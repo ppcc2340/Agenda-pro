@@ -1,5 +1,0 @@
-Pillow>=10.0
-numpy>=1.24
-pypdf>=4.0
-# opcionales
-pytest>=8.0      # los tests usan unittest, pero pytest también los corre
