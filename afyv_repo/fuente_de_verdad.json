@@ -1,0 +1,86 @@
+{
+  "_nota": "Unica fuente de hechos permitida para la IA. Extraida de https://www.afyvlegal.com/ . Si cambian precios o servicios en la web, actualizar este archivo ANTES de generar contenido.",
+  "marca": {
+    "nombre": "AFyV Legal",
+    "descripcion": "Estudio para pymes y emprendedores en Santiago y todo Chile",
+    "lema": "El derecho cerca de ti.",
+    "propuesta": "Usamos la tecnología para llevar el Derecho cerca de ti.",
+    "tono": "Cercano, claro, profesional, sin jerga. Tuteo. Sin promesas de resultado.",
+    "whatsapp": "+56 9 8171 4111",
+    "whatsapp_link": "https://wa.me/56981714111",
+    "correo": "contacto@afyvlegal.com",
+    "web": "https://www.afyvlegal.com/",
+    "instagram": "@afyvlegal",
+    "linkedin": "https://www.linkedin.com/company/afyvlegal/",
+    "aviso": "Información general sobre nuestros servicios; no constituye asesoría legal."
+  },
+  "equipo": [
+    {"nombre": "Matías Araos", "area": "Derecho Civil y Derecho Corporativo"},
+    {"nombre": "Rosario Soto", "area": "Abogada · Derecho Público"},
+    {"nombre": "Alberto Vargas", "area": "Derecho Corporativo"},
+    {"nombre": "Gabriel Freulon", "area": "Derecho Civil y Derecho Laboral"}
+  ],
+  "compromisos": [
+    "Revisamos y firmamos cada entrega: nada sale del estudio sin una lectura completa y la firma de quien responde por el encargo.",
+    "Precio fijo conocido antes de empezar: lo que quede fuera del alcance se cotiza antes y solo se hace si lo aceptas.",
+    "Plazos en horas hábiles, contados desde que recibimos la información completa.",
+    "Tu información no entrena modelos de IA: herramientas que no usan tus datos para entrenar y un expediente reservado para cada cliente.",
+    "Con o sin IA, tú eliges: si prefieres trabajar sin IA, te informamos precio y plazo antes de contratar."
+  ],
+  "como_usamos_ia": {
+    "ia_hace": ["ordenar antecedentes", "investigar", "buscar jurisprudencia", "proponer un primer borrador"],
+    "equipo_hace": ["analizar", "decidir la estrategia", "verificar cada fuente en su origen oficial", "firmar y explicar el resultado"]
+  },
+  "proceso_6_pasos": [
+    ["Escuchamos", "Conversamos contigo para entender qué necesitas y qué está en juego."],
+    ["Proponemos", "Te enviamos un precio fijo con un alcance claro, antes de empezar."],
+    ["Acordamos", "Firmas la carta de encargo y eliges si trabajamos con o sin IA."],
+    ["Preparamos", "La IA ordena antecedentes, investiga y busca jurisprudencia, guiada por el equipo; en contratos y documentos, propone un primer borrador."],
+    ["Analizamos y decidimos", "El equipo valora argumentos, riesgos y alternativas, y define la estrategia."],
+    ["Verificamos y entregamos", "Contrastamos cada fuente, firmamos y te explicamos el resultado."]
+  ],
+  "precios_nota": "Precios sin IVA. Las tasas oficiales se cobran aparte cuando corresponde.",
+  "servicios": {
+    "Marcas": {
+      "lema": "Te decimos el riesgo antes de que pagues las tasas.",
+      "items": [
+        ["Diagnóstico de marca", "$29.990"],
+        ["Marca protegida (1 clase)", "$100.000"],
+        ["Vigilancia de marca", "$10.000 al mes"],
+        ["Defensa ante observaciones de fondo u oposiciones", "$100.000"],
+        ["Apelación ante el TDPI", "$100.000"]
+      ],
+      "ia": "La IA amplía la búsqueda de marcas similares; el equipo califica el riesgo."
+    },
+    "Corporativo pyme": {
+      "lema": "Tu empresa constituida, ordenada y con contratos claros.",
+      "items": [
+        ["Empresa lista (RES)", "$119.000"],
+        ["Pack Empresa + Marca", "$189.000"],
+        ["Pacto de accionistas", "$100.000"],
+        ["Contrato comercial: revisión", "$85.000"],
+        ["Contrato comercial: redacción", "desde $100.000"]
+      ],
+      "ia": "Borradores en horas a partir de modelos revisados por el equipo."
+    },
+    "Litigios y cobranza": {
+      "lema": "Cobrar lo que te deben, con un plan claro.",
+      "items": [
+        ["Negociación", "A cotizar"],
+        ["Cobranza judicial", "$300.000"],
+        ["Precario (Ley Devuélveme mi Casa) o cobro de rentas", "desde $300.000"],
+        ["Civil en general", "Cotización por etapa"]
+      ],
+      "ia": "La IA ordena antecedentes y busca jurisprudencia; la estrategia y los escritos son del equipo."
+    },
+    "Abogado de tu Pyme": {
+      "lema": "Asesoría mensual con alcance definido.",
+      "items": [
+        ["Plan Esencial", "$49.000 al mes"],
+        ["Plan Pyme", "$119.000 al mes"],
+        ["Plan Crecimiento", "$249.000 al mes"]
+      ],
+      "ia": "La IA agiliza la investigación; cada respuesta la revisa el equipo antes de enviarse."
+    }
+  }
+}
