@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 import { demoInput, event, isoPlusMinutes, task } from "./fixtures";
 import { PlannerInputError } from "./normalize";
 import { plan } from "./plan";
+import { MAX_RELEASED_BLOCKS } from "./stability";
 import type { ExistingBlock, PlannedBlock } from "./types";
 
 const codes = (b: PlannedBlock): string[] => b.reasons.map((r) => r.code);
@@ -229,6 +230,34 @@ describe("plan: backtracking exclusions", () => {
     expect(second.diff.moved).toEqual([]);
     expect(second.unscheduled).toEqual([{ taskId: "rush", reason: "DEADLINE_INFEASIBLE" }]);
     expect(second.conflicts[0]?.alternatives).toContain("move_other_task");
+  });
+});
+
+describe("plan: stability bound under cascading releases", () => {
+  it("displaces at most MAX_RELEASED_BLOCKS accepted blocks even when releases cascade through dependencies", () => {
+    // Kolkata, a single Wednesday of work. t2 -> t3 is a dependency chain with tight
+    // soft deadlines; adding a tiny task due early would otherwise shift everything.
+    const prefs = { ...demoInput().preferences, timezone: "Asia/Kolkata", workStart: "09:30", workEnd: "17:00", workDays: [3], deepWorkWindows: [], minBlockMinutes: 15, minDeepBlockMinutes: 45, bufferMinutes: 0, contingencyPct: 0, riskThresholdHours: 0 };
+    const base = {
+      now: "2026-10-19T03:56:00.000Z",
+      horizonStart: "2026-10-19T00:00:00.000Z",
+      horizonEnd: "2026-10-22T00:00:00.000Z",
+      preferences: prefs,
+      tasks: [
+        task({ id: "t0", priority: 1, kind: "deep", estimateMinutes: 30 }),
+        task({ id: "t1", priority: 1, kind: "deep", estimateMinutes: 30 }),
+        task({ id: "t2", priority: 1, kind: "deep", estimateMinutes: 40, remainingMinutes: 23, dueAt: "2026-10-21T04:42:00.000Z" }),
+        task({ id: "t3", priority: 1, kind: "deep", estimateMinutes: 30, dueAt: "2026-10-21T05:26:00.000Z", blockedBy: ["t2"] }),
+      ],
+    };
+    const first = plan(demoInput(base));
+    expect(first.blocks).toHaveLength(4);
+    const extra = task({ id: "extra", priority: 4, estimateMinutes: 15, dueAt: "2026-10-21T04:31:00.000Z" });
+    const second = plan(demoInput({ ...base, tasks: [...base.tasks, extra], existingBlocks: asExisting(first.blocks, false) }));
+    const kept = new Set(second.blocks.map((b) => `${b.taskId}|${b.startsAt}`));
+    const moved = first.blocks.filter((b) => !kept.has(`${b.taskId}|${b.startsAt}`)).length;
+    expect(moved).toBeLessThanOrEqual(MAX_RELEASED_BLOCKS);
+    expect(second.blocks.find((b) => b.taskId === "extra")?.endsAt).toBe("2026-10-21T04:15:00.000Z");
   });
 });
 

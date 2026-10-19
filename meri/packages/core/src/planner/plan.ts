@@ -11,7 +11,7 @@ import { computeRisks } from "./risks";
 import { createState, type ScheduleState } from "./schedule-state";
 import { processingOrder, scheduleAll, type SchedulerContext } from "./scheduler";
 import { scoreTasks } from "./scoring";
-import { addPinnedBlocks, keepValidBlocks } from "./stability";
+import { MAX_RELEASED_BLOCKS, addPinnedBlocks, keepValidBlocks } from "./stability";
 import type { PlanInput, PlannedBlock, PlanResult } from "./types";
 import { DEFAULT_WEIGHTS, type Weights } from "./weights";
 
@@ -48,6 +48,7 @@ export function plan(input: PlanInput, weights: Weights = DEFAULT_WEIGHTS): Plan
     facts: new Map(),
     processed: new Set(),
     displaced: new Set(),
+    budget: { keptReleases: MAX_RELEASED_BLOCKS },
   };
   const order = processingOrder(ctx);
   addPinnedBlocks(state, n);

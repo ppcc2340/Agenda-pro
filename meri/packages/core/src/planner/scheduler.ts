@@ -31,10 +31,15 @@ export interface SchedulerContext {
   readonly processed: Set<string>;
   /**
    * Tasks that had a block released this run. Once backtracking has moved
-   * anything, voluntary re-placements are disabled for the rest of the run so a
-   * single re-plan never moves more than MAX_RELEASED_BLOCKS existing blocks.
+   * anything, voluntary re-placements are disabled for the rest of the run.
    */
   readonly displaced: Set<string>;
+  /**
+   * How many previously accepted (kept) blocks may still be displaced in this
+   * run. Together with `displaced` it bounds a re-plan to MAX_RELEASED_BLOCKS
+   * moved existing blocks, even when releases cascade through dependencies.
+   */
+  readonly budget: { keptReleases: number };
 }
 
 type DependencyState =
@@ -93,17 +98,22 @@ function tryPlaceBeforeDeadline(state: ScheduleState, n: Normalized, task: Norma
 
 /**
  * Limited backtracking: release up to MAX_RELEASED_BLOCKS lower-scored blocks
- * before the deadline until the task fits; on failure the releases are undone.
- * Released tasks that were already processed are re-placed right away.
+ * before the deadline (kept blocks only while the run's budget allows) until
+ * the task fits; on failure the releases are undone. Released tasks that were
+ * already processed are re-placed right away.
  */
 function tryWithReleases(ctx: SchedulerContext, state: ScheduleState, task: NormalizedTask, earliest: number, deadline: number): boolean {
   const released: ScheduledBlock[] = [];
+  const keptReleased = (): number => released.filter((b) => b.kept).length;
   while (released.length < MAX_RELEASED_BLOCKS) {
-    const candidate = releaseCandidates(state, ctx.n, ctx.scores, task, deadline)[0];
+    const candidate = releaseCandidates(state, ctx.n, ctx.scores, task, deadline).find(
+      (b) => !b.kept || keptReleased() < ctx.budget.keptReleases,
+    );
     if (candidate === undefined) break;
     removeBlock(state, ctx.n, candidate);
     released.push(candidate);
     if (!tryPlaceBeforeDeadline(state, ctx.n, task, earliest, deadline)) continue;
+    ctx.budget.keptReleases -= keptReleased();
     for (const b of released) ctx.displaced.add(b.taskId);
     const toReplace = [...new Set(released.map((b) => b.taskId))]
       .map((id) => ctx.n.tasks.get(id))

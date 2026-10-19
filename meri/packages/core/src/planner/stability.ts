@@ -7,9 +7,10 @@
  *   meets a deadline the kept placement misses).
  * - A deadline task may release at most MAX_RELEASED_BLOCKS blocks of
  *   lower-scored tasks (limited backtracking); higher-scored work is never
- *   displaced. Voluntary re-placements stop once any release happened, so one
- *   re-plan moves at most MAX_RELEASED_BLOCKS existing blocks when the input
- *   change is adding a task (property 7 of docs/04).
+ *   displaced. A whole run may displace at most MAX_RELEASED_BLOCKS previously
+ *   accepted blocks, and voluntary re-placements stop once any release
+ *   happened, so one re-plan moves at most MAX_RELEASED_BLOCKS existing blocks
+ *   when the input change is adding a task (property 7 of docs/04).
  */
 import type { Normalized, NormalizedTask } from "./normalize";
 import { placeTask } from "./placement";
@@ -27,7 +28,10 @@ import {
 import type { ScoredTask } from "./scoring";
 import type { Weights } from "./weights";
 
-/** Upper bound on blocks a single deadline task may displace when re-planning. */
+/**
+ * Upper bound on blocks a single deadline task may displace, and on previously
+ * accepted blocks a whole re-plan may displace.
+ */
 export const MAX_RELEASED_BLOCKS = 3;
 
 export function remainingOf(state: ScheduleState, task: NormalizedTask): number {

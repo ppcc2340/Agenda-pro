@@ -7,3 +7,4 @@ export { toLocalParts, fromLocalParts, localDateKey, parseHHMM, addLocalDays, ty
 export { PlannerInputError } from "./planner/normalize";
 export { computeDailyCapacity, type DailyCapacity } from "./planner/capacity";
 export { MAX_RELEASED_BLOCKS } from "./planner/stability";
+export { buildAlerts, type AlertCandidate, type AlertRunInput, type AlertTemplate } from "./alerts/group";
