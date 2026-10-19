@@ -27,7 +27,7 @@
     "test:scripts": "vitest run --config scripts/vitest.config.ts",
     "seed:perf": "tsx scripts/seed-perf.ts",
     "e2e": "pnpm --filter @meri/web e2e",
-    "perf:hoy": "node scripts/perf/hoy.mjs"
+    "perf:hoy": "pnpm --filter @meri/web perf:hoy"
   },
   "devDependencies": {
     "@eslint/js": "^9.12.0",

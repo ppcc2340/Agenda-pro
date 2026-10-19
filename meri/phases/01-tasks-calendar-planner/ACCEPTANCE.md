@@ -1,10 +1,29 @@
 # Aceptación — Fase 1
-- [ ] F-02 AC1–3, F-03 AC1–2, F-04 AC1–3, F-05 AC1–4, F-06 AC1–2, F-13 AC1–2 verificados.
-- [ ] Propiedades del planificador (8/8) pasan con ≥ 1 000 casos generados.
-- [ ] Meri nunca altera eventos ajenos (test de contrato con `FakeCalendar`).
-- [ ] Token revocado → estado "reconectar" sin pérdida de datos (test).
-- [ ] Aceptar un diff escribe solo bloques Meri; deshacer restaura el estado previo.
-- [ ] Cada bloque muestra explicación traducida (es/en).
-- [ ] Rendimiento de "Hoy" medido y documentado.
-- [ ] E2E Playwright: onboarding → conectar calendario (fake) → capturar → plan → aceptar → deshacer.
-- [ ] `pnpm verify` en verde; `STATE.md` actualizado.
+
+Evidencia: nombre del test, comando o ruta. Verificado el 2026-10-19 en esta sesión (Postgres 16 y Redis 7 locales; reloj inyectado `DEMO_NOW=2026-10-20T08:40:00Z` para los flujos de UI).
+
+- [x] F-02 AC1–3, F-03 AC1–2, F-04 AC1–3, F-05 AC1–4, F-06 AC1–2, F-13 AC1–2 verificados. ✅
+  - F-02 AC1 «capturar con solo título crea un elemento en Entrada en < 1 s»: `apps/api/src/routes/capture.test.ts` («creates a capture proposal with suggested fields in well under a second»); E2E `apps/web/e2e/phase-1.spec.ts` (paleta → Entrada con 1 artículo).
+  - F-02 AC2 «≥ 85 % de campos correctos en el set de evals»: `evals/capture/seed.jsonl` (30 casos es/en) con `pnpm eval` → reglas 100 %, IA simulada 100 % (umbral 85 %); test `packages/ai/src/evals/capture.test.ts`. Se repetirá contra Anthropic al conectar `/connect-blocker anthropic` (fase 2).
+  - F-02 AC3 «sugerencias y confirmado se distinguen»: `Pill variant="sug"` siempre punteado (`apps/web/src/components/ui/pill.tsx`); tarjetas de Entrada con borde punteado; propuesta de reorganización con borde punteado en «¿Qué podría salir mal?» (`risk-list.tsx`).
+  - F-03 AC1 «dependencia no completada no se programa antes»: propiedad 4 (`plan.properties.test.ts` «dependencies are respected (fully placed, then +buffer)»), golden `plan.golden.test.ts`; ciclos rechazados en `tasks.test.ts` («validates dependencies: unknown ids, cycles and self-reference»).
+  - F-03 AC2 «`at_risk` por reglas»: `packages/core/src/planner/risks.ts` (sin IA); persistencia `applyTaskRisks` (`packages/db/src/repos/tasks.ts`); test `replan.test.ts` («removes blocks of completed tasks as a safe diff and persists risk with a capped, grouped alert»).
+  - F-04 AC1 «cambios en Google en ≤ 60 s / ≤ 5 min»: webhook `POST /webhooks/google/calendar` (`integrations.test.ts`) y polling cada 5 min (`apps/worker/src/dispatchers.ts`, `dispatchCalendarPolling`); cada sync con cambios encola `planner.replan` (`apps/worker/src/queues/calendar-sync.ts`).
+  - F-04 AC2 «nunca modifica eventos ajenos»: contrato `packages/integrations/src/fakes/fakes.test.ts` («refuses to modify or delete events it did not create»); `writeBlocksToCalendar` solo borra eventos `origin = 'meri'` (`packages/jobs/src/handlers/meri-calendar.ts`); `plan.test.ts` («accept … writes Meri events»: todos los eventos del calendario simulado son Meri o externos intactos).
+  - F-04 AC3 «token revocado → reconectar sin pérdida»: `calendar-sync.test.ts` («marks the account needs_reauth on AuthExpired without deleting mirrored data»); estado visible en Centro de control (`connections.tsx`).
+  - F-05 AC1 «sin solapamientos ni exceso de capacidad»: propiedades 1 y 3 (`plan.properties.test.ts`), 1 000 casos cada una.
+  - F-05 AC2 «determinista»: propiedad 5 («determinism: same input, same result»).
+  - F-05 AC3 «cada bloque tiene explicación»: `reasons` estructuradas (`packages/core/src/planner/reasons.ts`), traducidas en `apps/web/messages/{es,en}.json` (`plan.reasons.*`) y mostradas en el detalle del bloque (`timeline.tsx`, `BlockDetail`); E2E comprueba «Por qué está aquí».
+  - F-05 AC4 «tests de propiedades»: 8/8 (ver abajo).
+  - F-06 AC1 «Hoy < 1,5 s p75 con 500 tareas»: `docs/perf/phase-1.md` → p75 = 772 ms (30 cargas, build optimizado, `pnpm seed:perf` + `pnpm perf:hoy`).
+  - F-06 AC2 «accesible por teclado, PWA, responsive»: E2E con `@axe-core/playwright` (WCAG 2A/2AA, sin violaciones serias/críticas) en Hoy, Entrada, Calendario y Centro de control, proyectos `desktop` y `mobile` (Pixel 7); manifest de la fase 0; bloques del día son `button` con `aria-label` y `aria-pressed`.
+  - F-13 AC1 «nunca desplaza silenciosamente; siempre muestra diff»: ADR 0003; `replan.test.ts` («turns a move of a live block into a reschedule proposal instead of applying it»); diálogo «Reorganizar…» (`reorganize-dialog.tsx`) con cada movimiento antes → después; E2E acepta y deshace.
+  - F-13 AC2 «máximo N alertas/día, agrupadas»: `packages/core/src/alerts/group.test.ts` («orders risk before plan changes and respects the daily cap»); `replan.test.ts` (tope `maxAlertsPerDay = 2`); bandeja en Centro de control (`notifications-panel.tsx`).
+- [x] Propiedades del planificador (8/8) pasan con ≥ 1 000 casos generados. ✅ `pnpm --filter @meri/core test -- --coverage` → 59 tests, `plan.properties.test.ts` 8 propiedades con `numRuns: 1000`; cobertura core: 100 % líneas, 93,5 % ramas (umbral 90 %).
+- [x] Meri nunca altera eventos ajenos (test de contrato con `FakeCalendar`). ✅ `packages/integrations/src/fakes/fakes.test.ts` («refuses to modify or delete events it did not create»).
+- [x] Token revocado → estado "reconectar" sin pérdida de datos (test). ✅ `packages/jobs/src/handlers/calendar-sync.test.ts`.
+- [x] Aceptar un diff escribe solo bloques Meri; deshacer restaura el estado previo. ✅ `packages/jobs/src/handlers/replan.test.ts` («accept applies the diff, writes only Meri events to the calendar and audits; a stale proposal conflicts», «undo restores the previous blocks append-only and cancels the Meri events; a second undo conflicts»); `apps/api/src/routes/plan.test.ts` (ruta `POST /v1/plan/accept` + `POST /v1/audit/:id/undo`, aislamiento A/B).
+- [x] Cada bloque muestra explicación traducida (es/en). ✅ `apps/web/messages/{es,en}.json` → `plan.reasons.{9 códigos}`; test de paridad de claves `apps/web/src/test/messages.test.ts`; `ReasonList` (`reasons.tsx`).
+- [x] Rendimiento de "Hoy" medido y documentado. ✅ `docs/perf/phase-1.md` (p75 772 ms; `EXPLAIN` de las consultas de Hoy).
+- [x] E2E Playwright: onboarding → conectar calendario (fake) → capturar → plan → aceptar → deshacer. ✅ `apps/web/e2e/phase-1.spec.ts` (`pnpm e2e`, desktop + mobile, 2 passed); job `e2e` en `.github/workflows/ci.yml`.
+- [x] `pnpm verify` en verde; `STATE.md` actualizado. ✅ `pnpm verify` → ver registro de sesión en `STATE.md`; decisiones D-026..D-029; fase 1 cerrada.

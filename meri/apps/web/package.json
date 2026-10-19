@@ -11,7 +11,8 @@
     "lint": "eslint src",
     "test": "vitest run",
     "build": "next build",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "perf:hoy": "node e2e/perf-hoy.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.1.0",

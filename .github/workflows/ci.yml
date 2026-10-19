@@ -64,8 +64,10 @@ jobs:
             echo "Forbidden email send path found"; exit 1; fi
       - name: Verify (lint, typecheck, test, build, dependency rules)
         run: pnpm verify
-      - name: Coverage thresholds (api ≥ 80 %; core ≥ 90 % once it has code in phase 1)
-        run: pnpm --filter @meri/api test -- --coverage
+      - name: Coverage thresholds (api ≥ 80 %, core ≥ 90 %)
+        run: pnpm --filter @meri/api test -- --coverage && pnpm --filter @meri/core test -- --coverage
+      - name: Capture evals (F-02 AC2, ≥ 85 % against rules and the fake client)
+        run: pnpm eval
       - name: Start the web app for the domain smoke test
         run: (pnpm --filter @meri/web start > /tmp/web.log 2>&1 &) && for i in $(seq 1 30); do curl -sf localhost:3000/privacy > /dev/null && break; sleep 1; done
       - name: Smoke tests against fake adapters
@@ -78,6 +80,71 @@ jobs:
         with:
           name: openapi
           path: meri/apps/api/openapi.json
+
+  e2e:
+    name: end-to-end (Playwright + axe)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: verify
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: meri
+          POSTGRES_PASSWORD: meri
+          POSTGRES_DB: meri
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U meri" --health-interval 5s --health-timeout 5s --health-retries 10
+      redis:
+        image: redis:7
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgres://meri_app:meri_app@localhost:5432/meri
+      DATABASE_ADMIN_URL: postgres://meri:meri@localhost:5432/meri
+      REDIS_URL: redis://localhost:6379
+      # Deterministic clock for the day line and the fake calendar's sample meetings (Tuesday 10:40 Madrid).
+      DEMO_NOW: 2026-10-20T08:40:00Z
+      # Optimized build running against fake adapters (D-029).
+      APP_ENV: development
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.12.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: meri/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: cp .env.example .env
+      - run: pnpm db:migrate
+      - name: Install Chromium for Playwright
+        run: pnpm --filter @meri/web exec playwright install --with-deps chromium
+      - name: Build the web app
+        run: pnpm --filter @meri/web build
+      - name: Start api, worker and web
+        run: |
+          (pnpm --filter @meri/api exec tsx src/main.ts > /tmp/api.log 2>&1 &)
+          (pnpm --filter @meri/worker exec tsx src/main.ts > /tmp/worker.log 2>&1 &)
+          (pnpm --filter @meri/web start > /tmp/web.log 2>&1 &)
+          for i in $(seq 1 60); do curl -sf localhost:4000/health > /dev/null && curl -sf localhost:4100/ready > /dev/null && curl -sf localhost:3000/privacy > /dev/null && break; sleep 2; done
+      - name: E2E (desktop + mobile, axe AA)
+        run: pnpm e2e
+      - name: Server logs on failure
+        if: failure()
+        run: tail -n 200 /tmp/api.log /tmp/worker.log /tmp/web.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: |
+            meri/apps/web/playwright-report
+            meri/apps/web/e2e/.results
+          if-no-files-found: ignore
 
   security:
     name: secrets and dependency audit

@@ -1,7 +1,7 @@
 /**
  * "Hoy" load-time measurement (P1-10): 30 loads of /hoy as the perf-seed user (500 tasks / 5 000 events),
  * p50/p75/p95 of navigation start → network idle (server render + plan/events/notifications requests).
- * Usage: pnpm seed:perf && pnpm perf:hoy  (web, api and worker running; optimized web build recommended)
+ * Usage: pnpm seed:perf && pnpm perf:hoy  (web, api and worker running; optimized web build: `APP_ENV=development pnpm --filter @meri/web build && pnpm --filter @meri/web start`)
  */
 import { chromium } from "@playwright/test";
 
@@ -27,6 +27,12 @@ if (page.url().includes("onboarding")) {
   await page.click('button[type="submit"]');
   await page.waitForURL(/\/hoy/, { timeout: 60_000 });
 }
+// One synchronous replan so the seed has a plan (also reports the planner's wall time on 500 tasks).
+const t0 = Date.now();
+const replan = await page.request.post(`${base}/api/v1/plan/replan`, { headers: { "x-requested-with": "meri" } });
+const replanMs = Date.now() - t0;
+const replanBody = await replan.json();
+console.log(`replan: ${replan.status()} ${JSON.stringify(replanBody)} in ${replanMs} ms`);
 // Warm-up (route compilation / caches), not counted.
 await page.goto(`${base}/hoy`);
 await page.waitForLoadState("networkidle");
@@ -35,7 +41,6 @@ const total = [];
 const server = [];
 const plan = [];
 for (let i = 0; i < runs; i++) {
-  const planTiming = page.waitForResponse((r) => r.url().includes("/api/v1/plan?"));
   const t0 = Date.now();
   await page.goto(`${base}/hoy`, { waitUntil: "networkidle" });
   total.push(Date.now() - t0);
@@ -44,9 +49,11 @@ for (let i = 0; i < runs; i++) {
     return n ? { ttfb: n.responseStart - n.startTime, dcl: n.domContentLoadedEventEnd - n.startTime } : null;
   });
   if (nav) server.push(nav.ttfb);
-  const res = await planTiming;
-  const timing = await res.request().timing();
-  plan.push(timing.responseEnd - timing.startTime > 0 ? timing.responseEnd - timing.startTime : 0);
+  const planMs = await page.evaluate(() => {
+    const entry = performance.getEntriesByType("resource").find((e) => e.name.includes("/api/v1/plan?"));
+    return entry ? entry.duration : null;
+  });
+  if (planMs !== null) plan.push(planMs);
 }
 const blocks = await page.locator('main button[aria-pressed][aria-label*="–"]').count();
 await browser.close();

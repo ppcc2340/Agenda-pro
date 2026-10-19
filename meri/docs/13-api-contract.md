@@ -43,12 +43,14 @@ Fuente para que backend y frontend se construyan en paralelo. El OpenAPI generad
 | `POST /v1/commitments/:id/remind` | Crea un recordatorio |
 
 ### Plan y calendario
-| `GET /v1/plan?from=&to=` | Plan vigente: bloques, riesgos, conflictos |
+| `GET /v1/plan?from=&to=` | Plan vigente: bloques persistidos, tareas referenciadas, riesgos/conflictos del último `plan_run`, propuesta `reschedule` pendiente. Nunca ejecuta el planificador en la petición |
 |---|---|
-| `POST /v1/plan/replan` | Calcula una propuesta de reprogramación (diff). No aplica |
-| `POST /v1/plan/accept` | Aplica un diff (por id) y escribe bloques en Calendar |
-| `POST /v1/plan/blocks/:id/pin` | Ancla o suelta un bloque |
+| `POST /v1/plan/replan` | Ejecuta el planificador ahora. Diff seguro (solo añade bloques o retira los de tareas completadas) → se aplica como acción `system` auditada; cualquier movimiento de un bloque vivo → propuesta `reschedule` con `basePlanVersion` (ADR 0003) |
+| `POST /v1/plan/accept` `{ proposalId }` | Aplica la propuesta y escribe solo eventos Meri en Calendar. `CONFLICT` si el plan cambió desde la propuesta. Acepta `Idempotency-Key` |
+| `POST /v1/plan/blocks/:id/pin` `{ pinned }` | Ancla o suelta un bloque (auditado, deshacible) |
+| `POST /v1/plan/blocks/:id/complete` `{ taskDone? }` | Marca el bloque hecho y, por defecto, la tarea (auditado, deshacible) |
 | `GET /v1/calendar/events?from=&to=` | Eventos externos y bloques Meri |
+| `GET /v1/notifications` · `POST /v1/notifications/:id/read` | Avisos agrupados (`template` + `params` para i18n, tope `maxAlertsPerDay`) |
 
 ### Clientes, tiempo y briefings
 | `GET/POST /v1/clients` · `PATCH/DELETE /v1/clients/:id` | CRUD. Dominios para resolución automática |
@@ -64,7 +66,7 @@ Fuente para que backend y frontend se construyan en paralelo. El OpenAPI generad
 | `POST /v1/integrations/:provider/connect` | Devuelve URL de autorización |
 | `GET /v1/integrations/:provider/callback` | Intercambia código y guarda tokens cifrados |
 | `POST /v1/integrations/:id/pause` · `DELETE /v1/integrations/:id` | Pausar / desconectar y purgar |
-| `GET /v1/audit` · `POST /v1/audit/:id/undo` | Actividad y deshacer |
+| `GET /v1/audit` · `POST /v1/audit/:id/undo` | Actividad (con `undoneAt` derivado) y deshacer append-only: inserta `<acción>.undone` con `undo_of_audit_id` y aplica la compensación. Deshacibles: `plan.generated`, `plan.accepted`, `task.created`, `task.completed`, `block.pinned`, `block.completed`. `CONFLICT` si ya se deshizo o existe un plan posterior |
 | `GET /v1/value-report?period=` | Informe de valor con método por cifra |
 | `GET /v1/ai/usage` | Créditos usados y límite |
 
@@ -89,9 +91,9 @@ Todas llevan `{ workspaceId, traceId }` además de su carga.
 | `calendar.sync` | `{ integrationAccountId }` | Sincroniza eventos |
 | `ai.extract_commitments` | `{ threadId, messageIds[] }` | Crea propuestas y compromisos `proposed` |
 | `ai.brief_client` | `{ clientId, eventId? }` | Genera briefing |
-| `planner.replan` | `{ reason }` | Calcula diff y crea propuesta `reschedule` |
+| `planner.replan` | `{ reason }` | Calcula el diff; aplica diffs seguros y crea propuesta `reschedule` para el resto (ADR 0003). Se encola con debounce de 3 s por workspace al cambiar tareas o eventos |
 | `followups.scan` | `{}` (cron) | Detecta vencidos y sin respuesta |
-| `daily.review` | `{ date }` (cron) | Resumen del día |
+| `daily.review` | `{ date }` (cron cada 15 min: workspaces que pasaron su hora de inicio en su zona) | Resumen del día (plantilla, sin IA), uno por día |
 | `billing.usage_rollup` | `{ period }` (cron) | Consolida `ai_usage` y créditos |
 | `data.delete_account` | `{ userId }` | Borrado completo y verificación |
 | `integrations.renew_channels` | `{}` (cron) | Renueva `watch` de Gmail y Calendar |
