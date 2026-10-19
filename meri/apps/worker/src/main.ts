@@ -10,6 +10,7 @@ import { buildHealthServer } from "./health";
 import { calendarSyncJob } from "./queues/calendar-sync";
 import { dailyReviewJob } from "./queues/daily-review";
 import { gmailSyncJob } from "./queues/gmail-sync";
+import { extractCommitmentsJob } from "./queues/extract-commitments";
 import { plannerReplanJob } from "./queues/planner-replan";
 import { examplePing } from "./queues/example";
 import { QueueRegistry } from "./registry";
@@ -38,6 +39,9 @@ async function main(): Promise<void> {
   registry.register(plannerReplanJob(handlerDeps));
   registry.register(dailyReviewJob(handlerDeps));
   registry.register(gmailSyncJob(handlerDeps, dispatcher));
+  registry.register(
+    extractCommitmentsJob({ ...handlerDeps, costCapUsd: config.env.AI_MONTHLY_COST_CAP_USD_PER_USER }),
+  );
 
   // Cross-tenant dispatchers (D-025) use the owner connection only to enumerate accounts.
   // Cross-tenant dispatchers need the owner connection: under the app role + forced RLS they would silently
@@ -74,7 +78,17 @@ async function main(): Promise<void> {
   const port = config.env.PORT ?? 4100;
   await health.listen({ port, host: "0.0.0.0" });
   logger.info(
-    { port, queues: ["example.ping", "calendar.sync", "planner.replan", "daily.review", "gmail.sync"] },
+    {
+      port,
+      queues: [
+        "example.ping",
+        "calendar.sync",
+        "planner.replan",
+        "daily.review",
+        "gmail.sync",
+        "ai.extract_commitments",
+      ],
+    },
     "worker started",
   );
 

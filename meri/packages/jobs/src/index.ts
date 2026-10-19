@@ -39,3 +39,9 @@ export {
   MAX_MESSAGES_PER_RUN,
   type MailSyncResult,
 } from "./handlers/gmail-sync";
+export {
+  extractThreadCommitments,
+  gmailThreadUrl,
+  AUTOCONFIRM_THRESHOLD,
+  type ExtractResult,
+} from "./handlers/extract-commitments";

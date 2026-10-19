@@ -155,7 +155,14 @@
         "block_completed": "Marcaste un bloque como hecho.",
         "integration_connected": "Conectaste Google Calendar.",
         "integration_disconnected": "Desconectaste Google Calendar.",
-        "integration_needs_reauth": "Google Calendar necesita reconectarse."
+        "integration_needs_reauth": "Google Calendar necesita reconectarse.",
+        "commitment_autoconfirmed": "Meri confirmó automáticamente un compromiso explícito de alta confianza.",
+        "commitment_confirmed": "Confirmaste un compromiso.",
+        "commitment_dismissed": "Descartaste un compromiso.",
+        "commitment_fulfilled": "Marcaste un compromiso como cumplido.",
+        "followup_reminder": "Programaste un recordatorio de seguimiento.",
+        "followup_draft_saved": "Meri guardó un borrador de seguimiento en Gmail (sin enviar).",
+        "task_waiting_created": "Creaste una tarea «Esperando a»."
       },
       "undoneOf": "Deshecho: {text}",
       "undoDone": "Acción deshecha."
@@ -205,7 +212,9 @@
         "conflict_grouped": "{count, plural, one {Un conflicto} other {# conflictos}} en el plan ({tasks} tareas).",
         "plan_proposed": "Meri propone reorganizar: {moved, plural, one {un bloque movido} other {# bloques movidos}}, {added, plural, one {uno nuevo} other {# nuevos}}, {removed, plural, one {uno retirado} other {# retirados}}.",
         "plan_applied": "Meri actualizó tu plan: {added, plural, one {un bloque nuevo} other {# bloques nuevos}}, {removed, plural, one {uno retirado} other {# retirados}}.",
-        "daily_digest": "Resumen del día: {blocks} bloques, {risks} riesgos, {proposals} propuestas pendientes."
+        "daily_digest": "Resumen del día: {blocks} bloques, {risks} riesgos, {proposals} propuestas pendientes.",
+        "proposals_new": "{count, plural, one {Una propuesta nueva} other {# propuestas nuevas}} en Entrada.",
+        "ai_paused": "La IA está en pausa: se alcanzó el tope mensual de {capUsd} USD. Las reglas y el planificador siguen funcionando."
       },
       "seeInHoy": "Ver en Hoy"
     }

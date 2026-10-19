@@ -55,6 +55,8 @@ export {
   getProposal,
   listProposals,
   resolveProposal,
+  reopenProposal,
+  createProposalIfAbsent,
   expirePending,
   countPending,
   type ProposalKind,

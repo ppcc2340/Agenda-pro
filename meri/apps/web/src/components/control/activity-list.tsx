@@ -33,6 +33,13 @@ const ACTION_KEYS = [
   "integration_connected",
   "integration_disconnected",
   "integration_needs_reauth",
+  "commitment_autoconfirmed",
+  "commitment_confirmed",
+  "commitment_dismissed",
+  "commitment_fulfilled",
+  "followup_reminder",
+  "followup_draft_saved",
+  "task_waiting_created",
 ] as const;
 type ActionKey = (typeof ACTION_KEYS)[number];
 const toKey = (action: string): ActionKey | null => {
@@ -48,6 +55,7 @@ export const UNDOABLE = new Set([
   "task.created",
   "block.pinned",
   "block.completed",
+  "commitment.autoconfirmed",
 ]);
 
 /** Activity feed (F-14): every automated action is visible and, when possible, undoable. */

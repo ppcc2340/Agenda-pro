@@ -275,8 +275,9 @@ export function extractCommitmentsByRules(
   const from = emailAddress(message.from);
   const fromMe = from === me;
   const counterparty = fromMe ? (message.to.map(emailAddress).find((a) => a !== me) ?? null) : from;
+  // Relative dates ("mañana", "el viernes") are relative to when the message was written, not to when it is processed.
   const captureCtx: CaptureContext = {
-    now: ctx.now,
+    now: message.date,
     timezone: ctx.timezone,
     clients: [],
     defaultDueHour: 18,

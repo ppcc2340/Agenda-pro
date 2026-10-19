@@ -15,10 +15,12 @@ import {
   insertBlocks,
   listOpenTasks,
   lockWorkspace,
+  reopenProposal,
   resolveProposal,
   setPlanVersion,
   softDeleteTask,
   updateBlock,
+  updateCommitment,
   updateTask,
   withWorkspace,
   type AuditEntry,
@@ -199,6 +201,7 @@ export const UNDOABLE_ACTIONS = [
   "task.created",
   "block.pinned",
   "block.completed",
+  "commitment.autoconfirmed",
 ] as const;
 
 export interface UndoResult {
@@ -320,6 +323,21 @@ export async function undoAuditEntry(
           throw new PlanApplyError("VALIDATION_FAILED", "Entry has no restorable state.");
         const block = await updateBlock(tx, workspaceId, entry.entityId, { pinned: before.pinned });
         if (!block) throw new PlanApplyError("CONFLICT", "The block no longer exists.");
+        break;
+      }
+      case "commitment.autoconfirmed": {
+        const before = entry.before as { proposalId?: string } | null;
+        if (!entry.entityId || !before?.proposalId)
+          throw new PlanApplyError("VALIDATION_FAILED", "Entry has no restorable state.");
+        const commitment = await updateCommitment(
+          tx,
+          workspaceId,
+          entry.entityId,
+          { status: "proposed" },
+          now,
+        );
+        if (!commitment) throw new PlanApplyError("CONFLICT", "The commitment no longer exists.");
+        await reopenProposal(tx, workspaceId, before.proposalId);
         break;
       }
       case "block.completed": {

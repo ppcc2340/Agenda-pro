@@ -155,7 +155,14 @@
         "block_completed": "You marked a block as done.",
         "integration_connected": "You connected Google Calendar.",
         "integration_disconnected": "You disconnected Google Calendar.",
-        "integration_needs_reauth": "Google Calendar needs to be reconnected."
+        "integration_needs_reauth": "Google Calendar needs to be reconnected.",
+        "commitment_autoconfirmed": "Meri auto-confirmed a high-confidence explicit commitment.",
+        "commitment_confirmed": "You confirmed a commitment.",
+        "commitment_dismissed": "You dismissed a commitment.",
+        "commitment_fulfilled": "You marked a commitment as fulfilled.",
+        "followup_reminder": "You scheduled a follow-up reminder.",
+        "followup_draft_saved": "Meri saved a follow-up draft in Gmail (not sent).",
+        "task_waiting_created": "You created a “Waiting for” task."
       },
       "undoneOf": "Undone: {text}",
       "undoDone": "Action undone."
@@ -205,7 +212,9 @@
         "conflict_grouped": "{count, plural, one {One conflict} other {# conflicts}} in the plan ({tasks} tasks).",
         "plan_proposed": "Meri proposes a reorganization: {moved, plural, one {one block moved} other {# blocks moved}}, {added, plural, one {one new} other {# new}}, {removed, plural, one {one removed} other {# removed}}.",
         "plan_applied": "Meri updated your plan: {added, plural, one {one new block} other {# new blocks}}, {removed, plural, one {one removed} other {# removed}}.",
-        "daily_digest": "Daily digest: {blocks} blocks, {risks} risks, {proposals} pending proposals."
+        "daily_digest": "Daily digest: {blocks} blocks, {risks} risks, {proposals} pending proposals.",
+        "proposals_new": "{count, plural, one {One new proposal} other {# new proposals}} in Inbox.",
+        "ai_paused": "AI is paused: the monthly cap of {capUsd} USD was reached. Rules and the planner keep working."
       },
       "seeInHoy": "See in Today"
     }

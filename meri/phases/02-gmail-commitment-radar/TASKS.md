@@ -8,7 +8,7 @@
 - [x] P2-02 **`threads_index` y minimización:** guardar solo metadatos + `snippet` citado; nunca cuerpos.
 - [x] P2-03 **Prefiltro por reglas** (newsletters, no-reply, bulk, promos) con tests.
 - [x] P2-04 **`packages/ai`:** cliente Anthropic con reintentos, medición de coste/tokens (`ai_usage`), *prompt caching*, modelos por env, salida estructurada + Zod + reparación.
-- [ ] P2-05 **Pipeline de extracción (AI-2)** completo (docs/05 §3): contexto acotado, verificación de cita, deduplicación, clasificación de confianza.
+- [x] P2-05 **Pipeline de extracción (AI-2)** completo (docs/05 §3): contexto acotado, verificación de cita, deduplicación, clasificación de confianza.
 - [ ] P2-06 **Defensa contra inyección** (docs/05 §6) + suite `evals/injection/`.
 - [ ] P2-07 **Set de evals:** crear generador/semilla de ≥ 200 correos sintéticos es/en en `evals/commitments/*.jsonl` con etiquetas; runner `pnpm eval` que calcula precisión/recobrado y escribe informe.
 - [ ] P2-08 **Bandeja de propuestas (UI):** confirmar/editar/descartar con teclado; mostrar cita + enlace al hilo + confianza; feedback guardado.

@@ -164,3 +164,17 @@ export async function countPending(tx: WorkspaceTx, workspaceId: WorkspaceId): P
     .where(and(eq(proposals.workspaceId, workspaceId), eq(proposals.status, "pending")));
   return row?.n ?? 0;
 }
+
+/** Compensation for an automatic resolution (undo): back to pending. Fails when another pending twin exists. */
+export async function reopenProposal(
+  tx: WorkspaceTx,
+  workspaceId: WorkspaceId,
+  id: string,
+): Promise<ProposalView | null> {
+  const [row] = await tx
+    .update(proposals)
+    .set({ status: "pending", resolution: null, resolvedAt: null })
+    .where(and(eq(proposals.workspaceId, workspaceId), eq(proposals.id, id)))
+    .returning();
+  return row ? toView(row) : null;
+}
