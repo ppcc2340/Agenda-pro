@@ -75,6 +75,8 @@ const REQUEST_PATTERNS: RegExp[] = [
   /\b(te pido|le pido|les pido|ruego)\s+(que\s+)?(me\s+)?(\p{L}+)/iu,
   /\b(quedo a la espera de|espero)\s+(tu|su|el|la|los|las)\s+(\p{L}+)/iu,
   /\b(waiting for|looking forward to receiving|awaiting)\s+(your|the)\s+(\p{L}+)/iu,
+  // Third-person promise to us ("nos envían el contrato mañana", "me mandarán la factura"): something owed to the writer.
+  /\b(me|nos)\s+(envian|envían|enviaran|enviarán|mandan|mandaran|mandarán|pasan|pasaran|pasarán|entregan|entregaran|entregarán|confirman|confirmaran|confirmarán|devuelven|devolveran|devolverán|llaman|llamaran|llamarán)\b/i,
 ];
 const SUGGESTION_WORDS =
   /\b(quiza|quizas|quizá|quizás|tal vez|a lo mejor|podriamos|podríamos|maybe|perhaps|we could|might|sometime|cuando puedas|when you get a chance|si te parece|if you like|igual)\b/i;
