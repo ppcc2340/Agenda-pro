@@ -18,3 +18,4 @@ export { LocalKms, type KmsAdapter } from "./kms";
 export { createIntegrations, type Integrations, type IntegrationsDeps } from "./factory";
 export * from "./oauth/types";
 export { FakeGoogleOAuth } from "./fakes/oauth";
+export { FakeNotifier, type Notifier, type OutboundNotification } from "./notify/types";

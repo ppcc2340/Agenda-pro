@@ -11,7 +11,9 @@
     "language": "Language",
     "signOut": "Sign out",
     "demoNote": "Development mode with sample data. Nothing is sent or charged.",
-    "themeDark": "Dark theme"
+    "themeDark": "Dark theme",
+    "undo": "Undo",
+    "dialogClose": "Close"
   },
   "nav": {
     "hoy": "Today",
@@ -49,7 +51,9 @@
     "legendFixed": "Fixed meeting: Meri never touches it",
     "legendBlock": "Confirmed work block",
     "legendSuggested": "Suggested: waiting for your decision",
-    "subtitleEmpty": "No plan yet. Connect your calendar and capture tasks so Meri can build it."
+    "subtitleEmpty": "No plan yet. Connect your calendar and capture tasks so Meri can build it.",
+    "unscheduled": "To schedule",
+    "willSchedule": "Meri will schedule it in the next gap"
   },
   "entrada": {
     "subtitle": "Meri proposes, you decide. Nothing here is final until you confirm it.",
@@ -59,12 +63,14 @@
   "proyectos": {
     "subtitle": "What you owe, what you are owed and the time per client.",
     "tabs": {
+      "tareas": "Tasks",
       "compromisos": "Commitments",
       "clientes": "Clients",
       "tiempo": "Time"
     },
     "emptyTitle": "No commitments yet",
-    "emptyBody": "Commitments you confirm from the Inbox will appear here, split into what you owe and what you are owed."
+    "emptyBody": "Commitments you confirm from the Inbox will appear here, split into what you owe and what you are owed.",
+    "soon": "Arrives in a later phase."
   },
   "calendario": {
     "subtitle": "Your meetings and the work blocks Meri reserves for you.",
@@ -221,5 +227,142 @@
     "edit": "Edit",
     "dismiss": "Dismiss",
     "undo": "Undo"
+  },
+  "tasks": {
+    "title": "Tasks",
+    "subtitle": "What you are working on. Meri spreads it into realistic blocks.",
+    "new": "New task",
+    "emptyTitle": "No tasks yet",
+    "emptyBody": "Create a task or capture it with Ctrl K. Meri will schedule it in the next gap.",
+    "fields": {
+      "title": "Title",
+      "notes": "Notes",
+      "client": "Client",
+      "noClient": "No client",
+      "priority": "Priority",
+      "kind": "Kind of work",
+      "deep": "Deep",
+      "shallow": "Shallow",
+      "dueAt": "Due date",
+      "deadlineType": "Deadline type",
+      "soft": "Soft",
+      "hard": "Hard",
+      "estimate": "Estimate (min)",
+      "blockedBy": "Blocked by",
+      "status": "Status",
+      "tags": "Tags (comma separated)"
+    },
+    "priority": {
+      "1": "P1 · urgent",
+      "2": "P2 · high",
+      "3": "P3 · normal",
+      "4": "P4 · low"
+    },
+    "status": {
+      "pending": "Pending",
+      "scheduled": "Scheduled",
+      "in_progress": "In progress",
+      "blocked": "Blocked",
+      "waiting_on_third_party": "Waiting on others",
+      "at_risk": "At risk",
+      "completed": "Done"
+    },
+    "actions": {
+      "done": "Mark as done",
+      "reopen": "Reopen",
+      "edit": "Edit",
+      "delete": "Delete",
+      "save": "Save task",
+      "create": "Create task",
+      "cancel": "Cancel"
+    },
+    "toasts": {
+      "created": "Task created.",
+      "updated": "Task saved.",
+      "completed": "Done.",
+      "deleted": "Task deleted.",
+      "cycle": "Those dependencies would form a cycle."
+    },
+    "due": "Due {date}",
+    "minutes": "{n} min",
+    "hours": "{n} h"
+  },
+  "inbox": {
+    "pending": "{n} to review",
+    "confirmHigh": "Confirm the {n} high-confidence ones",
+    "confirmHighOne": "Confirm the high-confidence one",
+    "kind": {
+      "capture": "Capture",
+      "commitment": "Commitment",
+      "explicit": "Explicit",
+      "inferred": "Inferred",
+      "suggested": "Suggestion",
+      "reschedule": "Reschedule"
+    },
+    "noDate": "No date",
+    "forDate": "Due: {date}",
+    "understood": "This is what Meri understood. You can correct it before confirming.",
+    "source": {
+      "rules": "Rules",
+      "ai": "AI"
+    },
+    "actions": {
+      "confirm": "Confirm",
+      "edit": "Edit",
+      "dismiss": "Dismiss",
+      "saveConfirm": "Save and confirm",
+      "cancel": "Cancel"
+    },
+    "toasts": {
+      "confirmed": "Added. Meri will schedule it in the next gap.",
+      "dismissed": "Dismissed. Meri will learn from this.",
+      "batch": "{n} confirmed."
+    },
+    "editAction": "Action",
+    "editDate": "Date",
+    "quote": "“{text}”"
+  },
+  "capture": {
+    "placeholder": "Capture or search",
+    "hint": "Type a task with a date and duration, e.g. Report for Acme on Thursday, 2 h.",
+    "understood": "This is what Meri understood. You can correct it later.",
+    "captureInInbox": "Capture “{text}” in Inbox",
+    "captured": "Captured in Inbox. Review what Meri understood.",
+    "commands": {
+      "hoy": "Go to Today",
+      "entrada": "Go to Inbox",
+      "risks": "Show commitments at risk",
+      "waiting": "Who am I waiting on?",
+      "replan": "Reorganise my week",
+      "calendar": "See this week’s calendar",
+      "control": "Go to the Control centre",
+      "tasks": "See my tasks"
+    },
+    "mobileTitle": "Capture",
+    "mobileSub": "Write the way you speak. Meri understands clients, dates and durations.",
+    "mobileAdd": "Add to Inbox",
+    "undo": "Undo"
+  },
+  "connections": {
+    "connect": "Connect Google Calendar",
+    "pause": "Pause",
+    "resume": "Resume",
+    "disconnect": "Disconnect",
+    "sync": "Sync now",
+    "status": {
+      "healthy": "Connected",
+      "needs_reauth": "Reconnect",
+      "degraded": "Degraded",
+      "paused": "Paused",
+      "revoked": "Revoked"
+    },
+    "lastSync": "Last sync: {date}",
+    "neverSynced": "Not synced yet",
+    "fakeNote": "Test mode: a simulated calendar connects through the same flow as the real one.",
+    "connected": "Calendar connected. Meri will only write to the “Meri” calendar.",
+    "denied": "The connection was not completed.",
+    "disconnected": "Disconnected. Mirrored events were deleted.",
+    "confirmDisconnect": "Disconnect and delete mirrored events?",
+    "syncQueued": "Sync started."
   }
 }

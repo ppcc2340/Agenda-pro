@@ -5,10 +5,13 @@
  * backtracking, then "as far as possible". A final fill pass brings the state to
  * a fixpoint (no pending work fits anywhere), which is what makes re-planning
  * with the output pinned idempotent.
+ *
+ * Trials run on the real state and are undone block by block: the free space of
+ * a day is always recomputed from its base windows, so undo is exact.
  */
 import type { Normalized, NormalizedTask } from "./normalize";
 import { placeTask } from "./placement";
-import { blocksOf, cloneState, finishOf, removeBlock, type ScheduledBlock, type ScheduleState } from "./schedule-state";
+import { addBlock, blocksOf, finishOf, removeBlock, type ScheduledBlock, type ScheduleState } from "./schedule-state";
 import { compareByScore, type ScoredTask } from "./scoring";
 import { MAX_RELEASED_BLOCKS, releaseCandidates, remainingOf, shouldMoveKeptBlocks } from "./stability";
 import type { Weights } from "./weights";
@@ -60,60 +63,47 @@ export function effectiveDeadline(n: Normalized, task: NormalizedTask): number |
   return task.dueAt !== null && task.dueAt <= n.horizonEnd ? task.dueAt : null;
 }
 
-/** Topological order (Kahn) choosing the best-scored ready task at every step. */
+/**
+ * Topological order choosing the best-scored ready task at every step. Tasks
+ * that never become ready depend (transitively) on a cycle and go last; they
+ * end up BLOCKED.
+ */
 export function processingOrder(ctx: SchedulerContext): NormalizedTask[] {
-  const { n } = ctx;
-  const indegree = new Map<string, number>();
-  for (const task of n.tasks.values()) indegree.set(task.id, task.deps.length);
   const compare = compareByScore(ctx.scores);
+  const done = new Set<string>();
   const order: NormalizedTask[] = [];
-  let ready = [...n.tasks.values()].filter((t) => t.deps.length === 0);
-  while (ready.length > 0) {
-    ready.sort(compare);
-    const [next, ...rest] = ready;
+  let pending = [...ctx.n.tasks.values()];
+  while (pending.length > 0) {
+    const next = pending.filter((t) => t.deps.every((d) => done.has(d))).sort(compare)[0];
     if (next === undefined) break;
-    ready = rest;
+    done.add(next.id);
     order.push(next);
-    for (const depId of next.dependents) {
-      const left = (indegree.get(depId) ?? 0) - 1;
-      indegree.set(depId, left);
-      const dependent = n.tasks.get(depId);
-      if (left === 0 && dependent !== undefined) ready.push(dependent);
-    }
+    pending = pending.filter((t) => t !== next);
   }
-  // Tasks never released depend (transitively) on a cycle: they end up BLOCKED.
-  const seen = new Set(order.map((t) => t.id));
-  for (const task of [...n.tasks.values()].sort(compare)) if (!seen.has(task.id)) order.push(task);
-  return order;
+  return [...order, ...pending.sort(compare)];
 }
 
-function commitState(target: ScheduleState, source: ScheduleState): void {
-  target.blocks = source.blocks;
-  source.days.forEach((day, i) => {
-    const t = target.days[i];
-    if (t === undefined) return;
-    t.free = day.free;
-    t.assigned = day.assigned;
-  });
+/** Places before `deadline` and keeps the result only when everything fits. */
+function tryPlaceBeforeDeadline(state: ScheduleState, n: Normalized, task: NormalizedTask, earliest: number, deadline: number): boolean {
+  const result = placeTask(state, n, { task, remaining: remainingOf(state, task), earliest, deadline });
+  if (result.unplaced === 0) return true;
+  for (const b of result.placed) removeBlock(state, n, b);
+  return false;
 }
 
 /**
  * Limited backtracking: release up to MAX_RELEASED_BLOCKS lower-scored blocks
- * before the deadline until the task fits; on failure nothing changes.
+ * before the deadline until the task fits; on failure the releases are undone.
  * Released tasks that were already processed are re-placed right away.
  */
 function tryWithReleases(ctx: SchedulerContext, state: ScheduleState, task: NormalizedTask, earliest: number, deadline: number): boolean {
-  const trial = cloneState(state);
   const released: ScheduledBlock[] = [];
   while (released.length < MAX_RELEASED_BLOCKS) {
-    const candidate = releaseCandidates(trial, ctx.n, ctx.scores, task, deadline)[0];
-    if (candidate === undefined) return false;
-    removeBlock(trial, ctx.n, candidate);
+    const candidate = releaseCandidates(state, ctx.n, ctx.scores, task, deadline)[0];
+    if (candidate === undefined) break;
+    removeBlock(state, ctx.n, candidate);
     released.push(candidate);
-    const probe = cloneState(trial);
-    const result = placeTask(probe, ctx.n, { task, remaining: remainingOf(probe, task), earliest, deadline });
-    if (result.unplaced > 0) continue;
-    commitState(state, probe);
+    if (!tryPlaceBeforeDeadline(state, ctx.n, task, earliest, deadline)) continue;
     for (const b of released) ctx.displaced.add(b.taskId);
     const toReplace = [...new Set(released.map((b) => b.taskId))]
       .map((id) => ctx.n.tasks.get(id))
@@ -122,6 +112,7 @@ function tryWithReleases(ctx: SchedulerContext, state: ScheduleState, task: Norm
     for (const other of toReplace) placeOne(ctx, state, other, "fill");
     return true;
   }
+  for (const b of released) addBlock(state, ctx.n, b);
   return false;
 }
 
@@ -152,12 +143,7 @@ function placeOne(ctx: SchedulerContext, state: ScheduleState, task: NormalizedT
   if (deps.earliest >= deadline && deps.lastDependency !== null) {
     facts.dependencyAfterDeadline = deps.lastDependency;
   } else {
-    const trial = cloneState(state);
-    const result = placeTask(trial, n, { task, remaining, earliest: deps.earliest, deadline });
-    if (result.unplaced === 0) {
-      commitState(state, trial);
-      return;
-    }
+    if (tryPlaceBeforeDeadline(state, n, task, deps.earliest, deadline)) return;
     if (mode === "initial" && tryWithReleases(ctx, state, task, deps.earliest, deadline)) return;
     // Infeasible: place as much as possible before the deadline...
     placeTask(state, n, { task, remaining, earliest: deps.earliest, deadline });

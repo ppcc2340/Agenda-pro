@@ -7,7 +7,7 @@ import { computeDiff } from "./diff";
 import { deriveFeasibility } from "./feasibility";
 import { normalize } from "./normalize";
 import { buildReasons } from "./reasons";
-import { computeRisks, slackHoursOf } from "./risks";
+import { computeRisks } from "./risks";
 import { createState, type ScheduleState } from "./schedule-state";
 import { processingOrder, scheduleAll, type SchedulerContext } from "./scheduler";
 import { scoreTasks } from "./scoring";
@@ -16,18 +16,17 @@ import type { PlanInput, PlannedBlock, PlanResult } from "./types";
 import { DEFAULT_WEIGHTS, type Weights } from "./weights";
 
 function toPlannedBlocks(ctx: SchedulerContext, state: ScheduleState): PlannedBlock[] {
-  const slackByTask = new Map<string, number | null>();
-  for (const task of ctx.n.tasks.values()) slackByTask.set(task.id, slackHoursOf(ctx, state, task));
   const blocks: PlannedBlock[] = [];
   for (const block of state.blocks) {
     const task = ctx.n.tasks.get(block.taskId);
-    if (task === undefined) continue;
+    // The state only ever holds blocks of schedulable tasks (see addPinnedBlocks / keepValidBlocks).
+    if (task === undefined) throw new Error(`planner invariant: block of unknown task ${block.taskId}`);
     blocks.push({
       taskId: block.taskId,
       startsAt: minutesToIso(block.start),
       endsAt: minutesToIso(block.end),
       pinned: block.pinned,
-      reasons: buildReasons(ctx, block, task, slackByTask.get(task.id) ?? null),
+      reasons: buildReasons(ctx, state, block, task),
     });
   }
   return blocks.sort((a, b) => a.startsAt.localeCompare(b.startsAt) || a.taskId.localeCompare(b.taskId));

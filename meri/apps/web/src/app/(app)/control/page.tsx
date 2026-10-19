@@ -1,7 +1,10 @@
 import { getFormatter, getLocale, getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { CaptureButton, PageHeader } from "@/components/shell/app-shell";
+import { Suspense } from "react";
 import { ActivityList } from "@/components/control/activity-list";
+import { ConnectionsPanel } from "@/components/control/connections";
+import { getServerConfig } from "@/server/config";
 import { Button } from "@/components/ui/button";
 import { Pill } from "@/components/ui/pill";
 import { Panel } from "@/components/ui/section";
@@ -35,6 +38,7 @@ export default async function ControlPage() {
     apiFetch<Preferences>("/v1/preferences"),
     apiFetch<AuditPage>("/v1/audit?limit=8"),
   ]);
+  const fakeMode = getServerConfig().modes.google === "fake";
   const creditsUsed = 0; // ai_usage rollup arrives in phase 4
   const KNOWN_STATUS = ["trialing", "active", "past_due", "canceled", "unpaid"] as const;
   type PlanStatus = (typeof KNOWN_STATUS)[number];
@@ -93,27 +97,9 @@ export default async function ControlPage() {
         </Button>
       </Panel>
       <Panel title={t("connections.title")} desc={t("connections.desc")}>
-        <div className="flex items-center justify-between gap-3.5 border-b border-dashed border-rule py-2">
-          <div>
-            <b>{t("connections.calendar")}</b>
-            <div className="text-ink2">{t("connections.calendarScope")}</div>
-          </div>
-          <Pill variant="plain">{t("connections.notConnected")}</Pill>
-        </div>
-        <div className="flex items-center justify-between gap-3.5 border-b border-dashed border-rule py-2">
-          <div>
-            <b>{t("connections.gmail")}</b>
-            <div className="text-ink2">{t("connections.gmailScope")}</div>
-          </div>
-          <Pill variant="plain">{t("connections.notConnected")}</Pill>
-        </div>
-        <div className="flex items-center justify-between gap-3.5 py-2">
-          <div>
-            <b>{t("connections.others")}</b>
-            <div className="text-ink2">{t("connections.othersBody")}</div>
-          </div>
-          <Pill variant="plain">{t("connections.soon")}</Pill>
-        </div>
+        <Suspense fallback={null}>
+          <ConnectionsPanel fakeMode={fakeMode} timezone={prefs.timezone} />
+        </Suspense>
       </Panel>
       <Panel title={t("credits.title")} desc={t("credits.desc")}>
         <div className="num">

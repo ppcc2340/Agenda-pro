@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type * as React from "react";
+import { usePalette } from "@/components/capture/palette";
 import { cn } from "@/lib/cn";
 import { AREAS, MOBILE_TABS, type AreaKey } from "./areas";
 import { LocaleSwitch } from "./locale-switch";
@@ -149,13 +150,13 @@ export function PageHeader({
 
 export function CaptureButton() {
   const t = useTranslations("nav");
+  const palette = usePalette();
   return (
     <button
       type="button"
+      onClick={palette.open}
       className="hidden min-w-[260px] items-center gap-2.5 rounded-[11px] border border-rule bg-raised px-3.5 py-2 text-ink2 hover:border-ink3 md:flex"
       aria-keyshortcuts="Control+K Meta+K"
-      aria-disabled="true"
-      title={t("captureSoon")}
     >
       <Search size={16} aria-hidden="true" />
       <span>{t("capture")}</span>

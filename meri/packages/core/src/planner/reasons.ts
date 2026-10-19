@@ -5,26 +5,23 @@
  */
 import { minutesToIso } from "./calendar-math";
 import type { NormalizedTask } from "./normalize";
-import type { ScheduledBlock } from "./schedule-state";
+import { slackHoursFor } from "./risks";
+import type { ScheduledBlock, ScheduleState } from "./schedule-state";
 import type { SchedulerContext } from "./scheduler";
 import type { Reason } from "./types";
 
 /** P1 and P2 are what users call "high priority". */
 const HIGH_PRIORITY_MAX = 2;
 
-export function buildReasons(
-  ctx: SchedulerContext,
-  block: ScheduledBlock,
-  task: NormalizedTask,
-  slackHours: number | null,
-): Reason[] {
+export function buildReasons(ctx: SchedulerContext, state: ScheduleState, block: ScheduledBlock, task: NormalizedTask): Reason[] {
   const reasons: Reason[] = [];
   if (block.pinned) reasons.push({ code: "PINNED_BY_USER", params: { blockId: block.sourceId ?? "" } });
   if (block.kept) reasons.push({ code: "KEPT_STABLE", params: { blockId: block.sourceId ?? "" } });
   if (task.dueAt !== null) {
     const dueAt = minutesToIso(task.dueAt);
     if (task.deadlineType === "hard") reasons.push({ code: "DEADLINE_HARD", params: { dueAt } });
-    if (slackHours !== null && slackHours < ctx.n.preferences.riskThresholdHours) {
+    const slackHours = slackHoursFor(ctx, state, task, task.dueAt);
+    if (slackHours < ctx.n.preferences.riskThresholdHours) {
       reasons.push({ code: "DEADLINE_SLACK_LOW", params: { dueAt, slackHours } });
     }
   }

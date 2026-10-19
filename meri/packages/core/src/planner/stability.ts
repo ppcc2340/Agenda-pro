@@ -17,7 +17,6 @@ import {
   addBlock,
   assignedMinutes,
   blocksOf,
-  cloneState,
   dayIndexAt,
   finishOf,
   fitsInFree,
@@ -144,14 +143,17 @@ export function shouldMoveKeptBlocks(
 ): boolean {
   const kept = blocksOf(state, task.id).filter((b) => b.kept);
   if (kept.length === 0) return false;
-  const keepTrial = cloneState(state);
-  const keepResult = placeTask(keepTrial, n, { task, remaining: remainingOf(state, task), earliest, deadline: null });
-  const freshTrial = cloneState(state);
-  for (const b of kept) removeBlock(freshTrial, n, b);
-  const freshResult = placeTask(freshTrial, n, { task, remaining: remainingOf(freshTrial, task), earliest, deadline: null });
+  // Alternative A: keep the blocks and place only the rest.
+  const keepResult = placeTask(state, n, { task, remaining: remainingOf(state, task), earliest, deadline: null });
+  const keepFinish = finishOf(state, task.id) ?? n.horizonEnd;
+  for (const b of keepResult.placed) removeBlock(state, n, b);
+  // Alternative B: release the kept blocks and place everything fresh.
+  for (const b of kept) removeBlock(state, n, b);
+  const freshResult = placeTask(state, n, { task, remaining: remainingOf(state, task), earliest, deadline: null });
+  const freshFinish = finishOf(state, task.id) ?? n.horizonEnd;
+  for (const b of freshResult.placed) removeBlock(state, n, b);
+  for (const b of kept) addBlock(state, n, b);
   if (freshResult.unplaced > keepResult.unplaced) return false;
-  const keepFinish = finishOf(keepTrial, task.id) ?? n.horizonEnd;
-  const freshFinish = finishOf(freshTrial, task.id) ?? n.horizonEnd;
   if (task.dueAt !== null && keepFinish > task.dueAt && freshFinish <= task.dueAt) return true;
   const gainHours = (keepFinish - freshFinish) / 60;
   return gainHours > weights.movementPenalty * kept.length;
@@ -161,7 +163,8 @@ export function shouldMoveKeptBlocks(
  * Blocks a deadline task may displace: non-pinned blocks of lower-scored tasks
  * that start before the deadline, excluding its own dependencies and tasks whose
  * dependents already have blocks (moving those would break dependency order).
- * Lowest score first, then latest start, so the cheapest commitments go first.
+ * Lowest score first, then latest start (blocks never share a start, so the
+ * order is total), so the cheapest commitments go first.
  */
 export function releaseCandidates(
   state: ScheduleState,
@@ -183,5 +186,5 @@ export function releaseCandidates(
         !ancestors.has(b.taskId) &&
         !descendantHasBlocks(state, n, b.taskId),
     )
-    .sort((x, y) => scoreOf(x.taskId) - scoreOf(y.taskId) || y.start - x.start || x.taskId.localeCompare(y.taskId));
+    .sort((x, y) => scoreOf(x.taskId) - scoreOf(y.taskId) || y.start - x.start);
 }

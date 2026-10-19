@@ -88,11 +88,12 @@ function parseInput(raw: unknown): PlanInput {
 
 function normalizePreferences(input: PlanInput, issues: string[]): NormalizedPreferences {
   const p = input.preferences;
-  const workStart = parseWallTime(p.workStart) ?? { hour: 0, minute: 0 };
-  const workEnd = parseWallTime(p.workEnd) ?? { hour: 0, minute: 0 };
+  const workStart = parseWallTime(p.workStart);
+  const workEnd = parseWallTime(p.workEnd);
   if (!isValidTimeZone(p.timezone)) issues.push(`preferences.timezone: unknown IANA zone "${p.timezone}"`);
-  if (parseWallTime(p.workStart) === null) issues.push("preferences.workStart: expected HH:MM");
-  if (parseWallTime(p.workEnd) === null) issues.push("preferences.workEnd: expected HH:MM");
+  if (workStart === null) issues.push("preferences.workStart: expected HH:MM");
+  if (workEnd === null) issues.push("preferences.workEnd: expected HH:MM");
+  if (workStart === null || workEnd === null) throw new PlannerInputError(issues);
   if (wallToMinutes(workStart) >= wallToMinutes(workEnd)) {
     issues.push("preferences.workStart must be before workEnd");
   }

@@ -53,7 +53,6 @@ interface ScoreParts {
   priority: number;
   costOfDelay: number;
   unblocks: number;
-  hoursUntilDue: number | null;
 }
 
 function combine(parts: ScoreParts, slackHours: number | null, deadlineType: "soft" | "hard", w: Weights): number {
@@ -83,50 +82,46 @@ export function compareByScore(scores: ReadonlyMap<string, ScoredTask>): (a: Nor
   };
 }
 
-export function scoreTasks(n: Normalized, days: readonly DayState[], w: Weights): Map<string, ScoredTask> {
+interface Entry {
+  task: NormalizedTask;
+  parts: ScoreParts;
+  /** Work hours available between now and the deadline; null without deadline. */
+  capacityHoursUntilDue: number | null;
+  descendants: number;
+}
+
+function entryFor(n: Normalized, days: readonly DayState[], task: NormalizedTask): Entry {
   const horizonHours = Math.max((n.horizonEnd - n.now) / 60, 1);
-  const parts = new Map<string, ScoreParts>();
-  const capacityUntilDue = new Map<string, number>();
-  for (const task of n.tasks.values()) {
-    const hoursUntilDue = task.dueAt === null ? null : (task.dueAt - n.now) / 60;
-    // Cost of delay grows as the deadline approaches within the horizon.
-    const costOfDelay = hoursUntilDue === null ? 0 : clamp01(1 - hoursUntilDue / horizonHours);
-    parts.set(task.id, {
+  const hoursUntilDue = task.dueAt === null ? null : (task.dueAt - n.now) / 60;
+  const descendants = countDescendants(n, task.id);
+  return {
+    task,
+    parts: {
       priority: priorityWeight(task.priority),
-      costOfDelay,
-      unblocks: Math.min(countDescendants(n, task.id), MAX_REWARDED_DESCENDANTS) / MAX_REWARDED_DESCENDANTS,
-      hoursUntilDue,
-    });
-    if (task.dueAt !== null) {
-      capacityUntilDue.set(task.id, grossCapacityBetween(days, n.preferences, n.now, task.dueAt) / 60);
-    }
-  }
-  const ownSlack = (task: NormalizedTask): number | null => {
-    const capacity = capacityUntilDue.get(task.id);
-    return capacity === undefined ? null : capacity - task.remaining / 60;
+      // Cost of delay grows as the deadline approaches within the horizon.
+      costOfDelay: hoursUntilDue === null ? 0 : clamp01(1 - hoursUntilDue / horizonHours),
+      unblocks: Math.min(descendants, MAX_REWARDED_DESCENDANTS) / MAX_REWARDED_DESCENDANTS,
+    },
+    capacityHoursUntilDue: task.dueAt === null ? null : grossCapacityBetween(days, n.preferences, n.now, task.dueAt) / 60,
+    descendants,
   };
-  const preliminary = new Map<string, ScoredTask>();
-  for (const task of n.tasks.values()) {
-    const p = parts.get(task.id);
-    if (p === undefined) continue;
-    preliminary.set(task.id, {
-      id: task.id,
-      score: combine(p, ownSlack(task), task.deadlineType, w),
-      estimatedSlackHours: ownSlack(task),
-      descendants: countDescendants(n, task.id),
-    });
-  }
-  const ordered = [...n.tasks.values()].sort(compareByScore(preliminary));
+}
+
+function scored(e: Entry, higherScoredHours: number, w: Weights): ScoredTask {
+  const slack = e.capacityHoursUntilDue === null ? null : e.capacityHoursUntilDue - higherScoredHours - e.task.remaining / 60;
+  return { id: e.task.id, score: combine(e.parts, slack, e.task.deadlineType, w), estimatedSlackHours: slack, descendants: e.descendants };
+}
+
+export function scoreTasks(n: Normalized, days: readonly DayState[], w: Weights): Map<string, ScoredTask> {
+  const entries = [...n.tasks.values()].map((task) => entryFor(n, days, task));
+  const preliminary = new Map(entries.map((e) => [e.task.id, scored(e, 0, w)]));
+  const compare = compareByScore(preliminary);
+  entries.sort((a, b) => compare(a.task, b.task));
   const final = new Map<string, ScoredTask>();
   let accumulatedHours = 0;
-  for (const task of ordered) {
-    const p = parts.get(task.id);
-    const prelim = preliminary.get(task.id);
-    if (p === undefined || prelim === undefined) continue;
-    const capacity = capacityUntilDue.get(task.id);
-    const slack = capacity === undefined ? null : capacity - accumulatedHours - task.remaining / 60;
-    final.set(task.id, { ...prelim, score: combine(p, slack, task.deadlineType, w), estimatedSlackHours: slack });
-    accumulatedHours += task.remaining / 60;
+  for (const e of entries) {
+    final.set(e.task.id, scored(e, accumulatedHours, w));
+    accumulatedHours += e.task.remaining / 60;
   }
   return final;
 }

@@ -62,3 +62,5 @@ export {
 export { getIdempotentResponse, storeIdempotentResponse, type StoredResponse } from "./repos/idempotency";
 export { listClients, type ClientSummary } from "./repos/clients";
 export * from "./repos/integrations";
+export * from "./repos/schedule";
+export * from "./repos/notifications";

@@ -203,8 +203,32 @@ describe("plan: stability", () => {
     }));
     expect(second.unscheduled).toEqual([]);
     expect(second.conflicts.map((c) => c.code)).not.toContain("DEADLINE_INFEASIBLE");
-    expect(second.blocks.find((b) => b.taskId === "rush")?.endsAt ?? "").toBeLessThanOrEqual("2026-10-19T16:00:00.000Z");
+    expect(Date.parse(second.blocks.find((b) => b.taskId === "rush")?.endsAt ?? "")).toBeLessThanOrEqual(Date.parse("2026-10-19T16:00:00.000Z"));
     expect(second.diff.moved.length + second.diff.removed.length).toBeGreaterThan(0);
+  });
+});
+
+describe("plan: backtracking exclusions", () => {
+  it("never releases its own dependencies nor tasks whose dependents are already placed", () => {
+    const prefs = { ...demoInput().preferences, deepWorkWindows: [] };
+    const base = [
+      task({ id: "dep", priority: 1, estimateMinutes: 60 }),
+      task({ id: "filler", priority: 4, estimateMinutes: 300 }),
+      task({ id: "child", priority: 4, estimateMinutes: 30, blockedBy: ["filler"] }),
+    ];
+    const first = plan(demoInput({ tasks: base, horizonEnd: "2026-10-19T22:00:00.000Z", preferences: prefs }));
+    expect(first.unscheduled).toEqual([]);
+    const rush = task({ id: "rush", priority: 1, estimateMinutes: 60, dueAt: "2026-10-19T12:00:00.000Z", deadlineType: "hard", blockedBy: ["dep"] });
+    const second = plan(demoInput({
+      tasks: [...base, rush],
+      horizonEnd: "2026-10-19T22:00:00.000Z",
+      preferences: prefs,
+      existingBlocks: asExisting(first.blocks, false),
+    }));
+    // dep is rush's ancestor and filler's dependent (child) already has a block: nothing may be released.
+    expect(second.diff.moved).toEqual([]);
+    expect(second.unscheduled).toEqual([{ taskId: "rush", reason: "DEADLINE_INFEASIBLE" }]);
+    expect(second.conflicts[0]?.alternatives).toContain("move_other_task");
   });
 });
 

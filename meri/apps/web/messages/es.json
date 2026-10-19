@@ -11,7 +11,9 @@
     "language": "Idioma",
     "signOut": "Cerrar sesión",
     "demoNote": "Modo de desarrollo con datos de ejemplo. Nada se envía ni se cobra.",
-    "themeDark": "Tema oscuro"
+    "themeDark": "Tema oscuro",
+    "undo": "Deshacer",
+    "dialogClose": "Cerrar"
   },
   "nav": {
     "hoy": "Hoy",
@@ -49,7 +51,9 @@
     "legendFixed": "Reunión fija: Meri no la toca",
     "legendBlock": "Bloque de trabajo confirmado",
     "legendSuggested": "Sugerido: espera tu decisión",
-    "subtitleEmpty": "Todavía no hay plan. Conecta tu calendario y captura tareas para que Meri lo arme."
+    "subtitleEmpty": "Todavía no hay plan. Conecta tu calendario y captura tareas para que Meri lo arme.",
+    "unscheduled": "Por programar",
+    "willSchedule": "Meri la programará en el siguiente hueco"
   },
   "entrada": {
     "subtitle": "Meri propone, tú decides. Nada de esto es definitivo hasta que lo confirmes.",
@@ -59,12 +63,14 @@
   "proyectos": {
     "subtitle": "Lo que debes, lo que te deben y el tiempo de cada cliente.",
     "tabs": {
+      "tareas": "Tareas",
       "compromisos": "Compromisos",
       "clientes": "Clientes",
       "tiempo": "Tiempo"
     },
     "emptyTitle": "Sin compromisos todavía",
-    "emptyBody": "Los compromisos que confirmes desde Entrada aparecerán aquí, separados en lo que debes y lo que te deben."
+    "emptyBody": "Los compromisos que confirmes desde Entrada aparecerán aquí, separados en lo que debes y lo que te deben.",
+    "soon": "Llega en una fase posterior."
   },
   "calendario": {
     "subtitle": "Tus reuniones y los bloques de trabajo que Meri reserva para ti.",
@@ -221,5 +227,142 @@
     "edit": "Editar",
     "dismiss": "Descartar",
     "undo": "Deshacer"
+  },
+  "tasks": {
+    "title": "Tareas",
+    "subtitle": "Lo que tienes entre manos. Meri lo reparte en bloques realistas.",
+    "new": "Nueva tarea",
+    "emptyTitle": "Sin tareas todavía",
+    "emptyBody": "Crea una tarea o captúrala con Ctrl K. Meri la programará en el siguiente hueco.",
+    "fields": {
+      "title": "Título",
+      "notes": "Notas",
+      "client": "Cliente",
+      "noClient": "Sin cliente",
+      "priority": "Prioridad",
+      "kind": "Tipo de trabajo",
+      "deep": "Profundo",
+      "shallow": "Corto",
+      "dueAt": "Fecha límite",
+      "deadlineType": "Tipo de fecha",
+      "soft": "Blanda",
+      "hard": "Dura",
+      "estimate": "Duración estimada (min)",
+      "blockedBy": "Depende de",
+      "status": "Estado",
+      "tags": "Etiquetas (separadas por coma)"
+    },
+    "priority": {
+      "1": "P1 · urgente",
+      "2": "P2 · alta",
+      "3": "P3 · normal",
+      "4": "P4 · baja"
+    },
+    "status": {
+      "pending": "Pendiente",
+      "scheduled": "Programada",
+      "in_progress": "En curso",
+      "blocked": "Bloqueada",
+      "waiting_on_third_party": "Esperando a otros",
+      "at_risk": "En riesgo",
+      "completed": "Hecha"
+    },
+    "actions": {
+      "done": "Marcar como hecha",
+      "reopen": "Reabrir",
+      "edit": "Editar",
+      "delete": "Eliminar",
+      "save": "Guardar tarea",
+      "create": "Crear tarea",
+      "cancel": "Cancelar"
+    },
+    "toasts": {
+      "created": "Tarea creada.",
+      "updated": "Tarea guardada.",
+      "completed": "Hecha.",
+      "deleted": "Tarea eliminada.",
+      "cycle": "Esas dependencias formarían un ciclo."
+    },
+    "due": "Para el {date}",
+    "minutes": "{n} min",
+    "hours": "{n} h"
+  },
+  "inbox": {
+    "pending": "{n} por revisar",
+    "confirmHigh": "Confirmar las {n} de alta confianza",
+    "confirmHighOne": "Confirmar la de alta confianza",
+    "kind": {
+      "capture": "Captura",
+      "commitment": "Compromiso",
+      "explicit": "Explícito",
+      "inferred": "Inferido",
+      "suggested": "Sugerencia",
+      "reschedule": "Reorganización"
+    },
+    "noDate": "Sin fecha",
+    "forDate": "Para: {date}",
+    "understood": "Meri entendió esto. Puedes corregirlo antes de confirmar.",
+    "source": {
+      "rules": "Reglas",
+      "ai": "IA"
+    },
+    "actions": {
+      "confirm": "Confirmar",
+      "edit": "Editar",
+      "dismiss": "Descartar",
+      "saveConfirm": "Guardar y confirmar",
+      "cancel": "Cancelar"
+    },
+    "toasts": {
+      "confirmed": "Añadida. Meri la programará en el siguiente hueco.",
+      "dismissed": "Descartada. Meri aprenderá de esto.",
+      "batch": "{n} confirmadas."
+    },
+    "editAction": "Acción",
+    "editDate": "Fecha",
+    "quote": "“{text}”"
+  },
+  "capture": {
+    "placeholder": "Capturar o buscar",
+    "hint": "Escribe una tarea con fecha y duración, por ejemplo: Informe para Acme el jueves, 2 h.",
+    "understood": "Meri entendió esto. Puedes corregirlo después.",
+    "captureInInbox": "Capturar «{text}» en Entrada",
+    "captured": "Capturado en Entrada. Revisa lo que Meri entendió.",
+    "commands": {
+      "hoy": "Ir a Hoy",
+      "entrada": "Ir a Entrada",
+      "risks": "Mostrar compromisos en riesgo",
+      "waiting": "¿De quién espero una respuesta?",
+      "replan": "Reorganizar mi semana",
+      "calendar": "Ver el calendario de la semana",
+      "control": "Ir al Centro de control",
+      "tasks": "Ver mis tareas"
+    },
+    "mobileTitle": "Capturar",
+    "mobileSub": "Escribe como hablas. Meri entiende clientes, fechas y duración.",
+    "mobileAdd": "Añadir a Entrada",
+    "undo": "Deshacer"
+  },
+  "connections": {
+    "connect": "Conectar Google Calendar",
+    "pause": "Pausar",
+    "resume": "Reanudar",
+    "disconnect": "Desconectar",
+    "sync": "Sincronizar ahora",
+    "status": {
+      "healthy": "Conectado",
+      "needs_reauth": "Reconectar",
+      "degraded": "Con problemas",
+      "paused": "En pausa",
+      "revoked": "Revocado"
+    },
+    "lastSync": "Última sincronización: {date}",
+    "neverSynced": "Todavía no sincronizado",
+    "fakeNote": "Modo de pruebas: se conecta un calendario simulado con el mismo flujo que el real.",
+    "connected": "Calendario conectado. Meri solo escribirá en el calendario «Meri».",
+    "denied": "No se completó la conexión.",
+    "disconnected": "Desconectado. Los eventos copiados se han borrado.",
+    "confirmDisconnect": "¿Desconectar y borrar los eventos copiados?",
+    "syncQueued": "Sincronización en marcha."
   }
 }

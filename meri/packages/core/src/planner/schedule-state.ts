@@ -1,8 +1,8 @@
 /**
  * Mutable working state of a plan: the day windows plus every block placed so
- * far (pinned, kept from the previous plan, or newly placed). Trial placements
- * (stability checks, limited backtracking) work on a clone and are committed by
- * replacing the state, which keeps the greedy loop simple and deterministic.
+ * far (pinned, kept from the previous plan, or newly placed). Trials undo their
+ * blocks one by one; a day's free space is always recomputed from its base
+ * windows, so undo is exact and the greedy loop stays deterministic.
  */
 import { localDateKey, localParts } from "./calendar-math";
 import { buildDays, subtractInterval, type DayState } from "./capacity";
@@ -31,13 +31,6 @@ export interface ScheduleState {
 
 export function createState(n: Normalized): ScheduleState {
   return { days: buildDays(n), blocks: [] };
-}
-
-export function cloneState(state: ScheduleState): ScheduleState {
-  return {
-    days: state.days.map((d) => ({ ...d, free: [...d.free] })),
-    blocks: [...state.blocks],
-  };
 }
 
 /** Index of the work day containing the instant, by local date; -1 when not a work day. */

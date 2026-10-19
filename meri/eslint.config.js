@@ -28,6 +28,8 @@ export default tseslint.config(
       "react/jsx-no-literals": ["error", { noStrings: true, ignoreProps: true, noAttributeStrings: false, allowedStrings: ["–", "%", ":", "·", "(", ")"] }],
       "react/jsx-key": "error",
       "react/self-closing-comp": "error",
+      // React event handlers are conventionally `onClick={() => mutate(x)}`; the void return is intentional there.
+      "@typescript-eslint/no-confusing-void-expression": ["error", { ignoreArrowShorthand: true }],
     },
   },
   {

@@ -12,6 +12,7 @@ import { FakeCalendar } from "./fakes/calendar";
 import { FakeGmail } from "./fakes/mail";
 import { FakeGoogleOAuth } from "./fakes/oauth";
 import type { GoogleOAuth } from "./oauth/types";
+import { FakeNotifier, type Notifier } from "./notify/types";
 import { LocalKms, type KmsAdapter } from "./kms";
 
 export interface IntegrationsDeps {
@@ -21,6 +22,7 @@ export interface IntegrationsDeps {
 export interface Integrations {
   ai: AiClient;
   oauth: GoogleOAuth;
+  notifier: Notifier;
   billing: BillingProvider;
   analytics: Analytics;
   kms: KmsAdapter;
@@ -76,9 +78,12 @@ export function createIntegrations(config: AppConfig, deps: IntegrationsDeps): I
           throw notYet(`kms-${env.KMS_PROVIDER}`);
         })();
 
+  // Live delivery (push / transactional email) is wired in phase 6; the in-app inbox works regardless.
+  const notifier: Notifier = new FakeNotifier();
   return {
     ai,
     oauth,
+    notifier,
     billing,
     analytics,
     kms,

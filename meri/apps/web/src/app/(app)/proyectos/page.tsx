@@ -1,31 +1,46 @@
 import { getTranslations } from "next-intl/server";
+import Link from "next/link";
 import { CaptureButton, PageHeader } from "@/components/shell/app-shell";
+import { TaskList } from "@/components/tasks/task-list";
 import { EmptyState } from "@/components/ui/empty-state";
+import { apiFetch } from "@/server/api";
 
-export default async function ProyectosPage() {
+const TABS = ["tareas", "compromisos", "clientes", "tiempo"] as const;
+type Tab = (typeof TABS)[number];
+
+export default async function ProyectosPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
   const t = await getTranslations("proyectos");
   const nav = await getTranslations("nav");
-  const tabs = ["compromisos", "clientes", "tiempo"] as const;
+  const { tab: raw } = await searchParams;
+  const tab: Tab = (TABS as readonly string[]).includes(raw ?? "") ? (raw as Tab) : "tareas";
+  const [clients, prefs] = await Promise.all([
+    apiFetch<{ items: { id: string; name: string }[] }>("/v1/clients").catch(() => ({ items: [] })),
+    apiFetch<{ timezone: string }>("/v1/preferences"),
+  ]);
   return (
     <>
       <PageHeader title={nav("proyectos")} subtitle={t("subtitle")} action={<CaptureButton />} />
-      {/* Static section list until the tabs get content (phases 2 and 3). */}
-      <ul className="mb-1.5 flex gap-1 border-b border-rule">
-        {tabs.map((tab, i) => (
-          <li
-            key={tab}
-            aria-current={i === 0 ? "true" : undefined}
+      <nav className="mb-1.5 flex gap-1 border-b border-rule" aria-label={nav("proyectos")}>
+        {TABS.map((key) => (
+          <Link
+            key={key}
+            href={`/proyectos?tab=${key}`}
+            aria-current={key === tab ? "page" : undefined}
             className={
-              i === 0
+              key === tab
                 ? "-mb-px border-b-2 border-sea px-3.5 py-2.5 font-semibold text-ink"
                 : "-mb-px border-b-2 border-transparent px-3.5 py-2.5 font-semibold text-ink2"
             }
           >
-            {t(`tabs.${tab}`)}
-          </li>
+            {t(`tabs.${key}`)}
+          </Link>
         ))}
-      </ul>
-      <EmptyState title={t("emptyTitle")} body={t("emptyBody")} />
+      </nav>
+      {tab === "tareas" ? (
+        <TaskList clients={clients.items} timezone={prefs.timezone} />
+      ) : (
+        <EmptyState title={t("emptyTitle")} body={t("soon")} />
+      )}
     </>
   );
 }
