@@ -9,6 +9,7 @@ import { Pill } from "@/components/ui/pill";
 import { useToast } from "@/components/ui/toast";
 import { clientApi, ClientApiError } from "@/lib/client-api";
 import { formatDate, formatMinutes } from "@/lib/format";
+import { clientColorVar } from "@/lib/plan";
 import { idempotencyKey, useApiMutation, useTasks } from "@/lib/hooks/use-api";
 import type { Task, TaskStatus } from "@/lib/types";
 import { TaskForm, type TaskFormValues } from "./task-form";
@@ -26,9 +27,12 @@ const PILL: Record<TaskStatus, "plain" | "sea" | "risk" | "ok" | "sug"> = {
 export function TaskList({
   clients,
   timezone,
+  initialClientId = null,
 }: {
   clients: { id: string; name: string }[];
   timezone: string;
+  /** F-09 AC2: preselected client filter (deep links from search and the client view). */
+  initialClientId?: string | null;
 }) {
   const t = useTranslations("tasks");
   const tApp = useTranslations("app");
@@ -37,6 +41,7 @@ export function TaskList({
   const tasks = useTasks({ includeCompleted: true });
   const [editing, setEditing] = useState<Task | null>(null);
   const [open, setOpen] = useState(false);
+  const [clientId, setClientId] = useState<string | null>(initialClientId);
   const invalidate = [["tasks"] as const];
 
   const save = useApiMutation(async ({ id, values }: { id: string | null; values: TaskFormValues }) => {
@@ -62,6 +67,7 @@ export function TaskList({
   );
 
   const items = (tasks.data?.items ?? [])
+    .filter((x) => !clientId || x.clientId === clientId)
     .slice()
     .sort(
       (a, b) =>
@@ -86,6 +92,28 @@ export function TaskList({
           {t("new")}
         </Button>
       </div>
+      {clients.length > 0 ? (
+        <div className="mb-2 flex flex-wrap items-center gap-2">
+          {clients.map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              aria-pressed={clientId === c.id}
+              onClick={() => setClientId(clientId === c.id ? null : c.id)}
+              style={{ "--cc": clientColorVar(c.id, clients) } as React.CSSProperties}
+              className="inline-flex items-center gap-1.5 rounded-full border border-rule bg-raised px-2.5 py-1 text-[13px] aria-pressed:border-[var(--cc)] aria-pressed:bg-[color-mix(in_srgb,var(--cc)_14%,var(--raised))]"
+            >
+              <i aria-hidden="true" className="h-[9px] w-[9px] rounded-[3px] bg-[var(--cc)]" />
+              {c.name}
+            </button>
+          ))}
+          {clientId ? (
+            <Button size="sm" variant="quiet" onClick={() => setClientId(null)}>
+              {t("clearFilter")}
+            </Button>
+          ) : null}
+        </div>
+      ) : null}
       {tasks.isPending ? <p className="py-6 text-ink3">{tApp("loading")}</p> : null}
       {tasks.isError ? (
         <p role="alert" className="py-6 text-risk">
@@ -98,7 +126,7 @@ export function TaskList({
           const done = task.status === "completed";
           const client = clients.find((c) => c.id === task.clientId);
           return (
-            <li key={task.id} className="flex items-start gap-3.5 py-3">
+            <li key={task.id} id={`task-${task.id}`} className="flex items-start gap-3.5 py-3 target:bg-sea-soft">
               <button
                 type="button"
                 aria-label={done ? t("actions.reopen") : t("actions.done")}

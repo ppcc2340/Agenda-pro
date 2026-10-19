@@ -10,6 +10,8 @@ export interface CaptureContext {
   clients: { id: string; name: string }[];
   /** Hour used when a date is found without a time (local). */
   defaultDueHour?: number;
+  /** D-045 vertical vocabulary (optional: phase-2 behaviour when absent). */
+  vocabulary?: { deadlineNouns: string[]; deliverableNouns: string[] } | undefined;
 }
 
 export interface CaptureSuggestion {
@@ -21,6 +23,8 @@ export interface CaptureSuggestion {
   estimateMinutes: number | null;
   priority: number | null;
   kind: "deep" | "shallow" | null;
+  /** Hard when a dated capture names a deadline noun of the vertical ("audiencia el 3 de noviembre"). */
+  deadlineType: "hard" | "soft" | null;
   confidence: number;
 }
 
@@ -206,7 +210,11 @@ export function parseCapture(raw: string, ctx: CaptureContext): CaptureSuggestio
   if (title.length === 0) title = text;
 
   const estimate = duration?.minutes ?? null;
-  const kind = estimate === null ? null : estimate >= 90 ? "deep" : "shallow";
+  const mentions = (nouns: string[] | undefined) =>
+    (nouns ?? []).some((n) => new RegExp(`\\b${normalizeText(n).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`).test(lower));
+  const hardDeadline = date !== null && mentions(ctx.vocabulary?.deadlineNouns);
+  const deliverable = estimate === null && mentions(ctx.vocabulary?.deliverableNouns);
+  const kind = estimate === null ? (deliverable ? "deep" : null) : estimate >= 90 ? "deep" : "shallow";
   const signals = [date, duration, priority, client].filter(Boolean).length;
   return {
     title,
@@ -215,8 +223,9 @@ export function parseCapture(raw: string, ctx: CaptureContext): CaptureSuggestio
     dueAt: date?.dueAt ?? null,
     dueText: date?.match.text ?? null,
     estimateMinutes: estimate,
-    priority: priority?.priority ?? null,
+    priority: priority?.priority ?? (hardDeadline ? 2 : null),
     kind,
+    deadlineType: hardDeadline ? "hard" : null,
     confidence: Math.min(1, 0.55 + signals * 0.12),
   };
 }

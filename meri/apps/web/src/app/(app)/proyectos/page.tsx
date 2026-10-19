@@ -14,11 +14,12 @@ type Tab = (typeof TABS)[number];
 export default async function ProyectosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string; dir?: string }>;
+  searchParams: Promise<{ tab?: string; dir?: string; clientId?: string }>;
 }) {
   const t = await getTranslations("proyectos");
   const nav = await getTranslations("nav");
-  const { tab: raw, dir } = await searchParams;
+  const { tab: raw, dir, clientId } = await searchParams;
+  const initialClientId = clientId && /^[0-9a-f-]{36}$/i.test(clientId) ? clientId : null;
   const demoNow = getServerConfig().env.DEMO_NOW;
   const tab: Tab = (TABS as readonly string[]).includes(raw ?? "") ? (raw as Tab) : "tareas";
   const [clients, prefs] = await Promise.all([
@@ -45,13 +46,14 @@ export default async function ProyectosPage({
         ))}
       </nav>
       {tab === "tareas" ? (
-        <TaskList clients={clients.items} timezone={prefs.timezone} />
+        <TaskList clients={clients.items} timezone={prefs.timezone} initialClientId={initialClientId} />
       ) : tab === "compromisos" ? (
         <CommitmentList
           clients={clients.items}
           timezone={prefs.timezone}
           now={demoNow ? new Date(demoNow).toISOString() : undefined}
           initialDirection={dir === "owed_to_me" ? "owed_to_me" : "owed_by_me"}
+          initialClientId={initialClientId}
         />
       ) : tab === "clientes" ? (
         <ClientList />

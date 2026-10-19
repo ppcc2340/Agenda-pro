@@ -103,3 +103,12 @@ export {
   type WeekRange,
 } from "./time/infer";
 export { timeEntriesCsv, csvCell, hoursOf, CSV_BOM, TIME_CSV_COLUMNS, type TimeCsvRow } from "./time/csv";
+export {
+  VERTICALS,
+  VERTICAL_TEMPLATES,
+  getVerticalTemplate,
+  isVerticalId,
+  type VerticalId,
+  type VerticalTemplate,
+  type CaptureVocabulary,
+} from "./verticals/templates";

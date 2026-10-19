@@ -36,6 +36,7 @@ describe("OnboardingForm (F-01)", () => {
     const range = document.querySelector('input[name="contingencyPct"]');
     if (!range) throw new Error("range input missing");
     fireEvent.change(range, { target: { value: "30" } });
+    fireEvent.click(screen.getByRole("radio", { name: new RegExp(es.verticals.legal.name) }));
     fireEvent.click(screen.getByRole("button", { name: es.onboarding.submit }));
     await waitFor(() => {
       expect(clientApi).toHaveBeenCalledTimes(1);
@@ -52,6 +53,7 @@ describe("OnboardingForm (F-01)", () => {
       workEnd: "18:00",
       workDays: [1, 2, 3, 4, 5],
       contingencyPct: 30,
+      vertical: "legal",
       completeOnboarding: true,
     });
     await waitFor(() => {

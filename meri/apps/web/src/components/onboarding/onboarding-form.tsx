@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
+import { VerticalCards } from "@/components/control/vertical-settings";
 import { Button } from "@/components/ui/button";
 import { clientApi, ClientApiError } from "@/lib/client-api";
 
@@ -17,6 +18,7 @@ const Schema = z
     workEnd: z.string().regex(HHMM),
     workDays: z.array(z.number().int().min(0).max(6)).min(1, "days"),
     contingencyPct: z.coerce.number().int().min(0).max(60),
+    vertical: z.enum(["legal", "consulting", "generic"]),
   })
   .refine((v) => v.workStart < v.workEnd, { message: "order", path: ["workEnd"] });
 type Values = z.infer<typeof Schema>;
@@ -27,6 +29,7 @@ export interface OnboardingInitial {
   workEnd: string;
   workDays: number[];
   contingencyPct: number;
+  vertical?: "legal" | "consulting" | "generic";
 }
 
 function browserTimezone(): string {
@@ -68,6 +71,7 @@ export function OnboardingForm({ initial }: { initial: OnboardingInitial }) {
       workEnd: initial.workEnd,
       workDays: initial.workDays,
       contingencyPct: initial.contingencyPct,
+      vertical: initial.vertical ?? "generic",
     },
   });
   const dayOrder = [1, 2, 3, 4, 5, 6, 0];
@@ -189,6 +193,15 @@ export function OnboardingForm({ initial }: { initial: OnboardingInitial }) {
         </span>
         <span className="text-[13px] font-normal text-ink2">{t("contingencyHelp")}</span>
       </label>
+      <fieldset className="flex flex-col gap-2">
+        <legend className="font-semibold">{t("vertical")}</legend>
+        <span className="text-[13px] text-ink2">{t("verticalHelp")}</span>
+        <Controller
+          control={form.control}
+          name="vertical"
+          render={({ field }) => <VerticalCards value={field.value} onChange={field.onChange} />}
+        />
+      </fieldset>
       {form.formState.errors.root ? (
         <p role="alert" className="rounded-lg bg-risk-soft px-3 py-2 text-risk">
           {tApp("errorTitle")}: {form.formState.errors.root.message}

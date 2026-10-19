@@ -28,7 +28,7 @@ describe("GET /v1/search (F-09 AC2)", () => {
       await createCommitment(
         tx,
         a.workspaceId,
-        { clientId: acme, direction: "owed_to_me", kind: "explicit", status: "confirmed", action: "Enviar el contrato firmado", dueAt: null, dueText: null, confidence: 0.9, evidence: null, threadId: null, externalMessageId: null, dedupeHash: `s-${Date.now().toString(36)}` },
+        { clientId: acme, direction: "owed_to_me", kind: "explicit", status: "confirmed", counterpartyEmail: null, action: "Enviar el contrato firmado", dueAt: null, dueText: null, confidence: 0.9, evidence: null, threadId: null, externalMessageId: null, dedupeHash: `s-${Date.now().toString(36)}` },
         NOW,
       );
     });

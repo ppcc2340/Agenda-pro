@@ -97,6 +97,8 @@ export interface ClientRoutesOptions {
   now: () => Date;
   /** Plan ceiling on active clients (docs/08); entitlements row may override per workspace. */
   maxClientsFor: (tx: WorkspaceTx, workspaceId: Parameters<typeof getClient>[1]) => Promise<number>;
+  /** Linked meetings become time sources: refresh inference (D-042). */
+  onEventsLinked?: (workspaceId: string, traceId: string) => Promise<void>;
 }
 
 export function clientRoutes(app: FastifyInstance, options: ClientRoutesOptions, done: () => void): void {
@@ -161,15 +163,48 @@ export function clientRoutes(app: FastifyInstance, options: ClientRoutesOptions,
     "/v1/clients/:id",
     {
       preHandler: requireSession,
-      schema: { tags: ["clients"], params: IdParams, response: { 200: ClientJson } },
+      schema: {
+        tags: ["clients"],
+        params: IdParams,
+        querystring: z.object({ stats: z.enum(["week", "month"]).optional() }),
+        response: { 200: ClientJson },
+      },
     },
     async (request) => {
       const session = sessionOf(request);
-      const client = await request.withWorkspace((tx) =>
-        getClient(tx, session.workspaceId, request.params.id),
-      );
-      if (!client) throw new ApiError("NOT_FOUND", "Client not found.");
-      return serializeClient(client);
+      const now = options.now();
+      return request.withWorkspace(async (tx) => {
+        const client = await getClient(tx, session.workspaceId, request.params.id);
+        if (!client) throw new ApiError("NOT_FOUND", "Client not found.");
+        if (!request.query.stats) return serializeClient(client);
+        const tz = (await getPreferences(tx, session.workspaceId))?.timezone ?? "UTC";
+        const today = localDateKey(now.getTime(), tz);
+        let from: string;
+        let to: string;
+        if (request.query.stats === "month") {
+          from = `${today.slice(0, 7)}-01`;
+          const [y, m] = today.split("-").map(Number);
+          to = new Date(Date.UTC(y ?? 1970, m ?? 1, 0)).toISOString().slice(0, 10);
+        } else {
+          const monday = new Date(`${today}T00:00:00Z`);
+          monday.setUTCDate(monday.getUTCDate() - ((monday.getUTCDay() + 6) % 7));
+          from = monday.toISOString().slice(0, 10);
+          to = new Date(monday.getTime() + 6 * 86_400_000).toISOString().slice(0, 10);
+        }
+        const s = (await clientStats(tx, session.workspaceId, { from, to })).get(client.id);
+        return serializeClient(
+          client,
+          s
+            ? {
+                openCommitments: s.openCommitments,
+                overdueCommitments: s.overdueCommitments,
+                atRiskTasks: s.atRiskTasks,
+                minutesApproved: s.minutesApproved,
+                minutesSuggested: s.minutesSuggested,
+              }
+            : null,
+        );
+      });
     },
   );
 
@@ -190,16 +225,20 @@ export function clientRoutes(app: FastifyInstance, options: ClientRoutesOptions,
             `Your plan allows ${String(max)} active clients. Archive one or upgrade.`,
           );
         const client = await createClient(tx, session.workspaceId, request.body, now);
-        if (client.domains.length) await relinkClientByDomains(tx, session.workspaceId, client.id, client.domains);
+        const linked = client.domains.length
+          ? await relinkClientByDomains(tx, session.workspaceId, client.id, client.domains)
+          : { contacts: 0, threads: 0, events: 0 };
         await audit(tx, actor(request), {
           action: "client.created",
           entityType: "client",
           entityId: client.id,
-          after: { name: client.name, domains: client.domains },
+          after: { name: client.name, domains: client.domains, linked },
         });
-        return client;
+        return { client, linked };
       });
-      return reply.status(201).send(serializeClient(created));
+      if (created.linked.events > 0 && options.onEventsLinked)
+        await options.onEventsLinked(session.workspaceId, request.id);
+      return reply.status(201).send(serializeClient(created.client));
     },
   );
 
@@ -224,7 +263,9 @@ export function clientRoutes(app: FastifyInstance, options: ClientRoutesOptions,
         const client = await updateClient(tx, session.workspaceId, before.id, b, now);
         if (!client) throw new ApiError("NOT_FOUND", "Client not found.");
         const added = client.domains.filter((d) => !before.domains.includes(d));
-        if (added.length) await relinkClientByDomains(tx, session.workspaceId, client.id, added);
+        const linked = added.length
+          ? await relinkClientByDomains(tx, session.workspaceId, client.id, added)
+          : { contacts: 0, threads: 0, events: 0 };
         await audit(tx, actor(request), {
           action:
             b.followupsMuted !== undefined && Object.keys(b).length === 1
@@ -239,11 +280,13 @@ export function clientRoutes(app: FastifyInstance, options: ClientRoutesOptions,
           entityType: "client",
           entityId: client.id,
           before: { name: before.name, domains: before.domains, followupsMuted: before.followupsMuted },
-          after: { name: client.name, domains: client.domains, followupsMuted: client.followupsMuted },
+          after: { name: client.name, domains: client.domains, followupsMuted: client.followupsMuted, linked },
         });
-        return client;
+        return { client, linked };
       });
-      return serializeClient(updated);
+      if (updated.linked.events > 0 && options.onEventsLinked)
+        await options.onEventsLinked(session.workspaceId, request.id);
+      return serializeClient(updated.client);
     },
   );
 

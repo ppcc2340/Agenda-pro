@@ -117,7 +117,8 @@ export async function getMe(db: Db, userId: UserId, workspaceId: WorkspaceId): P
     const prefs = await tx.query.preferences.findFirst({ where: eq(preferences.workspaceId, workspaceId) });
     return {
       user: { id: userId, email: user.email, name: user.name, image: user.image, locale: user.locale },
-      workspace: { id: workspaceId, name: ws.name, vertical: ws.vertical },
+      // D-045 / ADR 0005: preferences.vertical is the source of truth; workspaces.vertical is deprecated.
+      workspace: { id: workspaceId, name: ws.name, vertical: prefs?.vertical ?? ws.vertical },
       plan: {
         plan: sub?.plan ?? "trial",
         status: sub?.status ?? "trialing",

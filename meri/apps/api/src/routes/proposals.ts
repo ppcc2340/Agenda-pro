@@ -136,7 +136,7 @@ export function proposalRoutes(app: FastifyInstance, options: ProposalRoutesOpti
             edits?.estimateMinutes !== undefined ? edits.estimateMinutes : payload.estimateMinutes,
           priority: edits?.priority ?? payload.priority ?? 3,
           kind: edits?.kind ?? payload.kind ?? "shallow",
-          deadlineType: edits?.deadlineType ?? "soft",
+          deadlineType: edits?.deadlineType ?? payload.deadlineType ?? "soft",
           notes: edits?.notes ?? null,
           tags: edits?.tags ?? [],
           origin: "ai_confirmed",

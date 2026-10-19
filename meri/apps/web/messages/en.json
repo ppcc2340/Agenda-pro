@@ -303,6 +303,16 @@
       "clients": "Clients",
       "time": "Time",
       "tasks": "Tasks"
+    },
+    "vertical": {
+      "title": "Vertical and vocabulary",
+      "desc": "Which tags, matter kinds and keywords Meri uses.",
+      "matterKinds": "Matter kinds",
+      "deadlineNouns": "Deadlines",
+      "deliverableNouns": "Deliverables",
+      "saved": "Vertical saved.",
+      "note": "Changing the vertical deletes nothing: it only changes what Meri suggests.",
+      "sample": "{words}…"
     }
   },
   "login": {
@@ -351,7 +361,9 @@
       "4": "Thursday",
       "5": "Friday",
       "6": "Saturday"
-    }
+    },
+    "vertical": "Your vertical",
+    "verticalHelp": "Pick a template: tags, matter kinds and capture vocabulary. You can change it later without losing anything."
   },
   "legal": {
     "privacyTitle": "Privacy policy (draft)",
@@ -438,7 +450,8 @@
     },
     "due": "Due {date}",
     "minutes": "{n} min",
-    "hours": "{n} h"
+    "hours": "{n} h",
+    "clearFilter": "Clear filter"
   },
   "inbox": {
     "pending": "{n} to review",
@@ -808,6 +821,59 @@
     "kind": {
       "commitment": "Commitment",
       "capture": "Task"
+    }
+  },
+  "verticals": {
+    "label": "Vertical",
+    "legal": {
+      "name": "Law firm",
+      "desc": "Matters, procedural deadlines, hearings and filings."
+    },
+    "consulting": {
+      "name": "Consulting",
+      "desc": "Projects, milestones, committees and deliverables."
+    },
+    "generic": {
+      "name": "Independent professional",
+      "desc": "Clients and projects without special vocabulary."
+    }
+  },
+  "clientDetail": {
+    "subtitle": "Timeline, risks, month hours and briefing.",
+    "briefing": "Briefing",
+    "edit": "Edit",
+    "noDomains": "No domains",
+    "month": "This month",
+    "monthHours": "Hours this month",
+    "suggested": "+{h} suggested",
+    "openCommitments": "Open commitments",
+    "overdue": "{n} overdue",
+    "atRisk": "Tasks at risk",
+    "risks": "Risks",
+    "timeline": "Timeline",
+    "emptyTitle": "No activity yet",
+    "emptyBody": "This client's tasks, commitments and meetings will appear here by date.",
+    "noDate": "No date",
+    "type": {
+      "task": "Task",
+      "commitment": "Commitment",
+      "event": "Meeting"
+    },
+    "status": {
+      "pending": "pending",
+      "scheduled": "scheduled",
+      "in_progress": "in progress",
+      "blocked": "blocked",
+      "waiting_on_third_party": "waiting",
+      "at_risk": "at risk",
+      "completed": "done",
+      "confirmed": "confirmed",
+      "fulfilled": "fulfilled",
+      "broken": "broken",
+      "proposed": "proposed",
+      "dismissed": "dismissed",
+      "past": "held",
+      "upcoming": "upcoming"
     }
   }
 }

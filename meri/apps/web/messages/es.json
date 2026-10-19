@@ -303,6 +303,16 @@
       "clients": "Clientes",
       "time": "Tiempo",
       "tasks": "Tareas"
+    },
+    "vertical": {
+      "title": "Vertical y vocabulario",
+      "desc": "Qué etiquetas, tipos de asunto y palabras clave usa Meri.",
+      "matterKinds": "Tipos de asunto",
+      "deadlineNouns": "Plazos",
+      "deliverableNouns": "Entregables",
+      "saved": "Vertical guardada.",
+      "note": "Cambiar de vertical no borra nada: solo cambia lo que Meri sugiere.",
+      "sample": "{words}…"
     }
   },
   "login": {
@@ -351,7 +361,9 @@
       "4": "jueves",
       "5": "viernes",
       "6": "sábado"
-    }
+    },
+    "vertical": "Tu vertical",
+    "verticalHelp": "Elige una plantilla: etiquetas, tipos de asunto y vocabulario para la captura. Puedes cambiarla después sin perder nada."
   },
   "legal": {
     "privacyTitle": "Política de privacidad (borrador)",
@@ -438,7 +450,8 @@
     },
     "due": "Para el {date}",
     "minutes": "{n} min",
-    "hours": "{n} h"
+    "hours": "{n} h",
+    "clearFilter": "Quitar filtro"
   },
   "inbox": {
     "pending": "{n} por revisar",
@@ -808,6 +821,59 @@
     "kind": {
       "commitment": "Compromiso",
       "capture": "Tarea"
+    }
+  },
+  "verticals": {
+    "label": "Vertical",
+    "legal": {
+      "name": "Despacho de abogados",
+      "desc": "Asuntos, plazos procesales, audiencias y escritos."
+    },
+    "consulting": {
+      "name": "Consultoría",
+      "desc": "Proyectos, hitos, comités y entregables."
+    },
+    "generic": {
+      "name": "Profesional independiente",
+      "desc": "Clientes y proyectos sin vocabulario especial."
+    }
+  },
+  "clientDetail": {
+    "subtitle": "Línea de tiempo, riesgos, horas del mes y briefing.",
+    "briefing": "Briefing",
+    "edit": "Editar",
+    "noDomains": "Sin dominios",
+    "month": "Este mes",
+    "monthHours": "Horas este mes",
+    "suggested": "+{h} sugeridas",
+    "openCommitments": "Compromisos abiertos",
+    "overdue": "{n} vencidos",
+    "atRisk": "Tareas en riesgo",
+    "risks": "Riesgos",
+    "timeline": "Línea de tiempo",
+    "emptyTitle": "Sin actividad todavía",
+    "emptyBody": "Las tareas, compromisos y reuniones de este cliente aparecerán aquí por fecha.",
+    "noDate": "Sin fecha",
+    "type": {
+      "task": "Tarea",
+      "commitment": "Compromiso",
+      "event": "Reunión"
+    },
+    "status": {
+      "pending": "pendiente",
+      "scheduled": "programada",
+      "in_progress": "en curso",
+      "blocked": "bloqueada",
+      "waiting_on_third_party": "esperando",
+      "at_risk": "en riesgo",
+      "completed": "hecha",
+      "confirmed": "confirmado",
+      "fulfilled": "cumplido",
+      "broken": "incumplido",
+      "proposed": "propuesto",
+      "dismissed": "descartado",
+      "past": "celebrada",
+      "upcoming": "próxima"
     }
   }
 }

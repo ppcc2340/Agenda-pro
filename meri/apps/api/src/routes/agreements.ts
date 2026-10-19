@@ -7,7 +7,7 @@ import { createHash } from "node:crypto";
 import type { FastifyInstance } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import { z } from "zod";
-import { extractCommitmentsByRules, normalizeForMatch, parseCapture } from "@meri/core";
+import { extractCommitmentsByRules, getVerticalTemplate, normalizeForMatch, parseCapture } from "@meri/core";
 import {
   audit,
   createCommitment,
@@ -136,7 +136,12 @@ export function agreementRoutes(app: FastifyInstance, options: AgreementRoutesOp
             else skipped++;
             continue;
           }
-          const s = parseCapture(line, { now: now.toISOString(), timezone, clients });
+          const s = parseCapture(line, {
+            now: now.toISOString(),
+            timezone,
+            clients,
+            vocabulary: getVerticalTemplate(prefs?.vertical).vocabulary,
+          });
           const payload: CapturePayload = {
             text: line,
             title: s.title,
@@ -147,6 +152,7 @@ export function agreementRoutes(app: FastifyInstance, options: AgreementRoutesOp
             estimateMinutes: s.estimateMinutes,
             priority: s.priority,
             kind: s.kind,
+            deadlineType: s.deadlineType,
             source: "rules",
           };
           const created = await createProposalIfAbsent(

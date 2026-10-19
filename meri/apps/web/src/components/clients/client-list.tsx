@@ -2,6 +2,7 @@
 
 import { Archive, ArchiveRestore, FileText, Pencil, Plus } from "lucide-react";
 import { useTranslations } from "next-intl";
+import Link from "next/link";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -91,7 +92,9 @@ export function ClientList() {
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <div className="truncate font-head text-[17px] font-semibold">{c.name}</div>
+                  <Link href={`/clientes/${c.id}`} className="block truncate font-head text-[17px] font-semibold underline-offset-2 hover:underline">
+                    {c.name}
+                  </Link>
                   <div className="truncate text-[12.5px] text-ink3">
                     {c.domains.length ? c.domains.join(" · ") : t("noDomains")}
                   </div>

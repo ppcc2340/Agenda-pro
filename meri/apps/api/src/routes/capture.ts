@@ -2,6 +2,7 @@ import type { FastifyInstance } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import { z } from "zod";
 import { suggestCapture } from "@meri/ai";
+import { getVerticalTemplate } from "@meri/core";
 import type { FeatureFlagStore } from "@meri/config";
 import { audit, createProposal, getPreferences, listClients, type ProposalView } from "@meri/db";
 import type { AiClient } from "@meri/integrations";
@@ -36,6 +37,8 @@ export const CapturePayload = z.object({
   estimateMinutes: z.number().int().nullable(),
   priority: z.number().int().nullable(),
   kind: z.enum(["deep", "shallow"]).nullable(),
+  /** D-045: hard when the vertical vocabulary names a dated deadline ("audiencia el 3 de noviembre"). */
+  deadlineType: z.enum(["hard", "soft"]).nullable().default(null),
   source: z.enum(["rules", "ai"]),
 });
 export type CapturePayload = z.infer<typeof CapturePayload>;
@@ -91,14 +94,19 @@ export function captureRoutes(app: FastifyInstance, options: CaptureRoutesOption
     async (request, reply) => {
       const session = sessionOf(request);
       const now = options.now();
-      const { clients, timezone } = await request.withWorkspace(async (tx) => ({
+      const { clients, prefs } = await request.withWorkspace(async (tx) => ({
         clients: await listClients(tx, session.workspaceId),
-        timezone: (await getPreferences(tx, session.workspaceId))?.timezone ?? "UTC",
+        prefs: await getPreferences(tx, session.workspaceId),
       }));
       const useAi = await options.flags.isEnabled("ai_capture", session.workspaceId);
       const { suggestion, source } = await suggestCapture(
         request.body.text,
-        { now: now.toISOString(), timezone, clients },
+        {
+          now: now.toISOString(),
+          timezone: prefs?.timezone ?? "UTC",
+          clients,
+          vocabulary: getVerticalTemplate(prefs?.vertical).vocabulary,
+        },
         { ai: options.ai, useAi },
       );
       const payload: CapturePayload = { text: request.body.text, ...suggestion, source };

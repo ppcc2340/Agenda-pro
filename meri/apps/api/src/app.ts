@@ -15,7 +15,7 @@ import {
 } from "@meri/config";
 import type { Db } from "@meri/db";
 import type { Integrations } from "@meri/integrations";
-import type { JobDispatcher } from "@meri/jobs";
+import { enqueueTimeInfer, type JobDispatcher } from "@meri/jobs";
 import { createErrorHandler, problemFrom, sendProblem } from "./errors";
 import { contextPlugin } from "./plugins/context";
 import { csrfPlugin } from "./plugins/csrf";
@@ -177,6 +177,8 @@ export async function buildApp(deps: AppDeps) {
   await app.register(clientRoutes, {
     now: deps.now,
     maxClientsFor: (tx, workspaceId) => getEntitlementMaxClients(tx, workspaceId),
+    onEventsLinked: (workspaceId, traceId) =>
+      enqueueTimeInfer(deps.dispatcher, { workspaceId, traceId, reason: "event_assigned" }).then(() => undefined),
   });
   await app.register(timeRoutes, { now: deps.now });
   await app.register(searchRoutes, {});

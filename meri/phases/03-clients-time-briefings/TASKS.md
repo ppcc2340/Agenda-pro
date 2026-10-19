@@ -9,8 +9,8 @@
 - [x] P3-04 **Tiempo inferido (F-10):** inferir desde eventos, bloques completados y actividad; pantalla de revisión semanal (aprobar/editar/rechazar en lote); detección de tiempo no registrado; redondeos configurables (6/15 min); exportación CSV.
 - [x] P3-05 **Briefing de cliente/reunión (F-11, AI-4):** ficha con pendientes, compromisos, últimas comunicaciones, decisiones pendientes y riesgos; **cada afirmación enlaza a su fuente**; generación en < 10 s; disparo automático antes de reuniones con cliente (configurable).
 - [x] P3-06 **Post-reunión:** formulario rápido para registrar acuerdos → compromisos/tareas propuestas (sin transcripción).
-- [ ] P3-07 **Plantillas por vertical** (abogados, consultores): etiquetas, tipos de asunto, plazos típicos, vocabulario; onboarding ≤ 10 min.
-- [ ] P3-08 **Vista por cliente:** línea de tiempo, riesgos, horas del mes.
+- [x] P3-07 **Plantillas por vertical** (abogados, consultores): etiquetas, tipos de asunto, plazos típicos, vocabulario; onboarding ≤ 10 min.
+- [x] P3-08 **Vista por cliente:** línea de tiempo, riesgos, horas del mes.
 
 ## Fuera de alcance
 Facturación contable, CRM, transcripción de audio.

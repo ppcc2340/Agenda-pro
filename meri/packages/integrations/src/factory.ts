@@ -115,7 +115,10 @@ export function createIntegrations(config: AppConfig, deps: IntegrationsDeps): I
   };
 }
 
-/** Demo meetings relative to `now`: today's weekly call, tomorrow's strategy meeting, a closing meeting in 3 days. */
+/**
+ * Demo meetings relative to `now`: yesterday's kickoff (ended: feeds time inference), today's weekly call,
+ * tomorrow's strategy meeting, a closing meeting in 3 days.
+ */
 export function seedSampleMeetings(calendar: FakeCalendar, now: Date): void {
   const at = (dayOffset: number, hourUtc: number, minute = 0) => {
     const d = new Date(now);
@@ -125,6 +128,7 @@ export function seedSampleMeetings(calendar: FakeCalendar, now: Date): void {
   };
   const iso = (d: Date) => d.toISOString();
   const samples: { title: string; start: Date; minutes: number; attendees: string[] }[] = [
+    { title: "Reunión de arranque con Acme", start: at(-1, 15, 0), minutes: 50, attendees: ["ana@acme.com"] },
     { title: "Llamada semanal con Acme", start: at(0, 10, 30), minutes: 45, attendees: ["ana@acme.com"] },
     {
       title: "Reunión de estrategia con Estudio Norte",

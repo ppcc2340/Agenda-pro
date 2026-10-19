@@ -13,6 +13,7 @@ export default async function OnboardingPage() {
     workEnd: string;
     workDays: number[];
     contingencyPct: number;
+    vertical: "legal" | "consulting" | "generic";
   }>("/v1/preferences");
   const t = await getTranslations("onboarding");
   const tApp = await getTranslations("app");

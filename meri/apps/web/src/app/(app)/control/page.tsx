@@ -4,6 +4,7 @@ import { CaptureButton, PageHeader } from "@/components/shell/app-shell";
 import { Suspense } from "react";
 import { ActivityList } from "@/components/control/activity-list";
 import { AiSettings } from "@/components/control/ai-settings";
+import { VerticalSettings } from "@/components/control/vertical-settings";
 import { MailPrivacy } from "@/components/control/mail-privacy";
 import { ConnectionsPanel } from "@/components/control/connections";
 import { NotificationsPanel } from "@/components/control/notifications-panel";
@@ -23,6 +24,7 @@ interface Preferences {
   gmailAutoconfirm: boolean;
   briefingBeforeMeetings: boolean;
   retentionDays: number;
+  vertical: "legal" | "consulting" | "generic";
 }
 interface AuditPage {
   items: {
@@ -90,6 +92,9 @@ export default async function ControlPage() {
         <Button asChild size="sm" className="mt-3">
           <Link href="/onboarding">{t("preferences.edit")}</Link>
         </Button>
+      </Panel>
+      <Panel title={t("vertical.title")} desc={t("vertical.desc")}>
+        <VerticalSettings vertical={prefs.vertical} />
       </Panel>
       <Panel title={t("connections.title")} desc={t("connections.desc")}>
         <Suspense fallback={null}>

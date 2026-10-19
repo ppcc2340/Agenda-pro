@@ -34,11 +34,13 @@ export function CommitmentList({
   timezone,
   now: nowIso,
   initialDirection = "owed_by_me",
+  initialClientId = null,
 }: {
   clients: { id: string; name: string }[];
   timezone: string;
   now?: string;
   initialDirection?: CommitmentDirection;
+  initialClientId?: string | null;
 }) {
   const t = useTranslations("commitments");
   const tApp = useTranslations("app");
@@ -47,7 +49,7 @@ export function CommitmentList({
   const { toast } = useToast();
   const now = nowIso ? new Date(nowIso) : new Date();
   const [direction, setDirection] = useState<CommitmentDirection>(initialDirection);
-  const [clientId, setClientId] = useState<string | null>(null);
+  const [clientId, setClientId] = useState<string | null>(initialClientId);
   const [followup, setFollowup] = useState<FollowupTarget | null>(null);
   const [showClosed, setShowClosed] = useState(false);
   const all = useCommitments();
@@ -128,7 +130,7 @@ export function CommitmentList({
         {items.map((c) => {
           const overdue = isOverdue(c, now);
           return (
-            <li key={c.id} className="flex flex-col gap-2 py-3 md:flex-row md:items-start md:gap-4">
+            <li key={c.id} id={`commitment-${c.id}`} className="flex flex-col gap-2 py-3 target:bg-sea-soft md:flex-row md:items-start md:gap-4">
               <div className="min-w-0 flex-1">
                 <div className="font-semibold">{c.action}</div>
                 <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[13px] text-ink2">
