@@ -132,7 +132,7 @@ test("client → meeting → briefing → agreements → weekly time → CSV →
   await row.getByRole("button", { name: /^aprobar$/i }).click();
   await expect(page.getByRole("status")).toContainText(/entrada aprobada/i);
   await expect(row).toContainText(/aprobada/i);
-  await expect(page.locator("section", { hasText: /resumen semanal/i })).toContainText(/54 min/);
+  await expect(page.getByLabel(/resumen semanal/i)).toContainText(/54 min/);
 
   // CSV export (D-046): BOM, documented columns, the approved row only.
   const [download] = await Promise.all([
