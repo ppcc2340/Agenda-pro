@@ -33,7 +33,10 @@ export function AppShell({
   const t = useTranslations("nav");
   const tApp = useTranslations("app");
   const pathname = usePathname();
-  const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
+  const isActive = (href: string) => {
+    const path = href.split("?")[0] ?? href;
+    return pathname === path || pathname.startsWith(`${path}/`);
+  };
   const badgeFor = (key: AreaKey): number | undefined =>
     key === "entrada" ? badges.entrada : key === "proyectos" ? badges.proyectos : undefined;
 

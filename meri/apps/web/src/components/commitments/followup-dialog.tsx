@@ -97,7 +97,7 @@ export function FollowupDialog({ target, onClose }: { target: FollowupTarget | n
           description={draft ? t("meta", { to: draft.to, subject: draft.subject }) : tApp("loading")}
           footer={
             <>
-              <span className="mr-auto text-[12.5px] text-ink3">{t("note")}</span>
+              <span className="mr-auto basis-full text-[12.5px] text-ink2 sm:basis-auto">{t("note")}</span>
               <Button onClick={onClose}>{t("cancel")}</Button>
               <Button onClick={() => remind.mutate(undefined)} disabled={remind.isPending}>
                 {t("remind")}
@@ -130,8 +130,9 @@ export function FollowupDialog({ target, onClose }: { target: FollowupTarget | n
             className="w-full resize-y rounded-lg border border-rule bg-raised px-3 py-2 leading-relaxed"
           />
           {draft ? (
-            <p className="mt-1.5 text-[12.5px] text-ink3">
+            <p className="mt-1.5 text-[12.5px] text-ink2">
               {draft.source === "ai" ? t("sourceAi") : t("sourceTemplate")}
+              {body.trim().length < 20 ? ` ${t("minLength")}` : ""}
             </p>
           ) : null}
         </DialogContent>

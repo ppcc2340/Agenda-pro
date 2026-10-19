@@ -12,6 +12,10 @@ export interface ClientRef {
   contactEmails?: string[];
 }
 
+/** Deep link to a Gmail thread (fixed origin; the id is encoded, never trusted as a URL). */
+export const gmailThreadUrl = (externalThreadId: string) =>
+  `https://mail.google.com/mail/u/0/#all/${encodeURIComponent(externalThreadId)}`;
+
 export const THREAD_OPEN = "<thread>";
 export const THREAD_CLOSE = "</thread>";
 export const MAX_CONTEXT_CHARS = 12_000;
@@ -42,6 +46,8 @@ export function resolveClient(participants: string[], me: string, clients: Clien
 }
 
 const escapeDelims = (s: string) => s.replace(/<\/?(thread|message|client)\b/gi, "‹tag›");
+/** Attribute values: bare address when one is present, never a quote or a newline. */
+const attr = (s: string) => escapeDelims(/[^\s<>@"]+@[^\s<>@"]+/.exec(s)?.[0] ?? s).replace(/["\r\n]/g, " ");
 
 export interface ExtractionPromptInput {
   me: string;
@@ -62,7 +68,7 @@ export function buildExtractionContext(input: ExtractionPromptInput): string {
   ].join("\n");
   const messages = input.messages.map(
     (m) =>
-      `<message id="${m.id}" from="${escapeDelims(m.from)}" to="${escapeDelims(m.to.join(", "))}" date="${m.date}">\n${escapeDelims(m.text)}\n</message>`,
+      `<message id="${attr(m.id)}" from="${attr(m.from)}" to="${m.to.map(attr).join(", ")}" date="${attr(m.date)}">\n${escapeDelims(m.text)}\n</message>`,
   );
   const body = `${THREAD_OPEN}\nSubject: ${escapeDelims(input.subject ?? "")}\n${messages.join("\n")}\n${THREAD_CLOSE}`;
   const full = `${header}\n${body}`;

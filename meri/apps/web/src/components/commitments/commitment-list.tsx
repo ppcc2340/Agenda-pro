@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { FollowupDialog, type FollowupTarget } from "@/components/commitments/followup-dialog";
 import { Button } from "@/components/ui/button";
+import { ClientChip } from "@/components/ui/client-chip";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Pill } from "@/components/ui/pill";
 import { useToast } from "@/components/ui/toast";
@@ -48,11 +49,15 @@ export function CommitmentList({
   const [direction, setDirection] = useState<CommitmentDirection>(initialDirection);
   const [clientId, setClientId] = useState<string | null>(null);
   const [followup, setFollowup] = useState<FollowupTarget | null>(null);
+  const [showClosed, setShowClosed] = useState(false);
   const all = useCommitments();
+  const isOpen = (c: Commitment) =>
+    c.status === "confirmed" || c.status === "at_risk" || c.status === "broken";
   const items = (all.data?.items ?? []).filter(
-    (c) => c.direction === direction && (!clientId || c.clientId === clientId),
+    (c) => c.direction === direction && (!clientId || c.clientId === clientId) && (showClosed || isOpen(c)),
   );
-  const count = (d: CommitmentDirection) => (all.data?.items ?? []).filter((c) => c.direction === d).length;
+  const count = (d: CommitmentDirection) =>
+    (all.data?.items ?? []).filter((c) => c.direction === d && isOpen(c)).length;
   const patch = useApiMutation(
     (vars: { id: string; status: CommitmentStatus }) =>
       clientApi<Commitment>(`/v1/commitments/${vars.id}`, { method: "PATCH", json: { status: vars.status } }),
@@ -98,6 +103,14 @@ export function CommitmentList({
             {t("clearFilter")}
           </Button>
         ) : null}
+        <button
+          type="button"
+          aria-pressed={showClosed}
+          onClick={() => setShowClosed(!showClosed)}
+          className="inline-flex items-center rounded-full border border-rule bg-raised px-2.5 py-1 text-[13px] aria-pressed:border-sea aria-pressed:bg-sea-soft"
+        >
+          {t("showClosed")}
+        </button>
       </div>
       {all.isPending ? <p className="py-6 text-ink3">{tApp("loading")}</p> : null}
       {all.isError ? (
@@ -114,21 +127,12 @@ export function CommitmentList({
       <ul className="divide-y divide-rule border-t border-rule">
         {items.map((c) => {
           const overdue = isOverdue(c, now);
-          const client = clients.find((x) => x.id === c.clientId);
           return (
             <li key={c.id} className="flex flex-col gap-2 py-3 md:flex-row md:items-start md:gap-4">
               <div className="min-w-0 flex-1">
                 <div className="font-semibold">{c.action}</div>
                 <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[13px] text-ink2">
-                  {client ? (
-                    <span
-                      className="inline-flex items-center gap-1.5"
-                      style={{ "--cc": clientColorVar(client.id, clients) } as React.CSSProperties}
-                    >
-                      <i aria-hidden="true" className="h-[9px] w-[9px] rounded-[3px] bg-[var(--cc)]" />
-                      {client.name}
-                    </span>
-                  ) : null}
+                  <ClientChip clientId={c.clientId} clients={clients} />
                   <span>{c.counterpartyName ?? c.counterpartyEmail ?? t("noCounterparty")}</span>
                   <Pill variant={overdue ? "risk" : PILL[c.status]}>
                     {overdue ? t("status.overdue") : t(`status.${c.status}`)}

@@ -586,16 +586,7 @@ function buildAutomated(): AutomatedCase[] {
       message: { subject: null, ...base, ...m },
       expected: { keep },
     });
-  const senders = [
-    "news",
-    "newsletter",
-    "no-reply",
-    "noreply",
-    "notifications",
-    "alerts",
-    "marketing",
-    "info",
-  ];
+  const senders = ["news", "newsletter", "no-reply", "noreply", "notifications", "marketing"];
   const domains = ["shop.example", "saas.example", "bank.example", "airline.example", "social.example"];
   for (const s of senders)
     for (const d of domains) add({ from: `${s}@${d}`, subject: `Weekly update from ${d}` }, false);
@@ -634,6 +625,9 @@ function buildAutomated(): AutomatedCase[] {
   add({ from: "postmaster@mx.example", subject: "Undeliverable" }, false);
   // People mail must be kept, whatever the subject.
   add({ from: "Ana Ruiz <ana.ruiz@acme.example>", subject: "RE: Contrato" }, true);
+  // Shared mailboxes of small firms are people too: only bulk/list headers may discard them.
+  add({ from: "info@despacho-lopez.example", subject: "Documentación del expediente" }, true);
+  add({ from: "alerts@monitoring.example", subject: "Disk usage", headers: { Precedence: "bulk" } }, false);
   add({ from: "bob@client.example", subject: "Weekly update" }, true);
   add({ from: "marta.diaz@lunaabogados.example", subject: "Newsletter de la firma (borrador)" }, true);
   add({ from: "tom@harbor.example", subject: "Invoice question" }, true);

@@ -14,6 +14,7 @@ import type { IntegrationAccount, MailExclusion } from "@/lib/types";
 export function MailPrivacy({ retentionDays }: { retentionDays: number }) {
   const t = useTranslations("control.mailPrivacy");
   const tConn = useTranslations("connections");
+  const tApp = useTranslations("app");
   const { toast } = useToast();
   const integrations = useIntegrations();
   const exclusions = useMailExclusions();
@@ -42,7 +43,8 @@ export function MailPrivacy({ retentionDays }: { retentionDays: number }) {
         setValue("");
         setError(null);
       },
-      onError: (e) => setError(e instanceof ClientApiError && e.problem.status === 400 ? t("invalid") : e.message),
+      onError: (e) =>
+        setError(e instanceof ClientApiError && e.problem.status === 400 ? t("invalid") : tApp("errorBody")),
     },
   );
   const remove = useApiMutation(
@@ -65,16 +67,17 @@ export function MailPrivacy({ retentionDays }: { retentionDays: number }) {
               size="sm"
               variant="risk"
               onClick={() => {
-                if (window.confirm(t("confirmPurge"))) disconnect.mutate(google.id);
+                if (window.confirm(tConn("confirmDisconnect"))) disconnect.mutate(google.id);
               }}
             >
               {t("disconnectPurge")}
             </Button>
           </>
         ) : (
-          <Pill variant="plain">{tConn("status.paused") === "" ? "" : t("notConnected")}</Pill>
+          <Pill variant="plain">{t("notConnected")}</Pill>
         )}
       </div>
+      <p className="text-[13.5px] text-ink2">{t("pauseHint")}</p>
       <p className="text-[13.5px] text-ink2">{t("retention", { days: retentionDays })}</p>
       <div>
         <h4 className="mb-1 font-semibold">{t("exclusions")}</h4>

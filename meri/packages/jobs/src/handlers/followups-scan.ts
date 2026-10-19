@@ -3,8 +3,9 @@
  * `followup` proposal each (dedupe hash), overdue commitments move to `at_risk`, and the user gets a grouped
  * notification under the daily cap. Mutes per contact/client are applied by the pure rules in core.
  */
-import { detectFollowups, localDateKey, type FollowupCandidate } from "@meri/core";
+import { detectFollowups, gmailThreadUrl, localDateKey, type FollowupCandidate } from "@meri/core";
 import {
+  audit,
   countNotificationsForDay,
   createProposalIfAbsent,
   getThreadsByIds,
@@ -15,6 +16,7 @@ import {
   listOverdueOwedToMe,
   listUnansweredThreads,
   mutedClientIds,
+  proposalHashExists,
   getPreferences,
   updateCommitment,
   withWorkspace,
@@ -88,6 +90,8 @@ export async function scanFollowups(
           : commitment?.threadId
             ? threads.get(commitment.threadId)
             : undefined;
+      // One alert per item, ever: a dismissed or handled follow-up is feedback, not something to re-propose.
+      if (await proposalHashExists(tx, workspaceId, followupDedupeHash(c))) continue;
       const created = await createProposalIfAbsent(
         tx,
         workspaceId,
@@ -100,7 +104,7 @@ export async function scanFollowups(
             ? {
                 type: "thread",
                 id: thread.id,
-                url: `https://mail.google.com/mail/u/0/#all/${thread.externalThreadId}`,
+                url: gmailThreadUrl(thread.externalThreadId),
               }
             : commitment
               ? { type: "commitment", id: commitment.id }
@@ -126,8 +130,21 @@ export async function scanFollowups(
       );
       if (!created) continue;
       proposals++;
-      if (commitment && commitment.status === "confirmed")
+      if (commitment && commitment.status === "confirmed") {
         await updateCommitment(tx, workspaceId, commitment.id, { status: "at_risk" }, now);
+        await audit(
+          tx,
+          { workspaceId, actor: "system" },
+          {
+            action: "commitment.at_risk",
+            entityType: "commitment",
+            entityId: commitment.id,
+            reason: `overdue ${String(c.daysLate)} days`,
+            before: { status: "confirmed" },
+            after: { status: "at_risk", proposalId: created.id },
+          },
+        );
+      }
     }
     let notified = false;
     const day = localDateKey(now.getTime(), prefs.timezone);

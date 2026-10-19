@@ -4,6 +4,7 @@ import { Check, ExternalLink, Mail, Pencil, X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { ClientChip } from "@/components/ui/client-chip";
 import { Pill } from "@/components/ui/pill";
 import { formatDateTime, isoToLocalInput, localInputToIso } from "@/lib/format";
 import type { CommitmentPayload, FollowupPayload, Proposal } from "@/lib/types";
@@ -30,12 +31,14 @@ export function Confidence({ value }: { value: number | null }) {
 export function CommitmentCard({
   proposal,
   timezone,
+  clients,
   busy,
   onConfirm,
   onDismiss,
 }: {
   proposal: Proposal;
   timezone: string;
+  clients: { id: string; name: string }[];
   busy: boolean;
   onConfirm: (edits?: { action?: string; dueAt?: string | null; createWaitingTask?: boolean }) => void;
   onDismiss: () => void;
@@ -79,6 +82,7 @@ export function CommitmentCard({
           >
             <input
               name="action"
+              autoFocus
               defaultValue={p.action}
               aria-label={t("editAction")}
               className="rounded-lg border border-rule bg-raised px-2.5 py-1.5"
@@ -106,6 +110,7 @@ export function CommitmentCard({
               ? t("forDate", { date: formatDateTime(p.dueAt, locale, timezone) })
               : (p.dueText ?? t("noDate"))}
           </span>
+          <ClientChip clientId={p.clientId} clients={clients} />
           <Pill variant="sug">{t("kind.commitment")}</Pill>
           <Pill variant="plain">{t(`kind.${p.kind}`)}</Pill>
           <Confidence value={proposal.confidence} />
@@ -161,12 +166,19 @@ export function CommitmentCard({
 export function FollowupCard({
   proposal,
   timezone,
+  clients,
+  busy,
   onFollowup,
+  onWaitingTask,
   onDismiss,
 }: {
   proposal: Proposal;
   timezone: string;
+  clients: { id: string; name: string }[];
+  busy: boolean;
   onFollowup: () => void;
+  /** Confirms the proposal as a "waiting for" task (unanswered threads, or instead of a draft). */
+  onWaitingTask: () => void;
   onDismiss: () => void;
 }) {
   const t = useTranslations("inbox");
@@ -186,7 +198,7 @@ export function FollowupCard({
             <span className="num">{t("forDate", { date: formatDateTime(p.dueAt, locale, timezone) })}</span>
           ) : null}
           {p.subject ? <span>{p.subject}</span> : null}
-          {p.clientName ? <span>{p.clientName}</span> : null}
+          <ClientChip clientId={p.clientId} clients={clients} name={p.clientName} />
           <Pill variant="sug">{t("kind.followup")}</Pill>
           {proposal.sourceRef?.url ? (
             <a
@@ -208,6 +220,15 @@ export function FollowupCard({
             {t("followup.prepare")}
           </Button>
         ) : null}
+        <Button
+          variant={p.commitmentId ? "default" : "primary"}
+          size="sm"
+          disabled={busy}
+          onClick={onWaitingTask}
+        >
+          <Check size={14} aria-hidden="true" />
+          {t("followup.waitingTask")}
+        </Button>
         <Button size="sm" variant="quiet" onClick={onDismiss}>
           <X size={14} aria-hidden="true" />
           {t("actions.dismiss")}

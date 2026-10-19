@@ -144,6 +144,13 @@ describe("admin context for cross-tenant dispatchers (D-037)", () => {
       await expect(
         admin.sql`insert into clients (id, workspace_id, name) values (${newId()}, ${a.workspaceId}, 'Intruder')`,
       ).rejects.toThrow(/row-level security/);
+      // …and neither DELETE nor UPDATE reach another tenant's rows (the wildcard policy is SELECT-only).
+      const deleted = await admin.sql`delete from clients where workspace_id = ${a.workspaceId} returning id`;
+      expect(deleted).toHaveLength(0);
+      const updated =
+        await admin.sql`update clients set name = 'Renamed' where workspace_id = ${a.workspaceId} returning id`;
+      expect(updated).toHaveLength(0);
+      expect(await admin.sql`select id from clients where workspace_id = ${a.workspaceId}`).toHaveLength(1);
     } finally {
       await app.close();
       await admin.close();

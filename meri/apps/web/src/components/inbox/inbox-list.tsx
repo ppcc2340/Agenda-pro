@@ -25,7 +25,13 @@ import { CommitmentCard, FollowupCard } from "./commitment-card";
 const HIGH = 0.85;
 
 /** Entrada: every AI/rules proposal with confirm / edit / dismiss (F-02 AC3: suggestions are dashed until confirmed). */
-export function InboxList({ timezone }: { timezone: string }) {
+export function InboxList({
+  timezone,
+  clients,
+}: {
+  timezone: string;
+  clients: { id: string; name: string }[];
+}) {
   const t = useTranslations("inbox");
   const tEntrada = useTranslations("entrada");
   const tApp = useTranslations("app");
@@ -112,6 +118,7 @@ export function InboxList({ timezone }: { timezone: string }) {
                 key={p.id}
                 proposal={p}
                 timezone={timezone}
+                clients={clients}
                 busy={confirm.isPending}
                 onConfirm={(edits) =>
                   confirm.mutate(
@@ -130,6 +137,11 @@ export function InboxList({ timezone }: { timezone: string }) {
                 key={p.id}
                 proposal={p}
                 timezone={timezone}
+                clients={clients}
+                busy={confirm.isPending}
+                onWaitingTask={() =>
+                  confirm.mutate({ id: p.id }, { onSuccess: () => toast(t("toasts.waitingTask")) })
+                }
                 onFollowup={() =>
                   fp.commitmentId &&
                   setFollowup({
@@ -192,6 +204,7 @@ export function InboxList({ timezone }: { timezone: string }) {
                   >
                     <input
                       name="title"
+                      autoFocus
                       defaultValue={payload.title}
                       aria-label={t("editAction")}
                       className="rounded-lg border border-rule bg-raised px-2.5 py-1.5"

@@ -5,7 +5,13 @@
  */
 import { FakeAiClient, hasGmailScopes, type AiClient } from "@meri/integrations";
 import { extractCommitments, registerFakeAiHandlers, type ExtractedCommitment } from "@meri/ai";
-import { localDateKey, sanitizeMailBody, type ClientRef, type MailMessageInput } from "@meri/core";
+import {
+  gmailThreadUrl,
+  localDateKey,
+  sanitizeMailBody,
+  type ClientRef,
+  type MailMessageInput,
+} from "@meri/core";
 import {
   audit,
   countNotificationsForDay,
@@ -45,9 +51,6 @@ function rulesClient(): AiClient {
   registerFakeAiHandlers(ai);
   return ai;
 }
-
-export const gmailThreadUrl = (externalThreadId: string) =>
-  `https://mail.google.com/mail/u/0/#all/${externalThreadId}`;
 
 export async function extractThreadCommitments(
   deps: HandlerDeps,

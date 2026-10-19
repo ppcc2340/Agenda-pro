@@ -11,12 +11,12 @@
 - [x] P2-05 **Pipeline de extracción (AI-2)** completo (docs/05 §3): contexto acotado, verificación de cita, deduplicación, clasificación de confianza.
 - [x] P2-06 **Defensa contra inyección** (docs/05 §6) + suite `evals/injection/`.
 - [x] P2-07 **Set de evals:** crear generador/semilla de ≥ 200 correos sintéticos es/en en `evals/commitments/*.jsonl` con etiquetas; runner `pnpm eval` que calcula precisión/recobrado y escribe informe.
-- [ ] P2-08 **Bandeja de propuestas (UI):** confirmar/editar/descartar con teclado; mostrar cita + enlace al hilo + confianza; feedback guardado.
-- [ ] P2-09 **Radar de compromisos (UI):** vistas "Debo" / "Me deben"; estados; vencimientos; vínculo a tareas.
-- [ ] P2-10 **Seguimiento (F-08):** job `followups.scan`; reglas (sin respuesta tras N días, vencidos); acciones: recordatorio, tarea "esperando a", **borrador en Gmail** (AI-3). Silenciar por contacto/cliente. **Nunca enviar.**
-- [ ] P2-11 **Auto-confirmación opcional** (flag `gmail_autoconfirm`) solo para `explicit` ∧ confianza alta.
-- [ ] P2-12 **Notificaciones agrupadas** de propuestas nuevas.
-- [ ] P2-13 **Controles de privacidad:** pausar ingesta, excluir remitentes/etiquetas, desconectar y purgar.
+- [x] P2-08 **Bandeja de propuestas (UI):** confirmar/editar/descartar con teclado; mostrar cita + enlace al hilo + confianza; feedback guardado.
+- [x] P2-09 **Radar de compromisos (UI):** vistas "Debo" / "Me deben"; estados; vencimientos; vínculo a tareas.
+- [x] P2-10 **Seguimiento (F-08):** job `followups.scan`; reglas (sin respuesta tras N días, vencidos); acciones: recordatorio, tarea "esperando a", **borrador en Gmail** (AI-3). Silenciar por contacto/cliente. **Nunca enviar.**
+- [x] P2-11 **Auto-confirmación opcional** (flag `gmail_autoconfirm`) solo para `explicit` ∧ confianza alta.
+- [x] P2-12 **Notificaciones agrupadas** de propuestas nuevas.
+- [x] P2-13 **Controles de privacidad:** pausar ingesta, excluir remitentes/etiquetas, desconectar y purgar.
 
 ## Fuera de alcance
 Outlook, adjuntos, envío de correo, clientes avanzados (Fase 3).

@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { FollowupDialog, type FollowupTarget } from "@/components/commitments/followup-dialog";
 import { Button } from "@/components/ui/button";
+import { ClientChip } from "@/components/ui/client-chip";
 import { Pill } from "@/components/ui/pill";
 import { formatDate } from "@/lib/format";
 import { useCommitments } from "@/lib/hooks/use-api";
@@ -15,13 +16,16 @@ export function WaitingList({
   timezone,
   now: nowIso,
   gmailConnected,
+  clients,
 }: {
   timezone: string;
   now?: string;
   gmailConnected: boolean;
+  clients: { id: string; name: string }[];
 }) {
   const t = useTranslations("commitments");
   const tHoy = useTranslations("hoy");
+  const tApp = useTranslations("app");
   const locale = useLocale();
   const now = nowIso ? new Date(nowIso) : new Date();
   const owed = useCommitments({ direction: "owed_to_me" });
@@ -33,7 +37,17 @@ export function WaitingList({
         Number(isOverdue(b, now)) - Number(isOverdue(a, now)) || (a.dueAt ?? "").localeCompare(b.dueAt ?? ""),
     )
     .slice(0, 6);
-  if (owed.data && items.length === 0)
+  if (owed.isPending) return <p className="py-4 text-ink2">{tApp("loading")}</p>;
+  if (owed.isError)
+    return (
+      <p role="alert" className="flex items-center gap-3 py-4 text-risk">
+        {tApp("errorBody")}
+        <Button size="sm" onClick={() => void owed.refetch()}>
+          {tApp("retry")}
+        </Button>
+      </p>
+    );
+  if (items.length === 0)
     return <p className="py-4 text-ink2">{gmailConnected ? t("emptyWaiting") : tHoy("emptyWaiting")}</p>;
   return (
     <>
@@ -45,6 +59,7 @@ export function WaitingList({
               <div className="min-w-0 flex-1">
                 <div className="font-semibold">{c.action}</div>
                 <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[13px] text-ink2">
+                  <ClientChip clientId={c.clientId} clients={clients} />
                   <span>{c.counterpartyName ?? c.counterpartyEmail}</span>
                   <Pill variant={overdue ? "risk" : "plain"}>
                     {overdue ? t("status.overdue") : t("status.confirmed")}

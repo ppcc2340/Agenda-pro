@@ -166,6 +166,27 @@ export async function countPending(tx: WorkspaceTx, workspaceId: WorkspaceId): P
 }
 
 /** Compensation for an automatic resolution (undo): back to pending. Fails when another pending twin exists. */
+/** Has this hash ever been proposed (any status)? Dismissed/handled items must not come back (docs/05 §8). */
+export async function proposalHashExists(
+  tx: WorkspaceTx,
+  workspaceId: WorkspaceId,
+  dedupeHash: string,
+  status?: ProposalStatus,
+): Promise<boolean> {
+  const [row] = await tx
+    .select({ id: proposals.id })
+    .from(proposals)
+    .where(
+      and(
+        eq(proposals.workspaceId, workspaceId),
+        eq(proposals.dedupeHash, dedupeHash),
+        status ? eq(proposals.status, status) : undefined,
+      ),
+    )
+    .limit(1);
+  return row !== undefined;
+}
+
 export async function reopenProposal(
   tx: WorkspaceTx,
   workspaceId: WorkspaceId,

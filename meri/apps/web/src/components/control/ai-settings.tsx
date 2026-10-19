@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Pill } from "@/components/ui/pill";
 import { useToast } from "@/components/ui/toast";
 import { clientApi } from "@/lib/client-api";
@@ -20,6 +20,7 @@ export function AiSettings({
   const usage = useAiUsage();
   // Optimistic: the box flips at once and only reverts if the save fails.
   const [on, setOn] = useState(gmailAutoconfirm);
+  useEffect(() => setOn(gmailAutoconfirm), [gmailAutoconfirm]);
   const toggle = useApiMutation(
     (value: boolean) => clientApi("/v1/preferences", { method: "PUT", json: { gmailAutoconfirm: value } }),
     [keys.audit],
@@ -54,7 +55,7 @@ export function AiSettings({
       <div>
         <div className="num">
           <b className="font-head text-2xl font-semibold">{t("usedAmount", { used: used.toFixed(2) })}</b>{" "}
-          <span className="text-ink2">{t("used", { cap: cap.toFixed(2), credits: capCredits })}</span>
+          <span className="text-ink2">{t("used", { cap: cap.toFixed(2) })}</span>
           {usage.data?.paused ? (
             <Pill variant="risk" className="ml-2">
               {t("paused")}
@@ -65,7 +66,8 @@ export function AiSettings({
           <b className="block h-full bg-sea" style={{ width: `${String(pct)}%` }} />
         </div>
         <p className="text-ink2">{t("pause")}</p>
-        {usage.data?.mode === "fake" ? <p className="mt-1 text-[12.5px] text-ink3">{t("fakeNote")}</p> : null}
+        <p className="mt-1 text-[12.5px] text-ink2">{t("credits", { credits: capCredits })}</p>
+        {usage.data?.mode === "fake" ? <p className="mt-1 text-[12.5px] text-ink2">{t("fakeNote")}</p> : null}
       </div>
     </div>
   );

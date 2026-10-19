@@ -7,8 +7,10 @@ import {
   getCommitment,
   listCommitments,
   listNotifications,
+  listAudit,
   listProposals,
   listThreads,
+  resolveProposal,
   setContactMuted,
   updatePreferences,
   upsertContact,
@@ -179,6 +181,18 @@ describe("followups.scan and mail purge (F-08 AC1/AC2, D-035, D-036)", () => {
     // F-08 AC1: a second scan creates nothing new (single alert per commitment/thread).
     const second = await scanFollowups(deps, ws);
     expect(second).toMatchObject({ candidates: 2, proposals: 0, notified: false });
+    // Dismissing the alert is feedback (docs/05 §8): the next scan must not bring it back.
+    await withWorkspace(handle.db, ws, (tx) =>
+      resolveProposal(tx, ws, overdueProposal?.id ?? "", { status: "dismissed", action: "dismissed" }, NOW),
+    );
+    const third = await scanFollowups(deps, ws);
+    expect(third).toMatchObject({ candidates: 2, proposals: 0 });
+    const stillPending = await withWorkspace(handle.db, ws, (tx) =>
+      listProposals(tx, ws, { status: "pending", kind: "followup" }, { limit: 20 }),
+    );
+    expect(stillPending.items).toHaveLength(1);
+    const page = await withWorkspace(handle.db, ws, (tx) => listAudit(tx, ws, 50));
+    expect(page.items.find((e) => e.action === "commitment.at_risk")?.actor).toBe("system");
   });
 
   it("honours mutes per contact (F-08 AC2): a muted counterparty yields no proposal", async () => {
@@ -209,7 +223,9 @@ describe("followups.scan and mail purge (F-08 AC1/AC2, D-035, D-036)", () => {
     // t1 (5 days), t2 (6 days) and t3 (10 days) are older than 4 days.
     expect(r.threads).toBe(3);
     expect(r.detachedCommitments).toBe(2);
-    expect(r.expiredProposals).toBeGreaterThanOrEqual(2);
+    expect(r.expiredProposals).toBe(1); // the unanswered-thread proposal; the dismissed one was already resolved
+    const auditPage = await withWorkspace(handle.db, ws, (tx) => listAudit(tx, ws, 50));
+    expect(auditPage.items.find((e) => e.action === "mail.retention_applied")?.actor).toBe("system");
     const kept = await withWorkspace(handle.db, ws, (tx) =>
       listCommitments(tx, ws, { includeProposed: true }, { limit: 20 }),
     );
@@ -253,7 +269,12 @@ describe("followups.scan and mail purge (F-08 AC1/AC2, D-035, D-036)", () => {
       );
     });
     const purge = await withWorkspace(handle.db, ws, (tx) => purgeAccountMail(tx, ws, accountId, NOW));
-    expect(purge).toMatchObject({ threads: 1, proposedCommitments: 1 });
+    expect(purge).toEqual({
+      threads: 1,
+      proposedCommitments: 1,
+      detachedCommitments: 0,
+      expiredProposals: 0,
+    });
     expect(await withWorkspace(handle.db, ws, (tx) => listThreads(tx, ws, { limit: 10 }))).toHaveLength(0);
     const after = await withWorkspace(handle.db, ws, (tx) =>
       listCommitments(tx, ws, { includeProposed: true }, { limit: 20 }),

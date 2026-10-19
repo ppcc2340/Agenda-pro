@@ -32,7 +32,7 @@ export interface PrefilterResult {
 }
 
 const NOREPLY =
-  /(^|[.\-_])(no[-_.]?reply|noreply|do[-_.]?not[-_.]?reply|notifications?|mailer-daemon|postmaster|alerts?|newsletter|news|info|marketing|bounce)([.\-_+]|@)/i;
+  /(^|[.\-_])(no[-_.]?reply|noreply|do[-_.]?not[-_.]?reply|notifications?|mailer-daemon|postmaster|newsletter|news|marketing|bounce)([.\-_+]|@)/i;
 const CATEGORY_LABELS = new Set([
   "CATEGORY_PROMOTIONS",
   "CATEGORY_SOCIAL",

@@ -43,6 +43,7 @@ export {
 } from "./mail/commitments";
 export {
   buildExtractionContext,
+  gmailThreadUrl,
   parseExtractionContext,
   resolveClient,
   type ClientRef,

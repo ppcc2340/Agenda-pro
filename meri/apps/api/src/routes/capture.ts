@@ -273,6 +273,13 @@ export function captureRoutes(app: FastifyInstance, options: CaptureRoutesOption
       const payload = CommitmentPayload.parse(proposal.payload);
       const current = await getCommitment(tx, session.workspaceId, payload.commitmentId);
       if (!current) throw new ApiError("CONFLICT", "The commitment behind this proposal no longer exists.");
+      if (
+        edits?.clientId &&
+        !(await listClients(tx, session.workspaceId)).some((c) => c.id === edits.clientId)
+      )
+        throw new ApiError("VALIDATION_FAILED", "Invalid references.", [
+          { path: "clientId", message: "Unknown client." },
+        ]);
       const edited = edits !== undefined && Object.keys(edits).some((k) => k !== "createWaitingTask");
       let taskId: string | null = null;
       if (edits?.createWaitingTask && current.direction === "owed_to_me") {

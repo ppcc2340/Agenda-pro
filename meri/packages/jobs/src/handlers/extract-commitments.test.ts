@@ -11,9 +11,13 @@ import {
   listProposals,
   listThreads,
   recordAiUsage,
+  updateCommitment,
   updatePreferences,
   upsertIntegrationAccount,
   withWorkspace,
+  clients,
+  newId,
+  upsertContact,
   type DbHandle,
   type UserId,
   type WorkspaceId,
@@ -226,7 +230,7 @@ describe("ai.extract_commitments (F-07 AC1, AC2, AC3; D-034; ADR 0004 §3)", () 
       costCapUsd: 5,
     });
     expect(res.proposals).toBe(0);
-    expect(res.rejected).toBeGreaterThanOrEqual(1);
+    expect(res.rejected).toBe(1);
     const commitments = await withWorkspace(handle.db, ws, (tx) =>
       listCommitments(tx, ws, { includeProposed: true }, { limit: 20 }),
     );
@@ -258,8 +262,12 @@ describe("ai.extract_commitments (F-07 AC1, AC2, AC3; D-034; ADR 0004 §3)", () 
       messageIds: ["m4"],
       costCapUsd: 5,
     });
-    expect(res.proposals).toBeGreaterThanOrEqual(1);
+    expect(res.proposals).toBe(2);
     expect(res.autoconfirmed).toBe(1); // only the explicit one; the hedged suggestion stays pending
+    const pendingAfter = await withWorkspace(handle.db, ws, (tx) =>
+      listProposals(tx, ws, { status: "pending", kind: "commitment" }, { limit: 20 }),
+    );
+    expect(pendingAfter.items.some((p) => (p.payload as { kind: string }).kind === "suggested")).toBe(true);
     const confirmed = (
       await withWorkspace(handle.db, ws, (tx) =>
         listCommitments(tx, ws, { status: "confirmed" }, { limit: 20 }),
@@ -289,9 +297,89 @@ describe("ai.extract_commitments (F-07 AC1, AC2, AC3; D-034; ADR 0004 §3)", () 
     );
     const after = await withWorkspace(handle.db, ws, (tx) => listAudit(tx, ws, 50));
     expect(after.items.some((e) => e.action === "commitment.autoconfirmed.undone")).toBe(true);
+    // A second undo of the same entry conflicts.
+    await expect(undoAuditEntry(deps, ws, entry?.id ?? "", userId)).rejects.toMatchObject({
+      code: "CONFLICT",
+    });
+    // Once the user acted on an auto-confirmed commitment, the auto-confirmation is history (no silent regress).
+    mail.addMessage({
+      headers: {},
+      labels: ["INBOX"],
+      id: "m4b",
+      threadId: "t3b",
+      from: "Luis Mora <luis@beta.example>",
+      to: [email],
+      subject: "Nota",
+      date: "2026-10-18T11:00:00Z",
+      snippet: "Te envío la nota firmada el viernes.",
+      bodyText: "Te envío la nota firmada el viernes.",
+    });
+    await syncMailAccount(deps, ws, accountId);
+    const t3b = await threadByExternalId("t3b");
+    const second = await extractThreadCommitments(deps, ws, {
+      threadId: t3b.id,
+      messageIds: ["m4b"],
+      costCapUsd: 5,
+    });
+    expect(second.autoconfirmed).toBe(1);
+    const entry2 = (await withWorkspace(handle.db, ws, (tx) => listAudit(tx, ws, 50))).items.find(
+      (e) => e.action === "commitment.autoconfirmed" && e.entityId !== confirmed[0]?.id,
+    );
+    await withWorkspace(handle.db, ws, (tx) =>
+      updateCommitment(tx, ws, entry2?.entityId ?? "", { status: "fulfilled" }, NOW),
+    );
+    await expect(undoAuditEntry(deps, ws, entry2?.id ?? "", userId)).rejects.toMatchObject({
+      code: "CONFLICT",
+    });
     await withWorkspace(handle.db, ws, (tx) =>
       updatePreferences(tx, ws, { gmailAutoconfirm: false }, { now: NOW }),
     );
+  });
+
+  it("sends the AI only the resolved client's context (F-09 AC1) and reads bodies only for the changed messages", async () => {
+    const [acme, beta] = await withWorkspace(handle.db, ws, async (tx) => {
+      const a = await tx
+        .insert(clients)
+        .values({ id: newId(), workspaceId: ws, name: "Acme", domains: ["acme.example"] })
+        .returning();
+      const b = await tx
+        .insert(clients)
+        .values({ id: newId(), workspaceId: ws, name: "Beta Logística", domains: ["beta.example"] })
+        .returning();
+      await upsertContact(tx, ws, {
+        email: "secret@gmail.example",
+        name: "Beta Secret",
+        clientId: b[0]?.id ?? null,
+      });
+      return [a[0], b[0]];
+    });
+    const mail = integrations.mailFor(email) as FakeGmail;
+    mail.addMessage({
+      headers: {},
+      labels: ["INBOX"],
+      id: "m-acme",
+      threadId: "t-acme",
+      from: "Ana Ruiz <ana@acme.example>",
+      to: [email],
+      subject: "Acta",
+      date: "2026-10-18T13:00:00Z",
+      snippet: "Te envío el acta el lunes.",
+      bodyText: "Te envío el acta el lunes.",
+    });
+    await syncMailAccount(deps, ws, accountId);
+    const thread = await threadByExternalId("t-acme");
+    expect(thread.clientId).toBe(acme?.id);
+    const fake = integrations.ai as FakeAiClient;
+    const before = fake.calls.length;
+    const fetched = mail.messages.size;
+    await extractThreadCommitments(deps, ws, { threadId: thread.id, messageIds: ["m-acme"], costCapUsd: 5 });
+    const call = fake.calls[fake.calls.length - 1];
+    expect(fake.calls.length).toBe(before + 1);
+    expect(call?.user).toContain("Client: Acme");
+    expect(call?.user).not.toContain("Beta");
+    expect(call?.user).not.toContain("secret@gmail.example");
+    expect(call?.user).not.toContain(beta?.id ?? "no-id");
+    expect(mail.messages.size).toBe(fetched); // bodies are read, never written anywhere
   });
 
   it("falls back to rules without calling the model when the monthly AI budget is exhausted", async () => {

@@ -8,6 +8,7 @@ import {
   expirePending,
   getAuditEntry,
   getBlocksByIds,
+  getCommitment,
   getPreferences,
   getProposal,
   getTask,
@@ -15,6 +16,7 @@ import {
   insertBlocks,
   listOpenTasks,
   lockWorkspace,
+  proposalHashExists,
   reopenProposal,
   resolveProposal,
   setPlanVersion,
@@ -329,14 +331,14 @@ export async function undoAuditEntry(
         const before = entry.before as { proposalId?: string } | null;
         if (!entry.entityId || !before?.proposalId)
           throw new PlanApplyError("VALIDATION_FAILED", "Entry has no restorable state.");
-        const commitment = await updateCommitment(
-          tx,
-          workspaceId,
-          entry.entityId,
-          { status: "proposed" },
-          now,
-        );
-        if (!commitment) throw new PlanApplyError("CONFLICT", "The commitment no longer exists.");
+        const current = await getCommitment(tx, workspaceId, entry.entityId);
+        if (!current) throw new PlanApplyError("CONFLICT", "The commitment no longer exists.");
+        // Once the user acted on it (fulfilled, dismissed, edited status) the auto-confirmation is history.
+        if (current.status !== "confirmed")
+          throw new PlanApplyError("CONFLICT", "The commitment was already handled; nothing to undo.");
+        if (await proposalHashExists(tx, workspaceId, current.dedupeHash, "pending"))
+          throw new PlanApplyError("CONFLICT", "A pending proposal for this commitment already exists.");
+        await updateCommitment(tx, workspaceId, entry.entityId, { status: "proposed" }, now);
         await reopenProposal(tx, workspaceId, before.proposalId);
         break;
       }

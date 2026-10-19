@@ -2,7 +2,13 @@
  * gmail.sync (docs/07, ADR 0004): incremental history with a cursor in sync_state, initial 30-day load, prefilter
  * by rules, thread index without bodies. Returns the threads that changed so the worker can enqueue extraction.
  */
-import { emailAddress, prefilterMessage, resolveClient, type Exclusion } from "@meri/core";
+import {
+  emailAddress,
+  looksLikeInjection,
+  prefilterMessage,
+  resolveClient,
+  type Exclusion,
+} from "@meri/core";
 import {
   audit,
   getIntegrationAccount,
@@ -29,6 +35,10 @@ import type { HandlerDeps } from "./context";
 export const MAIL_RESOURCE = "gmail.history";
 export const INITIAL_LOAD_DAYS = 30;
 export const MAX_MESSAGES_PER_RUN = 500;
+
+/** Display names are attacker-controlled metadata: bounded, and never stored when they read like an instruction. */
+const safeName = (name: string | null): string | null =>
+  name && !looksLikeInjection(name) ? name.slice(0, 120) : null;
 
 export interface MailSyncResult {
   status: "synced" | "needs_reauth" | "paused" | "skipped";
@@ -79,8 +89,11 @@ async function collectMessageIds(
       break;
     }
     next = res.nextCursor;
+    // Cap per run without losing anything: the cursor stays at the last page that was fully collected, so the
+    // next run continues from there.
+    if (ids.length >= MAX_MESSAGES_PER_RUN) break;
   }
-  return { ids: [...new Set(ids)].slice(0, MAX_MESSAGES_PER_RUN), nextCursor: next, fullResync: false };
+  return { ids: [...new Set(ids)], nextCursor: next, fullResync: false };
 }
 
 export async function syncMailAccount(
@@ -149,15 +162,15 @@ export async function syncMailAccount(
           if (address !== me)
             await upsertContact(tx, workspaceId, {
               email: address,
-              name: displayName(raw),
+              name: safeName(displayName(raw)),
               clientId: client?.id ?? null,
             });
         }
         const { thread, changed } = await upsertThread(tx, workspaceId, {
           integrationAccountId: accountId,
           externalThreadId: meta.threadId,
-          subject: meta.subject,
-          participants,
+          subject: meta.subject ? meta.subject.slice(0, 255) : null,
+          participants: participants.slice(0, 50),
           clientId: client?.id ?? null,
           lastMessageAt: new Date(meta.date),
           lastMessageFromMe: emailAddress(meta.from) === me,

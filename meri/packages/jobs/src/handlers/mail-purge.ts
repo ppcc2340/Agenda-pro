@@ -4,6 +4,7 @@
  * and only then the thread rows are deleted. Nothing the user confirmed is lost.
  */
 import {
+  audit,
   detachCommitmentsFromThreads,
   deleteThreadsByIds,
   expireProposalsForThreads,
@@ -68,6 +69,18 @@ export async function applyMailRetention(
     const before = new Date(now.getTime() - retentionDays * 86_400_000);
     const ids = await listThreadIdsOlderThan(tx, workspaceId, before);
     const result = await purgeThreads(tx, workspaceId, ids, now);
+    if (result.threads > 0)
+      await audit(
+        tx,
+        { workspaceId, actor: "system" },
+        {
+          action: "mail.retention_applied",
+          entityType: "workspace",
+          entityId: workspaceId,
+          reason: `older than ${String(retentionDays)} days`,
+          after: { ...result },
+        },
+      );
     return { ...result, retentionDays };
   });
 }

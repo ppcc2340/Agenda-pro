@@ -28,7 +28,8 @@ export function ConnectionsPanel({ fakeMode, timezone }: { fakeMode: boolean; ti
   const integrations = useIntegrations();
   useEffect(() => {
     const flag = params.get("integration");
-    if (flag === "connected") toast(t("connected"));
+    const feature = params.get("feature");
+    if (flag === "connected") toast(feature === "gmail" ? t("connectedGmail") : t("connected"));
     if (flag === "denied") toast(t("denied"));
   }, [params, t, toast]);
 
@@ -45,6 +46,7 @@ export function ConnectionsPanel({ fakeMode, timezone }: { fakeMode: boolean; ti
   const pause = useApiMutation(
     (id: string) => clientApi<IntegrationAccount>(`/v1/integrations/${id}/pause`, { method: "POST" }),
     [keys.integrations],
+    { onSuccess: (a) => toast(a.status === "paused" ? t("pausedToast") : t("resumedToast")) },
   );
   const sync = useApiMutation(
     (id: string) => clientApi(`/v1/integrations/${id}/sync`, { method: "POST" }),
@@ -84,7 +86,7 @@ export function ConnectionsPanel({ fakeMode, timezone }: { fakeMode: boolean; ti
               <Pill variant={PILL[google.status]}>{t(`status.${google.status}`)}</Pill>
               {google.status === "needs_reauth" ? (
                 <Button size="sm" variant="primary" onClick={() => connect.mutate("all")}>
-                  {t("status.needs_reauth")}
+                  {t("reconnect")}
                 </Button>
               ) : null}
               <Button size="sm" onClick={() => sync.mutate(google.id)} disabled={google.status === "paused"}>
@@ -118,7 +120,6 @@ export function ConnectionsPanel({ fakeMode, timezone }: { fakeMode: boolean; ti
           )}
         </div>
       </div>
-      {fakeMode ? <p className="pt-2 text-[12.5px] text-ink3">{t("fakeNote")}</p> : null}
       <div className="flex flex-col gap-2 border-b border-dashed border-rule py-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <b>{tc("gmail")}</b>
@@ -160,6 +161,7 @@ export function ConnectionsPanel({ fakeMode, timezone }: { fakeMode: boolean; ti
         </div>
         <Pill variant="plain">{tc("soon")}</Pill>
       </div>
+      {fakeMode ? <p className="pt-2 text-[12.5px] text-ink2">{t("fakeNote")}</p> : null}
     </div>
   );
 }

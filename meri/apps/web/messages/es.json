@@ -185,7 +185,6 @@
     "privacy": {
       "title": "Privacidad",
       "desc": "Tus datos son tuyos.",
-      "pause": "Pausar lectura de correo",
       "export": "Exportar mis datos",
       "delete": "Eliminar mi cuenta",
       "soon": "Todavía no disponible. Llegará en una próxima versión."
@@ -233,11 +232,12 @@
       "autoconfirmBody": "Solo los que el correo deja claros y con fecha (confianza ≥ 90 %). Cada uno queda en Actividad y puedes deshacerlo. El resto siempre pasa por Entrada.",
       "autoconfirmOn": "Auto-confirmación activada. Verás cada compromiso en Actividad.",
       "autoconfirmOff": "Auto-confirmación desactivada.",
-      "used": "de {cap} USD este mes ({credits} créditos de IA en tu plan)",
+      "used": "de {cap} USD este mes",
       "paused": "IA en pausa",
       "pause": "Al llegar al límite, la IA se pausa: las reglas, el calendario y el plan siguen funcionando.",
       "fakeNote": "Modo de pruebas: el extractor por reglas no consume créditos.",
-      "usedAmount": "{used} USD"
+      "usedAmount": "{used} USD",
+      "credits": "Tu plan incluye {credits} créditos de IA al mes; el gasto se muestra en USD para que sepas qué cuesta."
     },
     "mailPrivacy": {
       "title": "Correo y privacidad",
@@ -245,10 +245,9 @@
       "statusReading": "Leyendo correo",
       "statusPaused": "Lectura en pausa",
       "notConnected": "Gmail sin conectar",
-      "pauseReading": "Pausar lectura de correo",
+      "pauseReading": "Pausar lectura (correo y calendario)",
       "resume": "Reanudar lectura",
       "disconnectPurge": "Desconectar y purgar",
-      "confirmPurge": "¿Desconectar Gmail y borrar los hilos indexados y las propuestas pendientes? Los compromisos que confirmaste se conservan.",
       "pausedToast": "Lectura de correo en pausa.",
       "resumedToast": "Lectura de correo reanudada.",
       "purgedToast": "Gmail desconectado. Hilos indexados y propuestas pendientes borrados.",
@@ -270,7 +269,8 @@
       "add": "Excluir",
       "invalid": "Ese valor no es válido para este tipo.",
       "removeAria": "Quitar exclusión {value}",
-      "noExclusions": "Sin exclusiones. Los boletines y correos automáticos ya se descartan por reglas."
+      "noExclusions": "Sin exclusiones. Los boletines y correos automáticos ya se descartan por reglas.",
+      "pauseHint": "La pausa detiene la lectura de Gmail y de Google Calendar; nada se borra."
     }
   },
   "login": {
@@ -437,13 +437,14 @@
     },
     "toasts": {
       "confirmed": "Añadida. Meri la programará en el siguiente hueco.",
-      "dismissed": "Descartada.",
+      "dismissed": "Descartada. Meri aprenderá de esto.",
       "batch": "{n} confirmadas.",
-      "commitmentConfirmed": "Confirmado. Ya está en tus compromisos."
+      "commitmentConfirmed": "Confirmado. Ya está en tus compromisos.",
+      "waitingTask": "Tarea «Esperando a» creada."
     },
     "editAction": "Acción",
     "editDate": "Fecha",
-    "quote": "“{text}”",
+    "quote": "«{text}»",
     "reschedule": {
       "title": "Meri propone reorganizar tu plan",
       "summary": "{moved, plural, one {un movido} other {# movidos}} · {added, plural, one {uno nuevo} other {# nuevos}} · {removed, plural, one {uno retirado} other {# retirados}}",
@@ -459,7 +460,8 @@
       "title": "Seguimiento con {who}",
       "overdue": "{who} debía «{action}» y lleva {days, plural, one {un día} other {# días}} de retraso.",
       "unanswered": "{who} no ha respondido a tu correo en {days, plural, one {un día} other {# días}}.",
-      "prepare": "Preparar seguimiento"
+      "prepare": "Preparar seguimiento",
+      "waitingTask": "Crear tarea «Esperando a»"
     }
   },
   "capture": {
@@ -491,7 +493,7 @@
     "sync": "Sincronizar ahora",
     "status": {
       "healthy": "Conectado",
-      "needs_reauth": "Reconectar",
+      "needs_reauth": "Necesita reconectar",
       "degraded": "Con problemas",
       "paused": "En pausa",
       "revoked": "Revocado"
@@ -502,10 +504,13 @@
     "connected": "Calendario conectado. Meri solo escribirá en el calendario «Meri».",
     "denied": "No se completó la conexión.",
     "disconnected": "Desconectado. Los eventos copiados se han borrado.",
-    "confirmDisconnect": "¿Desconectar y borrar los eventos copiados?",
+    "confirmDisconnect": "¿Desconectar Google (Calendar y Gmail)? Se borran los eventos copiados, los hilos indexados y las propuestas pendientes. Los compromisos que confirmaste se conservan.",
     "syncQueued": "Sincronización en marcha.",
     "connectGmail": "Conectar Gmail",
-    "connectedGmail": "Gmail conectado. Meri solo lee y crea borradores; nunca envía."
+    "connectedGmail": "Gmail conectado. Meri solo lee y crea borradores; nunca envía.",
+    "reconnect": "Reconectar",
+    "pausedToast": "Google en pausa: Meri deja de leer correo y calendario.",
+    "resumedToast": "Lectura reanudada."
   },
   "plan": {
     "why": "Por qué está aquí.",
@@ -615,7 +620,8 @@
       "fulfilled": "Cumplido. Buen trabajo.",
       "received": "Marcado como recibido."
     },
-    "quote": "«{text}»"
+    "quote": "«{text}»",
+    "showClosed": "Mostrar cumplidos"
   },
   "followup": {
     "title": "Seguimiento para {who}",
@@ -628,6 +634,7 @@
     "savedToast": "Borrador guardado en Gmail. Meri no envía correos.",
     "remindToast": "Recordatorio creado para mañana.",
     "sourceAi": "Redactado por la IA con el contexto de este compromiso. Revísalo antes de guardarlo.",
-    "sourceTemplate": "Plantilla de Meri. Puedes editarla antes de guardarla."
+    "sourceTemplate": "Plantilla de Meri. Puedes editarla antes de guardarla.",
+    "minLength": "Escribe al menos 20 caracteres."
   }
 }

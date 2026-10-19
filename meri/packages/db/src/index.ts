@@ -60,6 +60,7 @@ export {
   createProposalIfAbsent,
   expirePending,
   expireProposalsForThreads,
+  proposalHashExists,
   countPending,
   type ProposalKind,
   type ProposalStatus,

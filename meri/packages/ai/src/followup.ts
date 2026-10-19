@@ -21,19 +21,24 @@ export interface FollowupInput {
   myName: string | null;
 }
 
+/** Mail-derived fields can never open or close the untrusted block (docs/05 §6.1). */
+export const escapeFollowupField = (s: string) =>
+  s.replace(/<\/?\s*followup\b/gi, "‹tag›").replace(/\r?\n/g, " ");
+
 export function buildFollowupContext(input: FollowupInput): string {
+  const f = escapeFollowupField;
   const lines = [
     `Language: ${input.language}`,
     `<followup>`,
-    `Counterparty: ${input.counterpartyName ?? "(unknown)"}`,
-    `Promised: ${input.action}`,
-    `Expected: ${input.dueText ?? input.dueAt ?? "(no date)"}`,
+    `Counterparty: ${f(input.counterpartyName ?? "(unknown)")}`,
+    `Promised: ${f(input.action)}`,
+    `Expected: ${f(input.dueText ?? input.dueAt ?? "(no date)")}`,
     `Days late: ${String(input.daysLate)}`,
-    `Thread subject: ${input.subject ?? ""}`,
-    `Me: ${input.myName ?? ""}`,
+    `Thread subject: ${f(input.subject ?? "")}`,
+    `Me: ${f(input.myName ?? "")}`,
     `</followup>`,
   ];
-  return lines.join("\n").replace(/<\/followup>(?![^]*$)/g, "‹tag›");
+  return lines.join("\n");
 }
 
 export async function draftFollowup(

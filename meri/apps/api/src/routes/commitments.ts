@@ -12,7 +12,10 @@ import {
   createTask,
   getCommitment,
   getIntegrationAccount,
+  getProposal,
   getThread,
+  getThreadsByIds,
+  listClients,
   listCommitments,
   listContacts,
   monthlyAiCostMicroUsd,
@@ -25,7 +28,7 @@ import {
   type WorkspaceTx,
 } from "@meri/db";
 import { readTokens, type HandlerDeps } from "@meri/jobs";
-import { hasGmailScopes, type AiClient } from "@meri/integrations";
+import { hasGmailScopes, IntegrationError, type AiClient } from "@meri/integrations";
 import { ApiError } from "../errors";
 import { requireSession, sessionOf } from "../plugins/session";
 import { serializeTask, TaskViewSchema } from "./tasks";
@@ -115,18 +118,29 @@ export function commitmentRoutes(
   const r = app.withTypeProvider<ZodTypeProvider>();
 
   async function enrich(tx: WorkspaceTx, workspaceId: WorkspaceId, items: CommitmentView[]) {
-    const contacts = await listContacts(tx, workspaceId);
-    const out = [];
-    for (const c of items) {
-      const thread = c.threadId ? await getThread(tx, workspaceId, c.threadId) : null;
-      out.push(
-        serializeCommitment(c, {
-          counterpartyName: contacts.find((x) => x.email === c.counterpartyEmail)?.name ?? null,
-          threadUrl: thread ? gmailThreadUrl(thread.externalThreadId) : null,
-        }),
-      );
-    }
-    return out;
+    const contacts = new Map((await listContacts(tx, workspaceId)).map((x) => [x.email, x.name]));
+    const threads = await getThreadsByIds(tx, workspaceId, [
+      ...new Set(items.map((c) => c.threadId).filter((x): x is string => x !== null)),
+    ]);
+    return items.map((c) => {
+      const thread = c.threadId ? threads.get(c.threadId) : undefined;
+      return serializeCommitment(c, {
+        counterpartyName: c.counterpartyEmail ? (contacts.get(c.counterpartyEmail) ?? null) : null,
+        threadUrl: thread ? gmailThreadUrl(thread.externalThreadId) : null,
+      });
+    });
+  }
+
+  /** A client id must belong to this workspace: FK checks bypass RLS (same guard as tasks). */
+  async function assertClient(
+    tx: WorkspaceTx,
+    workspaceId: WorkspaceId,
+    clientId: string | null | undefined,
+  ) {
+    if (clientId && !(await listClients(tx, workspaceId)).some((c) => c.id === clientId))
+      throw new ApiError("VALIDATION_FAILED", "Invalid references.", [
+        { path: "clientId", message: "Unknown client." },
+      ]);
   }
 
   r.get(
@@ -182,6 +196,7 @@ export function commitmentRoutes(
         if (!current) throw new ApiError("NOT_FOUND", "Commitment not found.");
         if (current.status === "proposed")
           throw new ApiError("CONFLICT", "Confirm the proposal in Entrada before editing it.");
+        await assertClient(tx, session.workspaceId, b.clientId);
         const updated = await updateCommitment(
           tx,
           session.workspaceId,
@@ -230,6 +245,8 @@ export function commitmentRoutes(
     if (!commitment) throw new ApiError("NOT_FOUND", "Commitment not found.");
     if (commitment.direction !== "owed_to_me")
       throw new ApiError("VALIDATION_FAILED", "Follow-ups are for commitments other people owe you.");
+    if (!["confirmed", "at_risk", "broken"].includes(commitment.status))
+      throw new ApiError("CONFLICT", "Confirm the commitment before following it up.");
     if (!commitment.counterpartyEmail)
       throw new ApiError("VALIDATION_FAILED", "This commitment has no counterparty to write to.");
     const thread = commitment.threadId ? await getThread(tx, ws, commitment.threadId) : null;
@@ -259,10 +276,27 @@ export function commitmentRoutes(
     return { commitment, thread, input, subject, to: commitment.counterpartyEmail };
   }
 
+  /** A `proposalId` may only resolve the follow-up proposal that points at this very commitment. */
+  async function resolveFollowupProposal(
+    tx: WorkspaceTx,
+    ws: WorkspaceId,
+    proposalId: string,
+    commitmentId: string,
+    action: string,
+    now: Date,
+  ) {
+    const proposal = await getProposal(tx, ws, proposalId);
+    const payload = proposal?.payload as { commitmentId?: string } | undefined;
+    if (!proposal || proposal.kind !== "followup" || payload?.commitmentId !== commitmentId)
+      throw new ApiError("VALIDATION_FAILED", "proposalId is not a follow-up proposal of this commitment.");
+    await resolveProposal(tx, ws, proposalId, { status: "confirmed", action }, now);
+  }
+
   r.post(
     "/v1/commitments/:id/followup-draft",
     {
       preHandler: requireSession,
+      config: { rateLimit: { max: 10, timeWindow: "1 minute" } },
       schema: {
         tags: ["commitments"],
         params: IdParams,
@@ -305,8 +339,16 @@ export function commitmentRoutes(
               now,
             ),
           );
-        } catch {
-          // Policy rejection or provider error: the template never contains links or instructions.
+        } catch (err) {
+          // Provider outage or policy rejection → template (never links or instructions). Anything else is a bug.
+          const expected =
+            err instanceof IntegrationError ||
+            (err instanceof Error && /rejected by policy/.test(err.message));
+          if (!expected) throw err;
+          request.log.warn(
+            { err, commitmentId: ctx.commitment.id },
+            "follow-up draft fell back to the template",
+          );
           body = templateFollowup(ctx.input);
         }
       }
@@ -335,7 +377,11 @@ export function commitmentRoutes(
       const now = options.deps.now();
       const b = request.body;
       // The user edits the body, but it still cannot carry links, addresses or instructions (docs/05 §6.5).
-      if (looksLikeInjection(b.body) || POLICY.test(b.body))
+      if (
+        looksLikeInjection(b.body) ||
+        POLICY.test(b.body) ||
+        (b.subject && (looksLikeInjection(b.subject) || POLICY.test(b.subject)))
+      )
         throw new ApiError("VALIDATION_FAILED", "The draft cannot contain links, addresses or instructions.");
       const ctx = await request.withWorkspace((tx) =>
         followupContext(tx, session.workspaceId, request.params.id, b.language, now),
@@ -371,11 +417,12 @@ export function commitmentRoutes(
           },
         );
         if (b.proposalId)
-          await resolveProposal(
+          await resolveFollowupProposal(
             tx,
             session.workspaceId,
             b.proposalId,
-            { status: "confirmed", action: "draft_saved" },
+            ctx.commitment.id,
+            "draft_saved",
             now,
           );
       });
@@ -435,11 +482,12 @@ export function commitmentRoutes(
           },
         );
         if (request.body?.proposalId)
-          await resolveProposal(
+          await resolveFollowupProposal(
             tx,
             session.workspaceId,
             request.body.proposalId,
-            { status: "confirmed", action: "reminder" },
+            commitment.id,
+            "reminder",
             now,
           );
         return created;

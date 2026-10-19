@@ -92,6 +92,13 @@
       "when": 1792438000000,
       "tag": "0012_rls_admin_context",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1792439000000,
+      "tag": "0013_rls_admin_read_only",
+      "breakpoints": true
     }
   ]
 }

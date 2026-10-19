@@ -120,7 +120,7 @@ test("connect Gmail → proposals → confirm → radar → overdue follow-up dr
   await page.getByLabel(/tipo de exclusión/i).selectOption("domain");
   await page.getByLabel(/^valor$/i).fill("not a domain");
   await page.getByRole("button", { name: /^excluir$/i }).click();
-  await expect(page.getByRole("alert")).toContainText(/no es válido/i);
+  await expect(page.getByRole("alert").filter({ hasText: /no es válido/i })).toBeVisible();
   await page.getByLabel(/^valor$/i).fill("boletines.example");
   await page.getByRole("button", { name: /^excluir$/i }).click();
   await expect(page.getByText("boletines.example")).toBeVisible();

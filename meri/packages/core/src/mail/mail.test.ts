@@ -22,6 +22,17 @@ Ana Ruiz
     expect(evidenceAppearsIn("te envio el CONTRATO firmado", text)).toBe(true);
     expect(evidenceAppearsIn("te envío el presupuesto", text)).toBe(false);
   });
+
+  it("cuts at '--' signatures, mobile footers and Outlook quote headers, and caps the length", () => {
+    expect(sanitizeMailBody("Texto útil.\n--\nAna Ruiz\nTel 600")).toBe("Texto útil.");
+    expect(sanitizeMailBody("Texto útil.\nEnviado desde mi iPhone")).toBe("Texto útil.");
+    expect(sanitizeMailBody("Nuevo.\nDe: Ana <ana@acme.com>\nEnviado: lunes\n> viejo")).toBe("Nuevo.");
+    expect(sanitizeMailBody("Reply.\nFrom: Bob\nSent: Monday")).toBe("Reply.");
+    const long = sanitizeMailBody("a".repeat(7000));
+    expect(long.length).toBe(6001);
+    expect(long.endsWith("…")).toBe(true);
+    expect(sanitizeMailBody("")).toBe("");
+  });
 });
 
 describe("prefilterMessage (F-07 AC4)", () => {
@@ -182,5 +193,36 @@ describe("policy and context (docs/05 §6, F-09 AC1)", () => {
     const parsed = parseExtractionContext(context);
     expect(parsed?.messages[0]?.id).toBe("m1");
     expect(parsed?.client?.name).toBe("Acme");
+  });
+
+  it("keeps attributes well-formed whatever the headers contain, and parses malformed contexts as null", () => {
+    const context = buildExtractionContext({
+      me: ctx.me,
+      now: ctx.now,
+      timezone: ctx.timezone,
+      subject: null,
+      client: null,
+      messages: [
+        {
+          id: "m1",
+          from: 'Ruiz, Ana "la jefa" <ana@acme.com>',
+          to: ['"Yo, mismo" <yo@mifirma.com>', "luis@beta.cl"],
+          date: "2026-10-12T10:00:00Z",
+          text: "Hola",
+        },
+      ],
+    });
+    expect(context).toContain("Client: (unresolved)");
+    const parsed = parseExtractionContext(context);
+    expect(parsed?.messages[0]).toMatchObject({
+      from: "ana@acme.com",
+      to: ["yo@mifirma.com", "luis@beta.cl"],
+    });
+    expect(parsed?.client).toBeNull();
+    expect(parseExtractionContext("garbage")).toBeNull();
+    expect(
+      parseExtractionContext("Me: a\nNow: b\nTime zone: c\nClient: (unresolved)\n<thread>\n</thread>")
+        ?.messages,
+    ).toEqual([]);
   });
 });

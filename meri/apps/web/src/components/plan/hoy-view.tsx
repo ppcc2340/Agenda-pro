@@ -260,7 +260,7 @@ export function HoyView({
             )}
           </Section>
           <Section title={t("q4")}>
-            <WaitingList timezone={timezone} now={nowIso} gmailConnected={gmailConnected} />
+            <WaitingList timezone={timezone} now={nowIso} gmailConnected={gmailConnected} clients={clients} />
           </Section>
         </div>
       </div>

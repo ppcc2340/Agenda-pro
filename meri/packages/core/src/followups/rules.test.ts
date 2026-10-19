@@ -75,6 +75,37 @@ describe("detectFollowups (F-08, D-035)", () => {
     ]);
   });
 
+  it("skips unparsable dates, muted clients without a counterparty, and treats followupDays < 1 as 1", () => {
+    const out = detectFollowups({
+      ...base,
+      followupDays: 0,
+      mutedClientIds: new Set(["beta"]),
+      overdue: [
+        { id: "bad", dueAt: "not a date", counterpartyEmail: null, clientId: null, action: "x" },
+        {
+          id: "muted",
+          dueAt: "2026-10-16T16:00:00Z",
+          counterpartyEmail: null,
+          clientId: "beta",
+          action: "y",
+        },
+        { id: "ok", dueAt: "2026-10-16T16:00:00Z", counterpartyEmail: null, clientId: null, action: "z" },
+      ],
+      unanswered: [
+        { id: "t-bad", lastMessageAt: "soon", participants: [], clientId: null, subject: null },
+        {
+          id: "t-ok",
+          lastMessageAt: "2026-10-17T09:00:00Z",
+          participants: ["yo@mifirma.example"],
+          clientId: null,
+          subject: null,
+        },
+      ],
+    });
+    expect(out.map((o) => o.refId)).toEqual(["ok", "t-ok"]);
+    expect(out[1]).toMatchObject({ counterpartyEmail: null, daysLate: 2, action: "" });
+  });
+
   it("honours mutes per contact and per client (F-08 AC2)", () => {
     const out = detectFollowups({
       ...base,

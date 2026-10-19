@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray, isNull, lt, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, lt, sql } from "drizzle-orm";
 import { commitments } from "../schema";
 import type { WorkspaceTx } from "../workspace";
 import { newId, type WorkspaceId } from "../ids";
@@ -184,7 +184,7 @@ export async function purgeProposedCommitments(
       and(
         eq(commitments.workspaceId, workspaceId),
         inArray(commitments.threadId, threadIds),
-        or(eq(commitments.status, "proposed"), isNull(commitments.threadId)),
+        eq(commitments.status, "proposed"),
       ),
     )
     .returning({ id: commitments.id });

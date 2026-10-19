@@ -24,4 +24,4 @@ evals/reports/*.json
 # misc
 .DS_Store
 *.log
-e2e/.results/
+**/e2e/.results/

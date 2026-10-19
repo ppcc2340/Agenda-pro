@@ -41,7 +41,6 @@ export {
 } from "./handlers/gmail-sync";
 export {
   extractThreadCommitments,
-  gmailThreadUrl,
   AUTOCONFIRM_THRESHOLD,
   type ExtractResult,
 } from "./handlers/extract-commitments";

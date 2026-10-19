@@ -1,8 +1,10 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient, type UseMutationOptions } from "@tanstack/react-query";
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
-import { clientApi } from "@/lib/client-api";
+import { useToast } from "@/components/ui/toast";
+import { clientApi, ClientApiError } from "@/lib/client-api";
 import type {
   AiUsage,
   CalendarEvent,
@@ -119,7 +121,10 @@ export function useIntegrations() {
   });
 }
 
-/** Mutation that invalidates the given query keys and refreshes server components. */
+/**
+ * Mutation that invalidates the given query keys and refreshes server components. Every failure is shown as a
+ * toast (docs/11: errors say what happened) unless the caller handles `onError` itself.
+ */
 export function useApiMutation<TData, TVars>(
   fn: (vars: TVars) => Promise<TData>,
   invalidate: readonly (readonly unknown[])[],
@@ -127,9 +132,17 @@ export function useApiMutation<TData, TVars>(
 ) {
   const qc = useQueryClient();
   const router = useRouter();
+  const { toast } = useToast();
+  const tApp = useTranslations("app");
   return useMutation<TData, Error, TVars>({
     mutationFn: fn,
     ...options,
+    onError: (error, vars, ...rest) => {
+      if (options.onError) return options.onError(error, vars, ...rest);
+      toast(
+        error instanceof ClientApiError && error.problem.detail ? error.problem.detail : tApp("errorBody"),
+      );
+    },
     onSuccess: async (data, vars, ...rest) => {
       await Promise.all(invalidate.map((k) => qc.invalidateQueries({ queryKey: k })));
       router.refresh();

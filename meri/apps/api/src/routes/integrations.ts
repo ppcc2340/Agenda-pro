@@ -217,7 +217,12 @@ export function integrationRoutes(
           { jobId: `gmail.sync_${account.id}_connect_${connectBucket}` },
         );
       }
-      return reply.redirect(`${options.appUrl}/control?integration=connected`);
+      const feature = hasGmailScopes(account.scopes)
+        ? hasCalendarScopes(account.scopes)
+          ? "all"
+          : "gmail"
+        : "calendar";
+      return reply.redirect(`${options.appUrl}/control?integration=connected&feature=${feature}`);
     },
   );
 

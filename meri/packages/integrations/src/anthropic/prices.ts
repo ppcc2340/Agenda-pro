@@ -16,7 +16,16 @@ export const DEFAULT_PRICES: Record<string, ModelPrice> = {
 
 export function parsePrices(json: string | undefined): Record<string, ModelPrice> {
   if (!json) return DEFAULT_PRICES;
-  const parsed = JSON.parse(json) as Record<string, Partial<Record<keyof ModelPrice, unknown>>>;
+  let parsed: Record<string, Partial<Record<keyof ModelPrice, unknown>>>;
+  try {
+    const raw: unknown = JSON.parse(json);
+    if (typeof raw !== "object" || raw === null || Array.isArray(raw)) throw new Error("not an object");
+    parsed = raw as Record<string, Partial<Record<keyof ModelPrice, unknown>>>;
+  } catch (err) {
+    throw new Error(
+      `AI_PRICES_JSON must be a JSON object of model → {input, output, cacheRead, cacheWrite} (docs/blockers/anthropic.md): ${err instanceof Error ? err.message : String(err)}`,
+    );
+  }
   const out: Record<string, ModelPrice> = { ...DEFAULT_PRICES };
   const num = (v: unknown): number => (typeof v === "number" && Number.isFinite(v) ? v : 0);
   for (const [model, p] of Object.entries(parsed)) {

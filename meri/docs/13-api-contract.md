@@ -86,7 +86,7 @@ Propuestas `commitment` (Entrada): `POST /v1/proposals/:id/confirm` acepta `{ co
 | `GET /v1/billing/subscription` | Plan y estado |
 
 ### Webhooks (sin sesión, con verificación)
-| `POST /webhooks/google/gmail` | Pub/Sub push, verificar token JWT |
+| `POST /webhooks/google/gmail` | Push de Google: token de canal compartido con Calendar en el MVP (ADR 0004); el JWT de Pub/Sub llega con el bloqueo `gmail` en vivo |
 |---|---|
 | `POST /webhooks/google/calendar` | Canal `watch`, verificar `X-Goog-Channel-Token` |
 | `POST /webhooks/stripe` | Verificar firma e idempotencia por `event.id` |

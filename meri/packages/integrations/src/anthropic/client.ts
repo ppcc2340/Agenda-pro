@@ -3,7 +3,7 @@
  * a JSON Schema derived from Zod, prompt caching on the system prompt, one repair round on validation failure,
  * retries with backoff on 429/5xx/network, token and cost accounting. No tools with side effects, ever.
  */
-import type { z } from "zod";
+import { z } from "zod";
 import { IntegrationError, type HealthReport } from "../errors";
 import type { AiClient, AiUsage, StructuredRequest, StructuredResponse } from "../ai/types";
 import { zodToJsonSchema } from "../ai/json-schema";
@@ -19,20 +19,28 @@ export interface AnthropicClientOptions {
   /** Injected for deterministic backoff in tests. */
   sleep?: (ms: number) => Promise<void>;
   random?: () => number;
+  /** Per-request timeout (docs/12 §3: every external I/O has one). */
+  timeoutMs?: number;
 }
 
-interface MessagesResponse {
-  content: (
-    { type: "tool_use"; id: string; name: string; input: unknown } | { type: "text"; text: string }
-  )[];
-  usage: {
-    input_tokens: number;
-    output_tokens: number;
-    cache_read_input_tokens?: number;
-    cache_creation_input_tokens?: number;
-  };
-  stop_reason: string | null;
-}
+/** The parts of the Messages API response we rely on; anything else is ignored, a mismatch is Permanent. */
+const MessagesResponseSchema = z.object({
+  content: z.array(
+    z.union([
+      z.object({ type: z.literal("tool_use"), id: z.string(), name: z.string(), input: z.unknown() }),
+      z.object({ type: z.literal("text"), text: z.string() }),
+      z.object({ type: z.string() }).passthrough(),
+    ]),
+  ),
+  usage: z.object({
+    input_tokens: z.number().int().nonnegative(),
+    output_tokens: z.number().int().nonnegative(),
+    cache_read_input_tokens: z.number().int().nonnegative().optional(),
+    cache_creation_input_tokens: z.number().int().nonnegative().optional(),
+  }),
+  stop_reason: z.string().nullable().optional(),
+});
+type MessagesResponse = z.infer<typeof MessagesResponseSchema>;
 
 export const ANTHROPIC_VERSION = "2023-06-01";
 export const OUTPUT_TOOL = "emit_result";
@@ -40,6 +48,7 @@ export const OUTPUT_TOOL = "emit_result";
 export class AnthropicAiClient implements AiClient {
   readonly mode = "live" as const;
   private readonly fetchImpl: typeof fetch;
+  private readonly timeoutMs: number;
   private readonly baseUrl: string;
   private readonly prices: Record<string, ModelPrice>;
   private readonly maxRetries: number;
@@ -48,6 +57,7 @@ export class AnthropicAiClient implements AiClient {
 
   constructor(private readonly options: AnthropicClientOptions) {
     this.fetchImpl = options.fetch ?? fetch;
+    this.timeoutMs = options.timeoutMs ?? 60_000;
     this.baseUrl = (options.baseUrl ?? "https://api.anthropic.com").replace(/\/$/, "");
     this.prices = options.prices ?? DEFAULT_PRICES;
     this.maxRetries = options.maxRetries ?? 3;
@@ -166,6 +176,7 @@ export class AnthropicAiClient implements AiClient {
           method: "POST",
           headers: this.headers(),
           body: JSON.stringify(body),
+          signal: AbortSignal.timeout(this.timeoutMs),
         });
       } catch (err) {
         if (attempt >= this.maxRetries)
@@ -177,7 +188,16 @@ export class AnthropicAiClient implements AiClient {
         await this.sleep(this.backoff(attempt++, null));
         continue;
       }
-      if (res.ok) return (await res.json()) as MessagesResponse;
+      if (res.ok) {
+        const parsed = MessagesResponseSchema.safeParse(await res.json());
+        if (!parsed.success)
+          throw new IntegrationError(
+            "Permanent",
+            "anthropic",
+            `unexpected response shape: ${parsed.error.message}`,
+          );
+        return parsed.data;
+      }
       const retryAfter = Number(res.headers.get("retry-after") ?? "") || null;
       if (res.status === 429 || res.status >= 500 || res.status === 408) {
         if (attempt >= this.maxRetries) {
