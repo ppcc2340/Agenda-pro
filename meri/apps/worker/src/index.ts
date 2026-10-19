@@ -1,12 +1,4 @@
 export {
-  JobEnvelope,
-  withEnvelope,
-  QUEUE_NAMES,
-  DEAD_LETTER_QUEUE,
-  type JobEnvelope as JobEnvelopeType,
-  type QueueName,
-} from "./envelope";
-export {
   QueueRegistry,
   DeadLetterError,
   backoffDelayMs,
@@ -14,3 +6,4 @@ export {
   type JobDefinition,
   type RegistryDeps,
 } from "./registry";
+export { dispatchCalendarPolling, schedule, type DispatcherDeps } from "./dispatchers";

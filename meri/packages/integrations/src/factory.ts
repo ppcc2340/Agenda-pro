@@ -10,6 +10,8 @@ import { NoopAnalytics } from "./fakes/analytics";
 import { FakeBilling } from "./fakes/billing";
 import { FakeCalendar } from "./fakes/calendar";
 import { FakeGmail } from "./fakes/mail";
+import { FakeGoogleOAuth } from "./fakes/oauth";
+import type { GoogleOAuth } from "./oauth/types";
 import { LocalKms, type KmsAdapter } from "./kms";
 
 export interface IntegrationsDeps {
@@ -18,6 +20,7 @@ export interface IntegrationsDeps {
 
 export interface Integrations {
   ai: AiClient;
+  oauth: GoogleOAuth;
   billing: BillingProvider;
   analytics: Analytics;
   kms: KmsAdapter;
@@ -48,6 +51,12 @@ export function createIntegrations(config: AppConfig, deps: IntegrationsDeps): I
       : (() => {
           throw notYet("anthropic");
         })();
+  const oauth: GoogleOAuth =
+    modes.google === "fake"
+      ? new FakeGoogleOAuth(deps.now)
+      : (() => {
+          throw notYet("google-oauth");
+        })();
   const billing: BillingProvider =
     modes.stripe === "fake"
       ? new FakeBilling(deps.now)
@@ -69,6 +78,7 @@ export function createIntegrations(config: AppConfig, deps: IntegrationsDeps): I
 
   return {
     ai,
+    oauth,
     billing,
     analytics,
     kms,

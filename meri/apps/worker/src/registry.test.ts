@@ -2,7 +2,7 @@ import { Redis } from "ioredis";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createLogger } from "@meri/config";
 import { createDb, type DbHandle } from "@meri/db";
-import { DEAD_LETTER_QUEUE } from "./envelope";
+import { DEAD_LETTER_QUEUE } from "@meri/jobs";
 import { buildHealthServer } from "./health";
 import { examplePing } from "./queues/example";
 import { backoffDelayMs, QueueRegistry } from "./registry";

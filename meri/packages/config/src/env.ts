@@ -31,6 +31,8 @@ export const EnvSchema = z.object({
   GOOGLE_MODE: FakeLive.default("fake"),
   GOOGLE_CLIENT_ID: optionalString(),
   GOOGLE_CLIENT_SECRET: optionalString(),
+  /** Shared secret Google echoes in X-Goog-Channel-Token for Calendar push notifications. */
+  GOOGLE_CALENDAR_CHANNEL_TOKEN: z.string().min(8).default("dev-calendar-channel-token"),
 
   AI_MODE: FakeLive.default("fake"),
   ANTHROPIC_API_KEY: optionalString(),

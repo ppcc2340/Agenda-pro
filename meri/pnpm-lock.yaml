@@ -90,6 +90,9 @@ importers:
       '@meri/integrations':
         specifier: workspace:*
         version: link:../../packages/integrations
+      '@meri/jobs':
+        specifier: workspace:*
+        version: link:../../packages/jobs
       fastify:
         specifier: ^5.0.0
         version: 5.12.7
@@ -99,6 +102,9 @@ importers:
       fastify-type-provider-zod:
         specifier: ^4.0.2
         version: 4.0.2(fastify@5.12.7)(zod@3.25.76)
+      ioredis:
+        specifier: ^5.4.0
+        version: 5.11.1
       pino:
         specifier: ^9.4.0
         version: 9.14.0
@@ -224,6 +230,9 @@ importers:
 
   apps/worker:
     dependencies:
+      '@meri/ai':
+        specifier: workspace:*
+        version: link:../../packages/ai
       '@meri/config':
         specifier: workspace:*
         version: link:../../packages/config
@@ -236,6 +245,9 @@ importers:
       '@meri/integrations':
         specifier: workspace:*
         version: link:../../packages/integrations
+      '@meri/jobs':
+        specifier: workspace:*
+        version: link:../../packages/jobs
       bullmq:
         specifier: ^5.20.0
         version: 5.81.5
@@ -248,6 +260,9 @@ importers:
       pino:
         specifier: ^9.4.0
         version: 9.14.0
+      postgres:
+        specifier: ^3.4.4
+        version: 3.4.9
       zod:
         specifier: ^3.23.8
         version: 3.25.76
@@ -358,6 +373,40 @@ importers:
       '@meri/config':
         specifier: workspace:*
         version: link:../config
+      zod:
+        specifier: ^3.23.8
+        version: 3.25.76
+    devDependencies:
+      typescript:
+        specifier: ^5.6.0
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.6
+        version: 3.2.7(@types/node@22.20.5)(jsdom@25.0.1)(lightningcss@1.32.0)
+
+  packages/jobs:
+    dependencies:
+      '@meri/ai':
+        specifier: workspace:*
+        version: link:../ai
+      '@meri/config':
+        specifier: workspace:*
+        version: link:../config
+      '@meri/core':
+        specifier: workspace:*
+        version: link:../core
+      '@meri/db':
+        specifier: workspace:*
+        version: link:../db
+      '@meri/integrations':
+        specifier: workspace:*
+        version: link:../integrations
+      bullmq:
+        specifier: ^5.20.0
+        version: 5.81.5
+      ioredis:
+        specifier: ^5.4.0
+        version: 5.11.1
       zod:
         specifier: ^3.23.8
         version: 3.25.76

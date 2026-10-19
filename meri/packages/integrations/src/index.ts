@@ -16,3 +16,5 @@ export { FakeBilling } from "./fakes/billing";
 export { NoopAnalytics } from "./fakes/analytics";
 export { LocalKms, type KmsAdapter } from "./kms";
 export { createIntegrations, type Integrations, type IntegrationsDeps } from "./factory";
+export * from "./oauth/types";
+export { FakeGoogleOAuth } from "./fakes/oauth";

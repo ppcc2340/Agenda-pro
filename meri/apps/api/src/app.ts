@@ -15,6 +15,7 @@ import {
 } from "@meri/config";
 import type { Db } from "@meri/db";
 import type { Integrations } from "@meri/integrations";
+import type { JobDispatcher } from "@meri/jobs";
 import { createErrorHandler, problemFrom, sendProblem } from "./errors";
 import { contextPlugin } from "./plugins/context";
 import { csrfPlugin } from "./plugins/csrf";
@@ -24,6 +25,7 @@ import { healthRoutes } from "./routes/health";
 import { internalRoutes } from "./routes/internal";
 import { taskRoutes } from "./routes/tasks";
 import { captureRoutes } from "./routes/capture";
+import { integrationRoutes } from "./routes/integrations";
 import { idempotencyPlugin } from "./plugins/idempotency";
 
 export interface AppDeps {
@@ -37,6 +39,7 @@ export interface AppDeps {
   rateLimitMax?: number;
   observability?: Observability;
   flags?: FeatureFlagStore;
+  dispatcher: JobDispatcher;
   /** Hook for the replan trigger (set by main.ts to enqueue planner.replan). */
   onTasksChanged?: (workspaceId: string, traceId: string) => Promise<void>;
 }
@@ -116,6 +119,16 @@ export async function buildApp(deps: AppDeps) {
   await app.register(internalRoutes, { db: deps.db, secret: config.env.INTERNAL_API_SECRET, now: deps.now });
   await app.register(accountRoutes, { db: deps.db, now: deps.now });
   await app.register(taskRoutes, { now: deps.now, onTasksChanged: deps.onTasksChanged });
+  await app.register(integrationRoutes, {
+    now: deps.now,
+    oauth: deps.integrations.oauth,
+    keys: deps.integrations.kms.keys,
+    dispatcher: deps.dispatcher,
+    apiUrl: config.env.API_URL,
+    appUrl: config.env.APP_URL,
+    secureCookies: config.isProduction,
+    calendarChannelToken: config.env.GOOGLE_CALENDAR_CHANNEL_TOKEN,
+  });
   await app.register(captureRoutes, {
     now: deps.now,
     ai: deps.integrations.ai,

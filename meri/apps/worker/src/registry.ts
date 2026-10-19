@@ -3,7 +3,7 @@ import type { Redis } from "ioredis";
 import type { z } from "zod";
 import type { Logger } from "@meri/config";
 import { withWorkspace, type Db, type WorkspaceTx } from "@meri/db";
-import { DEAD_LETTER_QUEUE, JobEnvelope, type QueueName } from "./envelope";
+import { DEAD_LETTER_QUEUE, JobEnvelope, DEFAULT_JOB_OPTIONS, type QueueName } from "@meri/jobs";
 
 export interface JobContext<T> {
   payload: T;
@@ -51,12 +51,6 @@ export function backoffDelayMs(
   return exp + jitter;
 }
 
-export const DEFAULT_JOB_OPTIONS: JobsOptions = {
-  attempts: 5,
-  removeOnComplete: { count: 1000, age: 24 * 3600 },
-  removeOnFail: { age: 7 * 24 * 3600 },
-};
-
 /**
  * Owns queues and workers. Jobs are validated (envelope + payload) before the handler runs; after the last
  * failed attempt the job is copied to the dead-letter queue, which the health endpoint reports.
@@ -95,7 +89,6 @@ export class QueueRegistry {
     return this.queue(def.name).add(def.name, parsed, {
       ...DEFAULT_JOB_OPTIONS,
       attempts: def.attempts ?? DEFAULT_JOB_OPTIONS.attempts,
-      backoff: { type: "custom" },
       ...options,
     });
   }

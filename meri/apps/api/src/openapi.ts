@@ -2,6 +2,7 @@ import { writeFileSync } from "node:fs";
 import { createLogger, loadConfig, loadDotenv } from "@meri/config";
 import { createDb } from "@meri/db";
 import { createIntegrations } from "@meri/integrations";
+import { InMemoryDispatcher } from "@meri/jobs";
 import { buildApp } from "./app";
 
 /** Writes openapi.json (published as a CI artifact; must match docs/13-api-contract.md). */
@@ -15,6 +16,7 @@ const app = await buildApp({
   integrations: createIntegrations(config, { now: () => new Date() }),
   logger: createLogger({ name: "openapi", level: "silent" }),
   now: () => new Date(),
+  dispatcher: new InMemoryDispatcher(),
 });
 writeFileSync("openapi.json", JSON.stringify(app.swagger(), null, 2));
 await app.close();

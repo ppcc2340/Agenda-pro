@@ -1,0 +1,316 @@
+import { and, asc, eq, gte, lte, sql } from "drizzle-orm";
+import { calendarEvents, integrationAccounts, scheduleBlocks, syncState } from "../schema";
+import type { WorkspaceTx } from "../workspace";
+import { newId, type WorkspaceId } from "../ids";
+
+export type ConnectionStatus = "healthy" | "needs_reauth" | "degraded" | "paused" | "revoked";
+
+export interface IntegrationAccountView {
+  id: string;
+  provider: "google" | "microsoft" | "notion" | "slack";
+  externalAccountId: string;
+  email: string | null;
+  scopes: string[];
+  status: ConnectionStatus;
+  keyId: string;
+  lastSyncAt: Date | null;
+  lastError: string | null;
+  createdAt: Date;
+}
+
+type AccountRow = typeof integrationAccounts.$inferSelect;
+const toAccount = (r: AccountRow): IntegrationAccountView => ({
+  id: r.id,
+  provider: r.provider,
+  externalAccountId: r.externalAccountId,
+  email: r.email,
+  scopes: r.scopes,
+  status: r.status,
+  keyId: r.keyId,
+  lastSyncAt: r.lastSyncAt,
+  lastError: r.lastError,
+  createdAt: r.createdAt,
+});
+
+export async function listIntegrationAccounts(
+  tx: WorkspaceTx,
+  workspaceId: WorkspaceId,
+): Promise<IntegrationAccountView[]> {
+  const rows = await tx
+    .select()
+    .from(integrationAccounts)
+    .where(eq(integrationAccounts.workspaceId, workspaceId))
+    .orderBy(asc(integrationAccounts.createdAt));
+  return rows.map(toAccount);
+}
+
+export async function getIntegrationAccount(
+  tx: WorkspaceTx,
+  workspaceId: WorkspaceId,
+  id: string,
+): Promise<IntegrationAccountView | null> {
+  const row = await tx.query.integrationAccounts.findFirst({
+    where: and(eq(integrationAccounts.workspaceId, workspaceId), eq(integrationAccounts.id, id)),
+  });
+  return row ? toAccount(row) : null;
+}
+
+/** Ciphertext is read only by the sync services; never returned by the API. */
+export async function getEncryptedTokens(
+  tx: WorkspaceTx,
+  workspaceId: WorkspaceId,
+  id: string,
+): Promise<{ encryptedTokens: string; keyId: string } | null> {
+  const row = await tx.query.integrationAccounts.findFirst({
+    where: and(eq(integrationAccounts.workspaceId, workspaceId), eq(integrationAccounts.id, id)),
+    columns: { encryptedTokens: true, keyId: true },
+  });
+  return row ?? null;
+}
+
+export async function upsertIntegrationAccount(
+  tx: WorkspaceTx,
+  workspaceId: WorkspaceId,
+  input: {
+    provider: "google";
+    externalAccountId: string;
+    email: string;
+    scopes: string[];
+    encryptedTokens: string;
+    keyId: string;
+  },
+  now: Date,
+): Promise<IntegrationAccountView> {
+  const [row] = await tx
+    .insert(integrationAccounts)
+    .values({ id: newId(), workspaceId, ...input, status: "healthy", lastError: null, createdAt: now })
+    .onConflictDoUpdate({
+      target: [
+        integrationAccounts.workspaceId,
+        integrationAccounts.provider,
+        integrationAccounts.externalAccountId,
+      ],
+      set: {
+        email: input.email,
+        scopes: input.scopes,
+        encryptedTokens: input.encryptedTokens,
+        keyId: input.keyId,
+        status: "healthy",
+        lastError: null,
+      },
+    })
+    .returning();
+  if (!row) throw new Error("integration account upsert returned no row");
+  return toAccount(row);
+}
+
+export async function setIntegrationStatus(
+  tx: WorkspaceTx,
+  workspaceId: WorkspaceId,
+  id: string,
+  patch: {
+    status?: ConnectionStatus;
+    lastError?: string | null;
+    lastSyncAt?: Date | null;
+    encryptedTokens?: string;
+    keyId?: string;
+  },
+): Promise<IntegrationAccountView | null> {
+  const [row] = await tx
+    .update(integrationAccounts)
+    .set(patch)
+    .where(and(eq(integrationAccounts.workspaceId, workspaceId), eq(integrationAccounts.id, id)))
+    .returning();
+  return row ? toAccount(row) : null;
+}
+
+/** Disconnect: purge the account, its sync cursors and mirrored events; Meri blocks lose their calendar link. */
+export async function deleteIntegrationAccount(
+  tx: WorkspaceTx,
+  workspaceId: WorkspaceId,
+  id: string,
+): Promise<boolean> {
+  const events = await tx
+    .select({ id: calendarEvents.id })
+    .from(calendarEvents)
+    .where(and(eq(calendarEvents.workspaceId, workspaceId), eq(calendarEvents.integrationAccountId, id)));
+  if (events.length > 0) {
+    for (const e of events) {
+      await tx
+        .update(scheduleBlocks)
+        .set({ calendarEventId: null })
+        .where(and(eq(scheduleBlocks.workspaceId, workspaceId), eq(scheduleBlocks.calendarEventId, e.id)));
+    }
+    await tx
+      .delete(calendarEvents)
+      .where(and(eq(calendarEvents.workspaceId, workspaceId), eq(calendarEvents.integrationAccountId, id)));
+  }
+  await tx
+    .delete(syncState)
+    .where(and(eq(syncState.workspaceId, workspaceId), eq(syncState.integrationAccountId, id)));
+  const deleted = await tx
+    .delete(integrationAccounts)
+    .where(and(eq(integrationAccounts.workspaceId, workspaceId), eq(integrationAccounts.id, id)))
+    .returning({ id: integrationAccounts.id });
+  return deleted.length > 0;
+}
+
+// ---------- Sync cursors ----------
+export async function getSyncCursor(
+  tx: WorkspaceTx,
+  workspaceId: WorkspaceId,
+  accountId: string,
+  resource: string,
+): Promise<string | null> {
+  const row = await tx.query.syncState.findFirst({
+    where: and(
+      eq(syncState.workspaceId, workspaceId),
+      eq(syncState.integrationAccountId, accountId),
+      eq(syncState.resource, resource),
+    ),
+  });
+  return row?.cursor ?? null;
+}
+
+export async function setSyncCursor(
+  tx: WorkspaceTx,
+  workspaceId: WorkspaceId,
+  accountId: string,
+  resource: string,
+  cursor: string | null,
+  now: Date,
+): Promise<void> {
+  await tx
+    .insert(syncState)
+    .values({ workspaceId, integrationAccountId: accountId, resource, cursor, updatedAt: now })
+    .onConflictDoUpdate({
+      target: [syncState.integrationAccountId, syncState.resource],
+      set: { cursor, updatedAt: now },
+    });
+}
+
+// ---------- Calendar events mirror ----------
+export interface CalendarEventView {
+  id: string;
+  integrationAccountId: string | null;
+  externalId: string;
+  etag: string | null;
+  title: string | null;
+  startsAt: Date;
+  endsAt: Date;
+  allDay: boolean;
+  attendees: string[];
+  clientId: string | null;
+  origin: "meri" | "external";
+  busy: boolean;
+}
+
+type EventRow = typeof calendarEvents.$inferSelect;
+const toEvent = (r: EventRow): CalendarEventView => {
+  const { workspaceId: _ws, updatedAt: _u, ...rest } = r;
+  return rest;
+};
+
+export interface UpsertEventInput {
+  integrationAccountId: string;
+  externalId: string;
+  etag: string | null;
+  title: string | null;
+  startsAt: Date;
+  endsAt: Date;
+  allDay: boolean;
+  attendees: string[];
+  busy: boolean;
+  origin: "meri" | "external";
+}
+
+/** Idempotent by (workspace, account, external_id); a stale etag never overwrites a newer row (docs/07). */
+export async function upsertCalendarEvent(
+  tx: WorkspaceTx,
+  workspaceId: WorkspaceId,
+  input: UpsertEventInput,
+  now: Date,
+): Promise<CalendarEventView> {
+  const [row] = await tx
+    .insert(calendarEvents)
+    .values({ id: newId(), workspaceId, ...input, updatedAt: now })
+    .onConflictDoUpdate({
+      target: [calendarEvents.workspaceId, calendarEvents.integrationAccountId, calendarEvents.externalId],
+      set: {
+        etag: input.etag,
+        title: input.title,
+        startsAt: input.startsAt,
+        endsAt: input.endsAt,
+        allDay: input.allDay,
+        attendees: input.attendees,
+        busy: input.busy,
+        updatedAt: now,
+      },
+    })
+    .returning();
+  if (!row) throw new Error("calendar event upsert returned no row");
+  return toEvent(row);
+}
+
+export async function deleteCalendarEventByExternalId(
+  tx: WorkspaceTx,
+  workspaceId: WorkspaceId,
+  accountId: string,
+  externalId: string,
+): Promise<void> {
+  await tx
+    .delete(calendarEvents)
+    .where(
+      and(
+        eq(calendarEvents.workspaceId, workspaceId),
+        eq(calendarEvents.integrationAccountId, accountId),
+        eq(calendarEvents.externalId, externalId),
+      ),
+    );
+}
+
+export async function purgeAccountEvents(
+  tx: WorkspaceTx,
+  workspaceId: WorkspaceId,
+  accountId: string,
+): Promise<void> {
+  await tx
+    .delete(calendarEvents)
+    .where(
+      and(eq(calendarEvents.workspaceId, workspaceId), eq(calendarEvents.integrationAccountId, accountId)),
+    );
+}
+
+export async function listCalendarEvents(
+  tx: WorkspaceTx,
+  workspaceId: WorkspaceId,
+  range: { from: Date; to: Date },
+): Promise<CalendarEventView[]> {
+  const rows = await tx
+    .select()
+    .from(calendarEvents)
+    .where(
+      and(
+        eq(calendarEvents.workspaceId, workspaceId),
+        lte(calendarEvents.startsAt, range.to),
+        gte(calendarEvents.endsAt, range.from),
+      ),
+    )
+    .orderBy(asc(calendarEvents.startsAt), asc(calendarEvents.id));
+  return rows.map(toEvent);
+}
+
+export async function getCalendarEvent(
+  tx: WorkspaceTx,
+  workspaceId: WorkspaceId,
+  id: string,
+): Promise<CalendarEventView | null> {
+  const row = await tx.query.calendarEvents.findFirst({
+    where: and(eq(calendarEvents.workspaceId, workspaceId), eq(calendarEvents.id, id)),
+  });
+  return row ? toEvent(row) : null;
+}
+
+/** Accounts of a provider that are due for a poll (healthy and not synced within `olderThan`). Admin dispatcher input. */
+export const pollableAccountsSql = (provider: "google", olderThan: Date) =>
+  sql`select id, workspace_id as "workspaceId" from integration_accounts where provider = ${provider} and status in ('healthy','degraded') and (last_sync_at is null or last_sync_at < ${olderThan}) order by last_sync_at nulls first`;

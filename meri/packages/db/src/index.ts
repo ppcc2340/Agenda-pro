@@ -61,3 +61,4 @@ export {
 } from "./repos/proposals";
 export { getIdempotentResponse, storeIdempotentResponse, type StoredResponse } from "./repos/idempotency";
 export { listClients, type ClientSummary } from "./repos/clients";
+export * from "./repos/integrations";

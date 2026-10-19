@@ -8,7 +8,8 @@ import {
   type AccountIdentity,
   type DbHandle,
 } from "@meri/db";
-import { createIntegrations, FakeAiClient } from "@meri/integrations";
+import { createIntegrations, FakeAiClient, type Integrations } from "@meri/integrations";
+import { InMemoryDispatcher } from "@meri/jobs";
 import { registerFakeAiHandlers } from "@meri/ai";
 import { buildApp, type App } from "../app";
 import { sessionCookieName } from "../plugins/session";
@@ -29,6 +30,7 @@ export function testConfig(): AppConfig {
     AUTH_SECRET,
     INTERNAL_API_SECRET: INTERNAL_SECRET,
     LOCAL_MASTER_KEY: Buffer.alloc(32, 3).toString("base64"),
+    GOOGLE_CALENDAR_CHANNEL_TOKEN: "test-channel-token",
   });
   return { env, modes: resolveModes(env), isProduction: false, isTest: true };
 }
@@ -36,6 +38,8 @@ export function testConfig(): AppConfig {
 export interface TestApp {
   app: App;
   handle: DbHandle;
+  integrations: Integrations;
+  dispatcher: InMemoryDispatcher;
   close(): Promise<void>;
   /** Signs an Auth.js-compatible session cookie for the given account. */
   cookieFor(
@@ -55,10 +59,12 @@ export async function createTestApp(options: { rateLimitMax?: number } = {}): Pr
   const handle = createDb(TEST_APP_URL, { max: 3 });
   const integrations = createIntegrations(config, { now: () => NOW });
   if (integrations.ai instanceof FakeAiClient) registerFakeAiHandlers(integrations.ai);
+  const dispatcher = new InMemoryDispatcher();
   const app = await buildApp({
     config,
     db: handle.db,
     integrations,
+    dispatcher,
     logger: createLogger({ name: "api-test", level: "silent" }),
     now: () => NOW,
     rateLimitMax: options.rateLimitMax ?? 1000,
@@ -67,6 +73,8 @@ export async function createTestApp(options: { rateLimitMax?: number } = {}): Pr
   return {
     app,
     handle,
+    integrations,
+    dispatcher,
     close: async () => {
       await app.close();
       await handle.close();
