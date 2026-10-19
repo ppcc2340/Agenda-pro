@@ -19,3 +19,6 @@ export {
   type ErrorTracker,
   type Tracer,
 } from "./observability";
+
+/** Identity of the demo workspace created by `pnpm demo:seed` (PROTOTYPE.md, D-049). */
+export const DEMO_USER = { email: "demo@meri.local", name: "Demo de Meri" } as const;
