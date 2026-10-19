@@ -9,6 +9,7 @@ import {
   getPreferences,
   listAudit,
   updatePreferences,
+  PreferencesValidationError,
   type Db,
 } from "@meri/db";
 import { ApiError } from "../errors";
@@ -109,6 +110,13 @@ export function accountRoutes(app: FastifyInstance, options: AccountRoutesOption
         const after = await updatePreferences(tx, session.workspaceId, patch, {
           now,
           completeOnboarding: completeOnboarding ?? false,
+        }).catch((e: unknown) => {
+          if (e instanceof PreferencesValidationError) {
+            throw new ApiError("VALIDATION_FAILED", "The request body or query is invalid.", [
+              { path: e.path, message: e.message },
+            ]);
+          }
+          throw e;
         });
         await audit(
           tx,

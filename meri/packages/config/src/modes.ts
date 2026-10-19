@@ -64,6 +64,18 @@ export function resolveModes(env: Env, blockers: readonly BlockerDefinition[] = 
     }
   }
 
+  if (env.NODE_ENV === "production") {
+    const placeholders = (["AUTH_SECRET", "INTERNAL_API_SECRET"] as const).filter((k) =>
+      /^change-me/i.test(env[k]),
+    );
+    if (placeholders.length > 0)
+      errors.push(`${placeholders.join(", ")} still hold the .env.example placeholder; set real secrets.`);
+    if (!env.AUTH_URL)
+      errors.push(
+        "AUTH_URL is required in production (Auth.js must not derive callbacks from the Host header).",
+      );
+  }
+
   if (env.KMS_PROVIDER === "local" && !env.LOCAL_MASTER_KEY) {
     errors.push("KMS_PROVIDER=local requires LOCAL_MASTER_KEY (dev only). See docs/blockers/kms.md.");
   }

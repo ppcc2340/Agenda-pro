@@ -5,7 +5,10 @@ await run("stripe", async ({ integrations, config }) => {
   const health = await billing.healthCheck();
   ok(`billing health: ${health.status} (${health.mode})`);
   if (config.modes.stripe === "fake") {
-    const ev = await billing.parseWebhook(JSON.stringify({ id: "evt_smoke", type: "checkout.session.completed", data: {} }), "fake-webhook-secret");
+    const ev = await billing.parseWebhook(
+      JSON.stringify({ id: "evt_smoke", type: "checkout.session.completed", data: {} }),
+      "fake-webhook-secret",
+    );
     ok(`webhook signature verified for ${ev.id}`);
     let rejected = false;
     try {

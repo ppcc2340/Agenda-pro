@@ -36,19 +36,29 @@ export default async function ControlPage() {
     apiFetch<AuditPage>("/v1/audit?limit=8"),
   ]);
   const creditsUsed = 0; // ai_usage rollup arrives in phase 4
+  const KNOWN_STATUS = ["trialing", "active", "past_due", "canceled", "unpaid"] as const;
+  type PlanStatus = (typeof KNOWN_STATUS)[number];
+  const rawStatus = me?.plan.status ?? "trialing";
+  const planStatus: PlanStatus = (KNOWN_STATUS as readonly string[]).includes(rawStatus)
+    ? (rawStatus as PlanStatus)
+    : "trialing";
   const autonomy = prefs.autonomy === "auto_low_risk" ? "low" : "suggest";
   return (
     <>
       <PageHeader title={nav("control")} subtitle={t("subtitle")} action={<CaptureButton />} />
       <Panel title={t("autonomy.title")} desc={t("autonomy.desc")}>
-        <div className="inline-flex overflow-hidden rounded-[10px] border border-rule bg-raised" role="group">
+        <div
+          className="inline-flex overflow-hidden rounded-[10px] border border-rule bg-raised"
+          role="group"
+          aria-label={t("autonomy.current")}
+        >
           <span
             className={
               autonomy === "suggest"
                 ? "bg-sea px-3.5 py-1.5 font-semibold text-on-sea"
                 : "px-3.5 py-1.5 font-semibold text-ink2"
             }
-            aria-pressed={autonomy === "suggest"}
+            aria-current={autonomy === "suggest" ? "true" : undefined}
           >
             {t("autonomy.suggest")}
           </span>
@@ -58,7 +68,7 @@ export default async function ControlPage() {
                 ? "bg-sea px-3.5 py-1.5 font-semibold text-on-sea"
                 : "px-3.5 py-1.5 font-semibold text-ink2"
             }
-            aria-pressed={autonomy === "low"}
+            aria-current={autonomy === "low" ? "true" : undefined}
           >
             {t("autonomy.low")}
           </span>
@@ -88,14 +98,14 @@ export default async function ControlPage() {
             <b>{t("connections.calendar")}</b>
             <div className="text-ink2">{t("connections.calendarScope")}</div>
           </div>
-          <Pill variant="sug">{t("connections.notConnected")}</Pill>
+          <Pill variant="plain">{t("connections.notConnected")}</Pill>
         </div>
         <div className="flex items-center justify-between gap-3.5 border-b border-dashed border-rule py-2">
           <div>
             <b>{t("connections.gmail")}</b>
             <div className="text-ink2">{t("connections.gmailScope")}</div>
           </div>
-          <Pill variant="sug">{t("connections.notConnected")}</Pill>
+          <Pill variant="plain">{t("connections.notConnected")}</Pill>
         </div>
         <div className="flex items-center justify-between gap-3.5 py-2">
           <div>
@@ -109,7 +119,7 @@ export default async function ControlPage() {
         <div className="num">
           <b className="font-head text-2xl font-semibold">{creditsUsed}</b>{" "}
           <span className="text-ink2">
-            {t("credits.used", { used: creditsUsed, cap: me?.entitlements.aiCreditsMonthly ?? 0 })}
+            {t("credits.used", { cap: me?.entitlements.aiCreditsMonthly ?? 0 })}
           </span>
         </div>
         <div className="my-2 h-2 max-w-[360px] overflow-hidden rounded-full bg-rule">
@@ -125,7 +135,7 @@ export default async function ControlPage() {
             : t("plan.pro")
         }
       >
-        <Pill variant="plain">{me?.plan.status ?? ""}</Pill>
+        <Pill variant="plain">{t(`plan.status.${planStatus}`)}</Pill>
       </Panel>
       <Panel title={t("activity.title")} desc={t("activity.desc")}>
         <ActivityList items={audit.items} locale={locale} />

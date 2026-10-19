@@ -82,3 +82,33 @@ describe("resolveModes", () => {
     expect(() => resolveModes(parseEnv({ ...BASE, LOCAL_MASTER_KEY: "" }))).toThrow(/LOCAL_MASTER_KEY/);
   });
 });
+
+describe("production secrets", () => {
+  it("rejects .env.example placeholders and requires AUTH_URL in production", () => {
+    const prod = {
+      ...BASE,
+      NODE_ENV: "production",
+      GOOGLE_MODE: "live",
+      GOOGLE_CLIENT_ID: "id",
+      GOOGLE_CLIENT_SECRET: "s",
+      AI_MODE: "live",
+      ANTHROPIC_API_KEY: "k",
+      STRIPE_MODE: "live",
+      STRIPE_SECRET_KEY: "k",
+      STRIPE_WEBHOOK_SECRET: "w",
+      STRIPE_PRICE_PRO: "p",
+      STRIPE_PRICE_PRO_ANNUAL: "p2",
+      ANALYTICS_MODE: "live",
+      SENTRY_DSN: "d",
+      POSTHOG_KEY: "p",
+      KMS_PROVIDER: "aws",
+      KMS_KEY_ID: "arn",
+      AUTH_SECRET: "change-me-dev-only-secret-32-bytes-minimum",
+    };
+    expect(() => loadConfig(prod)).toThrow(/AUTH_SECRET still hold the \.env\.example placeholder/);
+    expect(() => loadConfig(prod)).toThrow(/AUTH_URL is required in production/);
+    expect(() =>
+      loadConfig({ ...prod, AUTH_SECRET: "r".repeat(40), AUTH_URL: "https://app.meri.test" }),
+    ).not.toThrow();
+  });
+});

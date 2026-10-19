@@ -154,6 +154,8 @@ export function CaptureButton() {
       type="button"
       className="hidden min-w-[260px] items-center gap-2.5 rounded-[11px] border border-rule bg-raised px-3.5 py-2 text-ink2 hover:border-ink3 md:flex"
       aria-keyshortcuts="Control+K Meta+K"
+      aria-disabled="true"
+      title={t("captureSoon")}
     >
       <Search size={16} aria-hidden="true" />
       <span>{t("capture")}</span>

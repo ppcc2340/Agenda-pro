@@ -13,6 +13,12 @@
     "build": "echo \"no build: consumed from src\"",
     "eval": "echo \"implement eval runner in phase 2 (see docs/05-ai-design.md section 7)\""
   },
-  "dependencies": { "@anthropic-ai/sdk": "^0.30.0", "zod": "^3.23.8" },
-  "devDependencies": { "typescript": "^5.6.0", "vitest": "^2.1.0" }
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.30.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0",
+    "vitest": "^3.2.6"
+  }
 }

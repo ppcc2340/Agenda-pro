@@ -10,8 +10,11 @@ await run("domain-brand", async ({ config }) => {
       if (res.status !== 200) throw new Error(`${url} responded ${String(res.status)}`);
       ok(`${url} responds 200`);
     } catch (e) {
-      if (domain === "localhost" && e instanceof TypeError) {
-        ok(`${url} not running (start pnpm dev to check); pages are covered by apps/web tests`);
+      // Locally the web may be down; CI sets SMOKE_REQUIRE_WEB=1 after starting it so this can never pass vacuously.
+      if (domain === "localhost" && e instanceof TypeError && process.env.SMOKE_REQUIRE_WEB !== "1") {
+        ok(
+          `${url} not running (start pnpm dev to check); pages are covered by apps/web/src/components/legal-page.test.tsx`,
+        );
         continue;
       }
       throw e;

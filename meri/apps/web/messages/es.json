@@ -10,7 +10,8 @@
     "theme": "Cambiar tema",
     "language": "Idioma",
     "signOut": "Cerrar sesión",
-    "demoNote": "Modo de desarrollo con datos de ejemplo. Nada se envía ni se cobra."
+    "demoNote": "Modo de desarrollo con datos de ejemplo. Nada se envía ni se cobra.",
+    "themeDark": "Tema oscuro"
   },
   "nav": {
     "hoy": "Hoy",
@@ -27,7 +28,8 @@
       "mas": "Más"
     },
     "capture": "Capturar o buscar",
-    "captureShortcut": "Ctrl K"
+    "captureShortcut": "Ctrl K",
+    "captureSoon": "La captura llega en la siguiente fase."
   },
   "hoy": {
     "subtitleCalm": "Tu plan cabe con margen y no hay nada en riesgo. Puedes concentrarte.",
@@ -46,7 +48,8 @@
     "lanePlan": "Plan de Meri",
     "legendFixed": "Reunión fija: Meri no la toca",
     "legendBlock": "Bloque de trabajo confirmado",
-    "legendSuggested": "Sugerido: espera tu decisión"
+    "legendSuggested": "Sugerido: espera tu decisión",
+    "subtitleEmpty": "Todavía no hay plan. Conecta tu calendario y captura tareas para que Meri lo arme."
   },
   "entrada": {
     "subtitle": "Meri propone, tú decides. Nada de esto es definitivo hasta que lo confirmes.",
@@ -55,7 +58,11 @@
   },
   "proyectos": {
     "subtitle": "Lo que debes, lo que te deben y el tiempo de cada cliente.",
-    "tabs": { "compromisos": "Compromisos", "clientes": "Clientes", "tiempo": "Tiempo" },
+    "tabs": {
+      "compromisos": "Compromisos",
+      "clientes": "Clientes",
+      "tiempo": "Tiempo"
+    },
     "emptyTitle": "Sin compromisos todavía",
     "emptyBody": "Los compromisos que confirmes desde Entrada aparecerán aquí, separados en lo que debes y lo que te deben."
   },
@@ -72,7 +79,8 @@
       "suggest": "Solo sugerir",
       "low": "Actuar en lo de bajo riesgo",
       "suggestBody": "Meri propone y tú confirmas todo. Es la opción por defecto.",
-      "lowBody": "Meri puede confirmar compromisos explícitos de alta confianza y mover sus propios bloques. Nunca toca reuniones ni envía correos."
+      "lowBody": "Meri puede confirmar compromisos explícitos de alta confianza y mover sus propios bloques. Nunca toca reuniones ni envía correos.",
+      "current": "Modo actual"
     },
     "connections": {
       "title": "Conexiones",
@@ -89,7 +97,7 @@
     "credits": {
       "title": "Créditos de IA",
       "desc": "Se usan al leer correos y generar borradores y briefings. El planificador no gasta créditos.",
-      "used": "{used} de {cap} este mes",
+      "used": "de {cap} este mes",
       "pause": "Al llegar al límite, la IA se pausa y el calendario y el plan siguen funcionando."
     },
     "activity": {
@@ -98,7 +106,11 @@
       "empty": "Todavía no hay actividad. Cada acción automática quedará registrada aquí.",
       "undo": "Deshacer",
       "undone": "Deshecho",
-      "actor": { "user": "Tú", "system": "Sistema", "ai": "IA" },
+      "actor": {
+        "user": "Tú",
+        "system": "Sistema",
+        "ai": "IA"
+      },
       "actions": {
         "onboarding_completed": "Completaste la configuración inicial.",
         "preferences_updated": "Cambiaste tus preferencias.",
@@ -119,9 +131,20 @@
       "pause": "Pausar lectura de correo",
       "export": "Exportar mis datos",
       "delete": "Eliminar mi cuenta",
-      "soon": "Disponible en una fase posterior."
+      "soon": "Todavía no disponible. Llegará en una próxima versión."
     },
-    "plan": { "title": "Plan", "trial": "Prueba hasta el {date}", "pro": "Plan Pro" }
+    "plan": {
+      "title": "Plan",
+      "trial": "Prueba hasta el {date}",
+      "pro": "Plan Pro",
+      "status": {
+        "trialing": "En prueba",
+        "active": "Activo",
+        "past_due": "Pago pendiente",
+        "canceled": "Cancelado",
+        "unpaid": "Impagado"
+      }
+    }
   },
   "login": {
     "title": "Entra en Meri",
@@ -149,9 +172,27 @@
     "saved": "Guardado. Vamos a Hoy.",
     "errors": {
       "order": "La hora de inicio debe ser anterior a la de fin.",
-      "days": "Elige al menos un día."
+      "days": "Elige al menos un día.",
+      "required": "Este dato es obligatorio."
     },
-    "days": { "0": "D", "1": "L", "2": "M", "3": "X", "4": "J", "5": "V", "6": "S" }
+    "days": {
+      "0": "D",
+      "1": "L",
+      "2": "M",
+      "3": "X",
+      "4": "J",
+      "5": "V",
+      "6": "S"
+    },
+    "dayNames": {
+      "0": "domingo",
+      "1": "lunes",
+      "2": "martes",
+      "3": "miércoles",
+      "4": "jueves",
+      "5": "viernes",
+      "6": "sábado"
+    }
   },
   "legal": {
     "privacyTitle": "Política de privacidad (borrador)",

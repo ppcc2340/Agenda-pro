@@ -1,4 +1,4 @@
-import NextAuth, { type NextAuthConfig } from "next-auth";
+import NextAuth, { type NextAuthConfig, type User } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
 import { z } from "zod";
@@ -14,7 +14,11 @@ const BootstrapResponse = z.object({
 });
 
 /** ADR 0001: ask the API to create or fetch the account for this identity. */
-async function bootstrapAccount(input: { email: string; name?: string | null; image?: string | null }) {
+export async function bootstrapAccount(input: {
+  email: string;
+  name?: string | null;
+  image?: string | null;
+}) {
   const { env } = getServerConfig();
   const res = await fetch(`${env.API_URL}/internal/auth/bootstrap`, {
     method: "POST",
@@ -59,7 +63,8 @@ function providers(): NextAuthConfig["providers"] {
   ];
 }
 
-export const { handlers, auth, signIn, signOut } = NextAuth(() => {
+/** Auth.js configuration, built lazily so it is never evaluated at build time. Exported for tests. */
+export function buildAuthConfig(): NextAuthConfig {
   const { isProduction } = getServerConfig();
   return {
     trustHost: true,
@@ -69,11 +74,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth(() => {
     useSecureCookies: isProduction,
     callbacks: {
       async jwt({ token, user }) {
-        if (user.email) {
+        // `user` is only present at sign-in; later session reads call this callback without it.
+        // `user` is only present at sign-in; later session reads call this callback without it (typed as required).
+        const signingIn = user as User | undefined;
+        if (signingIn?.email) {
           const account = await bootstrapAccount({
-            email: user.email,
-            name: user.name ?? null,
-            image: user.image ?? null,
+            email: signingIn.email,
+            name: signingIn.name ?? null,
+            image: signingIn.image ?? null,
           });
           token.sub = account.userId;
           token.workspaceId = account.workspaceId;
@@ -89,7 +97,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth(() => {
       },
     },
   };
-});
+}
+
+export const { handlers, auth, signIn, signOut } = NextAuth(buildAuthConfig);
 
 declare module "next-auth" {
   interface Session {

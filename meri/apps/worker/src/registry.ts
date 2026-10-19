@@ -54,7 +54,7 @@ export function backoffDelayMs(
 export const DEFAULT_JOB_OPTIONS: JobsOptions = {
   attempts: 5,
   removeOnComplete: { count: 1000, age: 24 * 3600 },
-  removeOnFail: false,
+  removeOnFail: { age: 7 * 24 * 3600 },
 };
 
 /**
@@ -64,6 +64,8 @@ export const DEFAULT_JOB_OPTIONS: JobsOptions = {
 export class QueueRegistry {
   private readonly queues = new Map<string, Queue>();
   private readonly workers: Worker[] = [];
+  /** In-flight dead-letter moves, awaited on close so none is lost. */
+  private readonly pending = new Set<Promise<unknown>>();
   readonly deadLetter: Queue;
 
   constructor(private readonly deps: RegistryDeps) {
@@ -145,7 +147,7 @@ export class QueueRegistry {
         "job failed",
       );
       if (exhausted) {
-        void this.deadLetter
+        const move = this.deadLetter
           .add(
             def.name,
             { ...job.data, failedJobId: job.id, error: err.message },
@@ -153,7 +155,11 @@ export class QueueRegistry {
           )
           .catch((e: unknown) => {
             this.deps.logger.error({ err: e }, "could not move job to dead-letter queue");
+          })
+          .finally(() => {
+            this.pending.delete(move);
           });
+        this.pending.add(move);
       }
     });
     this.workers.push(worker);
@@ -180,6 +186,7 @@ export class QueueRegistry {
 
   async close(): Promise<void> {
     await Promise.all(this.workers.map((w) => w.close()));
+    await Promise.all([...this.pending]);
     await Promise.all([...this.queues.values()].map((q) => q.close()));
   }
 }

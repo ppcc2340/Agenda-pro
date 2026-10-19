@@ -46,6 +46,16 @@ export async function getPreferences(
   return row ? toView(row) : null;
 }
 
+export class PreferencesValidationError extends Error {
+  override readonly name = "PreferencesValidationError";
+  constructor(
+    message: string,
+    readonly path: string,
+  ) {
+    super(message);
+  }
+}
+
 export interface UpdatePreferencesOptions {
   /** Injected clock. */
   now: Date;
@@ -61,6 +71,11 @@ export async function updatePreferences(
 ): Promise<PreferencesView> {
   const current = await tx.query.preferences.findFirst({ where: eq(preferences.workspaceId, workspaceId) });
   if (!current) throw new Error("preferences row missing for workspace");
+  // Validate the merged row, not only the patch: a lone workStart must still precede the stored workEnd.
+  const merged = { ...current, ...patch };
+  if (merged.workStart >= merged.workEnd) {
+    throw new PreferencesValidationError("workStart must be before workEnd", "workEnd");
+  }
   const [row] = await tx
     .update(preferences)
     .set({

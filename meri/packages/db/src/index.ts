@@ -1,5 +1,5 @@
 export * from "./schema";
-export { createDb, pingDb, type Db, type DbHandle } from "./client";
+export { createDb, pingDb, assertAppRole, type Db, type DbHandle } from "./client";
 export { withWorkspace, type WorkspaceTx } from "./workspace";
 export * from "./ids";
 export { runMigrations, ensureDevRoles } from "./migrate";
@@ -16,6 +16,7 @@ export {
   PreferencesPatchSchema,
   getPreferences,
   updatePreferences,
+  PreferencesValidationError,
   type Preferences,
   type PreferencesPatch,
   type PreferencesView,

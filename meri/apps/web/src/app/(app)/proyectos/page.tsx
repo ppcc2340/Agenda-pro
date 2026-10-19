@@ -9,13 +9,12 @@ export default async function ProyectosPage() {
   return (
     <>
       <PageHeader title={nav("proyectos")} subtitle={t("subtitle")} action={<CaptureButton />} />
-      <div role="tablist" className="mb-1.5 flex gap-1 border-b border-rule">
+      {/* Static section list until the tabs get content (phases 2 and 3). */}
+      <ul className="mb-1.5 flex gap-1 border-b border-rule">
         {tabs.map((tab, i) => (
-          <button
+          <li
             key={tab}
-            role="tab"
-            type="button"
-            aria-selected={i === 0}
+            aria-current={i === 0 ? "true" : undefined}
             className={
               i === 0
                 ? "-mb-px border-b-2 border-sea px-3.5 py-2.5 font-semibold text-ink"
@@ -23,9 +22,9 @@ export default async function ProyectosPage() {
             }
           >
             {t(`tabs.${tab}`)}
-          </button>
+          </li>
         ))}
-      </div>
+      </ul>
       <EmptyState title={t("emptyTitle")} body={t("emptyBody")} />
     </>
   );

@@ -8,6 +8,12 @@ import { auditLog, clients } from "./schema";
 import { TEST_APP_URL } from "./test/urls";
 import { withWorkspace } from "./workspace";
 
+/** drizzle wraps driver errors ("Failed query: …") and keeps the Postgres message in `cause`. */
+const pgMessage = (e: unknown): string => {
+  const err = e as { message?: string; cause?: { message?: string } };
+  return `${err.message ?? ""} ${err.cause?.message ?? ""}`;
+};
+
 describe("row level security isolation (docs/03, docs/06 §3)", () => {
   let handle: DbHandle;
   let wsA: WorkspaceId;
@@ -48,7 +54,7 @@ describe("row level security isolation (docs/03, docs/06 §3)", () => {
       withWorkspace(handle.db, wsB, (tx) =>
         tx.insert(clients).values({ id: newId(), workspaceId: wsA, name: "Intruder" }),
       ),
-    ).rejects.toThrow(/row-level security/);
+    ).rejects.toSatisfy((e: unknown) => /row-level security/.test(pgMessage(e)));
     const clientId = newId();
     await withWorkspace(handle.db, wsA, (tx) =>
       tx.insert(clients).values({ id: clientId, workspaceId: wsA, name: "Mine" }),
@@ -100,9 +106,9 @@ describe("row level security isolation (docs/03, docs/06 §3)", () => {
           .set({ reason: "x" })
           .where(sql`${auditLog.id} = ${id}`),
       ),
-    ).rejects.toThrow(/permission denied/);
+    ).rejects.toSatisfy((e: unknown) => /permission denied/.test(pgMessage(e)));
     await expect(
       withWorkspace(handle.db, wsA, (tx) => tx.delete(auditLog).where(sql`${auditLog.id} = ${id}`)),
-    ).rejects.toThrow(/permission denied/);
+    ).rejects.toSatisfy((e: unknown) => /permission denied/.test(pgMessage(e)));
   });
 });

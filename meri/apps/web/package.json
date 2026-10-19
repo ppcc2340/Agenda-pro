@@ -5,7 +5,7 @@
   "type": "module",
   "description": "Next.js: Meri interface. Visual reference: demo/.",
   "scripts": {
-    "dev": "next dev -p 3000",
+    "dev": "NEXT_DIST_DIR=.next-dev next dev -p 3000",
     "start": "next start -p 3000",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",
@@ -32,7 +32,6 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@next/eslint-plugin-next": "^15.5.0",
     "@playwright/test": "1.56.1",
     "@tailwindcss/postcss": "^4.0.0",
     "@testing-library/jest-dom": "^6.5.0",
@@ -46,6 +45,6 @@
     "postcss": "^8.4.47",
     "tailwindcss": "^4.0.0",
     "typescript": "^5.6.0",
-    "vitest": "^2.1.0"
+    "vitest": "^3.2.6"
   }
 }

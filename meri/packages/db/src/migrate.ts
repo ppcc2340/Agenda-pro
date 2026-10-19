@@ -35,10 +35,12 @@ if (isMain) {
     console.error("DATABASE_ADMIN_URL (or DATABASE_URL) is required");
     process.exit(2);
   }
+  // Dev role password only for local databases or with an explicit opt-in (never by accident on staging).
+  const devRoles = process.env.MERI_DEV_ROLES === "1" || /@(localhost|127\.0\.0\.1|postgres)[:/]/.test(url);
   runMigrations(url, (m) => {
     console.warn(m);
   })
-    .then(() => (process.env.NODE_ENV === "production" ? undefined : ensureDevRoles(url)))
+    .then(() => (devRoles && process.env.NODE_ENV !== "production" ? ensureDevRoles(url) : undefined))
     .catch((e: unknown) => {
       console.error(e);
       process.exit(1);

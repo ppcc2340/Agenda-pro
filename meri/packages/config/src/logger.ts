@@ -23,6 +23,11 @@ export const REDACTED_PATHS = [
   "*.STRIPE_SECRET_KEY",
   "*.AUTH_SECRET",
   "*.LOCAL_MASTER_KEY",
+  // postgres.js errors carry the failing query and its parameters (may include emails/contact data)
+  "err.query",
+  "err.parameters",
+  "*.err.query",
+  "*.err.parameters",
 ] as const;
 
 export interface LoggerConfig {

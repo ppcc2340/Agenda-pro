@@ -127,3 +127,26 @@ describe("account routes: session, preferences, audit and tenant isolation", () 
     expect(bad.statusCode).toBe(400);
   });
 });
+
+describe("preferences merged validation", () => {
+  it("rejects a lone workStart that is not before the stored workEnd", async () => {
+    const t = await createTestApp();
+    try {
+      const acc = await t.createAccount("merge");
+      const cookie = await t.cookieFor(acc);
+      const res = await t.app.inject({
+        method: "PUT",
+        url: "/v1/preferences",
+        headers: { cookie, ...csrf },
+        payload: { workStart: "19:00" },
+      });
+      expect(res.statusCode).toBe(400);
+      expect(res.json()).toMatchObject({ code: "VALIDATION_FAILED", errors: [{ path: "workEnd" }] });
+      expect((await t.app.inject({ url: "/v1/preferences", headers: { cookie } })).json()).toMatchObject({
+        workStart: "09:00",
+      });
+    } finally {
+      await t.close();
+    }
+  });
+});

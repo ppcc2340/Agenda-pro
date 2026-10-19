@@ -15,5 +15,7 @@ await run("anthropic", async ({ integrations }) => {
     schema: Schema,
   });
   ok(`structured output validated: ${res.output.answer}`);
-  ok(`usage: ${String(res.usage.inputTokens)} in / ${String(res.usage.outputTokens)} out tokens, ${String(res.usage.costMicroUsd)} µUSD`);
+  ok(
+    `usage: ${String(res.usage.inputTokens)} in / ${String(res.usage.outputTokens)} out tokens, ${String(res.usage.costMicroUsd)} µUSD`,
+  );
 });

@@ -4,7 +4,7 @@ import reactHooks from "eslint-plugin-react-hooks";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: ["**/dist/**", "**/.next/**", "**/coverage/**", "demo/**", "packages/db/drizzle/**"] },
+  { ignores: ["**/dist/**", "**/.next/**", "**/.next-dev/**", "**/coverage/**", "demo/**", "packages/db/drizzle/**"] },
   js.configs.recommended,
   ...tseslint.configs.strictTypeChecked,
   {

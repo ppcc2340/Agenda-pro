@@ -92,3 +92,22 @@ describe("account bootstrap and preferences (F-01)", () => {
     expect(new Set(all).size).toBe(3);
   });
 });
+
+describe("bootstrap race safety (ADR 0001)", () => {
+  it("two concurrent first logins for the same email yield one account", async () => {
+    const handle = createDb(TEST_APP_URL, { max: 4 });
+    try {
+      const email = `race-${newId()}@test.local`;
+      const now = new Date("2026-10-19T10:40:00Z");
+      const results = await Promise.all(
+        [1, 2, 3].map(() => bootstrapAccount(handle.db, { email, name: "Race", now })),
+      );
+      const ids = new Set(results.map((r) => r.userId));
+      expect(ids.size).toBe(1);
+      expect(results.filter((r) => r.created)).toHaveLength(1);
+      expect(new Set(results.map((r) => r.workspaceId)).size).toBe(1);
+    } finally {
+      await handle.close();
+    }
+  });
+});

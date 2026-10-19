@@ -13,6 +13,8 @@ export const EnvSchema = z.object({
   API_URL: z.string().url().default("http://localhost:4000"),
   PUBLIC_DOMAIN: z.string().min(1).default("localhost"),
   PORT: z.preprocess(emptyToUndefined, z.coerce.number().int().positive().optional()),
+  /** Trusted reverse-proxy hops in front of the API (0 = none). */
+  TRUST_PROXY_HOPS: z.preprocess(emptyToUndefined, z.coerce.number().int().min(0).max(10).default(0)),
 
   /** Application connection: role without SUPERUSER/BYPASSRLS (docs/12 §4). */
   DATABASE_URL: z.string().min(1),
@@ -22,6 +24,8 @@ export const EnvSchema = z.object({
   REDIS_URL: z.string().min(1).default("redis://localhost:6379"),
 
   AUTH_SECRET: z.string().min(32, "AUTH_SECRET must be at least 32 characters"),
+  /** Canonical URL of the web app for Auth.js (required in production so callbacks never derive from Host). */
+  AUTH_URL: z.preprocess(emptyToUndefined, z.string().url().optional()),
   INTERNAL_API_SECRET: z.string().min(16, "INTERNAL_API_SECRET must be at least 16 characters"),
 
   GOOGLE_MODE: FakeLive.default("fake"),

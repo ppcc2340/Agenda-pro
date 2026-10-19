@@ -10,7 +10,11 @@ await run("google-oauth", async ({ integrations, config, now }) => {
   const meriId = await calendar.ensureMeriCalendar();
   const start = new Date(now.getTime() + 3_600_000).toISOString();
   const end = new Date(now.getTime() + 5_400_000).toISOString();
-  const ev = await calendar.createMeriEvent(meriId, { title: "Meri smoke test", startsAt: start, endsAt: end });
+  const ev = await calendar.createMeriEvent(meriId, {
+    title: "Meri smoke test",
+    startsAt: start,
+    endsAt: end,
+  });
   await calendar.deleteMeriEvent(meriId, ev.externalId);
   ok(`created and deleted a test event in calendar "${meriId}"`);
 

@@ -41,4 +41,4 @@ El esquema ejecutable está en `packages/db/src/schema.ts` (fuente de verdad). E
 - `ai_usage (workspace_id, period)`
 
 ## Migraciones
-Drizzle Kit; migraciones versionadas en `packages/db/drizzle/`. Las políticas RLS se añaden mediante migraciones SQL manuales (`packages/db/sql/`). Todas las migraciones deben ser reversibles o documentar por qué no.
+Drizzle Kit; migraciones versionadas en `packages/db/drizzle/`. Las políticas RLS, el rol de aplicación y los permisos viven en la migración custom `packages/db/drizzle/0001_rls_roles_grants.sql` (creada con `drizzle-kit generate --custom`). Todas las migraciones deben ser reversibles o documentar por qué no.

@@ -14,7 +14,7 @@ describe("i18n catalogues", () => {
   it("keeps the five areas and the product promises in both languages", () => {
     for (const m of [es, en]) {
       expect(Object.keys(m.nav.mobile)).toEqual(["hoy", "entrada", "agenda", "compromisos", "mas"]);
-      expect(m.hoy.q1.length).toBeGreaterThan(5);
+      expect([m.hoy.q1, m.hoy.q2, m.hoy.q3, m.hoy.q4].every((q) => q.endsWith("?"))).toBe(true);
       expect(m.control.connections.gmailScope.toLowerCase()).toMatch(
         /sin permiso de envío|no send permission/,
       );

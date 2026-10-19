@@ -30,6 +30,46 @@ const TRIAL_DAYS = 14;
  */
 export async function bootstrapAccount(db: Db, input: BootstrapInput): Promise<AccountIdentity> {
   const email = input.email.trim().toLowerCase();
+  const existing = await findExisting(db, email, input);
+  if (existing) return existing;
+
+  const userId = newUserId();
+  const workspaceId = newWorkspaceId();
+  const locale = input.locale ?? "es";
+  // One transaction for the whole bootstrap (docs/12 §4): identity rows first, then the RLS context, then tenant rows.
+  // Concurrent first logins for the same email race on users_email_uq: the loser inserts nothing and re-reads.
+  const created = await db.transaction(async (tx) => {
+    const inserted = await tx
+      .insert(users)
+      .values({ id: userId, email, name: input.name ?? null, image: input.image ?? null, locale })
+      .onConflictDoNothing({ target: users.email })
+      .returning({ id: users.id });
+    if (inserted.length === 0) return false;
+    await tx
+      .insert(workspaces)
+      .values({ id: workspaceId, name: input.name ?? email, ownerId: userId, vertical: "generic" });
+    await tx.execute(sql`select set_config('app.workspace_id', ${workspaceId}, true)`);
+    await tx.insert(memberships).values({ workspaceId, userId, role: "owner" });
+    await tx.insert(preferences).values({ workspaceId });
+    await tx.insert(subscriptions).values({
+      id: newId(),
+      workspaceId,
+      plan: "trial",
+      status: "trialing",
+      trialEndsAt: new Date(input.now.getTime() + TRIAL_DAYS * 86_400_000),
+    });
+    await tx.insert(entitlements).values({ workspaceId });
+    return true;
+  });
+  if (!created) {
+    const winner = await findExisting(db, email, input);
+    if (!winner) throw new Error(`bootstrap race: user ${email} vanished`);
+    return winner;
+  }
+  return { userId, workspaceId, email, name: input.name ?? null, locale, created: true };
+}
+
+async function findExisting(db: Db, email: string, input: BootstrapInput): Promise<AccountIdentity | null> {
   const existing = await db.query.users.findFirst({ where: eq(users.email, email) });
   if (existing) {
     const membership = await db
@@ -54,31 +94,7 @@ export async function bootstrapAccount(db: Db, input: BootstrapInput): Promise<A
       created: false,
     };
   }
-
-  const userId = newUserId();
-  const workspaceId = newWorkspaceId();
-  const locale = input.locale ?? "es";
-  // One transaction for the whole bootstrap (docs/12 §4): identity rows first, then the RLS context, then tenant rows.
-  await db.transaction(async (tx) => {
-    await tx
-      .insert(users)
-      .values({ id: userId, email, name: input.name ?? null, image: input.image ?? null, locale });
-    await tx
-      .insert(workspaces)
-      .values({ id: workspaceId, name: input.name ?? email, ownerId: userId, vertical: "generic" });
-    await tx.execute(sql`select set_config('app.workspace_id', ${workspaceId}, true)`);
-    await tx.insert(memberships).values({ workspaceId, userId, role: "owner" });
-    await tx.insert(preferences).values({ workspaceId });
-    await tx.insert(subscriptions).values({
-      id: newId(),
-      workspaceId,
-      plan: "trial",
-      status: "trialing",
-      trialEndsAt: new Date(input.now.getTime() + TRIAL_DAYS * 86_400_000),
-    });
-    await tx.insert(entitlements).values({ workspaceId });
-  });
-  return { userId, workspaceId, email, name: input.name ?? null, locale, created: true };
+  return null;
 }
 
 export interface MeView {

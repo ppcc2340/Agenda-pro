@@ -1,6 +1,6 @@
 import { Redis } from "ioredis";
 import { createLogger, loadConfig, loadDotenv } from "@meri/config";
-import { createDb } from "@meri/db";
+import { assertAppRole, createDb } from "@meri/db";
 import { buildHealthServer } from "./health";
 import { examplePing } from "./queues/example";
 import { QueueRegistry } from "./registry";
@@ -13,6 +13,7 @@ async function main(): Promise<void> {
   const logger = createLogger({ name: "worker", level: config.env.LOG_LEVEL, pretty: !config.isProduction });
   const connection = new Redis(config.env.REDIS_URL, { maxRetriesPerRequest: null });
   const handle = createDb(config.env.DATABASE_URL, { max: 5 });
+  await assertAppRole(handle.db);
   const registry = new QueueRegistry({ connection, db: handle.db, logger });
   registry.register(examplePing);
   const health = await buildHealthServer(registry, logger);

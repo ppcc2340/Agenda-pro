@@ -1,4 +1,9 @@
-import { decryptEnvelopeToString, encryptEnvelope, LocalKeyProvider, rewrapEnvelope } from "@meri/config/crypto";
+import {
+  decryptEnvelopeToString,
+  encryptEnvelope,
+  LocalKeyProvider,
+  rewrapEnvelope,
+} from "@meri/config/crypto";
 import { ok, run } from "./_shared";
 
 await run("kms", async ({ integrations }) => {
@@ -11,6 +16,7 @@ await run("kms", async ({ integrations }) => {
   ok("encrypt and decrypt round-trip");
   const rotated = new LocalKeyProvider(LocalKeyProvider.generateMasterKeyBase64(), "local-rotated");
   const reblob = await rewrapEnvelope(kms.keys, rotated, blob);
-  if ((await decryptEnvelopeToString(rotated, reblob, "smoke")) !== "smoke-token") throw new Error("rotation failed");
+  if ((await decryptEnvelopeToString(rotated, reblob, "smoke")) !== "smoke-token")
+    throw new Error("rotation failed");
   ok("key rotation keeps data readable");
 });

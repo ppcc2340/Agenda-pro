@@ -58,10 +58,20 @@ jobs:
           PGPASSWORD: meri
       - name: Migrations on a clean database
         run: pnpm db:migrate
+      - name: No email-sending code path (CLAUDE.md: only drafts in the MVP)
+        run: |
+          if grep -rnE "gmail\.send|messages\.send\(|users\.messages\.send|sendMail\(|nodemailer|createTransport\(" apps packages scripts --include=*.ts --include=*.tsx -l; then
+            echo "Forbidden email send path found"; exit 1; fi
       - name: Verify (lint, typecheck, test, build, dependency rules)
         run: pnpm verify
+      - name: Coverage thresholds (api ≥ 80 %; core ≥ 90 % once it has code in phase 1)
+        run: pnpm --filter @meri/api test -- --coverage
+      - name: Start the web app for the domain smoke test
+        run: (pnpm --filter @meri/web start > /tmp/web.log 2>&1 &) && for i in $(seq 1 30); do curl -sf localhost:3000/privacy > /dev/null && break; sleep 1; done
       - name: Smoke tests against fake adapters
         run: for id in google-oauth anthropic stripe observability domain-brand kms; do pnpm smoke "$id"; done
+        env:
+          SMOKE_REQUIRE_WEB: "1"
       - name: OpenAPI artifact
         run: pnpm --filter @meri/api openapi
       - uses: actions/upload-artifact@v4
@@ -90,5 +100,8 @@ jobs:
           cache: pnpm
           cache-dependency-path: meri/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
-      - name: pnpm audit (high and critical)
+      - name: pnpm audit, production dependencies (blocking)
+        run: pnpm audit --prod --audit-level=high
+      - name: pnpm audit, all dependencies (report only; dev tooling advisories are tracked by Dependabot)
         run: pnpm audit --audit-level=high
+        continue-on-error: true

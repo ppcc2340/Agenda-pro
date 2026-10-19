@@ -15,8 +15,8 @@ export default async function LoginPage({
 }) {
   const session = await auth();
   const params = await searchParams;
-  const next =
-    params.next && params.next.startsWith("/") && !params.next.startsWith("//") ? params.next : "/hoy";
+  // Only same-origin paths: "/x" but never "//evil" or "/\\evil" (browsers normalise backslashes).
+  const next = params.next && /^\/(?![/\\])/.test(params.next) ? params.next : "/hoy";
   if (session?.user) redirect(next);
   const t = await getTranslations("login");
   const tApp = await getTranslations("app");

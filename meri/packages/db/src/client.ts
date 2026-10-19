@@ -18,6 +18,22 @@ export interface CreateDbOptions {
   connectTimeout?: number;
 }
 
+/**
+ * Startup guard (docs/12 §4): the application must never run as SUPERUSER or BYPASSRLS, otherwise RLS is silently void.
+ * Throws with a clear message so a wrong DATABASE_URL (e.g. the owner role from docker-compose) fails fast.
+ */
+export async function assertAppRole(db: Db): Promise<void> {
+  const rows = await db.execute(
+    sql`select rolsuper, rolbypassrls from pg_roles where rolname = current_user`,
+  );
+  const row = rows[0] as { rolsuper: boolean; rolbypassrls: boolean } | undefined;
+  if (!row || row.rolsuper || row.rolbypassrls) {
+    throw new Error(
+      "DATABASE_URL must use the application role (no SUPERUSER/BYPASSRLS), e.g. meri_app. See docs/03-data-model.md.",
+    );
+  }
+}
+
 /** Cheap connectivity check for readiness probes. */
 export async function pingDb(db: Db): Promise<void> {
   await db.execute(sql`select 1`);

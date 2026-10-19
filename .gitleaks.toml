@@ -6,8 +6,6 @@ useDefault = true
 description = "Example configuration and documented dev placeholders"
 paths = [
   '''meri/\.env\.example$''',
-  '''meri/docs/blockers/.*\.md$''',
-  '''meri/pnpm-lock\.yaml$''',
 ]
 regexes = [
   '''change-me-dev-only''',

@@ -1,5 +1,5 @@
 import { createLogger, loadConfig, loadDotenv } from "@meri/config";
-import { createDb } from "@meri/db";
+import { assertAppRole, createDb } from "@meri/db";
 import { createIntegrations } from "@meri/integrations";
 import { buildApp } from "./app";
 
@@ -11,6 +11,7 @@ async function main(): Promise<void> {
   const logger = createLogger({ name: "api", level: config.env.LOG_LEVEL, pretty: !config.isProduction });
   const now = config.env.DEMO_NOW ? () => new Date(config.env.DEMO_NOW ?? 0) : () => new Date();
   const handle = createDb(config.env.DATABASE_URL);
+  await assertAppRole(handle.db);
   const integrations = createIntegrations(config, { now });
   const app = await buildApp({ config, db: handle.db, integrations, logger, now });
   const port = config.env.PORT ?? 4000;

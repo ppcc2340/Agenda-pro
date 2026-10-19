@@ -115,6 +115,7 @@ export function OnboardingForm({ initial }: { initial: OnboardingInitial }) {
           <input
             type="time"
             step={300}
+            defaultValue={initial.workStart}
             {...form.register("workStart")}
             className="num rounded-lg border border-rule bg-panel px-3 py-2 font-normal text-ink"
           />
@@ -124,6 +125,7 @@ export function OnboardingForm({ initial }: { initial: OnboardingInitial }) {
           <input
             type="time"
             step={300}
+            defaultValue={initial.workEnd}
             {...form.register("workEnd")}
             className="num rounded-lg border border-rule bg-panel px-3 py-2 font-normal text-ink"
           />
@@ -148,6 +150,7 @@ export function OnboardingForm({ initial }: { initial: OnboardingInitial }) {
                     key={d}
                     type="button"
                     aria-pressed={on}
+                    aria-label={t(`dayNames.${String(d) as "0"}`)}
                     onClick={() => {
                       field.onChange(on ? field.value.filter((x) => x !== d) : [...field.value, d].sort());
                     }}
@@ -178,6 +181,7 @@ export function OnboardingForm({ initial }: { initial: OnboardingInitial }) {
             min={0}
             max={60}
             step={5}
+            defaultValue={initial.contingencyPct}
             {...form.register("contingencyPct")}
             className="flex-1"
           />

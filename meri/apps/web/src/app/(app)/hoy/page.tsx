@@ -8,9 +8,9 @@ export default async function HoyPage() {
   const nav = await getTranslations("nav");
   return (
     <>
-      <PageHeader title={nav("hoy")} subtitle={t("subtitleCalm")} action={<CaptureButton />} />
+      <PageHeader title={nav("hoy")} subtitle={t("subtitleEmpty")} action={<CaptureButton />} />
       <Section title={t("dayLine")} className="mt-0">
-        <div className="rounded-[10px] border border-dashed border-rule p-4 text-[12.5px] text-ink3">
+        <div className="rounded-[10px] border border-rule p-4 text-[13px] text-ink2">
           <div className="grid grid-cols-[104px_1fr] items-center gap-2">
             <span className="font-semibold text-ink2">{t("laneCalendar")}</span>
             <div className="h-10 rounded-[10px] bg-panel" />

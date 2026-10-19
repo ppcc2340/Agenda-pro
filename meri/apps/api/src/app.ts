@@ -34,12 +34,14 @@ export type App = Awaited<ReturnType<typeof buildApp>>;
 
 export async function buildApp(deps: AppDeps) {
   const { config } = deps;
+  const trustedHops = config.env.TRUST_PROXY_HOPS;
   const app = Fastify({
     loggerInstance: deps.logger,
     bodyLimit: BODY_LIMIT_BYTES,
     requestTimeout: 30_000,
     connectionTimeout: 10_000,
-    trustProxy: config.isProduction,
+    // Trusted reverse-proxy hops (TRUST_PROXY_HOPS); never "trust everything", so X-Forwarded-For cannot be spoofed.
+    trustProxy: trustedHops === 0 ? false : (_address: string, hop: number) => hop < trustedHops,
     requestIdHeader: "x-request-id",
     requestIdLogLabel: "traceId",
     genReqId: () => randomUUID(),

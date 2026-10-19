@@ -47,13 +47,15 @@ describe("system routes and error contract (docs/13)", () => {
     expect(Object.keys(doc.paths).some((p) => p.startsWith("/internal"))).toBe(false);
   });
 
-  it("rate limits by IP and answers RATE_LIMITED", async () => {
-    let last = 0;
-    for (let i = 0; i < 7; i++)
-      last = (await t.app.inject({ url: "/v1/me", headers: { "x-forwarded-for": "203.0.113.9" } }))
-        .statusCode;
-    const res = await t.app.inject({ url: "/v1/me" });
-    expect([last, res.statusCode]).toContain(429);
-    if (res.statusCode === 429) expect(res.json()).toMatchObject({ code: "RATE_LIMITED" });
+  it("rate limits by IP and answers RATE_LIMITED after the configured maximum", async () => {
+    const statuses: number[] = [];
+    for (let i = 0; i < 8; i++)
+      statuses.push((await t.app.inject({ url: "/v1/me", remoteAddress: "203.0.113.9" })).statusCode);
+    expect(statuses.slice(0, 5)).toEqual([401, 401, 401, 401, 401]);
+    expect(statuses.slice(5).every((s) => s === 429)).toBe(true);
+    const res = await t.app.inject({ url: "/v1/me", remoteAddress: "203.0.113.9" });
+    expect(res.json()).toMatchObject({ code: "RATE_LIMITED", status: 429 });
+    // Another client is not affected.
+    expect((await t.app.inject({ url: "/v1/me", remoteAddress: "203.0.113.10" })).statusCode).toBe(401);
   });
 });

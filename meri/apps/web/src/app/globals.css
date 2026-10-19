@@ -7,7 +7,8 @@
   --raised: #ffffff;
   --ink: #0f1e2e;
   --ink2: #44566a;
-  --ink3: #74869a;
+  /* ink3 and sug darkened vs the demo to reach AA (4.5:1) on bg/raised for small text. */
+  --ink3: #5e7084;
   --rule: #d2dbe1;
   --rail: #0f1e2e;
   --rail-ink: #c9dbe2;
@@ -17,7 +18,7 @@
   --sea-soft: #d5ebed;
   --risk: #bf3a4a;
   --risk-soft: #f7dee1;
-  --sug: #9a6a0c;
+  --sug: #86590a;
   --sug-soft: #faefd4;
   --ok: #2a7b58;
   --ok-soft: #d9efe5;
