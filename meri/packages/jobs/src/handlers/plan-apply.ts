@@ -9,6 +9,7 @@ import {
   getAuditEntry,
   getBlocksByIds,
   getCommitment,
+  getTimeEntry,
   getPreferences,
   getProposal,
   getTask,
@@ -18,6 +19,7 @@ import {
   lockWorkspace,
   proposalHashExists,
   reopenProposal,
+  updateTimeEntry,
   resolveProposal,
   setPlanVersion,
   softDeleteTask,
@@ -204,6 +206,7 @@ export const UNDOABLE_ACTIONS = [
   "block.pinned",
   "block.completed",
   "commitment.autoconfirmed",
+  "time.approved",
 ] as const;
 
 export interface UndoResult {
@@ -340,6 +343,15 @@ export async function undoAuditEntry(
           throw new PlanApplyError("CONFLICT", "A pending proposal for this commitment already exists.");
         await updateCommitment(tx, workspaceId, entry.entityId, { status: "proposed" }, now);
         await reopenProposal(tx, workspaceId, before.proposalId);
+        break;
+      }
+      case "time.approved": {
+        if (!entry.entityId) throw new PlanApplyError("VALIDATION_FAILED", "Entry has no time entry.");
+        const current = await getTimeEntry(tx, workspaceId, entry.entityId);
+        if (!current) throw new PlanApplyError("CONFLICT", "The time entry no longer exists.");
+        if (current.status !== "approved")
+          throw new PlanApplyError("CONFLICT", "The time entry was already changed; nothing to undo.");
+        await updateTimeEntry(tx, workspaceId, entry.entityId, { status: "suggested", approvedAt: null });
         break;
       }
       case "block.completed": {

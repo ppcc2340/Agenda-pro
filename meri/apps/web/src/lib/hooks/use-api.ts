@@ -18,6 +18,7 @@ import type {
   Plan,
   Proposal,
   Task,
+  TimeWeek,
 } from "@/lib/types";
 
 export const keys = {
@@ -33,6 +34,7 @@ export const keys = {
   exclusions: ["exclusions"] as const,
   aiUsage: ["ai-usage"] as const,
   clients: ["clients"] as const,
+  time: ["time"] as const,
 };
 
 /** Current plan (persisted blocks + last run). Polled: the worker replans in the background after each change. */
@@ -119,6 +121,16 @@ export function useClients(options: { stats?: boolean; includeArchived?: boolean
   return useQuery({
     queryKey: [...keys.clients, qs.toString()],
     queryFn: () => clientApi<{ items: Client[] }>(`/v1/clients?${qs.toString()}`),
+  });
+}
+
+export function useTimeWeek(week?: string) {
+  const qs = week ? `?week=${encodeURIComponent(week)}` : "";
+  return useQuery({
+    queryKey: [...keys.time, week ?? "current"],
+    queryFn: () => clientApi<TimeWeek>(`/v1/time-entries${qs}`),
+    // The worker infers in the background after a sync or a completed block.
+    refetchInterval: 10_000,
   });
 }
 

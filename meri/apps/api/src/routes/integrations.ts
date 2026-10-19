@@ -6,8 +6,11 @@ import type { KeyProvider } from "@meri/config/crypto";
 import {
   audit,
   deleteIntegrationAccount,
+  getCalendarEvent,
+  getClient,
   getIntegrationAccount,
   listCalendarEvents,
+  setCalendarEventClient,
   listIntegrationAccounts,
   setIntegrationStatus,
   upsertIntegrationAccount,
@@ -18,6 +21,7 @@ import {
   CalendarSyncJob,
   GmailSyncJob,
   encryptTokens,
+  enqueueTimeInfer,
   purgeAccountMail,
   type JobDispatcher,
 } from "@meri/jobs";
@@ -325,6 +329,7 @@ export function integrationRoutes(
         querystring: z.object({
           from: z.string().datetime({ offset: true }),
           to: z.string().datetime({ offset: true }),
+          clientId: z.string().uuid().optional(),
         }),
         response: { 200: z.object({ items: z.array(EventView) }) },
       },
@@ -338,13 +343,55 @@ export function integrationRoutes(
       const items = await request.withWorkspace((tx) =>
         listCalendarEvents(tx, session.workspaceId, { from, to }),
       );
+      const wanted = request.query.clientId;
       return {
-        items: items.map((e) => ({
-          ...e,
-          startsAt: e.startsAt.toISOString(),
-          endsAt: e.endsAt.toISOString(),
-        })),
+        items: items
+          .filter((e) => !wanted || e.clientId === wanted)
+          .map((e) => ({
+            ...e,
+            startsAt: e.startsAt.toISOString(),
+            endsAt: e.endsAt.toISOString(),
+          })),
       };
+    },
+  );
+
+  /** F-09: assign an external meeting to a client (ADR 0005); Meri blocks are never touched. Feeds time.infer. */
+  r.patch(
+    "/v1/calendar/events/:id",
+    {
+      preHandler: requireSession,
+      schema: {
+        tags: ["calendar"],
+        params: z.object({ id: z.string().uuid() }),
+        body: z.object({ clientId: z.string().uuid().nullable() }),
+        response: { 200: EventView },
+      },
+    },
+    async (request) => {
+      const session = sessionOf(request);
+      const updated = await request.withWorkspace(async (tx) => {
+        const before = await getCalendarEvent(tx, session.workspaceId, request.params.id);
+        if (!before || before.origin !== "external") throw new ApiError("NOT_FOUND", "Event not found.");
+        if (request.body.clientId && !(await getClient(tx, session.workspaceId, request.body.clientId)))
+          throw new ApiError("VALIDATION_FAILED", "Invalid references.", [{ path: "clientId", message: "Unknown client." }]);
+        await setCalendarEventClient(tx, session.workspaceId, before.id, request.body.clientId);
+        await audit(
+          tx,
+          { workspaceId: session.workspaceId, actor: "user", actorUserId: session.userId },
+          {
+            action: "event.client_assigned",
+            entityType: "calendar_event",
+            entityId: before.id,
+            before: { clientId: before.clientId },
+            after: { clientId: request.body.clientId },
+          },
+        );
+        return getCalendarEvent(tx, session.workspaceId, before.id);
+      });
+      if (!updated) throw new ApiError("NOT_FOUND", "Event not found.");
+      await enqueueTimeInfer(options.dispatcher, { workspaceId: session.workspaceId, traceId: request.id, reason: "event_assigned" });
+      return { ...updated, startsAt: updated.startsAt.toISOString(), endsAt: updated.endsAt.toISOString() };
     },
   );
 

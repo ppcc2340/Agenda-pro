@@ -63,6 +63,7 @@ export const UNDOABLE = new Set([
   "block.pinned",
   "block.completed",
   "commitment.autoconfirmed",
+  "time.approved",
 ]);
 
 /** Activity feed (F-14): every automated action is visible and, when possible, undoable. */

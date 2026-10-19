@@ -169,7 +169,21 @@
         "mail_exclusion_added": "You added a mail exclusion.",
         "mail_exclusion_removed": "You removed a mail exclusion.",
         "integration_paused": "You paused reading Google.",
-        "integration_resumed": "You resumed reading Google."
+        "integration_resumed": "You resumed reading Google.",
+        "time_approved": "You approved a time entry.",
+        "time_rejected": "You rejected a time entry.",
+        "time_updated": "You corrected a time entry.",
+        "event_client_assigned": "You assigned a meeting to a client.",
+        "briefing_generated": "You generated a client briefing.",
+        "client_created": "You created a client.",
+        "client_updated": "You edited a client.",
+        "client_archived": "You archived a client.",
+        "client_restored": "You restored a client.",
+        "client_deleted": "You deleted a client.",
+        "project_created": "You created a matter.",
+        "project_updated": "You edited a matter.",
+        "proposal_confirmed": "You confirmed a proposal.",
+        "proposal_edited": "You confirmed a proposal with changes."
       },
       "undoneOf": "Undone: {text}",
       "undoDone": "Action undone."
@@ -277,6 +291,13 @@
       "removeAria": "Remove exclusion {value}",
       "noExclusions": "No exclusions. Newsletters and automated mail are already discarded by rules.",
       "pauseHint": "Pausing stops reading Gmail and Google Calendar; nothing is deleted."
+    },
+    "shortcuts": {
+      "title": "Shortcuts",
+      "desc": "Clients, time and tasks.",
+      "clients": "Clients",
+      "time": "Time",
+      "tasks": "Tasks"
     }
   },
   "login": {
@@ -713,6 +734,51 @@
         "event": "Meeting"
       },
       "openSource": "See source: {title}"
+    }
+  },
+  "time": {
+    "week": "Week {week}",
+    "prevWeek": "Previous week",
+    "nextWeek": "Next week",
+    "approveSelected": "Approve {n, plural, =0 {selected} one {one} other {# selected}}",
+    "selectAll": "Select all suggested",
+    "exportCsv": "Export CSV",
+    "summary": "Weekly summary per client",
+    "summaryEmpty": "No time this week.",
+    "approved": "approved",
+    "suggested": "+{h} suggested",
+    "noClient": "No client",
+    "emptyTitle": "No time this week",
+    "emptyBody": "Meri suggests entries from finished client meetings and completed blocks. You approve them; nothing is billed on its own.",
+    "entries": "Time entries",
+    "select": "Select {desc}",
+    "noDescription": "No description",
+    "source": {
+      "event": "Meeting",
+      "block": "Meri block",
+      "other": "Manual"
+    },
+    "status": {
+      "suggested": "Suggested",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "exported": "Exported"
+    },
+    "minutes": "Minutes",
+    "save": "Save",
+    "cancel": "Cancel",
+    "edit": "Edit minutes",
+    "approve": "Approve",
+    "reject": "Reject",
+    "unassignedTitle": "Unrecorded time",
+    "unassignedBody": "Finished meetings without a client. Assign the client and Meri will suggest the entry.",
+    "unassignedPill": "No client",
+    "assignClient": "Assign client",
+    "toasts": {
+      "approved": "{n, plural, one {Entry approved} other {# entries approved}}. You can undo it in Activity.",
+      "rejected": "Entry rejected.",
+      "updated": "Minutes saved.",
+      "assigned": "Client assigned. Meri will suggest the entry in a few seconds."
     }
   }
 }

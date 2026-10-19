@@ -297,3 +297,26 @@ export interface Briefing {
   reused: boolean;
   items: BriefingItem[];
 }
+
+export interface TimeEntry {
+  id: string;
+  clientId: string | null;
+  clientName: string | null;
+  projectId: string | null;
+  taskId: string | null;
+  day: string;
+  minutes: number;
+  description: string | null;
+  status: "suggested" | "approved" | "rejected" | "exported";
+  sourceType: string;
+  sourceId: string | null;
+  approvedAt: string | null;
+}
+
+export interface TimeWeek {
+  week: string;
+  days: string[];
+  items: TimeEntry[];
+  summary: { clientId: string | null; clientName: string | null; minutesApproved: number; minutesSuggested: number }[];
+  unassignedEvents: { id: string; title: string | null; startsAt: string; endsAt: string; minutes: number }[];
+}

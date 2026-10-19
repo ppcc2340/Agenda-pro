@@ -87,3 +87,19 @@ export {
   type SnapshotProposal,
   type SnapshotContact,
 } from "./clients/context";
+export {
+  inferTimeEntries,
+  roundMinutes,
+  isoWeekKey,
+  isoWeekRange,
+  ROUNDING_OPTIONS,
+  BLOCK_WINS_OVERLAP,
+  type InferEvent,
+  type InferBlock,
+  type InferInput,
+  type InferredEntry,
+  type InferResult,
+  type RoundingMinutes,
+  type WeekRange,
+} from "./time/infer";
+export { timeEntriesCsv, csvCell, hoursOf, CSV_BOM, TIME_CSV_COLUMNS, type TimeCsvRow } from "./time/csv";

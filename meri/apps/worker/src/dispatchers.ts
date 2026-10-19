@@ -8,6 +8,7 @@ import {
   DataRetentionJob,
   FollowupsScanJob,
   GmailSyncJob,
+  TimeInferJob,
   dueForDigest,
   type JobDispatcher,
 } from "@meri/jobs";
@@ -147,6 +148,25 @@ export async function dispatchBriefingsPrepare(deps: DispatcherDeps): Promise<nu
     );
   }
   if (rows.length > 0) deps.logger.info({ workspaces: rows.length }, "briefings prepare dispatched");
+  return rows.length;
+}
+
+/** time.infer (D-042): once a day per onboarded workspace with a client (job id keyed by date; triggers add more). */
+export async function dispatchTimeInfer(deps: DispatcherDeps): Promise<number> {
+  const rows = await deps.adminSql<{ workspaceId: string }[]>`
+    select p.workspace_id as "workspaceId" from preferences p
+    where p.onboarded_at is not null
+      and exists (select 1 from clients c where c.workspace_id = p.workspace_id and c.deleted_at is null)
+    limit 5000`;
+  const date = deps.now().toISOString().slice(0, 10);
+  for (const row of rows) {
+    await deps.dispatcher.enqueue(
+      TimeInferJob,
+      { workspaceId: row.workspaceId, traceId: randomUUID(), reason: "daily" },
+      { jobId: `time.infer_${row.workspaceId}_daily_${date}` },
+    );
+  }
+  if (rows.length > 0) deps.logger.info({ workspaces: rows.length }, "time inference dispatched");
   return rows.length;
 }
 

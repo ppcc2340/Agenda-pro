@@ -3,7 +3,7 @@ import { assertAppRole, createDb } from "@meri/db";
 import { createIntegrations, FakeAiClient } from "@meri/integrations";
 import { registerFakeAiHandlers } from "@meri/ai";
 import { Redis } from "ioredis";
-import { createDispatcher, enqueueReplan } from "@meri/jobs";
+import { createDispatcher, enqueueReplan, enqueueTimeInfer } from "@meri/jobs";
 import { buildApp } from "./app";
 
 loadDotenv(".env");
@@ -32,6 +32,8 @@ async function main(): Promise<void> {
     dispatcher,
     onTasksChanged: async (workspaceId, traceId) => {
       await enqueueReplan(dispatcher, now, { workspaceId, traceId, reason: "tasks_changed" });
+      // Completed blocks are a time source (D-042); the job is idempotent and debounced.
+      await enqueueTimeInfer(dispatcher, { workspaceId, traceId, reason: "block_completed" });
     },
   });
   const port = config.env.PORT ?? 4000;

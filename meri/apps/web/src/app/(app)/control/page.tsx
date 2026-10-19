@@ -57,6 +57,19 @@ export default async function ControlPage() {
   return (
     <>
       <PageHeader title={nav("control")} subtitle={t("subtitle")} action={<CaptureButton />} />
+      <Panel title={t("shortcuts.title")} desc={t("shortcuts.desc")} className="md:hidden">
+        <div className="flex flex-wrap gap-2">
+          <Button asChild size="sm">
+            <Link href="/proyectos?tab=clientes">{t("shortcuts.clients")}</Link>
+          </Button>
+          <Button asChild size="sm">
+            <Link href="/proyectos?tab=tiempo">{t("shortcuts.time")}</Link>
+          </Button>
+          <Button asChild size="sm">
+            <Link href="/proyectos?tab=tareas">{t("shortcuts.tasks")}</Link>
+          </Button>
+        </div>
+      </Panel>
       <Panel title={t("autonomy.title")} desc={t("autonomy.desc")}>
         <Pill variant="sea">{autonomy === "suggest" ? t("autonomy.suggest") : t("autonomy.low")}</Pill>
         <p className="mt-2.5 max-w-[60ch] text-ink2">

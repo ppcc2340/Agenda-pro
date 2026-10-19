@@ -87,3 +87,5 @@ export * from "./repos/contacts";
 export * from "./repos/ai-usage";
 export * from "./repos/snapshot";
 export * from "./repos/briefings";
+export * from "./repos/time-entries";
+export * from "./repos/search";

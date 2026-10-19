@@ -35,6 +35,9 @@ import { commitmentRoutes } from "./routes/commitments";
 import { contactRoutes } from "./routes/contacts";
 import { clientRoutes } from "./routes/clients";
 import { briefingRoutes } from "./routes/briefings";
+import { timeRoutes } from "./routes/time-entries";
+import { searchRoutes } from "./routes/search";
+import { agreementRoutes } from "./routes/agreements";
 import { getEntitlementMaxClients } from "@meri/db";
 
 export interface AppDeps {
@@ -175,6 +178,9 @@ export async function buildApp(deps: AppDeps) {
     now: deps.now,
     maxClientsFor: (tx, workspaceId) => getEntitlementMaxClients(tx, workspaceId),
   });
+  await app.register(timeRoutes, { now: deps.now });
+  await app.register(searchRoutes, {});
+  await app.register(agreementRoutes, { now: deps.now });
   await app.register(briefingRoutes, {
     now: deps.now,
     ai: deps.integrations.ai,

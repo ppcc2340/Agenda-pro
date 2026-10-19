@@ -48,3 +48,5 @@ export { scanFollowups, followupDedupeHash, type FollowupsScanResult } from "./h
 export { purgeThreads, purgeAccountMail, applyMailRetention, type PurgeResult } from "./handlers/mail-purge";
 export { scanClients, clientLinkDedupeHash, type ClientsScanResult, type ClientLinkPayload } from "./handlers/clients-scan";
 export { prepareBriefings, BRIEFING_LOOKAHEAD_MS, type BriefingsPrepareResult } from "./handlers/briefings-prepare";
+export { inferTime, TIME_INFER_WINDOW_DAYS, type TimeInferResult } from "./handlers/time-infer";
+export { enqueueTimeInfer } from "./time-trigger";

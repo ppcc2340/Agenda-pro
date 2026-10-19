@@ -58,6 +58,7 @@ Fuente para que backend y frontend se construyan en paralelo. El OpenAPI generad
 | `POST /v1/plan/blocks/:id/pin` `{ pinned }` | Ancla o suelta un bloque (auditado, deshacible) |
 | `POST /v1/plan/blocks/:id/complete` `{ taskDone? }` | Marca el bloque hecho y, por defecto, la tarea (auditado, deshacible) |
 | `GET /v1/calendar/events?from=&to=&clientId=` | Eventos externos y bloques Meri; los externos llevan `clientId` cuando la resolución por dominio es inequívoca |
+| `PATCH /v1/calendar/events/:id` `{ clientId }` | Asigna una reunión externa a un cliente (nunca un bloque Meri). Auditado (`event.client_assigned`); dispara `time.infer` |
 | `GET /v1/notifications` · `POST /v1/notifications/:id/read` | Avisos agrupados (`template` + `params` para i18n, tope `maxAlertsPerDay`) |
 
 ### Clientes, tiempo y briefings (ADR 0005)

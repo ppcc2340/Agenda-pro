@@ -32,6 +32,10 @@ export const BriefingsPrepareJob = {
   name: "briefings.prepare" as const,
   schema: withEnvelope({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }),
 };
+export const TimeInferJob = {
+  name: "time.infer" as const,
+  schema: withEnvelope({ reason: z.enum(["daily", "calendar_changed", "block_completed", "event_assigned", "manual"]).default("manual") }),
+};
 export const DataRetentionJob = {
   name: "data.retention" as const,
   schema: withEnvelope({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }),
@@ -57,6 +61,7 @@ export type ExtractCommitmentsPayload = z.infer<typeof ExtractCommitmentsJob.sch
 export type FollowupsScanPayload = z.infer<typeof FollowupsScanJob.schema>;
 export type ClientsScanPayload = z.infer<typeof ClientsScanJob.schema>;
 export type BriefingsPreparePayload = z.infer<typeof BriefingsPrepareJob.schema>;
+export type TimeInferPayload = z.infer<typeof TimeInferJob.schema>;
 export type DataRetentionPayload = z.infer<typeof DataRetentionJob.schema>;
 export type PlannerReplanPayload = z.infer<typeof PlannerReplanJob.schema>;
 export type DailyReviewPayload = z.infer<typeof DailyReviewJob.schema>;

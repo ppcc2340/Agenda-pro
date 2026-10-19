@@ -169,7 +169,21 @@
         "mail_exclusion_added": "Añadiste una exclusión de correo.",
         "mail_exclusion_removed": "Quitaste una exclusión de correo.",
         "integration_paused": "Pausaste la lectura de Google.",
-        "integration_resumed": "Reanudaste la lectura de Google."
+        "integration_resumed": "Reanudaste la lectura de Google.",
+        "time_approved": "Aprobaste una entrada de tiempo.",
+        "time_rejected": "Rechazaste una entrada de tiempo.",
+        "time_updated": "Corregiste una entrada de tiempo.",
+        "event_client_assigned": "Asignaste una reunión a un cliente.",
+        "briefing_generated": "Generaste un briefing de cliente.",
+        "client_created": "Creaste un cliente.",
+        "client_updated": "Editaste un cliente.",
+        "client_archived": "Archivaste un cliente.",
+        "client_restored": "Restauraste un cliente.",
+        "client_deleted": "Eliminaste un cliente.",
+        "project_created": "Creaste un asunto.",
+        "project_updated": "Editaste un asunto.",
+        "proposal_confirmed": "Confirmaste una propuesta.",
+        "proposal_edited": "Confirmaste una propuesta con cambios."
       },
       "undoneOf": "Deshecho: {text}",
       "undoDone": "Acción deshecha."
@@ -277,6 +291,13 @@
       "removeAria": "Quitar exclusión {value}",
       "noExclusions": "Sin exclusiones. Los boletines y correos automáticos ya se descartan por reglas.",
       "pauseHint": "La pausa detiene la lectura de Gmail y de Google Calendar; nada se borra."
+    },
+    "shortcuts": {
+      "title": "Accesos directos",
+      "desc": "Clientes, tiempo y tareas.",
+      "clients": "Clientes",
+      "time": "Tiempo",
+      "tasks": "Tareas"
     }
   },
   "login": {
@@ -713,6 +734,51 @@
         "event": "Reunión"
       },
       "openSource": "Ver fuente: {title}"
+    }
+  },
+  "time": {
+    "week": "Semana {week}",
+    "prevWeek": "Semana anterior",
+    "nextWeek": "Semana siguiente",
+    "approveSelected": "Aprobar {n, plural, =0 {seleccionadas} one {una} other {# seleccionadas}}",
+    "selectAll": "Seleccionar todas las sugeridas",
+    "exportCsv": "Exportar CSV",
+    "summary": "Resumen semanal por cliente",
+    "summaryEmpty": "Sin tiempo esta semana.",
+    "approved": "aprobadas",
+    "suggested": "+{h} sugeridas",
+    "noClient": "Sin cliente",
+    "emptyTitle": "Sin tiempo esta semana",
+    "emptyBody": "Meri sugiere entradas a partir de reuniones con cliente terminadas y bloques completados. Tú las apruebas; nada se factura solo.",
+    "entries": "Entradas de tiempo",
+    "select": "Seleccionar {desc}",
+    "noDescription": "Sin descripción",
+    "source": {
+      "event": "Reunión",
+      "block": "Bloque de Meri",
+      "other": "Manual"
+    },
+    "status": {
+      "suggested": "Sugerida",
+      "approved": "Aprobada",
+      "rejected": "Rechazada",
+      "exported": "Exportada"
+    },
+    "minutes": "Minutos",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "edit": "Editar minutos",
+    "approve": "Aprobar",
+    "reject": "Rechazar",
+    "unassignedTitle": "Tiempo no registrado",
+    "unassignedBody": "Reuniones terminadas sin cliente. Asigna el cliente y Meri sugerirá la entrada.",
+    "unassignedPill": "Sin cliente",
+    "assignClient": "Asignar cliente",
+    "toasts": {
+      "approved": "{n, plural, one {Entrada aprobada} other {# entradas aprobadas}}. Puedes deshacerlo en Actividad.",
+      "rejected": "Entrada rechazada.",
+      "updated": "Minutos guardados.",
+      "assigned": "Cliente asignado. Meri sugerirá la entrada en unos segundos."
     }
   }
 }

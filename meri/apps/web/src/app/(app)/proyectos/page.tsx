@@ -2,10 +2,10 @@ import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { CaptureButton, PageHeader } from "@/components/shell/app-shell";
 import { ClientList } from "@/components/clients/client-list";
+import { TimeReview } from "@/components/time/time-review";
 import { CommitmentList } from "@/components/commitments/commitment-list";
 import { TaskList } from "@/components/tasks/task-list";
 import { getServerConfig } from "@/server/config";
-import { EmptyState } from "@/components/ui/empty-state";
 import { apiFetch } from "@/server/api";
 
 const TABS = ["tareas", "compromisos", "clientes", "tiempo"] as const;
@@ -56,7 +56,7 @@ export default async function ProyectosPage({
       ) : tab === "clientes" ? (
         <ClientList />
       ) : (
-        <EmptyState title={t("emptyTitle")} body={t("soon")} />
+        <TimeReview clients={clients.items} timezone={prefs.timezone} />
       )}
     </>
   );

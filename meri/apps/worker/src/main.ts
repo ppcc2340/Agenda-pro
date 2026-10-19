@@ -13,6 +13,7 @@ import {
   dispatchFollowupsScan,
   dispatchMailPolling,
   dispatchRetention,
+  dispatchTimeInfer,
   schedule,
 } from "./dispatchers";
 
@@ -22,6 +23,7 @@ import { buildHealthServer } from "./health";
 import { calendarSyncJob } from "./queues/calendar-sync";
 import { briefingsPrepareJob } from "./queues/briefings-prepare";
 import { clientsScanJob } from "./queues/clients-scan";
+import { timeInferJob } from "./queues/time-infer";
 import { dailyReviewJob } from "./queues/daily-review";
 import { gmailSyncJob } from "./queues/gmail-sync";
 import { extractCommitmentsJob } from "./queues/extract-commitments";
@@ -58,6 +60,7 @@ async function main(): Promise<void> {
   registry.register(followupsScanJob(handlerDeps));
   registry.register(clientsScanJob(handlerDeps));
   registry.register(briefingsPrepareJob(handlerDeps));
+  registry.register(timeInferJob(handlerDeps));
   registry.register(dataRetentionJob({ ...handlerDeps, maxRetentionDays: MAX_RETENTION_DAYS }));
   registry.register(
     extractCommitmentsJob({ ...handlerDeps, costCapUsd: config.env.AI_MONTHLY_COST_CAP_USD_PER_USER }),
@@ -109,6 +112,12 @@ async function main(): Promise<void> {
     () => dispatchBriefingsPrepare({ adminSql, dispatcher, logger, now }),
     logger,
   );
+  const stopTimeInfer = schedule(
+    "time.infer",
+    config.isProduction ? 60 * 60_000 : 60_000,
+    () => dispatchTimeInfer({ adminSql, dispatcher, logger, now }),
+    logger,
+  );
   const stopRetention = schedule(
     "data.retention",
     6 * 60 * 60_000,
@@ -138,6 +147,7 @@ async function main(): Promise<void> {
         "followups.scan",
         "clients.scan",
         "briefings.prepare",
+        "time.infer",
         "data.retention",
       ],
     },
@@ -152,6 +162,7 @@ async function main(): Promise<void> {
     stopFollowups();
     stopClientsScan();
     stopBriefings();
+    stopTimeInfer();
     stopRetention();
     await health.close();
     await registry.close();
