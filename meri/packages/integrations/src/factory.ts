@@ -198,6 +198,17 @@ export function seedSampleMail(mail: FakeGmail, me: string, now: Date): void {
   });
   mail.addMessage({
     ...base,
+    id: "msg-beta-1",
+    threadId: "thr-beta-presupuesto",
+    from: "Pablo Soto <pablo.soto@beta-logistica.example>",
+    subject: "Aprobación del presupuesto",
+    date: at(6, 10),
+    snippet: "Te envío el presupuesto aprobado el jueves.",
+    bodyText:
+      "Hola,\n\nTe envío el presupuesto aprobado el jueves, en cuanto lo firme dirección.\n\nSaludos,\nPablo Soto\nBeta Logística",
+  });
+  mail.addMessage({
+    ...base,
     id: "msg-news-1",
     threadId: "thr-news",
     from: "newsletter@productividadsemanal.com",

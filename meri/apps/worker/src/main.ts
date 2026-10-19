@@ -81,10 +81,12 @@ async function main(): Promise<void> {
     () => dispatchMailPolling({ adminSql, dispatcher, logger, now }),
     logger,
   );
+  // Hourly in production; every minute elsewhere so a freshly confirmed overdue commitment surfaces in a demo.
+  const followupsEveryMs = config.isProduction ? 60 * 60_000 : 60_000;
   const stopFollowups = schedule(
     "followups.scan",
-    60 * 60_000,
-    () => dispatchFollowupsScan({ adminSql, dispatcher, logger, now }),
+    followupsEveryMs,
+    () => dispatchFollowupsScan({ adminSql, dispatcher, logger, now }, followupsEveryMs),
     logger,
   );
   const stopRetention = schedule(

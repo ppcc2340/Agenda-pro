@@ -1,17 +1,24 @@
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { CaptureButton, PageHeader } from "@/components/shell/app-shell";
+import { CommitmentList } from "@/components/commitments/commitment-list";
 import { TaskList } from "@/components/tasks/task-list";
+import { getServerConfig } from "@/server/config";
 import { EmptyState } from "@/components/ui/empty-state";
 import { apiFetch } from "@/server/api";
 
 const TABS = ["tareas", "compromisos", "clientes", "tiempo"] as const;
 type Tab = (typeof TABS)[number];
 
-export default async function ProyectosPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
+export default async function ProyectosPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tab?: string; dir?: string }>;
+}) {
   const t = await getTranslations("proyectos");
   const nav = await getTranslations("nav");
-  const { tab: raw } = await searchParams;
+  const { tab: raw, dir } = await searchParams;
+  const demoNow = getServerConfig().env.DEMO_NOW;
   const tab: Tab = (TABS as readonly string[]).includes(raw ?? "") ? (raw as Tab) : "tareas";
   const [clients, prefs] = await Promise.all([
     apiFetch<{ items: { id: string; name: string }[] }>("/v1/clients").catch(() => ({ items: [] })),
@@ -38,6 +45,13 @@ export default async function ProyectosPage({ searchParams }: { searchParams: Pr
       </nav>
       {tab === "tareas" ? (
         <TaskList clients={clients.items} timezone={prefs.timezone} />
+      ) : tab === "compromisos" ? (
+        <CommitmentList
+          clients={clients.items}
+          timezone={prefs.timezone}
+          now={demoNow ? new Date(demoNow).toISOString() : undefined}
+          initialDirection={dir === "owed_to_me" ? "owed_to_me" : "owed_by_me"}
+        />
       ) : (
         <EmptyState title={t("emptyTitle")} body={t("soon")} />
       )}

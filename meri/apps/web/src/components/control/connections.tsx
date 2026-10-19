@@ -33,7 +33,8 @@ export function ConnectionsPanel({ fakeMode, timezone }: { fakeMode: boolean; ti
   }, [params, t, toast]);
 
   const connect = useApiMutation(
-    () => clientApi<{ url: string }>("/v1/integrations/google/connect", { method: "POST" }),
+    (feature: "calendar" | "gmail" | "all" = "calendar") =>
+      clientApi<{ url: string }>(`/v1/integrations/google/connect?feature=${feature}`, { method: "POST" }),
     [],
     {
       onSuccess: (r) => {
@@ -56,6 +57,12 @@ export function ConnectionsPanel({ fakeMode, timezone }: { fakeMode: boolean; ti
     { onSuccess: () => toast(t("disconnected")) },
   );
   const google = integrations.data?.items.find((i) => i.provider === "google") ?? null;
+  const gmail = google?.scopes.some((s) => s.includes("gmail.readonly")) ?? false;
+  const syncMail = useApiMutation(
+    (id: string) => clientApi(`/v1/integrations/${id}/mail/sync`, { method: "POST" }),
+    [keys.integrations, keys.proposals],
+    { onSuccess: () => toast(t("syncQueued")) },
+  );
 
   return (
     <div>
@@ -76,7 +83,7 @@ export function ConnectionsPanel({ fakeMode, timezone }: { fakeMode: boolean; ti
             <>
               <Pill variant={PILL[google.status]}>{t(`status.${google.status}`)}</Pill>
               {google.status === "needs_reauth" ? (
-                <Button size="sm" variant="primary" onClick={() => connect.mutate(undefined)}>
+                <Button size="sm" variant="primary" onClick={() => connect.mutate("all")}>
                   {t("status.needs_reauth")}
                 </Button>
               ) : null}
@@ -102,7 +109,7 @@ export function ConnectionsPanel({ fakeMode, timezone }: { fakeMode: boolean; ti
               <Button
                 size="sm"
                 variant="primary"
-                onClick={() => connect.mutate(undefined)}
+                onClick={() => connect.mutate("calendar")}
                 disabled={connect.isPending}
               >
                 {t("connect")}
@@ -112,12 +119,39 @@ export function ConnectionsPanel({ fakeMode, timezone }: { fakeMode: boolean; ti
         </div>
       </div>
       {fakeMode ? <p className="pt-2 text-[12.5px] text-ink3">{t("fakeNote")}</p> : null}
-      <div className="flex items-center justify-between gap-3.5 border-b border-dashed border-rule py-2">
+      <div className="flex flex-col gap-2 border-b border-dashed border-rule py-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <b>{tc("gmail")}</b>
           <div className="text-ink2">{tc("gmailScope")}</div>
         </div>
-        <Pill variant="plain">{tc("notConnected")}</Pill>
+        <div className="flex flex-wrap items-center gap-2">
+          {gmail ? (
+            <>
+              <Pill variant={PILL[google?.status ?? "healthy"]}>
+                {t(`status.${google?.status ?? "healthy"}`)}
+              </Pill>
+              <Button
+                size="sm"
+                onClick={() => google && syncMail.mutate(google.id)}
+                disabled={google?.status === "paused"}
+              >
+                {t("sync")}
+              </Button>
+            </>
+          ) : (
+            <>
+              <Pill variant="plain">{tc("notConnected")}</Pill>
+              <Button
+                size="sm"
+                variant="primary"
+                onClick={() => connect.mutate("gmail")}
+                disabled={connect.isPending}
+              >
+                {t("connectGmail")}
+              </Button>
+            </>
+          )}
+        </div>
       </div>
       <div className="flex items-center justify-between gap-3.5 py-2">
         <div>

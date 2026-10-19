@@ -11,7 +11,16 @@ import { useToast } from "@/components/ui/toast";
 import { clientApi } from "@/lib/client-api";
 import { formatDateTime, formatMinutes, isoToLocalInput, localInputToIso } from "@/lib/format";
 import { idempotencyKey, keys, useApiMutation, useProposals } from "@/lib/hooks/use-api";
-import type { CapturePayload, Proposal, Task } from "@/lib/types";
+import type {
+  CapturePayload,
+  Commitment,
+  CommitmentPayload,
+  FollowupPayload,
+  Proposal,
+  Task,
+} from "@/lib/types";
+import { FollowupDialog, type FollowupTarget } from "@/components/commitments/followup-dialog";
+import { CommitmentCard, FollowupCard } from "./commitment-card";
 
 const HIGH = 0.85;
 
@@ -25,13 +34,22 @@ export function InboxList({ timezone }: { timezone: string }) {
   const { toast } = useToast();
   const proposals = useProposals();
   const [editing, setEditing] = useState<string | null>(null);
-  const invalidate = [keys.proposals, ["tasks"] as const];
+  const [followup, setFollowup] = useState<FollowupTarget | null>(null);
+  const invalidate = [keys.proposals, ["tasks"] as const, ["commitments"] as const, keys.audit];
 
   const confirm = useApiMutation(
-    ({ id, edits }: { id: string; edits?: Record<string, unknown> }) =>
-      clientApi<{ task: Task }>(`/v1/proposals/${id}/confirm`, {
+    ({
+      id,
+      edits,
+      commitment,
+    }: {
+      id: string;
+      edits?: Record<string, unknown>;
+      commitment?: Record<string, unknown>;
+    }) =>
+      clientApi<{ task: Task | null; commitment: Commitment | null }>(`/v1/proposals/${id}/confirm`, {
         method: "POST",
-        json: edits ? { edits } : {},
+        json: edits ? { edits } : commitment ? { commitment } : {},
         headers: { "idempotency-key": idempotencyKey() },
       }),
     invalidate,
@@ -51,7 +69,13 @@ export function InboxList({ timezone }: { timezone: string }) {
   );
 
   const items = proposals.data?.items ?? [];
-  const high = items.filter((p) => p.kind === "capture" && (p.confidence ?? 0) >= HIGH);
+  // Batch: high-confidence captures and explicit commitments (docs/13 confirm-batch).
+  const high = items.filter(
+    (p) =>
+      (p.confidence ?? 0) >= HIGH &&
+      (p.kind === "capture" ||
+        (p.kind === "commitment" && (p.payload as unknown as CommitmentPayload).kind === "explicit")),
+  );
 
   return (
     <div>
@@ -82,6 +106,43 @@ export function InboxList({ timezone }: { timezone: string }) {
           <EmptyState title={tEntrada("emptyTitle")} body={tEntrada("emptyBody")} />
         ) : null}
         {items.map((p) => {
+          if (p.kind === "commitment") {
+            return (
+              <CommitmentCard
+                key={p.id}
+                proposal={p}
+                timezone={timezone}
+                busy={confirm.isPending}
+                onConfirm={(edits) =>
+                  confirm.mutate(
+                    { id: p.id, commitment: edits ?? {} },
+                    { onSuccess: () => toast(t("toasts.commitmentConfirmed")) },
+                  )
+                }
+                onDismiss={() => dismiss.mutate(p.id, { onSuccess: () => toast(t("toasts.dismissed")) })}
+              />
+            );
+          }
+          if (p.kind === "followup") {
+            const fp = p.payload as unknown as FollowupPayload;
+            return (
+              <FollowupCard
+                key={p.id}
+                proposal={p}
+                timezone={timezone}
+                onFollowup={() =>
+                  fp.commitmentId &&
+                  setFollowup({
+                    commitmentId: fp.commitmentId,
+                    counterpartyName: fp.counterpartyName,
+                    counterpartyEmail: fp.counterpartyEmail,
+                    proposalId: p.id,
+                  })
+                }
+                onDismiss={() => dismiss.mutate(p.id, { onSuccess: () => toast(t("toasts.dismissed")) })}
+              />
+            );
+          }
           if (p.kind === "reschedule") {
             return (
               <RescheduleCard
@@ -217,6 +278,7 @@ export function InboxList({ timezone }: { timezone: string }) {
           );
         })}
       </div>
+      <FollowupDialog target={followup} onClose={() => setFollowup(null)} />
     </div>
   );
 }

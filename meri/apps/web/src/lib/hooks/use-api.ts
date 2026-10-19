@@ -4,8 +4,12 @@ import { useMutation, useQuery, useQueryClient, type UseMutationOptions } from "
 import { useRouter } from "next/navigation";
 import { clientApi } from "@/lib/client-api";
 import type {
+  AiUsage,
   CalendarEvent,
+  Commitment,
+  Contact,
   IntegrationAccount,
+  MailExclusion,
   Notification,
   Page,
   Plan,
@@ -21,6 +25,10 @@ export const keys = {
   events: (from: string, to: string) => ["events", from, to] as const,
   notifications: ["notifications"] as const,
   audit: ["audit"] as const,
+  commitments: (params: string) => ["commitments", params] as const,
+  contacts: ["contacts"] as const,
+  exclusions: ["exclusions"] as const,
+  aiUsage: ["ai-usage"] as const,
 };
 
 /** Current plan (persisted blocks + last run). Polled: the worker replans in the background after each change. */
@@ -69,6 +77,37 @@ export function useProposals() {
     queryKey: keys.proposals,
     queryFn: () => clientApi<Page<Proposal>>("/v1/proposals?status=pending&limit=100"),
   });
+}
+
+export function useCommitments(params: { direction?: string; status?: string; clientId?: string } = {}) {
+  const qs = new URLSearchParams();
+  if (params.direction) qs.set("direction", params.direction);
+  if (params.status) qs.set("status", params.status);
+  if (params.clientId) qs.set("clientId", params.clientId);
+  qs.set("limit", "200");
+  const query = qs.toString();
+  return useQuery({
+    queryKey: keys.commitments(query),
+    queryFn: () => clientApi<Page<Commitment>>(`/v1/commitments?${query}`),
+  });
+}
+
+export function useContacts() {
+  return useQuery({
+    queryKey: keys.contacts,
+    queryFn: () => clientApi<{ items: Contact[] }>("/v1/contacts"),
+  });
+}
+
+export function useMailExclusions() {
+  return useQuery({
+    queryKey: keys.exclusions,
+    queryFn: () => clientApi<{ items: MailExclusion[] }>("/v1/mail/exclusions"),
+  });
+}
+
+export function useAiUsage() {
+  return useQuery({ queryKey: keys.aiUsage, queryFn: () => clientApi<AiUsage>("/v1/ai/usage") });
 }
 
 export function useIntegrations() {

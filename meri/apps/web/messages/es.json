@@ -162,7 +162,14 @@
         "commitment_fulfilled": "Marcaste un compromiso como cumplido.",
         "followup_reminder": "Programaste un recordatorio de seguimiento.",
         "followup_draft_saved": "Meri guardó un borrador de seguimiento en Gmail (sin enviar).",
-        "task_waiting_created": "Creaste una tarea «Esperando a»."
+        "task_waiting_created": "Creaste una tarea «Esperando a».",
+        "commitment_updated": "Editaste un compromiso.",
+        "followups_muted": "Silenciaste los seguimientos de un contacto o cliente.",
+        "followups_unmuted": "Reactivaste los seguimientos de un contacto o cliente.",
+        "mail_exclusion_added": "Añadiste una exclusión de correo.",
+        "mail_exclusion_removed": "Quitaste una exclusión de correo.",
+        "integration_paused": "Pausaste la lectura de Google.",
+        "integration_resumed": "Reanudaste la lectura de Google."
       },
       "undoneOf": "Deshecho: {text}",
       "undoDone": "Acción deshecha."
@@ -214,9 +221,56 @@
         "plan_applied": "Meri actualizó tu plan: {added, plural, one {un bloque nuevo} other {# bloques nuevos}}, {removed, plural, one {uno retirado} other {# retirados}}.",
         "daily_digest": "Resumen del día: {blocks} bloques, {risks} riesgos, {proposals} propuestas pendientes.",
         "proposals_new": "{count, plural, one {Una propuesta nueva} other {# propuestas nuevas}} en Entrada.",
-        "ai_paused": "La IA está en pausa: se alcanzó el tope mensual de {capUsd} USD. Las reglas y el planificador siguen funcionando."
+        "ai_paused": "La IA está en pausa: se alcanzó el tope mensual de {capUsd} USD. Las reglas y el planificador siguen funcionando.",
+        "followups_due": "{count, plural, one {Un seguimiento sugerido} other {# seguimientos sugeridos}} en Entrada."
       },
       "seeInHoy": "Ver en Hoy"
+    },
+    "ai": {
+      "title": "IA y auto-confirmación",
+      "desc": "Cuánto gasta la IA y qué puede confirmar sola.",
+      "autoconfirm": "Confirmar automáticamente compromisos explícitos de alta confianza",
+      "autoconfirmBody": "Solo los que el correo deja claros y con fecha (confianza ≥ 90 %). Cada uno queda en Actividad y puedes deshacerlo. El resto siempre pasa por Entrada.",
+      "autoconfirmOn": "Auto-confirmación activada. Verás cada compromiso en Actividad.",
+      "autoconfirmOff": "Auto-confirmación desactivada.",
+      "used": "de {cap} USD este mes ({credits} créditos de IA en tu plan)",
+      "paused": "IA en pausa",
+      "pause": "Al llegar al límite, la IA se pausa: las reglas, el calendario y el plan siguen funcionando.",
+      "fakeNote": "Modo de pruebas: el extractor por reglas no consume créditos.",
+      "usedAmount": "{used} USD"
+    },
+    "mailPrivacy": {
+      "title": "Correo y privacidad",
+      "desc": "Qué lee Meri de tu Gmail y cómo lo olvida.",
+      "statusReading": "Leyendo correo",
+      "statusPaused": "Lectura en pausa",
+      "notConnected": "Gmail sin conectar",
+      "pauseReading": "Pausar lectura de correo",
+      "resume": "Reanudar lectura",
+      "disconnectPurge": "Desconectar y purgar",
+      "confirmPurge": "¿Desconectar Gmail y borrar los hilos indexados y las propuestas pendientes? Los compromisos que confirmaste se conservan.",
+      "pausedToast": "Lectura de correo en pausa.",
+      "resumedToast": "Lectura de correo reanudada.",
+      "purgedToast": "Gmail desconectado. Hilos indexados y propuestas pendientes borrados.",
+      "retention": "Meri guarda solo metadatos y una cita de hasta 200 caracteres por hilo, y los borra a los {days} días.",
+      "exclusions": "Exclusiones",
+      "exclusionsBody": "Remitentes, dominios o etiquetas que Meri no leerá nunca.",
+      "kindLabel": "Tipo de exclusión",
+      "valueLabel": "Valor",
+      "kind": {
+        "sender": "Remitente",
+        "domain": "Dominio",
+        "label": "Etiqueta"
+      },
+      "placeholder": {
+        "sender": "nombre@dominio.com",
+        "domain": "dominio.com",
+        "label": "Etiqueta de Gmail"
+      },
+      "add": "Excluir",
+      "invalid": "Ese valor no es válido para este tipo.",
+      "removeAria": "Quitar exclusión {value}",
+      "noExclusions": "Sin exclusiones. Los boletines y correos automáticos ya se descartan por reglas."
     }
   },
   "login": {
@@ -364,7 +418,8 @@
       "explicit": "Explícito",
       "inferred": "Inferido",
       "suggested": "Sugerencia",
-      "reschedule": "Reorganización"
+      "reschedule": "Reorganización",
+      "followup": "Seguimiento"
     },
     "noDate": "Sin fecha",
     "forDate": "Para: {date}",
@@ -383,7 +438,8 @@
     "toasts": {
       "confirmed": "Añadida. Meri la programará en el siguiente hueco.",
       "dismissed": "Descartada.",
-      "batch": "{n} confirmadas."
+      "batch": "{n} confirmadas.",
+      "commitmentConfirmed": "Confirmado. Ya está en tus compromisos."
     },
     "editAction": "Acción",
     "editDate": "Fecha",
@@ -392,6 +448,18 @@
       "title": "Meri propone reorganizar tu plan",
       "summary": "{moved, plural, one {un movido} other {# movidos}} · {added, plural, one {uno nuevo} other {# nuevos}} · {removed, plural, one {uno retirado} other {# retirados}}",
       "review": "Ver los cambios en Hoy"
+    },
+    "commitment": {
+      "from": "{who} se compromete contigo",
+      "to": "Te comprometes con {who}",
+      "openThread": "Ver hilo en Gmail",
+      "waitingTask": "Crear una tarea «Esperando a» para no olvidarlo"
+    },
+    "followup": {
+      "title": "Seguimiento con {who}",
+      "overdue": "{who} debía «{action}» y lleva {days, plural, one {un día} other {# días}} de retraso.",
+      "unanswered": "{who} no ha respondido a tu correo en {days, plural, one {un día} other {# días}}.",
+      "prepare": "Preparar seguimiento"
     }
   },
   "capture": {
@@ -435,7 +503,9 @@
     "denied": "No se completó la conexión.",
     "disconnected": "Desconectado. Los eventos copiados se han borrado.",
     "confirmDisconnect": "¿Desconectar y borrar los eventos copiados?",
-    "syncQueued": "Sincronización en marcha."
+    "syncQueued": "Sincronización en marcha.",
+    "connectGmail": "Conectar Gmail",
+    "connectedGmail": "Gmail conectado. Meri solo lee y crea borradores; nunca envía."
   },
   "plan": {
     "why": "Por qué está aquí.",
@@ -509,5 +579,55 @@
       "accepted": "Cambios aplicados.",
       "undone": "Cambios deshechos."
     }
+  },
+  "commitments": {
+    "direction": "Dirección",
+    "owed_by_me": "Debo ({n})",
+    "owed_to_me": "Me deben ({n})",
+    "clearFilter": "Quitar filtro",
+    "emptyFilter": "No hay compromisos con este filtro.",
+    "emptyWaiting": "Nadie te debe nada ahora mismo.",
+    "noCounterparty": "Sin contraparte",
+    "openThread": "Ver hilo en Gmail",
+    "prepareFollowup": "Preparar seguimiento",
+    "followup": "Seguimiento",
+    "received": "Recibido",
+    "fulfilled": "Cumplido",
+    "status": {
+      "proposed": "Propuesto",
+      "confirmed": "Confirmado",
+      "at_risk": "Vencido",
+      "overdue": "Vencido",
+      "broken": "Incumplido",
+      "fulfilled": "Cumplido",
+      "dismissed": "Descartado"
+    },
+    "kind": {
+      "explicit": "Explícito",
+      "inferred": "Inferido",
+      "suggested": "Sugerencia"
+    },
+    "directionLabel": {
+      "owed_by_me": "Debo",
+      "owed_to_me": "Me deben"
+    },
+    "toasts": {
+      "fulfilled": "Cumplido. Buen trabajo.",
+      "received": "Marcado como recibido."
+    },
+    "quote": "«{text}»"
+  },
+  "followup": {
+    "title": "Seguimiento para {who}",
+    "meta": "Para: {to}. Asunto: {subject}",
+    "note": "Meri solo crea borradores. Tú decides cuándo enviarlo.",
+    "cancel": "Cancelar",
+    "remind": "Recordarme mañana",
+    "save": "Guardar borrador en Gmail",
+    "bodyLabel": "Borrador",
+    "savedToast": "Borrador guardado en Gmail. Meri no envía correos.",
+    "remindToast": "Recordatorio creado para mañana.",
+    "sourceAi": "Redactado por la IA con el contexto de este compromiso. Revísalo antes de guardarlo.",
+    "sourceTemplate": "Plantilla de Meri. Puedes editarla antes de guardarla."
   }
 }

@@ -40,6 +40,13 @@ const ACTION_KEYS = [
   "followup_reminder",
   "followup_draft_saved",
   "task_waiting_created",
+  "commitment_updated",
+  "followups_muted",
+  "followups_unmuted",
+  "mail_exclusion_added",
+  "mail_exclusion_removed",
+  "integration_paused",
+  "integration_resumed",
 ] as const;
 type ActionKey = (typeof ACTION_KEYS)[number];
 const toKey = (action: string): ActionKey | null => {

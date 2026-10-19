@@ -3,6 +3,8 @@ import Link from "next/link";
 import { CaptureButton, PageHeader } from "@/components/shell/app-shell";
 import { Suspense } from "react";
 import { ActivityList } from "@/components/control/activity-list";
+import { AiSettings } from "@/components/control/ai-settings";
+import { MailPrivacy } from "@/components/control/mail-privacy";
 import { ConnectionsPanel } from "@/components/control/connections";
 import { NotificationsPanel } from "@/components/control/notifications-panel";
 import { getServerConfig } from "@/server/config";
@@ -18,6 +20,8 @@ interface Preferences {
   workEnd: string;
   contingencyPct: number;
   autonomy: "suggest_only" | "auto_low_risk";
+  gmailAutoconfirm: boolean;
+  retentionDays: number;
 }
 interface AuditPage {
   items: {
@@ -42,7 +46,6 @@ export default async function ControlPage() {
     apiFetch<{ items: Notification[] }>("/v1/notifications?limit=20").catch(() => ({ items: [] })),
   ]);
   const fakeMode = getServerConfig().modes.google === "fake";
-  const creditsUsed = 0; // ai_usage rollup arrives in phase 4
   const KNOWN_STATUS = ["trialing", "active", "past_due", "canceled", "unpaid"] as const;
   type PlanStatus = (typeof KNOWN_STATUS)[number];
   const rawStatus = me?.plan.status ?? "trialing";
@@ -79,17 +82,11 @@ export default async function ControlPage() {
           <ConnectionsPanel fakeMode={fakeMode} timezone={prefs.timezone} />
         </Suspense>
       </Panel>
-      <Panel title={t("credits.title")} desc={t("credits.desc")}>
-        <div className="num">
-          <b className="font-head text-2xl font-semibold">{creditsUsed}</b>{" "}
-          <span className="text-ink2">
-            {t("credits.used", { cap: me?.entitlements.aiCreditsMonthly ?? 0 })}
-          </span>
-        </div>
-        <div className="my-2 h-2 max-w-[360px] overflow-hidden rounded-full bg-rule">
-          <b className="block h-full w-0 bg-sea" />
-        </div>
-        <p className="text-ink2">{t("credits.pause")}</p>
+      <Panel title={t("ai.title")} desc={t("ai.desc")}>
+        <AiSettings
+          gmailAutoconfirm={prefs.gmailAutoconfirm}
+          capCredits={me?.entitlements.aiCreditsMonthly ?? 0}
+        />
       </Panel>
       <Panel
         title={t("plan.title")}
@@ -107,11 +104,13 @@ export default async function ControlPage() {
       <Panel title={t("activity.title")} desc={t("activity.desc")}>
         <ActivityList items={audit.items} />
       </Panel>
+      <Panel title={t("mailPrivacy.title")} desc={t("mailPrivacy.desc")}>
+        <Suspense fallback={null}>
+          <MailPrivacy retentionDays={prefs.retentionDays} />
+        </Suspense>
+      </Panel>
       <Panel title={t("privacy.title")} desc={t("privacy.desc")}>
         <div className="flex flex-wrap gap-2">
-          <Button disabled title={t("privacy.soon")}>
-            {t("privacy.pause")}
-          </Button>
           <Button disabled title={t("privacy.soon")}>
             {t("privacy.export")}
           </Button>

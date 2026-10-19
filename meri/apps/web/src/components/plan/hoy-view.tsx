@@ -21,6 +21,7 @@ import {
   type DayItem,
 } from "@/lib/plan";
 import type { Task } from "@/lib/types";
+import { WaitingList } from "@/components/commitments/waiting-list";
 import { useCompleteBlock } from "./actions";
 import { ReasonList } from "./reasons";
 import { RiskList } from "./risk-list";
@@ -34,6 +35,7 @@ export interface HoyViewProps {
   /** Injected clock (DEMO_NOW) as ISO; defaults to the browser clock. */
   now?: string;
   pendingTasks: Task[];
+  gmailConnected?: boolean;
 }
 
 const hhmm = (s: string) => {
@@ -42,7 +44,15 @@ const hhmm = (s: string) => {
 };
 
 /** "Hoy": day line + the four questions, fed by the persisted plan (never planned on request). */
-export function HoyView({ timezone, workStart, workEnd, clients, now: nowIso, pendingTasks }: HoyViewProps) {
+export function HoyView({
+  timezone,
+  workStart,
+  workEnd,
+  clients,
+  now: nowIso,
+  pendingTasks,
+  gmailConnected = false,
+}: HoyViewProps) {
   const t = useTranslations("hoy");
   const tPlan = useTranslations("plan");
   const tTasks = useTranslations("tasks");
@@ -250,7 +260,7 @@ export function HoyView({ timezone, workStart, workEnd, clients, now: nowIso, pe
             )}
           </Section>
           <Section title={t("q4")}>
-            <p className="py-4 text-ink2">{t("emptyWaiting")}</p>
+            <WaitingList timezone={timezone} now={nowIso} gmailConnected={gmailConnected} />
           </Section>
         </div>
       </div>

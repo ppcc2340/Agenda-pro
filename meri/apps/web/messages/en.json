@@ -162,7 +162,14 @@
         "commitment_fulfilled": "You marked a commitment as fulfilled.",
         "followup_reminder": "You scheduled a follow-up reminder.",
         "followup_draft_saved": "Meri saved a follow-up draft in Gmail (not sent).",
-        "task_waiting_created": "You created a “Waiting for” task."
+        "task_waiting_created": "You created a “Waiting for” task.",
+        "commitment_updated": "You edited a commitment.",
+        "followups_muted": "You muted follow-ups for a contact or client.",
+        "followups_unmuted": "You re-enabled follow-ups for a contact or client.",
+        "mail_exclusion_added": "You added a mail exclusion.",
+        "mail_exclusion_removed": "You removed a mail exclusion.",
+        "integration_paused": "You paused reading Google.",
+        "integration_resumed": "You resumed reading Google."
       },
       "undoneOf": "Undone: {text}",
       "undoDone": "Action undone."
@@ -214,9 +221,56 @@
         "plan_applied": "Meri updated your plan: {added, plural, one {one new block} other {# new blocks}}, {removed, plural, one {one removed} other {# removed}}.",
         "daily_digest": "Daily digest: {blocks} blocks, {risks} risks, {proposals} pending proposals.",
         "proposals_new": "{count, plural, one {One new proposal} other {# new proposals}} in Inbox.",
-        "ai_paused": "AI is paused: the monthly cap of {capUsd} USD was reached. Rules and the planner keep working."
+        "ai_paused": "AI is paused: the monthly cap of {capUsd} USD was reached. Rules and the planner keep working.",
+        "followups_due": "{count, plural, one {One suggested follow-up} other {# suggested follow-ups}} in Inbox."
       },
       "seeInHoy": "See in Today"
+    },
+    "ai": {
+      "title": "AI and auto-confirmation",
+      "desc": "How much the AI spends and what it may confirm on its own.",
+      "autoconfirm": "Auto-confirm explicit, high-confidence commitments",
+      "autoconfirmBody": "Only the ones the e-mail makes clear, with a date (confidence ≥ 90 %). Each one shows up in Activity and can be undone. Everything else goes through Inbox.",
+      "autoconfirmOn": "Auto-confirmation on. Each commitment will appear in Activity.",
+      "autoconfirmOff": "Auto-confirmation off.",
+      "used": "of {cap} USD this month ({credits} AI credits in your plan)",
+      "paused": "AI paused",
+      "pause": "At the cap the AI pauses: rules, calendar and plan keep working.",
+      "fakeNote": "Test mode: the rules extractor uses no credits.",
+      "usedAmount": "{used} USD"
+    },
+    "mailPrivacy": {
+      "title": "Mail and privacy",
+      "desc": "What Meri reads from your Gmail and how it forgets it.",
+      "statusReading": "Reading mail",
+      "statusPaused": "Reading paused",
+      "notConnected": "Gmail not connected",
+      "pauseReading": "Pause mail reading",
+      "resume": "Resume reading",
+      "disconnectPurge": "Disconnect and purge",
+      "confirmPurge": "Disconnect Gmail and delete indexed threads and pending proposals? Commitments you confirmed are kept.",
+      "pausedToast": "Mail reading paused.",
+      "resumedToast": "Mail reading resumed.",
+      "purgedToast": "Gmail disconnected. Indexed threads and pending proposals deleted.",
+      "retention": "Meri keeps only metadata and a quote of up to 200 characters per thread, and deletes them after {days} days.",
+      "exclusions": "Exclusions",
+      "exclusionsBody": "Senders, domains or labels Meri will never read.",
+      "kindLabel": "Exclusion type",
+      "valueLabel": "Value",
+      "kind": {
+        "sender": "Sender",
+        "domain": "Domain",
+        "label": "Label"
+      },
+      "placeholder": {
+        "sender": "name@domain.com",
+        "domain": "domain.com",
+        "label": "Gmail label"
+      },
+      "add": "Exclude",
+      "invalid": "That value is not valid for this type.",
+      "removeAria": "Remove exclusion {value}",
+      "noExclusions": "No exclusions. Newsletters and automated mail are already discarded by rules."
     }
   },
   "login": {
@@ -364,7 +418,8 @@
       "explicit": "Explicit",
       "inferred": "Inferred",
       "suggested": "Suggestion",
-      "reschedule": "Reschedule"
+      "reschedule": "Reschedule",
+      "followup": "Follow-up"
     },
     "noDate": "No date",
     "forDate": "Due: {date}",
@@ -383,7 +438,8 @@
     "toasts": {
       "confirmed": "Added. Meri will schedule it in the next gap.",
       "dismissed": "Dismissed.",
-      "batch": "{n} confirmed."
+      "batch": "{n} confirmed.",
+      "commitmentConfirmed": "Confirmed. It is now in your commitments."
     },
     "editAction": "Action",
     "editDate": "Date",
@@ -392,6 +448,18 @@
       "title": "Meri proposes to reorganize your plan",
       "summary": "{moved, plural, one {one moved} other {# moved}} · {added, plural, one {one new} other {# new}} · {removed, plural, one {one removed} other {# removed}}",
       "review": "Review the changes in Today"
+    },
+    "commitment": {
+      "from": "{who} commits to you",
+      "to": "You commit to {who}",
+      "openThread": "Open thread in Gmail",
+      "waitingTask": "Create a “Waiting for” task so it is not forgotten"
+    },
+    "followup": {
+      "title": "Follow-up with {who}",
+      "overdue": "{who} owed you “{action}” and is {days, plural, one {one day} other {# days}} late.",
+      "unanswered": "{who} has not replied to your e-mail in {days, plural, one {one day} other {# days}}.",
+      "prepare": "Prepare follow-up"
     }
   },
   "capture": {
@@ -435,7 +503,9 @@
     "denied": "The connection was not completed.",
     "disconnected": "Disconnected. Mirrored events were deleted.",
     "confirmDisconnect": "Disconnect and delete mirrored events?",
-    "syncQueued": "Sync started."
+    "syncQueued": "Sync started.",
+    "connectGmail": "Connect Gmail",
+    "connectedGmail": "Gmail connected. Meri only reads and creates drafts; it never sends."
   },
   "plan": {
     "why": "Why it is here.",
@@ -509,5 +579,55 @@
       "accepted": "Changes applied.",
       "undone": "Changes undone."
     }
+  },
+  "commitments": {
+    "direction": "Direction",
+    "owed_by_me": "I owe ({n})",
+    "owed_to_me": "Owed to me ({n})",
+    "clearFilter": "Clear filter",
+    "emptyFilter": "No commitments match this filter.",
+    "emptyWaiting": "Nobody owes you anything right now.",
+    "noCounterparty": "No counterparty",
+    "openThread": "Open thread in Gmail",
+    "prepareFollowup": "Prepare follow-up",
+    "followup": "Follow up",
+    "received": "Received",
+    "fulfilled": "Done",
+    "status": {
+      "proposed": "Proposed",
+      "confirmed": "Confirmed",
+      "at_risk": "Overdue",
+      "overdue": "Overdue",
+      "broken": "Broken",
+      "fulfilled": "Fulfilled",
+      "dismissed": "Dismissed"
+    },
+    "kind": {
+      "explicit": "Explicit",
+      "inferred": "Inferred",
+      "suggested": "Suggestion"
+    },
+    "directionLabel": {
+      "owed_by_me": "I owe",
+      "owed_to_me": "Owed to me"
+    },
+    "toasts": {
+      "fulfilled": "Done. Nice work.",
+      "received": "Marked as received."
+    },
+    "quote": "“{text}”"
+  },
+  "followup": {
+    "title": "Follow-up for {who}",
+    "meta": "To: {to}. Subject: {subject}",
+    "note": "Meri only creates drafts. You decide when to send it.",
+    "cancel": "Cancel",
+    "remind": "Remind me tomorrow",
+    "save": "Save draft in Gmail",
+    "bodyLabel": "Draft",
+    "savedToast": "Draft saved in Gmail. Meri does not send e-mail.",
+    "remindToast": "Reminder created for tomorrow.",
+    "sourceAi": "Written by the AI from this commitment's context. Review it before saving.",
+    "sourceTemplate": "Meri template. You can edit it before saving."
   }
 }

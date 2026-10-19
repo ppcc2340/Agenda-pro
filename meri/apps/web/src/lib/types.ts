@@ -30,6 +30,7 @@ export interface Proposal {
   payload: Record<string, unknown>;
   confidence: number | null;
   explanation: string | null;
+  sourceRef: { type: string; id: string; url?: string } | null;
   createdAt: string;
 }
 
@@ -153,4 +154,99 @@ export interface Notification {
   day: string;
   readAt: string | null;
   createdAt: string;
+}
+
+// ---------- Commitments (phase 2) ----------
+export type CommitmentDirection = "owed_by_me" | "owed_to_me";
+export type CommitmentKind = "explicit" | "inferred" | "suggested";
+export type CommitmentStatus = "proposed" | "confirmed" | "fulfilled" | "at_risk" | "broken" | "dismissed";
+
+export interface Commitment {
+  id: string;
+  clientId: string | null;
+  direction: CommitmentDirection;
+  kind: CommitmentKind;
+  status: CommitmentStatus;
+  counterpartyEmail: string | null;
+  counterpartyName: string | null;
+  action: string;
+  dueAt: string | null;
+  dueText: string | null;
+  confidence: number | null;
+  evidence: string | null;
+  threadId: string | null;
+  threadUrl: string | null;
+  taskId: string | null;
+  origin: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Payload of a `commitment` proposal (ai.extract_commitments). */
+export interface CommitmentPayload {
+  commitmentId: string;
+  direction: CommitmentDirection;
+  action: string;
+  dueAt: string | null;
+  dueText: string | null;
+  kind: CommitmentKind;
+  confidence: number;
+  evidence: string;
+  counterpartyEmail: string | null;
+  counterpartyName: string | null;
+  clientId: string | null;
+  threadId: string;
+  externalThreadId: string;
+  subject: string | null;
+  externalMessageId: string;
+}
+
+/** Payload of a `followup` proposal (followups.scan). */
+export interface FollowupPayload {
+  kind: "overdue_commitment" | "unanswered_thread";
+  commitmentId: string | null;
+  threadId: string | null;
+  externalThreadId: string | null;
+  subject: string | null;
+  action: string;
+  dueAt: string | null;
+  dueText: string | null;
+  daysLate: number;
+  counterpartyEmail: string | null;
+  counterpartyName: string | null;
+  clientId: string | null;
+  clientName: string | null;
+  suggestedAction: "draft" | "waiting_task";
+}
+
+export interface FollowupDraft {
+  to: string;
+  subject: string;
+  body: string;
+  source: "ai" | "template";
+  language: "es" | "en";
+}
+
+export interface Contact {
+  id: string;
+  clientId: string | null;
+  email: string;
+  name: string | null;
+  muted: boolean;
+  createdAt: string;
+}
+
+export interface MailExclusion {
+  id: string;
+  kind: "sender" | "domain" | "label";
+  value: string;
+  createdAt: string;
+}
+
+export interface AiUsage {
+  period: string;
+  usedUsd: number;
+  capUsd: number;
+  paused: boolean;
+  mode: "fake" | "live";
 }

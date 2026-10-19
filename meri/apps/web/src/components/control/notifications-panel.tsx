@@ -16,6 +16,7 @@ const TEMPLATES = [
   "daily.digest",
   "proposals.new",
   "ai.paused",
+  "followups.due",
 ] as const;
 type Template = (typeof TEMPLATES)[number];
 const isTemplate = (s: string): s is Template => (TEMPLATES as readonly string[]).includes(s);

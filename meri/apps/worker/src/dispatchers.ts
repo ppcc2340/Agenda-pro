@@ -86,7 +86,7 @@ export async function dispatchDailyReview(deps: DispatcherDeps): Promise<number>
  * followups.scan (F-08): hourly for every onboarded workspace with a Gmail account or open third-party commitments.
  * jobId per workspace and hour bucket so retries within the hour collapse.
  */
-export async function dispatchFollowupsScan(deps: DispatcherDeps): Promise<number> {
+export async function dispatchFollowupsScan(deps: DispatcherDeps, everyMs = 3_600_000): Promise<number> {
   const rows = await deps.adminSql<{ workspaceId: string }[]>`
     select p.workspace_id as "workspaceId" from preferences p
     where p.onboarded_at is not null and (
@@ -96,7 +96,7 @@ export async function dispatchFollowupsScan(deps: DispatcherDeps): Promise<numbe
               and c.direction = 'owed_to_me' and c.status in ('confirmed', 'at_risk')))
     limit 5000`;
   const date = deps.now().toISOString().slice(0, 10);
-  const bucket = String(Math.floor(deps.now().getTime() / 3_600_000));
+  const bucket = String(Math.floor(Date.now() / everyMs)); // wall clock: DEMO_NOW is frozen
   for (const row of rows) {
     await deps.dispatcher.enqueue(
       FollowupsScanJob,
