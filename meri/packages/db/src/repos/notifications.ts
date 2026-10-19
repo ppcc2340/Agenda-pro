@@ -1,4 +1,4 @@
-import { and, count, desc, eq, isNull, lt } from "drizzle-orm";
+import { and, count, desc, eq, isNull, lt, sql } from "drizzle-orm";
 import { notifications } from "../schema";
 import type { WorkspaceTx } from "../workspace";
 import { newId, type WorkspaceId } from "../ids";
@@ -99,4 +99,24 @@ export async function markNotificationRead(
     .where(and(eq(notifications.workspaceId, workspaceId), eq(notifications.id, id)))
     .returning();
   return row ? toView(row) : null;
+}
+
+/** True when a notification with this template already references the entity (one alert per item, ever). */
+export async function notificationExistsForRef(
+  tx: WorkspaceTx,
+  workspaceId: WorkspaceId,
+  template: string,
+  ref: { type: string; id: string },
+): Promise<boolean> {
+  const [row] = await tx
+    .select({ n: count() })
+    .from(notifications)
+    .where(
+      and(
+        eq(notifications.workspaceId, workspaceId),
+        eq(notifications.template, template),
+        sql`${notifications.refs} @> ${JSON.stringify([ref])}::jsonb`,
+      ),
+    );
+  return (row?.n ?? 0) > 0;
 }

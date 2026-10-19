@@ -34,6 +34,7 @@ import { mailRoutes } from "./routes/integrations-mail";
 import { commitmentRoutes } from "./routes/commitments";
 import { contactRoutes } from "./routes/contacts";
 import { clientRoutes } from "./routes/clients";
+import { briefingRoutes } from "./routes/briefings";
 import { getEntitlementMaxClients } from "@meri/db";
 
 export interface AppDeps {
@@ -173,6 +174,12 @@ export async function buildApp(deps: AppDeps) {
   await app.register(clientRoutes, {
     now: deps.now,
     maxClientsFor: (tx, workspaceId) => getEntitlementMaxClients(tx, workspaceId),
+  });
+  await app.register(briefingRoutes, {
+    now: deps.now,
+    ai: deps.integrations.ai,
+    flags: deps.flags ?? new InMemoryFlagStore(),
+    costCapUsd: config.env.AI_MONTHLY_COST_CAP_USD_PER_USER,
   });
   await app.register(mailRoutes, {
     now: deps.now,

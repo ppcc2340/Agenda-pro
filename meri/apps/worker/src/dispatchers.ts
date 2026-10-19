@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { Logger } from "@meri/config";
 import {
+  BriefingsPrepareJob,
   CalendarSyncJob,
   ClientsScanJob,
   DailyReviewJob,
@@ -125,6 +126,27 @@ export async function dispatchClientsScan(deps: DispatcherDeps): Promise<number>
     );
   }
   if (rows.length > 0) deps.logger.info({ workspaces: rows.length }, "clients scan dispatched");
+  return rows.length;
+}
+
+/** briefings.prepare (D-043): once a day per workspace with the preference on and a client meeting ahead. */
+export async function dispatchBriefingsPrepare(deps: DispatcherDeps): Promise<number> {
+  const horizon = new Date(deps.now().getTime() + 2 * 86_400_000);
+  const rows = await deps.adminSql<{ workspaceId: string }[]>`
+    select p.workspace_id as "workspaceId" from preferences p
+    where p.onboarded_at is not null and p.briefing_before_meetings
+      and exists (select 1 from calendar_events e where e.workspace_id = p.workspace_id
+                  and e.client_id is not null and e.origin = 'external' and e.starts_at between ${deps.now()} and ${horizon})
+    limit 5000`;
+  const date = deps.now().toISOString().slice(0, 10);
+  for (const row of rows) {
+    await deps.dispatcher.enqueue(
+      BriefingsPrepareJob,
+      { workspaceId: row.workspaceId, traceId: randomUUID(), date },
+      { jobId: `briefings.prepare_${row.workspaceId}_${date}` },
+    );
+  }
+  if (rows.length > 0) deps.logger.info({ workspaces: rows.length }, "briefings prepare dispatched");
   return rows.length;
 }
 

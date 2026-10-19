@@ -6,6 +6,7 @@ import { ADMIN_WORKSPACE_CONTEXT, assertAppRole, createDb } from "@meri/db";
 import { createIntegrations, FakeAiClient } from "@meri/integrations";
 import { createDispatcher } from "@meri/jobs";
 import {
+  dispatchBriefingsPrepare,
   dispatchCalendarPolling,
   dispatchClientsScan,
   dispatchDailyReview,
@@ -19,6 +20,7 @@ import {
 const MAX_RETENTION_DAYS = 365;
 import { buildHealthServer } from "./health";
 import { calendarSyncJob } from "./queues/calendar-sync";
+import { briefingsPrepareJob } from "./queues/briefings-prepare";
 import { clientsScanJob } from "./queues/clients-scan";
 import { dailyReviewJob } from "./queues/daily-review";
 import { gmailSyncJob } from "./queues/gmail-sync";
@@ -55,6 +57,7 @@ async function main(): Promise<void> {
   registry.register(gmailSyncJob(handlerDeps, dispatcher));
   registry.register(followupsScanJob(handlerDeps));
   registry.register(clientsScanJob(handlerDeps));
+  registry.register(briefingsPrepareJob(handlerDeps));
   registry.register(dataRetentionJob({ ...handlerDeps, maxRetentionDays: MAX_RETENTION_DAYS }));
   registry.register(
     extractCommitmentsJob({ ...handlerDeps, costCapUsd: config.env.AI_MONTHLY_COST_CAP_USD_PER_USER }),
@@ -100,6 +103,12 @@ async function main(): Promise<void> {
     () => dispatchClientsScan({ adminSql, dispatcher, logger, now }),
     logger,
   );
+  const stopBriefings = schedule(
+    "briefings.prepare",
+    config.isProduction ? 60 * 60_000 : 60_000,
+    () => dispatchBriefingsPrepare({ adminSql, dispatcher, logger, now }),
+    logger,
+  );
   const stopRetention = schedule(
     "data.retention",
     6 * 60 * 60_000,
@@ -128,6 +137,7 @@ async function main(): Promise<void> {
         "ai.extract_commitments",
         "followups.scan",
         "clients.scan",
+        "briefings.prepare",
         "data.retention",
       ],
     },
@@ -141,6 +151,7 @@ async function main(): Promise<void> {
     stopMailPolling();
     stopFollowups();
     stopClientsScan();
+    stopBriefings();
     stopRetention();
     await health.close();
     await registry.close();

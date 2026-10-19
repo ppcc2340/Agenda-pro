@@ -35,17 +35,15 @@ export const CaptureProposal = z.object({
 });
 export type CaptureProposal = z.infer<typeof CaptureProposal>;
 
-/** AI-4: briefing. Every statement must cite a source entity. */
-export const Briefing = z.object({
-  summary: z.string().max(1200),
-  items: z
-    .array(
-      z.object({
-        text: z.string().max(400),
-        sourceType: z.enum(["task", "commitment", "thread", "event", "document"]),
-        sourceId: z.string(),
-      }),
-    )
-    .max(30),
+/** AI-4 briefing (D-043, ADR 0005): every claim cites one source item from the client context; nothing else. */
+export const BRIEFING_KINDS = ["pending", "commitment", "communication", "decision", "risk"] as const;
+export const BRIEFING_SOURCE_TYPES = ["task", "commitment", "thread", "event"] as const;
+export const BriefingItem = z.object({
+  claim: z.string().min(3).max(300),
+  kind: z.enum(BRIEFING_KINDS),
+  sourceType: z.enum(BRIEFING_SOURCE_TYPES),
+  sourceId: z.string().min(1).max(80),
 });
+export type BriefingItem = z.infer<typeof BriefingItem>;
+export const Briefing = z.object({ items: z.array(BriefingItem).max(30) });
 export type Briefing = z.infer<typeof Briefing>;

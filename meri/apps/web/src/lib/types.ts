@@ -278,3 +278,22 @@ export interface ClientLinkPayload {
   contacts: number;
   threads: number;
 }
+
+export interface BriefingItem {
+  claim: string;
+  kind: "pending" | "commitment" | "communication" | "decision" | "risk";
+  sourceType: "task" | "commitment" | "thread" | "event";
+  sourceId: string;
+  sourceTitle: string | null;
+  url: string | null;
+}
+
+export interface Briefing {
+  clientId: string;
+  clientName: string;
+  eventId: string | null;
+  source: "rules" | "ai";
+  generatedAt: string;
+  reused: boolean;
+  items: BriefingItem[];
+}

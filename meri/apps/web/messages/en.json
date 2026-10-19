@@ -221,9 +221,11 @@
         "daily_digest": "Daily digest: {blocks} blocks, {risks} risks, {proposals} pending proposals.",
         "proposals_new": "{count, plural, one {One new proposal} other {# new proposals}} in Inbox.",
         "ai_paused": "AI is paused: the monthly cap of {capUsd} USD was reached. Rules and the planner keep working.",
-        "followups_due": "{count, plural, one {One suggested follow-up} other {# suggested follow-ups}} in Inbox."
+        "followups_due": "{count, plural, one {One suggested follow-up} other {# suggested follow-ups}} in Inbox.",
+        "briefing_suggested": "Meeting \"{title}\" with {clientName}: open the briefing before you go."
       },
-      "seeInHoy": "See in Today"
+      "seeInHoy": "See in Today",
+      "seeClients": "See clients"
     },
     "ai": {
       "title": "AI and auto-confirmation",
@@ -237,7 +239,11 @@
       "pause": "At the cap the AI pauses: rules, calendar and plan keep working.",
       "fakeNote": "Test mode: the rules extractor uses no credits.",
       "usedAmount": "{used} USD",
-      "credits": "Your plan includes {credits} AI credits a month; spend is shown in USD so you know what it costs."
+      "credits": "Your plan includes {credits} AI credits a month; spend is shown in USD so you know what it costs.",
+      "briefing": "Remind me one day before each client meeting",
+      "briefingBody": "Meri suggests opening the client briefing. The AI is not called until you open it.",
+      "briefingOn": "Briefing reminders on.",
+      "briefingOff": "Briefing reminders off."
     },
     "mailPrivacy": {
       "title": "Mail and privacy",
@@ -681,6 +687,32 @@
       "updated": "Client saved.",
       "archived": "Client archived.",
       "restored": "Client restored."
+    },
+    "briefing": {
+      "open": "Briefing",
+      "title": "Briefing for {name}",
+      "desc": "Open items, commitments, latest communications, decisions and risks. Every point links to its source.",
+      "generated": "Generated {when} ({source}).",
+      "sourceAi": "AI, verified by rules",
+      "sourceRules": "rules",
+      "refresh": "Regenerate",
+      "close": "Close",
+      "loading": "Preparing the briefing…",
+      "empty": "Nothing to prepare: this client has no open items, commitments or recent mail.",
+      "kind": {
+        "risk": "Risks",
+        "commitment": "Commitments",
+        "pending": "Open items",
+        "decision": "Decisions and meetings",
+        "communication": "Latest communications"
+      },
+      "source": {
+        "task": "Task",
+        "commitment": "Commitment",
+        "thread": "Mail",
+        "event": "Meeting"
+      },
+      "openSource": "See source: {title}"
     }
   }
 }

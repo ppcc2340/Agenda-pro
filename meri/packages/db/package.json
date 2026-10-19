@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@meri/config": "workspace:*",
+    "@meri/core": "workspace:*",
     "drizzle-orm": "^0.45.2",
     "postgres": "^3.4.4",
     "uuid": "^11.0.0",

@@ -221,9 +221,11 @@
         "daily_digest": "Resumen del día: {blocks} bloques, {risks} riesgos, {proposals} propuestas pendientes.",
         "proposals_new": "{count, plural, one {Una propuesta nueva} other {# propuestas nuevas}} en Entrada.",
         "ai_paused": "La IA está en pausa: se alcanzó el tope mensual de {capUsd} USD. Las reglas y el planificador siguen funcionando.",
-        "followups_due": "{count, plural, one {Un seguimiento sugerido} other {# seguimientos sugeridos}} en Entrada."
+        "followups_due": "{count, plural, one {Un seguimiento sugerido} other {# seguimientos sugeridos}} en Entrada.",
+        "briefing_suggested": "Reunión «{title}» con {clientName}: abre el briefing antes de ir."
       },
-      "seeInHoy": "Ver en Hoy"
+      "seeInHoy": "Ver en Hoy",
+      "seeClients": "Ver clientes"
     },
     "ai": {
       "title": "IA y auto-confirmación",
@@ -237,7 +239,11 @@
       "pause": "Al llegar al límite, la IA se pausa: las reglas, el calendario y el plan siguen funcionando.",
       "fakeNote": "Modo de pruebas: el extractor por reglas no consume créditos.",
       "usedAmount": "{used} USD",
-      "credits": "Tu plan incluye {credits} créditos de IA al mes; el gasto se muestra en USD para que sepas qué cuesta."
+      "credits": "Tu plan incluye {credits} créditos de IA al mes; el gasto se muestra en USD para que sepas qué cuesta.",
+      "briefing": "Avisarme un día antes de cada reunión con un cliente",
+      "briefingBody": "Meri te sugiere abrir el briefing del cliente. No llama a la IA hasta que lo abras.",
+      "briefingOn": "Avisos de briefing activados.",
+      "briefingOff": "Avisos de briefing desactivados."
     },
     "mailPrivacy": {
       "title": "Correo y privacidad",
@@ -681,6 +687,32 @@
       "updated": "Cliente guardado.",
       "archived": "Cliente archivado.",
       "restored": "Cliente restaurado."
+    },
+    "briefing": {
+      "open": "Briefing",
+      "title": "Briefing de {name}",
+      "desc": "Pendientes, compromisos, últimas comunicaciones, decisiones y riesgos. Cada punto enlaza a su fuente.",
+      "generated": "Generado el {when} ({source}).",
+      "sourceAi": "IA, verificado por reglas",
+      "sourceRules": "reglas",
+      "refresh": "Regenerar",
+      "close": "Cerrar",
+      "loading": "Preparando el briefing…",
+      "empty": "Nada que preparar: este cliente no tiene pendientes, compromisos ni correos recientes.",
+      "kind": {
+        "risk": "Riesgos",
+        "commitment": "Compromisos",
+        "pending": "Pendientes",
+        "decision": "Decisiones y reuniones",
+        "communication": "Últimas comunicaciones"
+      },
+      "source": {
+        "task": "Tarea",
+        "commitment": "Compromiso",
+        "thread": "Correo",
+        "event": "Reunión"
+      },
+      "openSource": "Ver fuente: {title}"
     }
   }
 }

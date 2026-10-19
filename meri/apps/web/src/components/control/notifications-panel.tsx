@@ -17,6 +17,7 @@ const TEMPLATES = [
   "proposals.new",
   "ai.paused",
   "followups.due",
+  "briefing.suggested",
 ] as const;
 type Template = (typeof TEMPLATES)[number];
 const isTemplate = (s: string): s is Template => (TEMPLATES as readonly string[]).includes(s);
@@ -50,7 +51,11 @@ export function NotificationsPanel({ initial }: { initial: Notification[] }) {
               {format.dateTime(new Date(n.createdAt), { dateStyle: "medium", timeStyle: "short" })}
             </div>
           </div>
-          {n.kind === "risk" || n.kind === "plan" ? (
+          {n.template === "briefing.suggested" ? (
+            <Button size="sm" asChild>
+              <Link href="/proyectos?tab=clientes">{t("seeClients")}</Link>
+            </Button>
+          ) : n.kind === "risk" || n.kind === "plan" ? (
             <Button size="sm" asChild>
               <Link href="/hoy">{t("seeInHoy")}</Link>
             </Button>

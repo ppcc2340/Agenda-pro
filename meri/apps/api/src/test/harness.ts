@@ -1,5 +1,5 @@
 import { encode } from "@auth/core/jwt";
-import { createLogger, parseEnv, resolveModes, type AppConfig } from "@meri/config";
+import { createLogger, parseEnv, resolveModes, type AppConfig, type FeatureFlagStore } from "@meri/config";
 import {
   bootstrapAccount,
   createDb,
@@ -54,7 +54,9 @@ export async function migrateTestDb(): Promise<void> {
   await ensureDevRoles(TEST_ADMIN_URL);
 }
 
-export async function createTestApp(options: { rateLimitMax?: number } = {}): Promise<TestApp> {
+export async function createTestApp(
+  options: { rateLimitMax?: number; flags?: FeatureFlagStore } = {},
+): Promise<TestApp> {
   const config = testConfig();
   const handle = createDb(TEST_APP_URL, { max: 3 });
   const integrations = createIntegrations(config, { now: () => NOW });
@@ -68,6 +70,7 @@ export async function createTestApp(options: { rateLimitMax?: number } = {}): Pr
     logger: createLogger({ name: "api-test", level: "silent" }),
     now: () => NOW,
     rateLimitMax: options.rateLimitMax ?? 1000,
+    flags: options.flags,
   });
   const name = sessionCookieName(false);
   return {

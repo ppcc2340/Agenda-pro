@@ -47,3 +47,4 @@ export {
 export { scanFollowups, followupDedupeHash, type FollowupsScanResult } from "./handlers/followups-scan";
 export { purgeThreads, purgeAccountMail, applyMailRetention, type PurgeResult } from "./handlers/mail-purge";
 export { scanClients, clientLinkDedupeHash, type ClientsScanResult, type ClientLinkPayload } from "./handlers/clients-scan";
+export { prepareBriefings, BRIEFING_LOOKAHEAD_MS, type BriefingsPrepareResult } from "./handlers/briefings-prepare";

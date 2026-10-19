@@ -85,3 +85,5 @@ export * from "./repos/threads";
 export * from "./repos/commitments";
 export * from "./repos/contacts";
 export * from "./repos/ai-usage";
+export * from "./repos/snapshot";
+export * from "./repos/briefings";

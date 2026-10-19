@@ -21,6 +21,7 @@ interface Preferences {
   contingencyPct: number;
   autonomy: "suggest_only" | "auto_low_risk";
   gmailAutoconfirm: boolean;
+  briefingBeforeMeetings: boolean;
   retentionDays: number;
 }
 interface AuditPage {
@@ -85,6 +86,7 @@ export default async function ControlPage() {
       <Panel title={t("ai.title")} desc={t("ai.desc")}>
         <AiSettings
           gmailAutoconfirm={prefs.gmailAutoconfirm}
+          briefingBeforeMeetings={prefs.briefingBeforeMeetings}
           capCredits={me?.entitlements.aiCreditsMonthly ?? 0}
         />
       </Panel>

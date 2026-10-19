@@ -23,6 +23,10 @@ export const PreferencesSchema = z.object({
   gmailAutoconfirm: z.boolean(),
   followupDays: z.number().int().min(1).max(30),
   retentionDays: z.number().int().min(7).max(365),
+  /** D-043: notify one day before a meeting with a client so the briefing can be opened in time. */
+  briefingBeforeMeetings: z.boolean(),
+  /** D-045: vertical template (source of truth; `workspaces.vertical` is deprecated). */
+  vertical: z.enum(["legal", "consulting", "generic"]),
 });
 export type Preferences = z.infer<typeof PreferencesSchema>;
 export const PreferencesPatchSchema = PreferencesSchema.partial().refine(

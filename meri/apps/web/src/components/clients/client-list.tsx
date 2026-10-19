@@ -1,6 +1,6 @@
 "use client";
 
-import { Archive, ArchiveRestore, Pencil, Plus } from "lucide-react";
+import { Archive, ArchiveRestore, FileText, Pencil, Plus } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import { formatMinutes } from "@/lib/format";
 import { idempotencyKey, keys, useApiMutation, useClients } from "@/lib/hooks/use-api";
 import { clientColorVar } from "@/lib/plan";
 import type { Client } from "@/lib/types";
+import { BriefingDialog } from "./briefing-dialog";
 import { ClientForm, type ClientFormValues } from "./client-form";
 
 /** Clientes tab (F-09, demo tabClientes): colour, open commitments, week hours, risks; create / edit / archive. */
@@ -24,6 +25,7 @@ export function ClientList() {
   const [showArchived, setShowArchived] = useState(false);
   const [editing, setEditing] = useState<Client | null>(null);
   const [open, setOpen] = useState(false);
+  const [briefing, setBriefing] = useState<{ clientId: string; clientName: string } | null>(null);
   const list = useClients({ stats: true, includeArchived: showArchived });
   const invalidate = [keys.clients, keys.audit];
   const save = useApiMutation(
@@ -138,6 +140,15 @@ export function ClientList() {
               <div className="mt-auto flex flex-wrap gap-1.5 pt-1">
                 <Button
                   size="sm"
+                  variant="primary"
+                  disabled={Boolean(c.archivedAt)}
+                  onClick={() => setBriefing({ clientId: c.id, clientName: c.name })}
+                >
+                  <FileText size={14} aria-hidden="true" />
+                  {t("briefing.open")}
+                </Button>
+                <Button
+                  size="sm"
                   onClick={() => {
                     setEditing(c);
                     setOpen(true);
@@ -165,6 +176,7 @@ export function ClientList() {
           );
         })}
       </ul>
+      <BriefingDialog target={briefing} onClose={() => setBriefing(null)} />
       <ClientForm
         open={open}
         onOpenChange={setOpen}

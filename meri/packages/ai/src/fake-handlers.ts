@@ -1,5 +1,6 @@
 import type { FakeAiClient } from "@meri/integrations";
 import { extractCommitmentsByRules, parseCapture, parseExtractionContext } from "@meri/core";
+import { fakeBriefing } from "./briefing";
 import { templateFollowup, type FollowupInput } from "./followup";
 import type { CaptureProposal, CommitmentExtractionResult } from "./schemas";
 
@@ -75,4 +76,6 @@ export function registerFakeAiHandlers(ai: FakeAiClient): void {
     };
     return { body: templateFollowup(input) };
   });
+  // AI-4: rules briefing over the same isolated context; the policy still verifies every source.
+  ai.register("brief_client", ({ user }) => fakeBriefing(user));
 }

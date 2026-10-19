@@ -22,3 +22,13 @@ export {
   EXTRACT_COMMITMENTS_PROMPT_VERSION,
 } from "./prompts/extract-commitments";
 export { FOLLOWUP_DRAFT_SYSTEM_PROMPT, FOLLOWUP_DRAFT_PROMPT_VERSION } from "./prompts/followup-draft";
+export {
+  generateBriefing,
+  applyBriefingPolicy,
+  rulesBriefing,
+  fakeBriefing,
+  BRIEFING_TIMEOUT_MS,
+  MAX_BRIEFING_ITEMS,
+  type BriefingResult,
+} from "./briefing";
+export { BRIEFING_SYSTEM_PROMPT, BRIEFING_PROMPT_VERSION } from "./prompts/briefing";

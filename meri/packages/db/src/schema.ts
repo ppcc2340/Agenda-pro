@@ -147,7 +147,7 @@ export const preferences = pgTable("preferences", {
   /** docs/06 §5: retention of dismissed proposals and snippets, in days. */
   retentionDays: integer("retention_days").notNull().default(90),
   /** D-045: vertical template chosen in onboarding (legal | consulting | generic). */
-  vertical: text("vertical").notNull().default("generic"),
+  vertical: text("vertical").$type<"legal" | "consulting" | "generic">().notNull().default("generic"),
   /** D-043: create a "prepare briefing" task the day before a client meeting. */
   briefingBeforeMeetings: boolean("briefing_before_meetings").notNull().default(true),
   updatedAt: updatedAt(),
@@ -424,7 +424,9 @@ export const briefings = pgTable(
       .references(() => clients.id, { onDelete: "cascade" }),
     eventId: uuid("event_id"),
     items: jsonb("items")
-      .$type<{ claim: string; kind: string; sourceType: string; sourceId: string; url?: string }[]>()
+      .$type<
+        { claim: string; kind: string; sourceType: string; sourceId: string; url?: string; sourceTitle?: string }[]
+      >()
       .notNull()
       .default([]),
     /** Hash of the client snapshot the briefing was built from: unchanged → reuse (< 10 s, F-11 AC1). */
