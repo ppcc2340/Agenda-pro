@@ -146,6 +146,10 @@ export const preferences = pgTable("preferences", {
   followupDays: integer("followup_days").notNull().default(3),
   /** docs/06 §5: retention of dismissed proposals and snippets, in days. */
   retentionDays: integer("retention_days").notNull().default(90),
+  /** D-045: vertical template chosen in onboarding (legal | consulting | generic). */
+  vertical: text("vertical").notNull().default("generic"),
+  /** D-043: create a "prepare briefing" task the day before a client meeting. */
+  briefingBeforeMeetings: boolean("briefing_before_meetings").notNull().default(true),
   updatedAt: updatedAt(),
 });
 
@@ -160,6 +164,9 @@ export const clients = pgTable(
     color: text("color"),
     /** F-08 AC2: no follow-up proposals for this client. */
     followupsMuted: boolean("followups_muted").notNull().default(false),
+    /** Phase 3 (D-039/D-045): free notes and vertical template tags ("litigio", "fiscal", …). */
+    notes: text("notes"),
+    verticalTags: jsonb("vertical_tags").$type<string[]>().notNull().default([]),
     archivedAt: timestamp("archived_at", { withTimezone: true }),
     createdAt: createdAt(),
     deletedAt: deletedAt(),
@@ -174,6 +181,8 @@ export const projects = pgTable(
     workspaceId: workspaceId(),
     clientId: uuid("client_id").references(() => clients.id),
     name: text("name").notNull(),
+    /** Matter type from the vertical template (D-045), free text. */
+    kind: text("kind"),
     dueAt: timestamp("due_at", { withTimezone: true }),
     status: text("status").notNull().default("active"),
     createdAt: createdAt(),
@@ -269,6 +278,7 @@ export const calendarEvents = pgTable(
   (t) => [
     uniqueIndex("cal_events_ext_uq").on(t.workspaceId, t.integrationAccountId, t.externalId),
     index("cal_events_ws_start_idx").on(t.workspaceId, t.startsAt),
+    index("cal_events_ws_client_start_idx").on(t.workspaceId, t.clientId, t.startsAt),
   ],
 );
 
@@ -314,7 +324,10 @@ export const threadsIndex = pgTable(
     processedAt: timestamp("processed_at", { withTimezone: true }),
     createdAt: createdAt(),
   },
-  (t) => [uniqueIndex("threads_ext_uq").on(t.workspaceId, t.integrationAccountId, t.externalThreadId)],
+  (t) => [
+    uniqueIndex("threads_ext_uq").on(t.workspaceId, t.integrationAccountId, t.externalThreadId),
+    index("threads_ws_client_last_idx").on(t.workspaceId, t.clientId, t.lastMessageAt),
+  ],
 );
 
 // ---------- Commitments & proposals ----------
@@ -390,7 +403,45 @@ export const timeEntries = pgTable(
     createdAt: createdAt(),
     approvedAt: timestamp("approved_at", { withTimezone: true }),
   },
-  (t) => [index("time_ws_day_idx").on(t.workspaceId, t.day)],
+  (t) => [
+    index("time_ws_day_idx").on(t.workspaceId, t.day),
+    index("time_ws_client_day_idx").on(t.workspaceId, t.clientId, t.day),
+    // D-042: one entry per inferred source; re-inference is idempotent.
+    uniqueIndex("time_entries_source_uq")
+      .on(t.workspaceId, t.sourceType, t.sourceId)
+      .where(sql`${t.sourceId} is not null`),
+  ],
+);
+
+/** D-043: last generated briefing per client (and optionally per meeting); items carry their source ids. */
+export const briefings = pgTable(
+  "briefings",
+  {
+    id: id(),
+    workspaceId: workspaceId(),
+    clientId: uuid("client_id")
+      .notNull()
+      .references(() => clients.id, { onDelete: "cascade" }),
+    eventId: uuid("event_id"),
+    items: jsonb("items")
+      .$type<{ claim: string; kind: string; sourceType: string; sourceId: string; url?: string }[]>()
+      .notNull()
+      .default([]),
+    /** Hash of the client snapshot the briefing was built from: unchanged → reuse (< 10 s, F-11 AC1). */
+    sourceHash: text("source_hash").notNull(),
+    source: text("source").notNull().default("rules"), // 'rules' | 'ai'
+    generatedAt: timestamp("generated_at", { withTimezone: true }).notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    // One client-level briefing and one per meeting (NULLs are distinct in a plain unique index).
+    uniqueIndex("briefings_ws_client_uq")
+      .on(t.workspaceId, t.clientId)
+      .where(sql`${t.eventId} is null`),
+    uniqueIndex("briefings_ws_client_event_uq")
+      .on(t.workspaceId, t.clientId, t.eventId)
+      .where(sql`${t.eventId} is not null`),
+  ],
 );
 
 // ---------- Integrations ----------

@@ -7,11 +7,9 @@ import { z } from "zod";
 import {
   addMailExclusion,
   audit,
-  listClients,
   listContacts,
   listMailExclusions,
   removeMailExclusion,
-  setClientFollowupsMuted,
   setContactMuted,
   type ContactView,
   type MailExclusionView,
@@ -29,13 +27,6 @@ const ContactJson = z.object({
   createdAt: z.string().datetime(),
 });
 const serializeContact = (c: ContactView) => ({ ...c, createdAt: c.createdAt.toISOString() });
-const ClientJson = z.object({
-  id: z.string(),
-  name: z.string(),
-  color: z.string().nullable(),
-  domains: z.array(z.string()),
-  followupsMuted: z.boolean(),
-});
 const ExclusionJson = z.object({
   id: z.string(),
   kind: z.enum(["sender", "domain", "label"]),
@@ -105,55 +96,6 @@ export function contactRoutes(app: FastifyInstance, options: { now: () => Date }
         return c;
       });
       return serializeContact(updated);
-    },
-  );
-
-  r.get(
-    "/v1/clients",
-    {
-      preHandler: requireSession,
-      schema: { tags: ["clients"], response: { 200: z.object({ items: z.array(ClientJson) }) } },
-    },
-    async (request) => {
-      const session = sessionOf(request);
-      return { items: await request.withWorkspace((tx) => listClients(tx, session.workspaceId)) };
-    },
-  );
-
-  r.patch(
-    "/v1/clients/:id",
-    {
-      preHandler: requireSession,
-      schema: {
-        tags: ["clients"],
-        params: IdParams,
-        body: z.object({ followupsMuted: z.boolean() }),
-        response: { 200: ClientJson },
-      },
-    },
-    async (request) => {
-      const session = sessionOf(request);
-      return request.withWorkspace(async (tx) => {
-        const ok = await setClientFollowupsMuted(
-          tx,
-          session.workspaceId,
-          request.params.id,
-          request.body.followupsMuted,
-        );
-        if (!ok) throw new ApiError("NOT_FOUND", "Client not found.");
-        await audit(
-          tx,
-          { workspaceId: session.workspaceId, actor: "user", actorUserId: session.userId },
-          {
-            action: request.body.followupsMuted ? "followups.muted" : "followups.unmuted",
-            entityType: "client",
-            entityId: request.params.id,
-          },
-        );
-        const client = (await listClients(tx, session.workspaceId)).find((c) => c.id === request.params.id);
-        if (!client) throw new ApiError("NOT_FOUND", "Client not found.");
-        return client;
-      });
     },
   );
 

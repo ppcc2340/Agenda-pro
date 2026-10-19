@@ -27,6 +27,7 @@ export {
   bootstrapAccount,
   getMe,
   getEntitlementRetentionDays,
+  getEntitlementMaxClients,
   type AccountIdentity,
   type BootstrapInput,
   type MeView,
@@ -75,7 +76,7 @@ export {
   releaseIdempotencyKey,
   type StoredResponse,
 } from "./repos/idempotency";
-export { listClients, projectExists, type ClientSummary } from "./repos/clients";
+export * from "./repos/clients";
 export * from "./repos/integrations";
 export * from "./repos/schedule";
 export * from "./repos/notifications";

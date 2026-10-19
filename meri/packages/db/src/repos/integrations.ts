@@ -223,6 +223,8 @@ export interface UpsertEventInput {
   attendees: string[];
   busy: boolean;
   origin: "meri" | "external";
+  /** Resolved by attendees' domains/contacts (D-040); undefined keeps the stored value. */
+  clientId?: string | null;
 }
 
 /** Idempotent by (workspace, account, external_id); a stale etag never overwrites a newer row (docs/07). */
@@ -245,6 +247,7 @@ export async function upsertCalendarEvent(
         allDay: input.allDay,
         attendees: input.attendees,
         busy: input.busy,
+        ...(input.clientId !== undefined ? { clientId: input.clientId } : {}),
         updatedAt: now,
       },
     })

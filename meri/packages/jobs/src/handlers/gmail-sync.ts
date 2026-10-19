@@ -13,8 +13,7 @@ import {
   audit,
   getIntegrationAccount,
   getSyncCursor,
-  listClients,
-  listContacts,
+  listClientRefs,
   listMailExclusions,
   setIntegrationStatus,
   setSyncCursor,
@@ -118,22 +117,13 @@ export async function syncMailAccount(
       getSyncCursor(tx, workspaceId, accountId, MAIL_RESOURCE),
     );
     const { ids, nextCursor, fullResync } = await collectMessageIds(mail, cursor, now);
-    const { exclusions, clients } = await withWorkspace(deps.db, workspaceId, async (tx) => {
-      const contacts = await listContacts(tx, workspaceId);
-      const clientRows = await listClients(tx, workspaceId);
-      return {
-        exclusions: (await listMailExclusions(tx, workspaceId)).map((e): Exclusion => ({
-          kind: e.kind,
-          value: e.value,
-        })),
-        clients: clientRows.map((c) => ({
-          id: c.id,
-          name: c.name,
-          domains: c.domains,
-          contactEmails: contacts.filter((x) => x.clientId === c.id).map((x) => x.email),
-        })),
-      };
-    });
+    const { exclusions, clients } = await withWorkspace(deps.db, workspaceId, async (tx) => ({
+      exclusions: (await listMailExclusions(tx, workspaceId)).map((e): Exclusion => ({
+        kind: e.kind,
+        value: e.value,
+      })),
+      clients: await listClientRefs(tx, workspaceId),
+    }));
 
     const metas: MailMessageMeta[] = [];
     let discarded = 0;

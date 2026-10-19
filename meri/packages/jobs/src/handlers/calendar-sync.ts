@@ -13,6 +13,7 @@ import {
   withWorkspace,
   type WorkspaceId,
   type WorkspaceTx,
+  listClientRefs,
 } from "@meri/db";
 import {
   IntegrationError,
@@ -20,6 +21,7 @@ import {
   type CalendarProvider,
   type OAuthTokens,
 } from "@meri/integrations";
+import { resolveClient } from "@meri/core";
 import type { HandlerDeps } from "./context";
 
 /** One cursor per calendar, like Google's per-calendar syncToken. */
@@ -69,11 +71,14 @@ async function applyPage(
   tx: WorkspaceTx,
   workspaceId: WorkspaceId,
   accountId: string,
+  me: string,
   events: CalendarEvent[],
   now: Date,
 ): Promise<{ upserted: number; removed: number }> {
   let upserted = 0;
   let removed = 0;
+  // D-040: an event belongs to a client when its attendees resolve unambiguously by domain or contact.
+  const refs = await listClientRefs(tx, workspaceId);
   const known = await findCalendarEventEtags(
     tx,
     workspaceId,
@@ -100,6 +105,7 @@ async function applyPage(
         attendees: ev.attendees,
         busy: ev.busy,
         origin: ev.meri ? "meri" : "external",
+        clientId: ev.meri ? undefined : (resolveClient(ev.attendees, me, refs)?.id ?? null),
       },
       now,
     );
@@ -116,6 +122,7 @@ async function syncOneCalendar(
   calendar: CalendarProvider,
   calendarId: string,
   range: { from: string; to: string },
+  me: string,
 ): Promise<{ upserted: number; removed: number; fullResync: boolean }> {
   const now = deps.now();
   const resource = calendarResource(calendarId);
@@ -136,7 +143,7 @@ async function syncOneCalendar(
       continue;
     }
     const counts = await withWorkspace(deps.db, workspaceId, async (tx) => {
-      const c = await applyPage(tx, workspaceId, accountId, page.events, now);
+      const c = await applyPage(tx, workspaceId, accountId, me, page.events, now);
       await setSyncCursor(tx, workspaceId, accountId, resource, page.nextCursor, now);
       return c;
     });
@@ -172,7 +179,7 @@ export async function syncCalendarAccount(
   const result: CalendarSyncResult = { status: "synced", upserted: 0, removed: 0, fullResync: false };
   try {
     for (const cal of await calendar.listCalendars()) {
-      const r = await syncOneCalendar(deps, workspaceId, accountId, calendar, cal.id, range);
+      const r = await syncOneCalendar(deps, workspaceId, accountId, calendar, cal.id, range, tokens.email);
       result.upserted += r.upserted;
       result.removed += r.removed;
       result.fullResync = result.fullResync || r.fullResync;

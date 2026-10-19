@@ -32,6 +32,8 @@ import { notificationRoutes } from "./routes/notifications";
 import { mailRoutes } from "./routes/integrations-mail";
 import { commitmentRoutes } from "./routes/commitments";
 import { contactRoutes } from "./routes/contacts";
+import { clientRoutes } from "./routes/clients";
+import { getEntitlementMaxClients } from "@meri/db";
 
 export interface AppDeps {
   config: AppConfig;
@@ -163,6 +165,10 @@ export async function buildApp(deps: AppDeps) {
     onTasksChanged: deps.onTasksChanged,
   });
   await app.register(contactRoutes, { now: deps.now });
+  await app.register(clientRoutes, {
+    now: deps.now,
+    maxClientsFor: (tx, workspaceId) => getEntitlementMaxClients(tx, workspaceId),
+  });
   await app.register(mailRoutes, {
     now: deps.now,
     dispatcher: deps.dispatcher,

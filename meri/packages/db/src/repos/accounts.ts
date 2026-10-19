@@ -143,3 +143,9 @@ export async function getEntitlementRetentionDays(
   const ent = await tx.query.entitlements.findFirst({ where: eq(entitlements.workspaceId, workspaceId) });
   return ent?.retentionDays ?? 90;
 }
+
+/** Plan ceiling on active clients (docs/08 `max_clients`). */
+export async function getEntitlementMaxClients(tx: WorkspaceTx, workspaceId: WorkspaceId): Promise<number> {
+  const ent = await tx.query.entitlements.findFirst({ where: eq(entitlements.workspaceId, workspaceId) });
+  return ent?.maxClients ?? 10;
+}

@@ -99,6 +99,13 @@
       "when": 1792439000000,
       "tag": "0013_rls_admin_read_only",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1792440845822,
+      "tag": "0014_phase3_clients_time_briefings",
+      "breakpoints": true
     }
   ]
 }
