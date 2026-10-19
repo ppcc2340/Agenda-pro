@@ -2,6 +2,7 @@
 
 import { Check, Pencil, X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
+import Link from "next/link";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -81,6 +82,15 @@ export function InboxList({ timezone }: { timezone: string }) {
           <EmptyState title={tEntrada("emptyTitle")} body={tEntrada("emptyBody")} />
         ) : null}
         {items.map((p) => {
+          if (p.kind === "reschedule") {
+            return (
+              <RescheduleCard
+                key={p.id}
+                proposal={p}
+                onDismiss={() => dismiss.mutate(p.id, { onSuccess: () => toast(t("toasts.dismissed")) })}
+              />
+            );
+          }
           const payload = p.payload as unknown as CapturePayload;
           const isEditing = editing === p.id;
           return (
@@ -208,5 +218,36 @@ export function InboxList({ timezone }: { timezone: string }) {
         })}
       </div>
     </div>
+  );
+}
+
+/** Reschedule proposals (ADR 0003) live in Hoy's "¿Qué podría salir mal?"; here only a summary and a link. */
+function RescheduleCard({ proposal, onDismiss }: { proposal: Proposal; onDismiss: () => void }) {
+  const t = useTranslations("inbox");
+  const summary = (proposal.payload as { summary?: { added: number; removed: number; moved: number } })
+    .summary ?? {
+    added: 0,
+    removed: 0,
+    moved: 0,
+  };
+  return (
+    <article className="flex flex-col gap-3 border-b border-rule border-l-[3px] border-l-dashed border-l-sug bg-[linear-gradient(90deg,var(--sug-soft),transparent_30%)] px-4 py-4 md:flex-row md:items-start md:gap-4">
+      <div className="min-w-0 flex-1">
+        <div className="font-semibold">{t("reschedule.title")}</div>
+        <div className="mt-1 flex flex-wrap items-center gap-3 text-[13px] text-ink2">
+          <span className="num">{t("reschedule.summary", summary)}</span>
+          <Pill variant="sug">{t("kind.reschedule")}</Pill>
+        </div>
+      </div>
+      <div className="flex shrink-0 gap-1.5 md:min-w-[150px] md:flex-col">
+        <Button variant="primary" size="sm" asChild>
+          <Link href="/hoy">{t("reschedule.review")}</Link>
+        </Button>
+        <Button size="sm" variant="quiet" onClick={onDismiss}>
+          <X size={14} aria-hidden="true" />
+          {t("actions.dismiss")}
+        </Button>
+      </div>
+    </article>
   );
 }

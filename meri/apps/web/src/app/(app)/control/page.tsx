@@ -1,13 +1,15 @@
-import { getFormatter, getLocale, getTranslations } from "next-intl/server";
+import { getFormatter, getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { CaptureButton, PageHeader } from "@/components/shell/app-shell";
 import { Suspense } from "react";
 import { ActivityList } from "@/components/control/activity-list";
 import { ConnectionsPanel } from "@/components/control/connections";
+import { NotificationsPanel } from "@/components/control/notifications-panel";
 import { getServerConfig } from "@/server/config";
 import { Button } from "@/components/ui/button";
 import { Pill } from "@/components/ui/pill";
 import { Panel } from "@/components/ui/section";
+import type { Notification } from "@/lib/types";
 import { apiFetch, getMe } from "@/server/api";
 
 interface Preferences {
@@ -24,6 +26,7 @@ interface AuditPage {
     action: string;
     createdAt: string;
     undoneAt: string | null;
+    undoOfAuditId: string | null;
   }[];
   nextCursor: string | null;
 }
@@ -32,11 +35,11 @@ export default async function ControlPage() {
   const t = await getTranslations("control");
   const nav = await getTranslations("nav");
   const format = await getFormatter();
-  const locale = await getLocale();
-  const [me, prefs, audit] = await Promise.all([
+  const [me, prefs, audit, notifications] = await Promise.all([
     getMe(),
     apiFetch<Preferences>("/v1/preferences"),
-    apiFetch<AuditPage>("/v1/audit?limit=8"),
+    apiFetch<AuditPage>("/v1/audit?limit=12"),
+    apiFetch<{ items: Notification[] }>("/v1/notifications?limit=20").catch(() => ({ items: [] })),
   ]);
   const fakeMode = getServerConfig().modes.google === "fake";
   const creditsUsed = 0; // ai_usage rollup arrives in phase 4
@@ -123,8 +126,11 @@ export default async function ControlPage() {
       >
         <Pill variant="plain">{t(`plan.status.${planStatus}`)}</Pill>
       </Panel>
+      <Panel title={t("notifications.title")} desc={t("notifications.desc")}>
+        <NotificationsPanel initial={notifications.items} />
+      </Panel>
       <Panel title={t("activity.title")} desc={t("activity.desc")}>
-        <ActivityList items={audit.items} locale={locale} />
+        <ActivityList items={audit.items} />
       </Panel>
       <Panel title={t("privacy.title")} desc={t("privacy.desc")}>
         <div className="flex flex-wrap gap-2">

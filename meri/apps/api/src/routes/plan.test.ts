@@ -197,6 +197,24 @@ describe("/v1/plan, /v1/audit/:id/undo (F-05, F-13, ADR 0003)", () => {
     expect([...cal.events.values()].filter((e) => e.meri && e.status === "confirmed")).toHaveLength(0);
   });
 
+  it("exposes grouped notifications per tenant and marks them read", async () => {
+    const list = (await t.app.inject({ url: "/v1/notifications", headers: { cookie: cookieA } })).json<{
+      items: { id: string; template: string; readAt: string | null; refs: { id: string }[] }[];
+    }>();
+    const proposed = list.items.find((n) => n.template === "plan.proposed");
+    expect(proposed).toBeDefined();
+    expect(proposed?.refs[0]?.id).toBeTruthy();
+    expect(
+      (await t.app.inject({ url: "/v1/notifications", headers: { cookie: cookieB } })).json<{
+        items: unknown[];
+      }>().items,
+    ).toEqual([]);
+    expect((await post(cookieB, `/v1/notifications/${proposed?.id ?? ""}/read`)).statusCode).toBe(404);
+    const read = await post(cookieA, `/v1/notifications/${proposed?.id ?? ""}/read`);
+    expect(read.statusCode).toBe(200);
+    expect(read.json<{ readAt: string | null }>().readAt).toBe(NOW.toISOString());
+  });
+
   it("rejects unauthenticated and CSRF-less calls", async () => {
     expect((await t.app.inject({ url: "/v1/plan" })).statusCode).toBe(401);
     const noCsrf = await t.app.inject({

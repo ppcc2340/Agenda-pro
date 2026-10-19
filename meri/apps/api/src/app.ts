@@ -28,6 +28,7 @@ import { captureRoutes } from "./routes/capture";
 import { integrationRoutes } from "./routes/integrations";
 import { idempotencyPlugin } from "./plugins/idempotency";
 import { planRoutes } from "./routes/plan";
+import { notificationRoutes } from "./routes/notifications";
 
 export interface AppDeps {
   config: AppConfig;
@@ -147,6 +148,8 @@ export async function buildApp(deps: AppDeps) {
     },
     onTasksChanged: deps.onTasksChanged,
   });
+
+  await app.register(notificationRoutes, { now: deps.now });
 
   app.get("/docs/json", { schema: { hide: true } }, () => app.swagger());
 

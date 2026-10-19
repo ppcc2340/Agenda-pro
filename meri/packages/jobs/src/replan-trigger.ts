@@ -10,10 +10,12 @@ export const REPLAN_DEBOUNCE_MS = 3_000;
  */
 export function enqueueReplan(
   dispatcher: JobDispatcher,
-  now: () => Date,
+  _now: () => Date,
   input: { workspaceId: string; traceId: string; reason: PlannerReplanPayload["reason"] },
 ): Promise<{ id: string }> {
-  const bucket = Math.floor(now().getTime() / REPLAN_DEBOUNCE_MS);
+  // Wall clock on purpose: the injected clock (DEMO_NOW) is frozen in demos and would collapse every replan
+  // into one deduplicated job id.
+  const bucket = Math.floor(Date.now() / REPLAN_DEBOUNCE_MS);
   return dispatcher.enqueue(
     PlannerReplanJob,
     { workspaceId: input.workspaceId, traceId: input.traceId, reason: input.reason },

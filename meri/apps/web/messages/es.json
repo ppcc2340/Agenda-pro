@@ -53,7 +53,17 @@
     "legendSuggested": "Sugerido: espera tu decisión",
     "subtitleEmpty": "Todavía no hay plan. Conecta tu calendario y captura tareas para que Meri lo arme.",
     "unscheduled": "Por programar",
-    "willSchedule": "Meri la programará en el siguiente hueco"
+    "willSchedule": "Meri la programará en el siguiente hueco",
+    "subtitleRisk": "Tu plan cabe con margen. {n, plural, one {Una cosa pide} other {# cosas piden}} atención.",
+    "errorPlan": "No pudimos cargar el plan. Vuelve a intentarlo en unos segundos.",
+    "doneTodayTitle": "Has terminado el plan de hoy",
+    "doneTodayBody": "No queda nada programado. Mira Entrada por si hay compromisos nuevos.",
+    "nowRemaining": "Quedan {time} de este bloque.",
+    "nowStarts": "Empieza a las {time} y dura {duration}.",
+    "whyHere": "Ver por qué está aquí",
+    "whyNow": "Por qué ahora.",
+    "markDoneAria": "Marcar {title} como hecho",
+    "nextBlock": "Nada más por hoy. Tu siguiente bloque: {title}, {when}."
   },
   "entrada": {
     "subtitle": "Meri propone, tú decides. Nada de esto es definitivo hasta que lo confirmes.",
@@ -75,7 +85,14 @@
   "calendario": {
     "subtitle": "Tus reuniones y los bloques de trabajo que Meri reserva para ti.",
     "emptyTitle": "Calendario sin conectar",
-    "emptyBody": "Conecta Google Calendar desde el Centro de control. Meri solo crea y mueve sus propios bloques en un calendario aparte."
+    "emptyBody": "Conecta Google Calendar desde el Centro de control. Meri solo crea y mueve sus propios bloques en un calendario aparte.",
+    "legendMeetings": "Reuniones",
+    "legendBlocks": "Bloques de Meri",
+    "note": "Meri solo crea y mueve sus propios bloques en un calendario aparte.",
+    "error": "No pudimos cargar el calendario.",
+    "days": "Días de la semana",
+    "fixed": "Reunión fija",
+    "emptyDay": "Nada programado este día."
   },
   "control": {
     "subtitle": "Qué puede hacer Meri por su cuenta, qué datos usa y qué ha hecho.",
@@ -120,8 +137,24 @@
       "actions": {
         "onboarding_completed": "Completaste la configuración inicial.",
         "preferences_updated": "Cambiaste tus preferencias.",
-        "other": "Acción registrada: {action}"
-      }
+        "other": "Acción registrada: {action}",
+        "task_created": "Añadiste una tarea.",
+        "task_updated": "Editaste una tarea.",
+        "task_completed": "Marcaste una tarea como hecha.",
+        "task_deleted": "Eliminaste una tarea.",
+        "task_dependencies_updated": "Cambiaste las dependencias de una tarea.",
+        "capture_created": "Capturaste algo para revisar.",
+        "proposal_dismissed": "Descartaste una propuesta.",
+        "plan_generated": "Meri generó tu plan.",
+        "plan_accepted": "Aceptaste una reorganización del plan.",
+        "block_pinned": "Anclaste o soltaste un bloque.",
+        "block_completed": "Marcaste un bloque como hecho.",
+        "integration_connected": "Conectaste Google Calendar.",
+        "integration_disconnected": "Desconectaste Google Calendar.",
+        "integration_needs_reauth": "Google Calendar necesita reconectarse."
+      },
+      "undoneOf": "Deshecho: {text}",
+      "undoDone": "Acción deshecha."
     },
     "preferences": {
       "title": "Preferencias",
@@ -149,6 +182,26 @@
         "past_due": "Pago pendiente",
         "canceled": "Cancelado",
         "unpaid": "Impagado"
+      }
+    },
+    "notifications": {
+      "title": "Avisos",
+      "desc": "Riesgos y cambios del plan, agrupados y con un tope diario.",
+      "empty": "Sin avisos. Meri solo te avisa cuando algo pide tu atención.",
+      "markRead": "Marcar como leído",
+      "kind": {
+        "digest": "Resumen",
+        "risk": "Riesgo",
+        "proposals": "Propuestas",
+        "plan": "Plan",
+        "integration": "Conexión"
+      },
+      "templates": {
+        "risk_grouped": "{count, plural, one {Una tarea ha entrado} other {# tareas han entrado}} en riesgo.",
+        "conflict_grouped": "{count, plural, one {Un conflicto} other {# conflictos}} en el plan ({tasks} tareas).",
+        "plan_proposed": "Meri propone reorganizar: {moved} movidos, {added} nuevos, {removed} retirados.",
+        "plan_applied": "Meri actualizó tu plan: {added} bloques nuevos, {removed} retirados.",
+        "daily_digest": "Resumen del día: {blocks} bloques, {risks} riesgos, {proposals} propuestas pendientes."
       }
     }
   },
@@ -320,7 +373,12 @@
     },
     "editAction": "Acción",
     "editDate": "Fecha",
-    "quote": "“{text}”"
+    "quote": "“{text}”",
+    "reschedule": {
+      "title": "Meri propone reorganizar tu plan",
+      "summary": "{moved} movidos · {added} nuevos · {removed} retirados",
+      "review": "Ver los cambios en Hoy"
+    }
   },
   "capture": {
     "placeholder": "Capturar o buscar",
@@ -364,5 +422,73 @@
     "disconnected": "Desconectado. Los eventos copiados se han borrado.",
     "confirmDisconnect": "¿Desconectar y borrar los eventos copiados?",
     "syncQueued": "Sincronización en marcha."
+  },
+  "plan": {
+    "why": "Por qué está aquí.",
+    "deep": "Trabajo profundo.",
+    "shallow": "Trabajo corto.",
+    "range": "{from} a {to}, {duration}.",
+    "pin": "Anclar",
+    "unpin": "Soltar",
+    "pinned": "Anclado",
+    "markDone": "Marcar como hecho",
+    "toasts": {
+      "pinned": "Bloque anclado. Meri no lo moverá.",
+      "unpinned": "Bloque liberado.",
+      "done": "Hecho. Puedes deshacerlo desde Actividad."
+    },
+    "reasons": {
+      "none": "Es el siguiente hueco libre.",
+      "DEADLINE_SLACK_LOW": "Queda poco margen hasta la fecha límite ({slackHours} h).",
+      "DEADLINE_HARD": "La fecha límite es dura.",
+      "HIGH_PRIORITY": "Es de prioridad {priority}.",
+      "UNBLOCKS_OTHERS": "Desbloquea {count} tareas.",
+      "DEEP_WORK_WINDOW": "Es tu ventana de concentración.",
+      "FILLS_GAP": "Aprovecha un hueco corto entre reuniones.",
+      "PINNED_BY_USER": "Lo anclaste tú.",
+      "KEPT_STABLE": "Se mantiene donde estaba para no desordenar tu semana.",
+      "DEPENDENCY_ORDER": "Va después de las tareas de las que depende."
+    },
+    "risks": {
+      "cause": {
+        "LOW_SLACK": "Queda poco margen: {hours} h antes de la fecha límite.",
+        "BLOCKED_DEPENDENCY": "Depende de una tarea que no se ha podido programar.",
+        "NO_CAPACITY": "No cabe antes de su fecha límite."
+      },
+      "conflict": {
+        "CIRCULAR_DEPENDENCY": "Dependencias en círculo.",
+        "OVERLOAD": "Hay más trabajo que horas en el horizonte.",
+        "DEADLINE_INFEASIBLE": "No llega a la fecha límite ni reorganizando.",
+        "NO_CAPACITY": "No cabe en las horas disponibles.",
+        "DEPENDENCY_AFTER_DEADLINE": "Depende de algo que termina después de su fecha límite."
+      },
+      "alternatives": "Opciones:",
+      "alternative": {
+        "move_other_task": "mover otra tarea",
+        "split_task": "trocear la tarea",
+        "extend_deadline": "ampliar la fecha",
+        "delegate": "delegar",
+        "reduce_scope": "reducir el alcance"
+      },
+      "reorganize": "Ver cómo reorganizar",
+      "replan": "Replanificar",
+      "toasts": {
+        "proposed": "Meri propone cambios. Revísalos en «¿Qué podría salir mal?».",
+        "replanned": "Plan actualizado."
+      }
+    },
+    "proposal": {
+      "title": "Reorganizar para proteger tus fechas",
+      "description": "Meri propone {n, plural, one {un cambio} other {# cambios}}. Ninguna reunión se mueve.",
+      "note": "Se guarda en Actividad y podrás deshacerlo.",
+      "later": "Ahora no",
+      "accept": "Aceptar cambios",
+      "added": "Nuevo",
+      "removed": "Se retira",
+      "whatChanges": "Qué cambia.",
+      "meetingsUntouched": "Solo se mueven bloques de Meri; tus reuniones quedan como están.",
+      "accepted": "Cambios aplicados.",
+      "undone": "Cambios deshechos."
+    }
   }
 }
