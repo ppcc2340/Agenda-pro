@@ -27,6 +27,7 @@ import { taskRoutes } from "./routes/tasks";
 import { captureRoutes } from "./routes/capture";
 import { integrationRoutes } from "./routes/integrations";
 import { idempotencyPlugin } from "./plugins/idempotency";
+import { planRoutes } from "./routes/plan";
 
 export interface AppDeps {
   config: AppConfig;
@@ -133,6 +134,17 @@ export async function buildApp(deps: AppDeps) {
     now: deps.now,
     ai: deps.integrations.ai,
     flags: deps.flags ?? new InMemoryFlagStore(),
+    onTasksChanged: deps.onTasksChanged,
+  });
+
+  await app.register(planRoutes, {
+    deps: {
+      db: deps.db,
+      integrations: deps.integrations,
+      keys: deps.integrations.kms.keys,
+      logger: deps.logger,
+      now: deps.now,
+    },
     onTasksChanged: deps.onTasksChanged,
   });
 

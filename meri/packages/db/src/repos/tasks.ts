@@ -151,6 +151,27 @@ export async function listOpenTasks(tx: WorkspaceTx, workspaceId: WorkspaceId): 
   return rows.map((r) => toView(r, deps.get(r.id) ?? []));
 }
 
+/** Tasks by id (any status, including completed) for joins such as plan blocks. */
+export async function getTasksByIds(
+  tx: WorkspaceTx,
+  workspaceId: WorkspaceId,
+  ids: string[],
+): Promise<Map<string, TaskView>> {
+  const map = new Map<string, TaskView>();
+  if (ids.length === 0) return map;
+  const rows = await tx
+    .select()
+    .from(tasks)
+    .where(and(eq(tasks.workspaceId, workspaceId), inArray(tasks.id, ids), isNull(tasks.deletedAt)));
+  const deps = await dependenciesFor(
+    tx,
+    workspaceId,
+    rows.map((r) => r.id),
+  );
+  for (const r of rows) map.set(r.id, toView(r, deps.get(r.id) ?? []));
+  return map;
+}
+
 export async function getTask(
   tx: WorkspaceTx,
   workspaceId: WorkspaceId,

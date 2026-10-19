@@ -8,6 +8,7 @@ import { createDispatcher } from "@meri/jobs";
 import { dispatchCalendarPolling, schedule } from "./dispatchers";
 import { buildHealthServer } from "./health";
 import { calendarSyncJob } from "./queues/calendar-sync";
+import { plannerReplanJob } from "./queues/planner-replan";
 import { examplePing } from "./queues/example";
 import { QueueRegistry } from "./registry";
 
@@ -25,14 +26,16 @@ async function main(): Promise<void> {
   if (integrations.ai instanceof FakeAiClient) registerFakeAiHandlers(integrations.ai);
   const registry = new QueueRegistry({ connection, db: handle.db, logger });
   registry.register(examplePing);
-  registry.register(calendarSyncJob({ db: handle.db, integrations, keys: integrations.kms.keys, now }));
+  const dispatcher = createDispatcher(connection);
+  const handlerDeps = { db: handle.db, integrations, keys: integrations.kms.keys, now };
+  registry.register(calendarSyncJob(handlerDeps, dispatcher));
+  registry.register(plannerReplanJob(handlerDeps));
 
   // Cross-tenant dispatchers (D-025) use the owner connection only to enumerate accounts.
   const adminSql = postgres(config.env.DATABASE_ADMIN_URL ?? config.env.DATABASE_URL, {
     max: 1,
     onnotice: () => {},
   });
-  const dispatcher = createDispatcher(connection);
   const stopPolling = schedule(
     "calendar.poll",
     5 * 60_000,
@@ -43,7 +46,7 @@ async function main(): Promise<void> {
   const health = await buildHealthServer(registry, logger);
   const port = config.env.PORT ?? 4100;
   await health.listen({ port, host: "0.0.0.0" });
-  logger.info({ port, queues: ["example.ping", "calendar.sync"] }, "worker started");
+  logger.info({ port, queues: ["example.ping", "calendar.sync", "planner.replan"] }, "worker started");
 
   const shutdown = async (signal: string) => {
     logger.info({ signal }, "worker shutting down");

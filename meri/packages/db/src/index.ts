@@ -6,6 +6,7 @@ export { runMigrations, ensureDevRoles } from "./migrate";
 export {
   audit,
   listAudit,
+  getAuditEntry,
   type AuditContext,
   type AuditEntry,
   type AuditEntryInput,
@@ -35,6 +36,7 @@ export {
   TaskPatchSchema,
   listTasks,
   listOpenTasks,
+  getTasksByIds,
   getTask,
   createTask,
   updateTask,

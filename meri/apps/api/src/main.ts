@@ -3,7 +3,7 @@ import { assertAppRole, createDb } from "@meri/db";
 import { createIntegrations, FakeAiClient } from "@meri/integrations";
 import { registerFakeAiHandlers } from "@meri/ai";
 import { Redis } from "ioredis";
-import { createDispatcher } from "@meri/jobs";
+import { createDispatcher, enqueueReplan } from "@meri/jobs";
 import { buildApp } from "./app";
 
 loadDotenv(".env");
@@ -19,7 +19,17 @@ async function main(): Promise<void> {
   if (integrations.ai instanceof FakeAiClient) registerFakeAiHandlers(integrations.ai);
   const redis = new Redis(config.env.REDIS_URL, { maxRetriesPerRequest: null });
   const dispatcher = createDispatcher(redis);
-  const app = await buildApp({ config, db: handle.db, integrations, logger, now, dispatcher });
+  const app = await buildApp({
+    config,
+    db: handle.db,
+    integrations,
+    logger,
+    now,
+    dispatcher,
+    onTasksChanged: async (workspaceId, traceId) => {
+      await enqueueReplan(dispatcher, now, { workspaceId, traceId, reason: "tasks_changed" });
+    },
+  });
   const port = config.env.PORT ?? 4000;
   const shutdown = async (signal: string) => {
     logger.info({ signal }, "shutting down");

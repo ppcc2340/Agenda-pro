@@ -497,8 +497,12 @@ export const notifications = pgTable(
     id: id(),
     workspaceId: workspaceId(),
     kind: notificationKind("kind").notNull(),
+    /** Rendered in the default locale (fallback for e-mail digests); the UI renders `template` + `params`. */
     title: text("title").notNull(),
     body: text("body").notNull(),
+    /** i18n template key (e.g. "risk.grouped") and its parameters. */
+    template: text("template").notNull().default("generic"),
+    params: jsonb("params").$type<Record<string, string | number>>().notNull().default({}),
     /** Entities grouped into this notification (ids only, never content). */
     refs: jsonb("refs").$type<{ type: string; id: string }[]>().notNull().default([]),
     /** YYYY-MM-DD in the user's time zone; used for the daily cap. */

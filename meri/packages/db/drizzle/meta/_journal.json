@@ -50,6 +50,13 @@
       "when": 1792425897688,
       "tag": "0006_rls_plan_runs",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792426309773,
+      "tag": "0007_notifications_template",
+      "breakpoints": true
     }
   ]
 }

@@ -18,7 +18,8 @@ const strict = args.includes("--strict");
 function loadEnv() {
   const env = { ...process.env };
   const file = resolve(root, ".env");
-  if (existsSync(file)) {
+  // MERI_IGNORE_DOTENV=1 makes the report hermetic (tests); values are never printed either way.
+  if (process.env.MERI_IGNORE_DOTENV !== "1" && existsSync(file)) {
     for (const line of readFileSync(file, "utf8").split(/\r?\n/)) {
       const m = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/);
       if (!m) continue;

@@ -10,6 +10,8 @@ export interface NotificationView {
   kind: NotificationKind;
   title: string;
   body: string;
+  template: string;
+  params: Record<string, string | number>;
   refs: { type: string; id: string }[];
   day: string;
   readAt: Date | null;
@@ -29,6 +31,8 @@ export async function insertNotification(
     kind: NotificationKind;
     title: string;
     body: string;
+    template: string;
+    params: Record<string, string | number>;
     refs: { type: string; id: string }[];
     day: string;
   },

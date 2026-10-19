@@ -1,0 +1,324 @@
+/**
+ * Accepting a reschedule proposal and undoing audited actions (ADR 0003 §2 and §4). Shared by the API routes.
+ */
+import {
+  audit,
+  currentPlanVersion,
+  deleteBlocks,
+  expirePending,
+  getAuditEntry,
+  getPreferences,
+  getProposal,
+  getTask,
+  getTasksByIds,
+  insertBlocks,
+  listOpenTasks,
+  resolveProposal,
+  softDeleteTask,
+  updateBlock,
+  updateTask,
+  withWorkspace,
+  type AuditEntry,
+  type ScheduleBlockView,
+  type TaskStatus,
+  type UserId,
+  type WorkspaceId,
+  type WorkspaceTx,
+} from "@meri/db";
+import type { HandlerDeps } from "./context";
+import { writeBlocksToCalendar } from "./meri-calendar";
+import type { ReschedulePayload } from "./replan";
+
+export class PlanApplyError extends Error {
+  constructor(
+    readonly code: "NOT_FOUND" | "CONFLICT" | "VALIDATION_FAILED",
+    message: string,
+  ) {
+    super(message);
+    this.name = "PlanApplyError";
+  }
+}
+
+const serializeBlock = (b: ScheduleBlockView) => ({
+  id: b.id,
+  taskId: b.taskId,
+  startsAt: b.startsAt.toISOString(),
+  endsAt: b.endsAt.toISOString(),
+  pinned: b.pinned,
+  reason: b.reason,
+  calendarEventId: b.calendarEventId,
+  planVersion: b.planVersion,
+});
+type SerializedBlock = ReturnType<typeof serializeBlock>;
+
+async function titlesFor(
+  tx: WorkspaceTx,
+  workspaceId: WorkspaceId,
+  taskIds: string[],
+): Promise<Map<string, string>> {
+  const tasks = await getTasksByIds(tx, workspaceId, [...new Set(taskIds)]);
+  return new Map([...tasks.values()].map((t) => [t.id, t.title]));
+}
+
+export interface AcceptResult {
+  planVersion: number;
+  added: number;
+  removed: number;
+  auditId: string;
+  calendar: { created: number; deleted: number } | null;
+}
+
+/** Applies a pending reschedule proposal; `basePlanVersion` must still be the current plan (else CONFLICT). */
+export async function acceptProposal(
+  deps: HandlerDeps,
+  workspaceId: WorkspaceId,
+  proposalId: string,
+  actorUserId: UserId,
+): Promise<AcceptResult> {
+  const now = deps.now();
+  const applied = await withWorkspace(deps.db, workspaceId, async (tx) => {
+    const proposal = await getProposal(tx, workspaceId, proposalId);
+    if (!proposal || proposal.kind !== "reschedule")
+      throw new PlanApplyError("NOT_FOUND", "Proposal not found.");
+    if (proposal.status !== "pending") throw new PlanApplyError("CONFLICT", "Proposal is no longer pending.");
+    const payload = proposal.payload as unknown as ReschedulePayload;
+    const base = await currentPlanVersion(tx, workspaceId);
+    if (payload.basePlanVersion !== base) {
+      throw new PlanApplyError(
+        "CONFLICT",
+        "The plan changed since this proposal was computed. Replan first.",
+      );
+    }
+    const planVersion = base + 1;
+    const removeIds = [...payload.removed.map((r) => r.blockId), ...payload.moved.map((m) => m.blockId)];
+    const removed = await deleteBlocks(tx, workspaceId, removeIds);
+    const open = new Set<string>((await listOpenTasks(tx, workspaceId)).map((t) => t.id));
+    const toInsert = [
+      ...payload.added.map((b) => ({
+        taskId: b.taskId,
+        startsAt: b.startsAt,
+        endsAt: b.endsAt,
+        pinned: b.pinned,
+        reasons: b.reasons,
+      })),
+      ...payload.moved.map((m) => ({
+        taskId: m.taskId,
+        startsAt: m.to.startsAt,
+        endsAt: m.to.endsAt,
+        pinned: false,
+        reasons: m.reasons,
+      })),
+    ].filter((b) => open.has(b.taskId));
+    const created = await insertBlocks(
+      tx,
+      workspaceId,
+      toInsert.map((b) => ({
+        taskId: b.taskId,
+        startsAt: new Date(b.startsAt),
+        endsAt: new Date(b.endsAt),
+        pinned: b.pinned,
+        reason: b.reasons,
+      })),
+      planVersion,
+      now,
+    );
+    await resolveProposal(tx, workspaceId, proposalId, { status: "confirmed", action: "accepted" }, now);
+    const auditId = await audit(
+      tx,
+      { workspaceId, actor: "user", actorUserId },
+      {
+        action: "plan.accepted",
+        entityType: "proposal",
+        entityId: proposalId,
+        reason: `proposal:${proposalId}`,
+        before: { planVersion: base, removed: removed.map(serializeBlock) },
+        after: { planVersion, added: created.map(serializeBlock), proposalId },
+      },
+    );
+    const titles = await titlesFor(
+      tx,
+      workspaceId,
+      created.map((b) => b.taskId),
+    );
+    return { planVersion, created, removed, auditId, titles };
+  });
+  // Accepted plans always reach the calendar (ADR 0003 §3), after commit.
+  const cal = await writeBlocksToCalendar(deps, workspaceId, {
+    create: applied.created,
+    remove: applied.removed,
+    titles: applied.titles,
+  });
+  return {
+    planVersion: applied.planVersion,
+    added: applied.created.length,
+    removed: applied.removed.length,
+    auditId: applied.auditId,
+    calendar: cal.accountId ? { created: cal.created, deleted: cal.deleted } : null,
+  };
+}
+
+export const UNDOABLE_ACTIONS = [
+  "plan.generated",
+  "plan.accepted",
+  "task.completed",
+  "task.created",
+  "block.pinned",
+  "block.completed",
+] as const;
+
+export interface UndoResult {
+  auditId: string;
+  action: string;
+  calendar: { created: number; deleted: number } | null;
+}
+
+interface PlanAuditShape {
+  planVersion: number;
+  added?: SerializedBlock[];
+  removed?: SerializedBlock[];
+}
+
+async function undoPlan(
+  tx: WorkspaceTx,
+  workspaceId: WorkspaceId,
+  entry: AuditEntry,
+  now: Date,
+): Promise<{ create: ScheduleBlockView[]; remove: ScheduleBlockView[] }> {
+  const after = entry.after as PlanAuditShape;
+  const before = entry.before as PlanAuditShape;
+  const current = await currentPlanVersion(tx, workspaceId);
+  if (after.planVersion !== current) {
+    throw new PlanApplyError("CONFLICT", "A newer plan exists; undo the most recent plan change first.");
+  }
+  const remove = await deleteBlocks(
+    tx,
+    workspaceId,
+    (after.added ?? []).map((b) => b.id),
+  );
+  const open = new Set<string>((await listOpenTasks(tx, workspaceId)).map((t) => t.id));
+  const restored = (before.removed ?? []).filter((b) => open.has(b.taskId));
+  const create = await insertBlocks(
+    tx,
+    workspaceId,
+    restored.map((b) => ({
+      id: b.id,
+      taskId: b.taskId,
+      startsAt: new Date(b.startsAt),
+      endsAt: new Date(b.endsAt),
+      pinned: b.pinned,
+      reason: b.reason,
+    })),
+    before.planVersion,
+    now,
+  );
+  await expirePending(tx, workspaceId, "reschedule", now);
+  // Restored blocks get a fresh calendar event only if they had one before.
+  const hadEvent = new Set(restored.filter((b) => b.calendarEventId).map((b) => b.id));
+  return { create: create.filter((b) => hadEvent.has(b.id)), remove };
+}
+
+async function undoTaskStatus(
+  tx: WorkspaceTx,
+  workspaceId: WorkspaceId,
+  entry: AuditEntry,
+  now: Date,
+): Promise<void> {
+  const before = entry.before as { status?: TaskStatus; completedAt?: string | null } | null;
+  if (!entry.entityId || !before?.status)
+    throw new PlanApplyError("VALIDATION_FAILED", "Entry has no restorable state.");
+  const task = await getTask(tx, workspaceId, entry.entityId);
+  if (!task) throw new PlanApplyError("CONFLICT", "The task no longer exists.");
+  await updateTask(tx, workspaceId, entry.entityId, { status: before.status }, now);
+}
+
+/**
+ * Append-only undo (D-023): inserts `<action>.undone` with `undo_of_audit_id` and applies the compensation.
+ * Already-undone entries and compensations themselves are rejected.
+ */
+export async function undoAuditEntry(
+  deps: HandlerDeps,
+  workspaceId: WorkspaceId,
+  auditId: string,
+  actorUserId: UserId,
+): Promise<UndoResult> {
+  const now = deps.now();
+  const done = await withWorkspace(deps.db, workspaceId, async (tx) => {
+    const entry = await getAuditEntry(tx, workspaceId, auditId);
+    if (!entry) throw new PlanApplyError("NOT_FOUND", "Audit entry not found.");
+    if (entry.undoOfAuditId)
+      throw new PlanApplyError("VALIDATION_FAILED", "A compensation cannot be undone.");
+    if (entry.undoneAt) throw new PlanApplyError("CONFLICT", "This action was already undone.");
+    let calendar: { create: ScheduleBlockView[]; remove: ScheduleBlockView[] } = { create: [], remove: [] };
+    switch (entry.action) {
+      case "plan.generated":
+      case "plan.accepted":
+        calendar = await undoPlan(tx, workspaceId, entry, now);
+        break;
+      case "task.completed":
+        await undoTaskStatus(tx, workspaceId, entry, now);
+        break;
+      case "task.created": {
+        if (!entry.entityId) throw new PlanApplyError("VALIDATION_FAILED", "Entry has no task.");
+        const deleted = await softDeleteTask(tx, workspaceId, entry.entityId, now);
+        if (!deleted) throw new PlanApplyError("CONFLICT", "The task no longer exists.");
+        break;
+      }
+      case "block.pinned": {
+        const before = entry.before as { pinned?: boolean } | null;
+        if (!entry.entityId || before?.pinned === undefined)
+          throw new PlanApplyError("VALIDATION_FAILED", "Entry has no restorable state.");
+        const block = await updateBlock(tx, workspaceId, entry.entityId, { pinned: before.pinned });
+        if (!block) throw new PlanApplyError("CONFLICT", "The block no longer exists.");
+        break;
+      }
+      case "block.completed": {
+        const after = entry.after as {
+          taskCompleted?: boolean;
+          taskId?: string;
+          previousStatus?: TaskStatus;
+        } | null;
+        if (!entry.entityId) throw new PlanApplyError("VALIDATION_FAILED", "Entry has no block.");
+        const block = await updateBlock(tx, workspaceId, entry.entityId, { completedAt: null });
+        if (!block) throw new PlanApplyError("CONFLICT", "The block no longer exists.");
+        if (after?.taskCompleted && after.taskId && after.previousStatus) {
+          await updateTask(tx, workspaceId, after.taskId, { status: after.previousStatus }, now);
+        }
+        break;
+      }
+      default:
+        throw new PlanApplyError("VALIDATION_FAILED", `Action ${entry.action} cannot be undone.`);
+    }
+    const compensationId = await audit(
+      tx,
+      { workspaceId, actor: "user", actorUserId },
+      {
+        action: `${entry.action}.undone`,
+        entityType: entry.entityType ?? undefined,
+        entityId: entry.entityId,
+        reason: `undo:${entry.id}`,
+        before: entry.after,
+        after: entry.before,
+        undoOfAuditId: entry.id,
+      },
+    );
+    const titles = await titlesFor(
+      tx,
+      workspaceId,
+      calendar.create.map((b) => b.taskId),
+    );
+    const prefs = await getPreferences(tx, workspaceId);
+    return {
+      compensationId,
+      action: entry.action,
+      calendar,
+      titles,
+      autonomy: prefs?.autonomy ?? "suggest_only",
+    };
+  });
+  let calendar: UndoResult["calendar"] = null;
+  if (done.calendar.create.length > 0 || done.calendar.remove.length > 0) {
+    const r = await writeBlocksToCalendar(deps, workspaceId, { ...done.calendar, titles: done.titles });
+    calendar = r.accountId ? { created: r.created, deleted: r.deleted } : null;
+  }
+  return { auditId: done.compensationId, action: done.action, calendar };
+}

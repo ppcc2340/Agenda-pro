@@ -6,7 +6,7 @@ const root = resolve(import.meta.dirname, "..", "..");
 const run = (env: Record<string, string>, ...args: string[]) =>
   spawnSync("node", ["scripts/check-blockers.mjs", ...args], {
     cwd: root,
-    env: { PATH: process.env.PATH ?? "", ...env },
+    env: { PATH: process.env.PATH ?? "", MERI_IGNORE_DOTENV: "1", ...env },
     encoding: "utf8",
   });
 

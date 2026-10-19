@@ -41,6 +41,13 @@ export const TaskViewSchema = z.object({
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
   blockedBy: z.array(z.string()),
+  risk: z
+    .object({
+      cause: z.enum(["LOW_SLACK", "BLOCKED_DEPENDENCY", "NO_CAPACITY"]),
+      slackHours: z.number(),
+      since: z.string(),
+    })
+    .nullable(),
 });
 
 export const serializeTask = (t: TaskView) => ({

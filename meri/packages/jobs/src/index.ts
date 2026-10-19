@@ -12,3 +12,22 @@ export {
   SYNC_FUTURE_DAYS,
   type CalendarSyncResult,
 } from "./handlers/calendar-sync";
+export {
+  runReplan,
+  toPlannerTask,
+  HORIZON_DAYS,
+  DEFAULT_ESTIMATE_MINUTES,
+  type ReplanOptions,
+  type ReplanResult,
+  type ReschedulePayload,
+} from "./handlers/replan";
+export {
+  acceptProposal,
+  undoAuditEntry,
+  PlanApplyError,
+  UNDOABLE_ACTIONS,
+  type AcceptResult,
+  type UndoResult,
+} from "./handlers/plan-apply";
+export { writeBlocksToCalendar, type CalendarWriteResult } from "./handlers/meri-calendar";
+export { enqueueReplan, REPLAN_DEBOUNCE_MS } from "./replan-trigger";

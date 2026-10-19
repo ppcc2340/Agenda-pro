@@ -53,12 +53,15 @@ export async function getBlock(
 }
 
 export interface NewBlock {
+  /** Preserved when restoring blocks (undo); generated otherwise. */
+  id?: string;
   taskId: string;
   startsAt: Date;
   endsAt: Date;
   pinned?: boolean;
   reason: { code: string; params: Record<string, unknown> }[];
   calendarEventId?: string | null;
+  completedAt?: Date | null;
 }
 
 export async function insertBlocks(
@@ -73,7 +76,7 @@ export async function insertBlocks(
     .insert(scheduleBlocks)
     .values(
       blocks.map((b) => ({
-        id: newId(),
+        id: b.id ?? newId(),
         workspaceId,
         taskId: b.taskId,
         startsAt: b.startsAt,
@@ -81,11 +84,26 @@ export async function insertBlocks(
         pinned: b.pinned ?? false,
         reason: b.reason,
         calendarEventId: b.calendarEventId ?? null,
+        completedAt: b.completedAt ?? null,
         planVersion,
         createdAt: now,
       })),
     )
     .returning();
+  return rows.map(toView);
+}
+
+export async function getBlocksByIds(
+  tx: WorkspaceTx,
+  workspaceId: WorkspaceId,
+  ids: string[],
+): Promise<ScheduleBlockView[]> {
+  if (ids.length === 0) return [];
+  const rows = await tx
+    .select()
+    .from(scheduleBlocks)
+    .where(and(eq(scheduleBlocks.workspaceId, workspaceId), inArray(scheduleBlocks.id, ids)))
+    .orderBy(asc(scheduleBlocks.startsAt), asc(scheduleBlocks.id));
   return rows.map(toView);
 }
 
