@@ -5,26 +5,26 @@ import { auth, signIn } from "@/auth";
 import { Logo } from "@/components/shell/logo";
 import { Button } from "@/components/ui/button";
 import { getServerConfig } from "@/server/config";
+import { safeNext } from "@/server/demo";
 
 export const dynamic = "force-dynamic";
 
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string; error?: string }>;
+  searchParams: Promise<{ next?: string; error?: string; manual?: string }>;
 }) {
   const session = await auth();
   const params = await searchParams;
-  // Only same-origin paths: "/x" but never "//evil" or "/\\evil" (browsers normalise backslashes).
-  const next = params.next && /^\/(?![/\\])/.test(params.next) ? params.next : "/hoy";
+  const next = safeNext(params.next);
   if (session?.user) redirect(next);
   const t = await getTranslations("login");
   const tApp = await getTranslations("app");
   const { modes, env } = getServerConfig();
-  // DEMO_MODE (PROTOTYPE.md, D-049): sign in as the demo user without a form. Only reachable with the dev
-  // provider (GOOGLE_MODE=fake outside production); the provider itself is never mounted in production.
-  if (env.DEMO_MODE && modes.google !== "live")
-    await signIn("dev", { email: "demo@meri.local", name: "Demo de Meri", redirectTo: next });
+  // DEMO_MODE (PROTOTYPE.md, D-049/D-053): sign in as the demo user without a form, through the route handler
+  // that may set cookies. `?manual=1` (sign-out, E2E of other accounts) and `?error` keep the form.
+  if (env.DEMO_MODE && modes.google !== "live" && params.manual !== "1" && !params.error)
+    redirect(`/api/demo/sign-in?next=${encodeURIComponent(next)}`);
 
   async function devSignIn(formData: FormData): Promise<void> {
     "use server";

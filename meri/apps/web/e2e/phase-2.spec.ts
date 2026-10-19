@@ -25,7 +25,7 @@ async function hydrated(page: Page): Promise<void> {
 }
 
 async function login(page: Page): Promise<void> {
-  await page.goto("/login");
+  await page.goto("/login?manual=1");
   await hydrated(page);
   await page.getByLabel(/correo|email/i).fill(email());
   await page.getByRole("button", { name: /entrar|continuar|sign in|iniciar/i }).click();

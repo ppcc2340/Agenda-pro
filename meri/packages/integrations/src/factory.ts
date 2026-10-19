@@ -96,8 +96,9 @@ export function createIntegrations(config: AppConfig, deps: IntegrationsDeps): I
       let c = fakeCalendars.get(accountEmail);
       if (!c) {
         c = new FakeCalendar({ now: deps.now });
-        // Sample meetings (D-021) so a connected fake account looks like the demo. Tests seed their own.
-        if (!config.isTest) seedSampleMeetings(c, deps.now());
+        // Sample meetings (D-021) so a connected fake account looks like the demo. Tests seed their own and the
+        // demo dataset lives in the database (D-052): with DEMO_MODE the fakes start empty so sync is a no-op.
+        if (!config.isTest && !config.env.DEMO_MODE) seedSampleMeetings(c, deps.now());
         fakeCalendars.set(accountEmail, c);
       }
       return c;
@@ -107,7 +108,7 @@ export function createIntegrations(config: AppConfig, deps: IntegrationsDeps): I
       let m = fakeMail.get(accountEmail);
       if (!m) {
         m = new FakeGmail({ email: accountEmail });
-        if (!config.isTest) seedSampleMail(m, accountEmail, deps.now());
+        if (!config.isTest && !config.env.DEMO_MODE) seedSampleMail(m, accountEmail, deps.now());
         fakeMail.set(accountEmail, m);
       }
       return m;

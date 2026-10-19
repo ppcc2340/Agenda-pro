@@ -83,6 +83,9 @@ export function resolveModes(env: Env, blockers: readonly BlockerDefinition[] = 
       `APP_ENV=${String(env.APP_ENV)} on a production build (NODE_ENV=production) requires ALLOW_FAKES_ON_PRODUCTION_BUILD=1 (never in a real deployment; see docs/blockers/README.md).`,
     );
   }
+  // DEMO_MODE signs in without credentials (PROTOTYPE.md, D-049): never on a production configuration.
+  if (env.DEMO_MODE && isProductionEnv(env))
+    errors.push("DEMO_MODE=1 is forbidden in production: the demo signs in as demo@meri.local without credentials.");
   if (isProductionEnv(env)) {
     const placeholders = (["AUTH_SECRET", "INTERNAL_API_SECRET"] as const).filter((k) =>
       /^change-me/i.test(env[k]),

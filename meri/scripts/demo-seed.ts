@@ -203,7 +203,6 @@ export async function seedDemo(options: { now: Date; reset?: boolean; databaseUr
         );
         if (created) proposalsSeeded++;
       }
-      await audit(tx, { workspaceId: ws, actor: "ai" }, { action: "commitments.detected", entityType: "mailbox", entityId: accountRow.id, after: { proposals: proposalsSeeded } });
       return { clients: CLIENTS.length, tasks: tasksSeeded, events: events.length, commitments: 6, proposals: proposalsSeeded };
     });
 

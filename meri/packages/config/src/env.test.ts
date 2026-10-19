@@ -78,6 +78,12 @@ describe("resolveModes", () => {
     }
   });
 
+  it("DEMO_MODE=1 is forbidden on a production configuration (PROTOTYPE.md, D-049)", () => {
+    expect(() => loadConfig({ ...BASE, NODE_ENV: "production", DEMO_MODE: "1" })).toThrow(/DEMO_MODE=1 is forbidden/);
+    expect(loadConfig({ ...BASE, NODE_ENV: "development", DEMO_MODE: "1" }).env.DEMO_MODE).toBe(true);
+    expect(loadConfig({ ...BASE, NODE_ENV: "production", APP_ENV: "development", ALLOW_FAKES_ON_PRODUCTION_BUILD: "1", DEMO_MODE: "1" }).env.DEMO_MODE).toBe(true);
+  });
+
   it("APP_ENV=development lets an optimized build (NODE_ENV=production) run against fakes (D-029)", () => {
     expect(() => loadConfig({ ...BASE, NODE_ENV: "production", APP_ENV: "development" })).toThrow(
       /ALLOW_FAKES_ON_PRODUCTION_BUILD/,

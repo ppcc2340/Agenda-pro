@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createDb, listClients, listProposals, listTasks, listTimeEntries, withWorkspace, type WorkspaceId } from "@meri/db";
+import { createDb, latestPlanRun, listAudit, listClients, listProposals, listTasks, listTimeEntries, withWorkspace, type WorkspaceId } from "@meri/db";
 import { seedDemo } from "../demo-seed";
 
 const TEST_APP_URL = process.env.DATABASE_URL_TEST ?? "postgres://meri_app:meri_app@localhost:5432/meri_test";
@@ -33,6 +33,15 @@ describe("pnpm demo:seed (PROTOTYPE.md, D-048)", () => {
       expect(time.filter((t) => t.status === "suggested")).toHaveLength(2);
       expect(pending.items.filter((p) => p.kind === "commitment")).toHaveLength(3);
       expect(pending.items.filter((p) => p.kind === "followup").length).toBeGreaterThanOrEqual(1);
+      // The plan of the day is the planner's own (no hand-written live blocks): no pending reorganisation, and
+      // the only AI-looking activity is what the handlers produced.
+      expect(pending.items.filter((p) => p.kind === "reschedule")).toHaveLength(0);
+      const [plan, activity] = await withWorkspace(handle.db, ws, (tx) =>
+        Promise.all([latestPlanRun(tx, ws), listAudit(tx, ws, 100)]),
+      );
+      expect(plan).not.toBeNull();
+      expect(activity.items.some((a) => a.action === "plan.generated")).toBe(true);
+      expect(activity.items.filter((a) => a.action === "time.approved")).toHaveLength(3);
     } finally {
       await handle.close();
     }
