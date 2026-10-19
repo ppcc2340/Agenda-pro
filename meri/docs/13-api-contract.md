@@ -42,12 +42,12 @@ Fuente para que backend y frontend se construyan en paralelo. El OpenAPI generad
 | `POST /v1/commitments/:id/followup-draft/save` `{ body, subject?, proposalId? }` | Guarda el borrador en Gmail (`gmail.compose`) en el hilo original, destinatario = contraparte del hilo. Rechaza cuerpos con enlaces, direcciones o instrucciones (`VALIDATION_FAILED`). `INTEGRATION_NEEDS_REAUTH` sin Gmail. Auditado (`followup.draft_saved` con `draftId`). Acepta `Idempotency-Key`. **Nunca envía** |
 | `POST /v1/commitments/:id/remind` `{ at?, proposalId? }` | Crea una tarea «Seguimiento: …» (mañana por defecto) ligada al compromiso. Auditado (`followup.reminder`) |
 
-Propuestas `commitment` (Entrada): `POST /v1/proposals/:id/confirm` acepta `{ commitment: { action?, dueAt?, clientId?, createWaitingTask? } }` y devuelve `{ task: null, commitment }`; `createWaitingTask` (solo `owed_to_me`) crea una tarea `waiting_on_third_party` «Esperando a …» (auditada `task.waiting_created`). `dismiss` marca el compromiso `dismissed`. `confirm-batch` solo acepta compromisos `explicit` con confianza ≥ 0,85 (`skipped.reason = not_explicit`). Propuestas `followup` (job `followups.scan`, una por compromiso vencido o hilo sin respuesta) se resuelven desde `followup-draft/save` o `remind` con `proposalId`, o con `dismiss`.
+`POST /v1/proposals/:id/confirm` devuelve `{ task, commitment, client }` (los que no aplican, `null`). Propuestas `commitment` (Entrada): acepta `{ commitment: { action?, dueAt?, clientId?, createWaitingTask? } }` y devuelve `{ commitment }`; `createWaitingTask` (solo `owed_to_me`) crea una tarea `waiting_on_third_party` «Esperando a …» (auditada `task.waiting_created`). `dismiss` marca el compromiso `dismissed`. `confirm-batch` solo acepta compromisos `explicit` con confianza ≥ 0,85 (`skipped.reason = not_explicit`). Propuestas `followup` (job `followups.scan`, una por compromiso vencido o hilo sin respuesta) se resuelven desde `followup-draft/save` o `remind` con `proposalId`, con `dismiss`, o con `confirm` sin cuerpo, que crea la tarea «Esperando a …» (`task.waiting_created`). Propuestas `client_link` (job `clients.scan`, D-040, ADR 0005): `confirm { client?: { name?, color? } }` crea el cliente con el dominio propuesto (aplica `max_clients`) y vincula sus contactos, hilos y eventos sin cliente; devuelve `{ client }`. Un dominio descartado no se vuelve a proponer. `confirm-batch` nunca crea clientes.
 
 ### Contactos, silencios y exclusiones de correo
 | `GET /v1/contacts` · `PATCH /v1/contacts/:id` `{ muted }` | Contactos vistos en el correo; silenciar seguimientos por contacto (F-08 AC2) |
 |---|---|
-| `PATCH /v1/clients/:id` `{ followupsMuted }` | Silenciar seguimientos por cliente (el CRUD completo de clientes llega en la fase 3) |
+| `PATCH /v1/clients/:id` `{ followupsMuted }` | Silenciar seguimientos por cliente (misma ruta que la edición de clientes; auditado `followups.muted/unmuted`) |
 | `GET/POST /v1/mail/exclusions` · `DELETE /v1/mail/exclusions/:id` | `{ kind: sender|domain|label, value }`; el valor se valida según el tipo (correo, dominio, etiqueta) y se normaliza en minúsculas salvo etiquetas |
 
 ### Plan y calendario
@@ -57,16 +57,20 @@ Propuestas `commitment` (Entrada): `POST /v1/proposals/:id/confirm` acepta `{ co
 | `POST /v1/plan/accept` `{ proposalId }` | Aplica la propuesta y escribe solo eventos Meri en Calendar. `CONFLICT` si el plan cambió desde la propuesta. Acepta `Idempotency-Key` |
 | `POST /v1/plan/blocks/:id/pin` `{ pinned }` | Ancla o suelta un bloque (auditado, deshacible) |
 | `POST /v1/plan/blocks/:id/complete` `{ taskDone? }` | Marca el bloque hecho y, por defecto, la tarea (auditado, deshacible) |
-| `GET /v1/calendar/events?from=&to=` | Eventos externos y bloques Meri |
+| `GET /v1/calendar/events?from=&to=&clientId=` | Eventos externos y bloques Meri; los externos llevan `clientId` cuando la resolución por dominio es inequívoca |
 | `GET /v1/notifications` · `POST /v1/notifications/:id/read` | Avisos agrupados (`template` + `params` para i18n, tope `maxAlertsPerDay`) |
 
-### Clientes, tiempo y briefings
-| `GET/POST /v1/clients` · `PATCH/DELETE /v1/clients/:id` | CRUD. Dominios para resolución automática |
+### Clientes, tiempo y briefings (ADR 0005)
+| `GET /v1/clients?stats=&includeArchived=` · `POST /v1/clients` · `GET/PATCH/DELETE /v1/clients/:id` | CRUD (`name`, `domains`, `color`, `notes`, `verticalTags`, `archived`, `followupsMuted`). `?stats=true` añade compromisos abiertos/vencidos, tareas en riesgo y minutos aprobados/sugeridos de la semana. `POST` y restaurar aplican `max_clients` (402 `ENTITLEMENT_REQUIRED`). `DELETE` = borrado lógico, nada se desvincula. Al crear o ampliar `domains` se vinculan los contactos, hilos y eventos externos sin cliente de esos dominios. Auditado (`client.created/updated/archived/restored/deleted`) |
 |---|---|
-| `POST /v1/clients/:id/briefing` | Genera briefing con fuentes (contexto aislado) |
-| `GET /v1/time-entries?week=` | Entradas sugeridas y aprobadas |
-| `POST /v1/time-entries/:id/approve` · `.../reject` · `POST /v1/time-entries/approve-batch` | Revisión |
-| `GET /v1/time-entries/export.csv` | CSV de entradas aprobadas |
+| `GET /v1/projects?clientId=` · `POST /v1/projects` · `PATCH /v1/projects/:id` | Asuntos (matters) de un cliente: `name`, `kind`, `archived`. Auditado (`project.created/updated`) |
+| `GET /v1/search?q=&clientId=` | Tareas, compromisos y clientes (`q` de 2 a 100 caracteres, `LIMIT 20` por tipo, cada resultado con `clientId`) |
+| `GET /v1/clients/:id/briefing` · `POST /v1/clients/:id/briefing` `{ eventId? }` | Último briefing / genera uno con fuentes (contexto aislado del cliente, D-041/D-043). `POST` reutiliza el guardado si el `sourceHash` no cambió; en vivo, 8 s de tope y reglas como respaldo |
+| `GET /v1/time-entries?week=YYYY-Www&clientId=&status=all` | Entradas de la semana ISO (lunes–domingo en la zona del usuario): sugeridas y aprobadas; `status=all` incluye rechazadas. Incluye `unassignedEvents` (eventos externos de la semana sin cliente) |
+| `PATCH /v1/time-entries/:id` `{ minutes?, clientId? }` | Corrige una entrada (una aprobada sigue aprobada; auditado `time.updated`) |
+| `POST /v1/time-entries/:id/approve` · `.../reject` · `POST /v1/time-entries/approve-batch { ids }` | Revisión; `time.approved` auditado y deshacible; el lote es una sola transacción |
+| `GET /v1/time-entries/export.csv?week=&status=` | CSV UTF-8 con BOM, separador `,`, campos entrecomillados, celdas `= + - @` protegidas con `'`, `Content-Disposition: attachment`. Columnas `fecha,cliente,asunto,descripcion,minutos,horas,origen,estado,aprobada_el`. Solo aprobadas salvo `status=all`. Nunca cambia estados. Excel es-ES: «Datos → Desde texto/CSV» |
+| `POST /v1/events/:id/agreements` `{ lines: string[] }` | Post-reunión (D-044): cada línea → propuesta `capture` o `commitment` con `sourceRef { type: "event" }`; nada se confirma automáticamente |
 
 ### Integraciones y control
 | `GET /v1/integrations` | Cuentas, estado, scopes |
@@ -75,7 +79,7 @@ Propuestas `commitment` (Entrada): `POST /v1/proposals/:id/confirm` acepta `{ co
 | `GET /v1/integrations/:provider/callback` | Intercambia código y guarda tokens cifrados |
 | `POST /v1/integrations/:id/pause` · `DELETE /v1/integrations/:id` | Pausar (también detiene la lectura de correo) / desconectar y purgar: hilos indexados, compromisos `proposed` y propuestas pendientes del correo se borran; los compromisos confirmados se conservan sin hilo (D-036) |
 | `POST /v1/integrations/:id/mail/sync` | Sincronización manual de Gmail (202) |
-| `GET /v1/audit` · `POST /v1/audit/:id/undo` | Actividad (con `undoneAt` derivado) y deshacer append-only: inserta `<acción>.undone` con `undo_of_audit_id` y aplica la compensación. Deshacibles: `plan.generated`, `plan.accepted`, `task.created`, `task.completed`, `block.pinned`, `block.completed`, `commitment.autoconfirmed` (D-034: vuelve a `proposed` y reabre la propuesta). `CONFLICT` si ya se deshizo o existe un plan posterior |
+| `GET /v1/audit` · `POST /v1/audit/:id/undo` | Actividad (con `undoneAt` derivado) y deshacer append-only: inserta `<acción>.undone` con `undo_of_audit_id` y aplica la compensación. Deshacibles: `plan.generated`, `plan.accepted`, `task.created`, `task.completed`, `block.pinned`, `block.completed`, `commitment.autoconfirmed` (D-034: vuelve a `proposed` y reabre la propuesta), `time.approved` (vuelve a `suggested`). `CONFLICT` si ya se deshizo o existe un plan posterior |
 | `GET /v1/value-report?period=` | Informe de valor con método por cifra |
 | `GET /v1/ai/usage` | `{ period, usedUsd, capUsd, paused, mode }`: gasto del mes frente al tope por workspace (docs/05 §5) |
 
@@ -99,7 +103,10 @@ Todas llevan `{ workspaceId, traceId }` además de su carga.
 | `gmail.sync` | `{ integrationAccountId, historyId? }` | Ingesta incremental, prefiltro, encola extracción |
 | `calendar.sync` | `{ integrationAccountId }` | Sincroniza eventos |
 | `ai.extract_commitments` | `{ threadId, messageIds[] }` | Contexto acotado por hilo, AI-2 con política de inyección, crea compromisos `proposed` + propuestas deduplicadas; auto-confirma `explicit` ≥ 0,9 si `gmail_autoconfirm` (auditado, deshacible); tope mensual de IA → reglas |
-| `ai.brief_client` | `{ clientId, eventId? }` | Genera briefing |
+| `ai.brief_client` | `{ clientId, eventId? }` | Genera briefing bajo demanda (nunca programado) |
+| `clients.scan` | `{ date }` (diario; cada minuto fuera de producción, id por día) | Dominios vistos ≥ 3 veces entre contactos/hilos sin cliente → una propuesta `client_link` por dominio (sin correo personal, dominio propio, exclusiones ni dominios de clientes) |
+| `time.infer` | `{ date }` (diario y al completar bloque/tarea) | Entradas `suggested` por evento externo con cliente y bloque Meri completado (D-042); idempotente, nunca aprueba |
+| `briefings.prepare` | `{ date }` (diario) | Notificación `briefing.suggested` un día antes de una reunión con cliente si `briefing_before_meetings`; sin IA |
 | `planner.replan` | `{ reason }` | Calcula el diff; aplica diffs seguros y crea propuesta `reschedule` para el resto (ADR 0003). Se encola con debounce de 3 s por workspace al cambiar tareas o eventos |
 | `followups.scan` | `{ date }` (cada hora; cada minuto fuera de producción) | Detecta compromisos de terceros vencidos (→ `at_risk`) e hilos enviados sin respuesta tras `followup_days`; una propuesta `followup` por elemento (hash de deduplicación) y aviso agrupado `followups.due` |
 | `data.retention` | `{ date }` (diario) | Purga hilos indexados más antiguos que `min(preferences.retention_days, tope del plan, 365)` con el mismo orden que la desconexión (D-036) |

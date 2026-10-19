@@ -416,3 +416,39 @@ export async function updateProject(
     .returning();
   return row ? toProject(row) : null;
 }
+
+/** D-040: domains of every client of the workspace, active, archived or deleted (never re-proposed). */
+export async function listAllClientDomains(tx: WorkspaceTx, workspaceId: WorkspaceId): Promise<string[]> {
+  const rows = await tx.select({ domains: clients.domains }).from(clients).where(eq(clients.workspaceId, workspaceId));
+  return [...new Set(rows.flatMap((r) => r.domains.map((d) => d.toLowerCase())))];
+}
+
+export interface DomainSightingRow {
+  domain: string;
+  contacts: number;
+  threads: number;
+}
+
+/**
+ * D-040: how often each e-mail domain appears among contacts and indexed threads that have no client yet.
+ * Counts only, never names or subjects; the pure rules in core decide which ones become `client_link` proposals.
+ */
+export async function listUnlinkedDomainSightings(
+  tx: WorkspaceTx,
+  workspaceId: WorkspaceId,
+): Promise<DomainSightingRow[]> {
+  const rows = await tx.execute<{ domain: string; contacts: string | number; threads: string | number }>(sql`
+    with c as (
+      select lower(split_part(${contacts.email}, '@', 2)) as domain, count(*) as n
+      from ${contacts} where ${contacts.workspaceId} = ${workspaceId} and ${contacts.clientId} is null group by 1),
+    t as (
+      select lower(split_part(p, '@', 2)) as domain, count(distinct ${threadsIndex.id}) as n
+      from ${threadsIndex}, jsonb_array_elements_text(${threadsIndex.participants}) as p
+      where ${threadsIndex.workspaceId} = ${workspaceId} and ${threadsIndex.clientId} is null group by 1)
+    select coalesce(c.domain, t.domain) as domain, coalesce(c.n, 0) as contacts, coalesce(t.n, 0) as threads
+    from c full outer join t on c.domain = t.domain
+    where coalesce(c.domain, t.domain) <> ''
+    order by coalesce(c.n, 0) + coalesce(t.n, 0) desc, 1
+    limit 200`);
+  return [...rows].map((r) => ({ domain: r.domain, contacts: Number(r.contacts), threads: Number(r.threads) }));
+}

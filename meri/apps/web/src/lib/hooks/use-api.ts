@@ -8,6 +8,7 @@ import { clientApi, ClientApiError } from "@/lib/client-api";
 import type {
   AiUsage,
   CalendarEvent,
+  Client,
   Commitment,
   Contact,
   IntegrationAccount,
@@ -31,6 +32,7 @@ export const keys = {
   contacts: ["contacts"] as const,
   exclusions: ["exclusions"] as const,
   aiUsage: ["ai-usage"] as const,
+  clients: ["clients"] as const,
 };
 
 /** Current plan (persisted blocks + last run). Polled: the worker replans in the background after each change. */
@@ -107,6 +109,16 @@ export function useMailExclusions() {
   return useQuery({
     queryKey: keys.exclusions,
     queryFn: () => clientApi<{ items: MailExclusion[] }>("/v1/mail/exclusions"),
+  });
+}
+
+export function useClients(options: { stats?: boolean; includeArchived?: boolean } = {}) {
+  const qs = new URLSearchParams();
+  if (options.stats) qs.set("stats", "true");
+  if (options.includeArchived) qs.set("includeArchived", "true");
+  return useQuery({
+    queryKey: [...keys.clients, qs.toString()],
+    queryFn: () => clientApi<{ items: Client[] }>(`/v1/clients?${qs.toString()}`),
   });
 }
 

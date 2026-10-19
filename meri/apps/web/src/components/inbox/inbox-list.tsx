@@ -20,6 +20,7 @@ import type {
   Task,
 } from "@/lib/types";
 import { FollowupDialog, type FollowupTarget } from "@/components/commitments/followup-dialog";
+import { ClientLinkCard } from "./client-link-card";
 import { CommitmentCard, FollowupCard } from "./commitment-card";
 
 const HIGH = 0.85;
@@ -41,21 +42,23 @@ export function InboxList({
   const proposals = useProposals();
   const [editing, setEditing] = useState<string | null>(null);
   const [followup, setFollowup] = useState<FollowupTarget | null>(null);
-  const invalidate = [keys.proposals, ["tasks"] as const, ["commitments"] as const, keys.audit];
+  const invalidate = [keys.proposals, ["tasks"] as const, ["commitments"] as const, keys.audit, keys.clients];
 
   const confirm = useApiMutation(
     ({
       id,
       edits,
       commitment,
+      client,
     }: {
       id: string;
       edits?: Record<string, unknown>;
       commitment?: Record<string, unknown>;
+      client?: { name: string };
     }) =>
       clientApi<{ task: Task | null; commitment: Commitment | null }>(`/v1/proposals/${id}/confirm`, {
         method: "POST",
-        json: edits ? { edits } : commitment ? { commitment } : {},
+        json: edits ? { edits } : commitment ? { commitment } : client ? { client } : {},
         headers: { "idempotency-key": idempotencyKey() },
       }),
     invalidate,
@@ -150,6 +153,19 @@ export function InboxList({
                     counterpartyEmail: fp.counterpartyEmail,
                     proposalId: p.id,
                   })
+                }
+                onDismiss={() => dismiss.mutate(p.id, { onSuccess: () => toast(t("toasts.dismissed")) })}
+              />
+            );
+          }
+          if (p.kind === "client_link") {
+            return (
+              <ClientLinkCard
+                key={p.id}
+                proposal={p}
+                busy={confirm.isPending}
+                onConfirm={(client) =>
+                  confirm.mutate({ id: p.id, client }, { onSuccess: () => toast(t("toasts.clientCreated")) })
                 }
                 onDismiss={() => dismiss.mutate(p.id, { onSuccess: () => toast(t("toasts.dismissed")) })}
               />

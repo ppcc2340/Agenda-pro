@@ -419,7 +419,8 @@
       "inferred": "Inferred",
       "suggested": "Suggestion",
       "reschedule": "Reschedule",
-      "followup": "Follow-up"
+      "followup": "Follow-up",
+      "client_link": "Client"
     },
     "noDate": "No date",
     "forDate": "Due: {date}",
@@ -440,7 +441,8 @@
       "dismissed": "Dismissed. Meri will learn from this.",
       "batch": "{n} confirmed.",
       "commitmentConfirmed": "Confirmed. It is now in your commitments.",
-      "waitingTask": "“Waiting for” task created."
+      "waitingTask": "“Waiting for” task created.",
+      "clientCreated": "Client created and linked."
     },
     "editAction": "Action",
     "editDate": "Date",
@@ -462,6 +464,12 @@
       "unanswered": "{who} has not replied to your e-mail in {days, plural, one {one day} other {# days}}.",
       "prepare": "Prepare follow-up",
       "waitingTask": "Create “Waiting for” task"
+    },
+    "clientLink": {
+      "title": "Create the client {domain}?",
+      "seen": "{contacts, plural, one {one contact} other {# contacts}} and {threads, plural, one {one thread} other {# threads}} without a client on this domain.",
+      "name": "Client name",
+      "create": "Create client"
     }
   },
   "capture": {
@@ -636,5 +644,43 @@
     "sourceAi": "Written by the AI from this commitment's context. Review it before saving.",
     "sourceTemplate": "Meri template. You can edit it before saving.",
     "minLength": "Write at least 20 characters."
+  },
+  "clients": {
+    "new": "New client",
+    "edit": "Edit",
+    "archive": "Archive",
+    "restore": "Restore",
+    "archived": "Archived",
+    "showArchived": "Show archived",
+    "listLabel": "Clients",
+    "noDomains": "No domains",
+    "emptyTitle": "No clients yet",
+    "emptyBody": "Create your first client or confirm the ones Meri proposes in the Inbox from your mail.",
+    "limit": "Your plan does not allow more active clients. Archive one or upgrade.",
+    "formHint": "Domains let Meri assign mail and meetings to this client automatically.",
+    "form": {
+      "name": "Name",
+      "domains": "Mail domains",
+      "domainsHint": "Comma separated, for example: acme.com, acme.es",
+      "color": "Colour",
+      "tags": "Tags",
+      "tagsPlaceholder": "tax, litigation…",
+      "notes": "Notes",
+      "save": "Save client",
+      "cancel": "Cancel"
+    },
+    "stats": {
+      "commitments": "Open commitments",
+      "overdue": "{n} overdue",
+      "week": "This week",
+      "suggested": "+{h} suggested",
+      "risks": "Tasks at risk"
+    },
+    "toasts": {
+      "created": "Client created.",
+      "updated": "Client saved.",
+      "archived": "Client archived.",
+      "restored": "Client restored."
+    }
   }
 }

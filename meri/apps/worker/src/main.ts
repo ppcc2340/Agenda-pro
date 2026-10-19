@@ -7,6 +7,7 @@ import { createIntegrations, FakeAiClient } from "@meri/integrations";
 import { createDispatcher } from "@meri/jobs";
 import {
   dispatchCalendarPolling,
+  dispatchClientsScan,
   dispatchDailyReview,
   dispatchFollowupsScan,
   dispatchMailPolling,
@@ -18,6 +19,7 @@ import {
 const MAX_RETENTION_DAYS = 365;
 import { buildHealthServer } from "./health";
 import { calendarSyncJob } from "./queues/calendar-sync";
+import { clientsScanJob } from "./queues/clients-scan";
 import { dailyReviewJob } from "./queues/daily-review";
 import { gmailSyncJob } from "./queues/gmail-sync";
 import { extractCommitmentsJob } from "./queues/extract-commitments";
@@ -52,6 +54,7 @@ async function main(): Promise<void> {
   registry.register(dailyReviewJob(handlerDeps));
   registry.register(gmailSyncJob(handlerDeps, dispatcher));
   registry.register(followupsScanJob(handlerDeps));
+  registry.register(clientsScanJob(handlerDeps));
   registry.register(dataRetentionJob({ ...handlerDeps, maxRetentionDays: MAX_RETENTION_DAYS }));
   registry.register(
     extractCommitmentsJob({ ...handlerDeps, costCapUsd: config.env.AI_MONTHLY_COST_CAP_USD_PER_USER }),
@@ -91,6 +94,12 @@ async function main(): Promise<void> {
     () => dispatchFollowupsScan({ adminSql, dispatcher, logger, now }, followupsEveryMs),
     logger,
   );
+  const stopClientsScan = schedule(
+    "clients.scan",
+    config.isProduction ? 60 * 60_000 : 60_000,
+    () => dispatchClientsScan({ adminSql, dispatcher, logger, now }),
+    logger,
+  );
   const stopRetention = schedule(
     "data.retention",
     6 * 60 * 60_000,
@@ -118,6 +127,7 @@ async function main(): Promise<void> {
         "gmail.sync",
         "ai.extract_commitments",
         "followups.scan",
+        "clients.scan",
         "data.retention",
       ],
     },
@@ -130,6 +140,7 @@ async function main(): Promise<void> {
     stopDigest();
     stopMailPolling();
     stopFollowups();
+    stopClientsScan();
     stopRetention();
     await health.close();
     await registry.close();

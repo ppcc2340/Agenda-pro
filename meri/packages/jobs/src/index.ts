@@ -46,3 +46,4 @@ export {
 } from "./handlers/extract-commitments";
 export { scanFollowups, followupDedupeHash, type FollowupsScanResult } from "./handlers/followups-scan";
 export { purgeThreads, purgeAccountMail, applyMailRetention, type PurgeResult } from "./handlers/mail-purge";
+export { scanClients, clientLinkDedupeHash, type ClientsScanResult, type ClientLinkPayload } from "./handlers/clients-scan";

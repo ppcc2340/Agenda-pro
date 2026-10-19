@@ -81,7 +81,7 @@ const ProjectPatch = ProjectBody.partial()
   .extend({ status: z.enum(["active", "closed"]).optional() })
   .refine((b) => Object.keys(b).length > 0, { message: "Nothing to update." });
 
-const serializeClient = (c: ClientView, stats: z.infer<typeof ClientJson>["stats"] = null) => ({
+export const serializeClient = (c: ClientView, stats: z.infer<typeof ClientJson>["stats"] = null) => ({
   ...c,
   archivedAt: c.archivedAt ? c.archivedAt.toISOString() : null,
   createdAt: c.createdAt.toISOString(),

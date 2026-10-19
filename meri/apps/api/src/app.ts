@@ -25,6 +25,7 @@ import { healthRoutes } from "./routes/health";
 import { internalRoutes } from "./routes/internal";
 import { taskRoutes } from "./routes/tasks";
 import { captureRoutes } from "./routes/capture";
+import { proposalRoutes } from "./routes/proposals";
 import { integrationRoutes } from "./routes/integrations";
 import { idempotencyPlugin } from "./plugins/idempotency";
 import { planRoutes } from "./routes/plan";
@@ -143,6 +144,10 @@ export async function buildApp(deps: AppDeps) {
     now: deps.now,
     ai: deps.integrations.ai,
     flags: deps.flags ?? new InMemoryFlagStore(),
+  });
+  await app.register(proposalRoutes, {
+    now: deps.now,
+    maxClientsFor: (tx, workspaceId) => getEntitlementMaxClients(tx, workspaceId),
     onTasksChanged: deps.onTasksChanged,
   });
 

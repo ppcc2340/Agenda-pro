@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { CaptureButton, PageHeader } from "@/components/shell/app-shell";
+import { ClientList } from "@/components/clients/client-list";
 import { CommitmentList } from "@/components/commitments/commitment-list";
 import { TaskList } from "@/components/tasks/task-list";
 import { getServerConfig } from "@/server/config";
@@ -52,6 +53,8 @@ export default async function ProyectosPage({
           now={demoNow ? new Date(demoNow).toISOString() : undefined}
           initialDirection={dir === "owed_to_me" ? "owed_to_me" : "owed_by_me"}
         />
+      ) : tab === "clientes" ? (
+        <ClientList />
       ) : (
         <EmptyState title={t("emptyTitle")} body={t("soon")} />
       )}

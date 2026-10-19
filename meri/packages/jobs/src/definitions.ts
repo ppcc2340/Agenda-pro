@@ -24,6 +24,10 @@ export const FollowupsScanJob = {
   name: "followups.scan" as const,
   schema: withEnvelope({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }),
 };
+export const ClientsScanJob = {
+  name: "clients.scan" as const,
+  schema: withEnvelope({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }),
+};
 export const DataRetentionJob = {
   name: "data.retention" as const,
   schema: withEnvelope({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }),
@@ -47,6 +51,7 @@ export type CalendarSyncPayload = z.infer<typeof CalendarSyncJob.schema>;
 export type GmailSyncPayload = z.infer<typeof GmailSyncJob.schema>;
 export type ExtractCommitmentsPayload = z.infer<typeof ExtractCommitmentsJob.schema>;
 export type FollowupsScanPayload = z.infer<typeof FollowupsScanJob.schema>;
+export type ClientsScanPayload = z.infer<typeof ClientsScanJob.schema>;
 export type DataRetentionPayload = z.infer<typeof DataRetentionJob.schema>;
 export type PlannerReplanPayload = z.infer<typeof PlannerReplanJob.schema>;
 export type DailyReviewPayload = z.infer<typeof DailyReviewJob.schema>;

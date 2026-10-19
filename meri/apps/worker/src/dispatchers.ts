@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { Logger } from "@meri/config";
 import {
   CalendarSyncJob,
+  ClientsScanJob,
   DailyReviewJob,
   DataRetentionJob,
   FollowupsScanJob,
@@ -105,6 +106,25 @@ export async function dispatchFollowupsScan(deps: DispatcherDeps, everyMs = 3_60
     );
   }
   if (rows.length > 0) deps.logger.info({ workspaces: rows.length }, "followups scan dispatched");
+  return rows.length;
+}
+
+/** clients.scan (D-040): once a day per onboarded workspace with contacts (job id keyed by date). */
+export async function dispatchClientsScan(deps: DispatcherDeps): Promise<number> {
+  const rows = await deps.adminSql<{ workspaceId: string }[]>`
+    select p.workspace_id as "workspaceId" from preferences p
+    where p.onboarded_at is not null
+      and exists (select 1 from contacts c where c.workspace_id = p.workspace_id and c.client_id is null)
+    limit 5000`;
+  const date = deps.now().toISOString().slice(0, 10);
+  for (const row of rows) {
+    await deps.dispatcher.enqueue(
+      ClientsScanJob,
+      { workspaceId: row.workspaceId, traceId: randomUUID(), date },
+      { jobId: `clients.scan_${row.workspaceId}_${date}` },
+    );
+  }
+  if (rows.length > 0) deps.logger.info({ workspaces: rows.length }, "clients scan dispatched");
   return rows.length;
 }
 

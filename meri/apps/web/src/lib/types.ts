@@ -250,3 +250,31 @@ export interface AiUsage {
   paused: boolean;
   mode: "fake" | "live";
 }
+
+export interface ClientStats {
+  openCommitments: number;
+  overdueCommitments: number;
+  atRiskTasks: number;
+  minutesApproved: number;
+  minutesSuggested: number;
+}
+
+export interface Client {
+  id: string;
+  name: string;
+  domains: string[];
+  color: string | null;
+  notes: string | null;
+  verticalTags: string[];
+  followupsMuted: boolean;
+  archivedAt: string | null;
+  createdAt: string;
+  stats: ClientStats | null;
+}
+
+export interface ClientLinkPayload {
+  domain: string;
+  suggestedName: string;
+  contacts: number;
+  threads: number;
+}

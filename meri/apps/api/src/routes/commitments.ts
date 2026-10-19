@@ -6,7 +6,7 @@ import type { FastifyInstance } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import { z } from "zod";
 import { draftFollowup, templateFollowup, type FollowupInput } from "@meri/ai";
-import { isAllowedRecipient, looksLikeInjection } from "@meri/core";
+import { gmailThreadUrl, isAllowedRecipient, looksLikeInjection } from "@meri/core";
 import {
   audit,
   createTask,
@@ -53,9 +53,6 @@ export const CommitmentViewSchema = z.object({
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
 });
-
-export const gmailThreadUrl = (externalThreadId: string) =>
-  `https://mail.google.com/mail/u/0/#all/${externalThreadId}`;
 
 export function serializeCommitment(
   c: CommitmentView,

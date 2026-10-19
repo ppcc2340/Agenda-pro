@@ -419,7 +419,8 @@
       "inferred": "Inferido",
       "suggested": "Sugerencia",
       "reschedule": "Reorganización",
-      "followup": "Seguimiento"
+      "followup": "Seguimiento",
+      "client_link": "Cliente"
     },
     "noDate": "Sin fecha",
     "forDate": "Para: {date}",
@@ -440,7 +441,8 @@
       "dismissed": "Descartada. Meri aprenderá de esto.",
       "batch": "{n} confirmadas.",
       "commitmentConfirmed": "Confirmado. Ya está en tus compromisos.",
-      "waitingTask": "Tarea «Esperando a» creada."
+      "waitingTask": "Tarea «Esperando a» creada.",
+      "clientCreated": "Cliente creado y vinculado."
     },
     "editAction": "Acción",
     "editDate": "Fecha",
@@ -462,6 +464,12 @@
       "unanswered": "{who} no ha respondido a tu correo en {days, plural, one {un día} other {# días}}.",
       "prepare": "Preparar seguimiento",
       "waitingTask": "Crear tarea «Esperando a»"
+    },
+    "clientLink": {
+      "title": "¿Crear el cliente {domain}?",
+      "seen": "{contacts, plural, one {un contacto} other {# contactos}} y {threads, plural, one {un hilo} other {# hilos}} sin cliente con este dominio.",
+      "name": "Nombre del cliente",
+      "create": "Crear cliente"
     }
   },
   "capture": {
@@ -636,5 +644,43 @@
     "sourceAi": "Redactado por la IA con el contexto de este compromiso. Revísalo antes de guardarlo.",
     "sourceTemplate": "Plantilla de Meri. Puedes editarla antes de guardarla.",
     "minLength": "Escribe al menos 20 caracteres."
+  },
+  "clients": {
+    "new": "Nuevo cliente",
+    "edit": "Editar",
+    "archive": "Archivar",
+    "restore": "Restaurar",
+    "archived": "Archivado",
+    "showArchived": "Mostrar archivados",
+    "listLabel": "Clientes",
+    "noDomains": "Sin dominios",
+    "emptyTitle": "Sin clientes todavía",
+    "emptyBody": "Crea tu primer cliente o confirma los que Meri te proponga en Entrada a partir de tu correo.",
+    "limit": "Tu plan no permite más clientes activos. Archiva uno o mejora el plan.",
+    "formHint": "Los dominios permiten asignar correos y reuniones a este cliente automáticamente.",
+    "form": {
+      "name": "Nombre",
+      "domains": "Dominios de correo",
+      "domainsHint": "Separados por comas, por ejemplo: acme.com, acme.es",
+      "color": "Color",
+      "tags": "Etiquetas",
+      "tagsPlaceholder": "fiscal, litigio…",
+      "notes": "Notas",
+      "save": "Guardar cliente",
+      "cancel": "Cancelar"
+    },
+    "stats": {
+      "commitments": "Compromisos abiertos",
+      "overdue": "{n} vencidos",
+      "week": "Esta semana",
+      "suggested": "+{h} sugeridas",
+      "risks": "Tareas en riesgo"
+    },
+    "toasts": {
+      "created": "Cliente creado.",
+      "updated": "Cliente guardado.",
+      "archived": "Cliente archivado.",
+      "restored": "Cliente restaurado."
+    }
   }
 }
