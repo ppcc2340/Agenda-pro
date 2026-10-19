@@ -29,3 +29,21 @@ export {
   type BootstrapInput,
   type MeView,
 } from "./repos/accounts";
+export {
+  TASK_STATUSES,
+  TaskInputSchema,
+  TaskPatchSchema,
+  listTasks,
+  listOpenTasks,
+  getTask,
+  createTask,
+  updateTask,
+  softDeleteTask,
+  replaceDependencies,
+  setTaskStatuses,
+  type TaskStatus,
+  type TaskInput,
+  type TaskPatch,
+  type TaskView,
+  type TaskFilters,
+} from "./repos/tasks";

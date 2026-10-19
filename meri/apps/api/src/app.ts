@@ -15,6 +15,7 @@ import { sessionPlugin } from "./plugins/session";
 import { accountRoutes } from "./routes/account";
 import { healthRoutes } from "./routes/health";
 import { internalRoutes } from "./routes/internal";
+import { taskRoutes } from "./routes/tasks";
 
 export interface AppDeps {
   config: AppConfig;
@@ -26,6 +27,8 @@ export interface AppDeps {
   /** Override for tests. */
   rateLimitMax?: number;
   observability?: Observability;
+  /** Hook for the replan trigger (set by main.ts to enqueue planner.replan). */
+  onTasksChanged?: (workspaceId: string, traceId: string) => Promise<void>;
 }
 
 export const BODY_LIMIT_BYTES = 256 * 1024;
@@ -101,6 +104,7 @@ export async function buildApp(deps: AppDeps) {
   await app.register(healthRoutes, { db: deps.db });
   await app.register(internalRoutes, { db: deps.db, secret: config.env.INTERNAL_API_SECRET, now: deps.now });
   await app.register(accountRoutes, { db: deps.db, now: deps.now });
+  await app.register(taskRoutes, { now: deps.now, onTasksChanged: deps.onTasksChanged });
 
   app.get("/docs/json", { schema: { hide: true } }, () => app.swagger());
 

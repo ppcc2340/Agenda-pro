@@ -31,6 +31,14 @@
 - D-015: Cifrado de sobre en `packages/config/src/crypto`; `KeyProvider` es la única interfaz de KMS.
 - D-016: Rol `meri_app` sin `BYPASSRLS` para la aplicación; migraciones con el propietario (`DATABASE_ADMIN_URL`).
 - D-017: Componentes propios con convención shadcn/ui, sin su CLI (ADR 0002).
+- D-018: Pestaña «Tareas» en «Proyectos y compromisos» para el CRUD de tareas (fase 1).
+- D-019: Diffs seguros del planificador se aplican solos (auditados, deshacibles); movimientos → propuesta `reschedule`; Calendar se escribe al confirmar o con `auto_low_risk` (ADR 0003).
+- D-020: Notificaciones por interfaz `Notifier` con `FakeNotifier` + bandeja in-app; correo transaccional propio (nunca Gmail del usuario) en la fase 6.
+- D-021: Conexión de Google en `fake`: OAuth simulado con `state`, tokens ficticios cifrados por la misma ruta que en `live`.
+- D-022: Riesgo en `tasks.risk` (jsonb) calculado por reglas; `at_risk` solo desde `pending`/`scheduled`.
+- D-023: Deshacer append-only con `audit_log.undo_of_audit_id` (ADR 0003).
+- D-024: `Idempotency-Key` con tabla `idempotency_keys` y hook de Fastify.
+- D-025: Crons como jobs dispatcher que encolan un job por workspace/cuenta.
 - D-009: La demo `demo/desktop.html` y `demo/mobile.html` es la referencia visual y de textos (ver `docs/11-design-system.md`).
 
 ## Bloqueos humanos
