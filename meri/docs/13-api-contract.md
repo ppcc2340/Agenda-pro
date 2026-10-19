@@ -35,12 +35,20 @@ Fuente para que backend y frontend se construyan en paralelo. El OpenAPI generad
 | `POST /v1/proposals/confirm-batch` | Confirma varias (solo `explicit` con confianza alta) |
 
 ### Compromisos y seguimiento
-| `GET /v1/commitments?direction=&clientId=&status=` | Debo / Me deben |
+| `GET /v1/commitments?direction=&clientId=&status=` | Debo / Me deben. Cada elemento lleva `counterpartyName` y `threadUrl` (enlace al hilo en Gmail); sin `status` excluye `proposed` y `dismissed` |
 |---|---|
-| `PATCH /v1/commitments/:id` | Estado, fecha, cliente |
-| `POST /v1/commitments/:id/followup-draft` | Genera borrador (IA). Devuelve texto. No crea nada en Gmail |
-| `POST /v1/commitments/:id/followup-draft/save` | Guarda el borrador en Gmail (`gmail.compose`). **Nunca envía** |
-| `POST /v1/commitments/:id/remind` | Crea un recordatorio |
+| `PATCH /v1/commitments/:id` `{ status?, dueAt?, clientId?, action? }` | Estado (`confirmed`/`fulfilled`/`at_risk`/`broken`/`dismissed`), fecha, cliente, acción. Un `proposed` se confirma desde Entrada, no aquí. Auditado (`commitment.fulfilled`, `commitment.dismissed`, `commitment.updated`) |
+| `POST /v1/commitments/:id/followup-draft` `{ language? }` | Genera borrador (AI-3; plantilla si la IA está en pausa o rechaza por política). Devuelve `{ to, subject, body, source, language }`. No crea nada en Gmail. `to` y `subject` los fija el código desde el hilo |
+| `POST /v1/commitments/:id/followup-draft/save` `{ body, subject?, proposalId? }` | Guarda el borrador en Gmail (`gmail.compose`) en el hilo original, destinatario = contraparte del hilo. Rechaza cuerpos con enlaces, direcciones o instrucciones (`VALIDATION_FAILED`). `INTEGRATION_NEEDS_REAUTH` sin Gmail. Auditado (`followup.draft_saved` con `draftId`). Acepta `Idempotency-Key`. **Nunca envía** |
+| `POST /v1/commitments/:id/remind` `{ at?, proposalId? }` | Crea una tarea «Seguimiento: …» (mañana por defecto) ligada al compromiso. Auditado (`followup.reminder`) |
+
+Propuestas `commitment` (Entrada): `POST /v1/proposals/:id/confirm` acepta `{ commitment: { action?, dueAt?, clientId?, createWaitingTask? } }` y devuelve `{ task: null, commitment }`; `createWaitingTask` (solo `owed_to_me`) crea una tarea `waiting_on_third_party` «Esperando a …» (auditada `task.waiting_created`). `dismiss` marca el compromiso `dismissed`. `confirm-batch` solo acepta compromisos `explicit` con confianza ≥ 0,85 (`skipped.reason = not_explicit`). Propuestas `followup` (job `followups.scan`, una por compromiso vencido o hilo sin respuesta) se resuelven desde `followup-draft/save` o `remind` con `proposalId`, o con `dismiss`.
+
+### Contactos, silencios y exclusiones de correo
+| `GET /v1/contacts` · `PATCH /v1/contacts/:id` `{ muted }` | Contactos vistos en el correo; silenciar seguimientos por contacto (F-08 AC2) |
+|---|---|
+| `PATCH /v1/clients/:id` `{ followupsMuted }` | Silenciar seguimientos por cliente (el CRUD completo de clientes llega en la fase 3) |
+| `GET/POST /v1/mail/exclusions` · `DELETE /v1/mail/exclusions/:id` | `{ kind: sender|domain|label, value }`; el valor se valida según el tipo (correo, dominio, etiqueta) y se normaliza en minúsculas salvo etiquetas |
 
 ### Plan y calendario
 | `GET /v1/plan?from=&to=` | Plan vigente: bloques persistidos, tareas referenciadas, riesgos/conflictos del último `plan_run`, propuesta `reschedule` pendiente. Nunca ejecuta el planificador en la petición |
@@ -65,10 +73,11 @@ Fuente para que backend y frontend se construyan en paralelo. El OpenAPI generad
 |---|---|
 | `POST /v1/integrations/:provider/connect` | Devuelve URL de autorización |
 | `GET /v1/integrations/:provider/callback` | Intercambia código y guarda tokens cifrados |
-| `POST /v1/integrations/:id/pause` · `DELETE /v1/integrations/:id` | Pausar / desconectar y purgar |
-| `GET /v1/audit` · `POST /v1/audit/:id/undo` | Actividad (con `undoneAt` derivado) y deshacer append-only: inserta `<acción>.undone` con `undo_of_audit_id` y aplica la compensación. Deshacibles: `plan.generated`, `plan.accepted`, `task.created`, `task.completed`, `block.pinned`, `block.completed`. `CONFLICT` si ya se deshizo o existe un plan posterior |
+| `POST /v1/integrations/:id/pause` · `DELETE /v1/integrations/:id` | Pausar (también detiene la lectura de correo) / desconectar y purgar: hilos indexados, compromisos `proposed` y propuestas pendientes del correo se borran; los compromisos confirmados se conservan sin hilo (D-036) |
+| `POST /v1/integrations/:id/mail/sync` | Sincronización manual de Gmail (202) |
+| `GET /v1/audit` · `POST /v1/audit/:id/undo` | Actividad (con `undoneAt` derivado) y deshacer append-only: inserta `<acción>.undone` con `undo_of_audit_id` y aplica la compensación. Deshacibles: `plan.generated`, `plan.accepted`, `task.created`, `task.completed`, `block.pinned`, `block.completed`, `commitment.autoconfirmed` (D-034: vuelve a `proposed` y reabre la propuesta). `CONFLICT` si ya se deshizo o existe un plan posterior |
 | `GET /v1/value-report?period=` | Informe de valor con método por cifra |
-| `GET /v1/ai/usage` | Créditos usados y límite |
+| `GET /v1/ai/usage` | `{ period, usedUsd, capUsd, paused, mode }`: gasto del mes frente al tope por workspace (docs/05 §5) |
 
 ### Facturación
 | `POST /v1/billing/checkout` | Sesión de Stripe Checkout |
@@ -89,10 +98,11 @@ Todas llevan `{ workspaceId, traceId }` además de su carga.
 |---|---|---|
 | `gmail.sync` | `{ integrationAccountId, historyId? }` | Ingesta incremental, prefiltro, encola extracción |
 | `calendar.sync` | `{ integrationAccountId }` | Sincroniza eventos |
-| `ai.extract_commitments` | `{ threadId, messageIds[] }` | Crea propuestas y compromisos `proposed` |
+| `ai.extract_commitments` | `{ threadId, messageIds[] }` | Contexto acotado por hilo, AI-2 con política de inyección, crea compromisos `proposed` + propuestas deduplicadas; auto-confirma `explicit` ≥ 0,9 si `gmail_autoconfirm` (auditado, deshacible); tope mensual de IA → reglas |
 | `ai.brief_client` | `{ clientId, eventId? }` | Genera briefing |
 | `planner.replan` | `{ reason }` | Calcula el diff; aplica diffs seguros y crea propuesta `reschedule` para el resto (ADR 0003). Se encola con debounce de 3 s por workspace al cambiar tareas o eventos |
-| `followups.scan` | `{}` (cron) | Detecta vencidos y sin respuesta |
+| `followups.scan` | `{ date }` (cada hora; cada minuto fuera de producción) | Detecta compromisos de terceros vencidos (→ `at_risk`) e hilos enviados sin respuesta tras `followup_days`; una propuesta `followup` por elemento (hash de deduplicación) y aviso agrupado `followups.due` |
+| `data.retention` | `{ date }` (diario) | Purga hilos indexados más antiguos que `min(preferences.retention_days, tope del plan, 365)` con el mismo orden que la desconexión (D-036) |
 | `daily.review` | `{ date }` (cron cada 15 min: workspaces que pasaron su hora de inicio en su zona) | Resumen del día (plantilla, sin IA), uno por día |
 | `billing.usage_rollup` | `{ period }` (cron) | Consolida `ai_usage` y créditos |
 | `data.delete_account` | `{ userId }` | Borrado completo y verificación |

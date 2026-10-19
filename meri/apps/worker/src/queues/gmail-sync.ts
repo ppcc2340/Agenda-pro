@@ -44,7 +44,7 @@ export function gmailSyncJob(
             threadId: t.threadId,
             messageIds: t.messageIds,
           },
-          { jobId: `extract:${t.threadId}:${t.messageIds[t.messageIds.length - 1] ?? ""}` },
+          { jobId: `extract_${t.threadId}_${t.messageIds[t.messageIds.length - 1] ?? ""}` },
         );
       }
     },

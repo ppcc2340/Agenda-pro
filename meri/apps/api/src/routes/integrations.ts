@@ -202,7 +202,7 @@ export function integrationRoutes(
             integrationAccountId: account.id,
             reason: "connect",
           },
-          { jobId: `calendar.sync:${account.id}:connect:${connectBucket}` },
+          { jobId: `calendar.sync_${account.id}_connect_${connectBucket}` },
         );
       }
       if (hasGmailScopes(account.scopes)) {
@@ -214,7 +214,7 @@ export function integrationRoutes(
             integrationAccountId: account.id,
             reason: "connect",
           },
-          { jobId: `gmail.sync:${account.id}:connect:${connectBucket}` },
+          { jobId: `gmail.sync_${account.id}_connect_${connectBucket}` },
         );
       }
       return reply.redirect(`${options.appUrl}/control?integration=connected`);
@@ -305,7 +305,7 @@ export function integrationRoutes(
           integrationAccountId: current.id,
           reason: "manual",
         },
-        { jobId: `calendar.sync:${current.id}:${String(options.now().getTime())}` },
+        { jobId: `calendar.sync_${current.id}_${String(options.now().getTime())}` },
       );
       return reply.status(202).send({ queued: true });
     },
@@ -371,7 +371,7 @@ export function integrationRoutes(
           },
           // Bucketed id: pushes within 15 s collapse, later ones are never dropped by a retained completed job.
           {
-            jobId: `calendar.sync:${parsed.data.accountId}:webhook:${String(Math.floor(Date.now() / 15_000))}`,
+            jobId: `calendar.sync_${parsed.data.accountId}_webhook_${String(Math.floor(Date.now() / 15_000))}`,
           },
         );
       }

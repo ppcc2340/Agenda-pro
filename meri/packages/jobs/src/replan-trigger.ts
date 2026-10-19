@@ -19,6 +19,6 @@ export function enqueueReplan(
   return dispatcher.enqueue(
     PlannerReplanJob,
     { workspaceId: input.workspaceId, traceId: input.traceId, reason: input.reason },
-    { jobId: `planner.replan:${input.workspaceId}:${String(bucket)}`, delay: REPLAN_DEBOUNCE_MS },
+    { jobId: `planner.replan_${input.workspaceId}_${String(bucket)}`, delay: REPLAN_DEBOUNCE_MS },
   );
 }

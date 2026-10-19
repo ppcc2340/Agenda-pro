@@ -192,7 +192,8 @@ export function deriveAction(sentence: string, ctx: CaptureContext): string {
       }
     }
   }
-  const words = rest
+  // A clause after a comma/semicolon/colon qualifies the action ("…, en cuanto lo revise legal"): drop it.
+  const words = (rest.split(/[,;:(]/)[0] ?? "")
     .replace(/[^\p{L}\p{N}\s]/gu, " ")
     .split(/\s+/)
     .map((w) => w.toLowerCase())
@@ -205,7 +206,9 @@ export function deriveAction(sentence: string, ctx: CaptureContext): string {
       "para",
       "by",
       "cuando",
+      "cuanto",
       "when",
+      "once",
       "porque",
       "because",
       "si",

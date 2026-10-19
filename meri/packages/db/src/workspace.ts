@@ -17,6 +17,12 @@ export type WorkspaceTx = PgTransaction<
  * `SET LOCAL` (set_config(..., true)) is transaction-scoped, so the context can never leak to another request.
  * Every request and every job must go through here before touching tenant data (docs/03 §Reglas 2).
  */
+/**
+ * D-037: value of `app.workspace_id` that lets a NON-application role read every workspace (cross-tenant
+ * dispatchers). Set it as a connection parameter on the admin connection only; writes stay tenant-scoped.
+ */
+export const ADMIN_WORKSPACE_CONTEXT = "*";
+
 export async function withWorkspace<T>(
   db: Db,
   workspaceId: string,

@@ -1,6 +1,6 @@
 export * from "./schema";
 export { createDb, pingDb, assertAppRole, type Db, type DbHandle } from "./client";
-export { lockWorkspace, withWorkspace, type WorkspaceTx } from "./workspace";
+export { lockWorkspace, withWorkspace, ADMIN_WORKSPACE_CONTEXT, type WorkspaceTx } from "./workspace";
 export * from "./ids";
 export { runMigrations, ensureDevRoles } from "./migrate";
 export {

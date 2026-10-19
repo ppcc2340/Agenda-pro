@@ -52,7 +52,7 @@ export function CommitmentCard({
       <div className="min-w-0 flex-1">
         <div className="mb-1 flex flex-wrap items-center gap-2 text-[13px] text-ink2">
           <Pill variant={p.direction === "owed_to_me" ? "sea" : "plain"}>
-            {tc(`direction.${p.direction}`)}
+            {tc(`directionLabel.${p.direction}`)}
           </Pill>
           <span>
             {p.direction === "owed_to_me" ? t("commitment.from", { who }) : t("commitment.to", { who })}

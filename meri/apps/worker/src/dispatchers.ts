@@ -32,7 +32,7 @@ export async function dispatchCalendarPolling(deps: DispatcherDeps, staleMinutes
       { workspaceId: row.workspaceId, traceId: randomUUID(), integrationAccountId: row.id, reason: "poll" },
       // Bucketed per poll window: a retained completed job must never swallow the next poll (BullMQ ignores
       // `add` for an existing id in any state).
-      { jobId: `calendar.sync:${row.id}:poll:${String(Math.floor(Date.now() / (staleMinutes * 60_000)))}` },
+      { jobId: `calendar.sync_${row.id}_poll_${String(Math.floor(Date.now() / (staleMinutes * 60_000)))}` },
     );
   }
   if (rows.length > 0) deps.logger.info({ accounts: rows.length }, "calendar polling dispatched");
@@ -52,7 +52,7 @@ export async function dispatchMailPolling(deps: DispatcherDeps, staleMinutes = 5
     await deps.dispatcher.enqueue(
       GmailSyncJob,
       { workspaceId: row.workspaceId, traceId: randomUUID(), integrationAccountId: row.id, reason: "poll" },
-      { jobId: `gmail.sync:${row.id}:poll:${String(Math.floor(Date.now() / (staleMinutes * 60_000)))}` },
+      { jobId: `gmail.sync_${row.id}_poll_${String(Math.floor(Date.now() / (staleMinutes * 60_000)))}` },
     );
   }
   if (rows.length > 0) deps.logger.info({ accounts: rows.length }, "mail polling dispatched");
@@ -75,7 +75,7 @@ export async function dispatchDailyReview(deps: DispatcherDeps): Promise<number>
     await deps.dispatcher.enqueue(
       DailyReviewJob,
       { workspaceId: d.workspaceId, traceId: randomUUID(), date: d.date },
-      { jobId: `daily.review:${d.workspaceId}:${d.date}` },
+      { jobId: `daily.review_${d.workspaceId}_${d.date}` },
     );
   }
   if (due.length > 0) deps.logger.info({ workspaces: due.length }, "daily review dispatched");
@@ -101,7 +101,7 @@ export async function dispatchFollowupsScan(deps: DispatcherDeps, everyMs = 3_60
     await deps.dispatcher.enqueue(
       FollowupsScanJob,
       { workspaceId: row.workspaceId, traceId: randomUUID(), date },
-      { jobId: `followups.scan:${row.workspaceId}:${bucket}` },
+      { jobId: `followups.scan_${row.workspaceId}_${bucket}` },
     );
   }
   if (rows.length > 0) deps.logger.info({ workspaces: rows.length }, "followups scan dispatched");
@@ -117,7 +117,7 @@ export async function dispatchRetention(deps: DispatcherDeps): Promise<number> {
     await deps.dispatcher.enqueue(
       DataRetentionJob,
       { workspaceId: row.workspaceId, traceId: randomUUID(), date },
-      { jobId: `data.retention:${row.workspaceId}:${date}` },
+      { jobId: `data.retention_${row.workspaceId}_${date}` },
     );
   }
   if (rows.length > 0) deps.logger.info({ workspaces: rows.length }, "retention dispatched");

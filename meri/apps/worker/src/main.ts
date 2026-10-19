@@ -2,7 +2,7 @@ import { Redis } from "ioredis";
 import postgres from "postgres";
 import { registerFakeAiHandlers } from "@meri/ai";
 import { ConfigError, createLogger, loadConfig, loadDotenv } from "@meri/config";
-import { assertAppRole, createDb } from "@meri/db";
+import { ADMIN_WORKSPACE_CONTEXT, assertAppRole, createDb } from "@meri/db";
 import { createIntegrations, FakeAiClient } from "@meri/integrations";
 import { createDispatcher } from "@meri/jobs";
 import {
@@ -67,6 +67,8 @@ async function main(): Promise<void> {
   const adminSql = postgres(config.env.DATABASE_ADMIN_URL, {
     max: 1,
     onnotice: () => {},
+    // D-037: read-only admin context for enumeration across tenants (the policy ignores it for the app role).
+    connection: { "app.workspace_id": ADMIN_WORKSPACE_CONTEXT },
   });
   const stopPolling = schedule(
     "calendar.poll",

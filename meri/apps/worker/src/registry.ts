@@ -144,7 +144,7 @@ export class QueueRegistry {
           .add(
             def.name,
             { ...job.data, failedJobId: job.id, error: err.message },
-            { attempts: 1, jobId: `dlq:${def.name}:${job.id ?? ""}` },
+            { attempts: 1, jobId: `dlq_${def.name}_${job.id ?? ""}` },
           )
           .catch((e: unknown) => {
             this.deps.logger.error({ err: e }, "could not move job to dead-letter queue");

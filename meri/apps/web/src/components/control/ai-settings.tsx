@@ -1,6 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import { useState } from "react";
 import { Pill } from "@/components/ui/pill";
 import { useToast } from "@/components/ui/toast";
 import { clientApi } from "@/lib/client-api";
@@ -17,10 +18,15 @@ export function AiSettings({
   const t = useTranslations("control.ai");
   const { toast } = useToast();
   const usage = useAiUsage();
+  // Optimistic: the box flips at once and only reverts if the save fails.
+  const [on, setOn] = useState(gmailAutoconfirm);
   const toggle = useApiMutation(
     (value: boolean) => clientApi("/v1/preferences", { method: "PUT", json: { gmailAutoconfirm: value } }),
     [keys.audit],
-    { onSuccess: (_d, value) => toast(value ? t("autoconfirmOn") : t("autoconfirmOff")) },
+    {
+      onSuccess: (_d, value) => toast(value ? t("autoconfirmOn") : t("autoconfirmOff")),
+      onError: (_e, value) => setOn(!value),
+    },
   );
   const used = usage.data?.usedUsd ?? 0;
   const cap = usage.data?.capUsd ?? 0;
@@ -32,9 +38,12 @@ export function AiSettings({
           <input
             type="checkbox"
             className="mt-1"
-            checked={gmailAutoconfirm}
+            checked={on}
             disabled={toggle.isPending}
-            onChange={(e) => toggle.mutate(e.target.checked)}
+            onChange={(e) => {
+              setOn(e.target.checked);
+              toggle.mutate(e.target.checked);
+            }}
           />
           <span>
             <b>{t("autoconfirm")}</b>

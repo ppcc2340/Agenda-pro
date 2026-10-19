@@ -13,6 +13,8 @@ export interface DbHandle {
 }
 
 export interface CreateDbOptions {
+  /** Session parameters sent at connect (e.g. `app.workspace_id` for the admin context, D-037). */
+  connection?: Record<string, string>;
   max?: number;
   /** Fail fast when the server is unreachable (seconds). */
   connectTimeout?: number;
@@ -43,6 +45,7 @@ export function createDb(url: string, options: CreateDbOptions = {}): DbHandle {
   const sql = postgres(url, {
     max: options.max ?? 10,
     connect_timeout: options.connectTimeout ?? 10,
+    ...(options.connection ? { connection: options.connection } : {}),
     // Dates travel as ISO strings in UTC; the app never relies on the server timezone.
     transform: { undefined: null },
   });

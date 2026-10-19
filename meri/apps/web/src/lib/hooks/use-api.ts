@@ -72,10 +72,12 @@ export function useTasks(params: { status?: string; includeCompleted?: boolean }
   });
 }
 
+/** Pending proposals. Polled: the worker extracts commitments and scans follow-ups in the background. */
 export function useProposals() {
   return useQuery({
     queryKey: keys.proposals,
     queryFn: () => clientApi<Page<Proposal>>("/v1/proposals?status=pending&limit=100"),
+    refetchInterval: 10_000,
   });
 }
 

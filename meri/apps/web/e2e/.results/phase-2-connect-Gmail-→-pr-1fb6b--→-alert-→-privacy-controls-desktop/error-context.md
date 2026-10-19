@@ -1,0 +1,249 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - link "Ir al contenido" [ref=e3] [cursor=pointer]:
+      - /url: "#main"
+    - complementary [ref=e4]:
+      - generic [ref=e5]:
+        - img [ref=e6]
+        - generic [ref=e10]: meri
+      - navigation "Áreas" [ref=e11]:
+        - link "Hoy" [ref=e12] [cursor=pointer]:
+          - /url: /hoy
+          - img [ref=e13]
+          - generic [ref=e19]: Hoy
+        - link "Entrada 3" [ref=e20] [cursor=pointer]:
+          - /url: /entrada
+          - img [ref=e21]
+          - generic [ref=e24]: Entrada
+          - emphasis [ref=e25]: "3"
+        - link "Proyectos y compromisos" [ref=e26] [cursor=pointer]:
+          - /url: /proyectos
+          - img [ref=e27]
+          - generic [ref=e31]: Proyectos y compromisos
+        - link "Calendario" [ref=e32] [cursor=pointer]:
+          - /url: /calendario
+          - img [ref=e33]
+          - generic [ref=e35]: Calendario
+        - link "Centro de control" [ref=e36] [cursor=pointer]:
+          - /url: /control
+          - img [ref=e37]
+          - generic [ref=e38]: Centro de control
+      - generic [ref=e39]:
+        - button "Tema oscuro" [ref=e40] [cursor=pointer]:
+          - img [ref=e41]
+          - generic [ref=e43]: Cambiar tema
+        - generic [ref=e44]:
+          - generic [ref=e45]: Idioma
+          - combobox "Idioma" [ref=e46]:
+            - option "ES" [selected]
+            - option "EN"
+        - button "Cerrar sesión" [ref=e48] [cursor=pointer]
+    - main [ref=e49]:
+      - generic [ref=e50]:
+        - generic [ref=e51]:
+          - generic [ref=e52]:
+            - heading "Centro de control" [level=1] [ref=e53]
+            - paragraph [ref=e54]: Qué puede hacer Meri por su cuenta, qué datos usa y qué ha hecho.
+          - button "Capturar o buscar Ctrl K" [ref=e55] [cursor=pointer]:
+            - img [ref=e56]
+            - generic [ref=e59]: Capturar o buscar
+            - generic [ref=e60]: Ctrl K
+        - generic [ref=e61]:
+          - generic [ref=e62]:
+            - heading "Autonomía" [level=3] [ref=e63]
+            - paragraph [ref=e64]: Cuánto puede hacer Meri sin preguntarte.
+          - generic [ref=e65]:
+            - generic [ref=e66]: Solo sugerir
+            - paragraph [ref=e67]: Meri propone y tú confirmas todo. Es la opción por defecto.
+        - generic [ref=e68]:
+          - generic [ref=e69]:
+            - heading "Preferencias" [level=3] [ref=e70]
+            - paragraph [ref=e71]: Tu horario y tu margen para imprevistos.
+          - generic [ref=e72]:
+            - generic [ref=e73]:
+              - term [ref=e74]: Zona horaria
+              - definition [ref=e75]: Europe/Madrid
+              - term [ref=e76]: Horario laboral
+              - definition [ref=e77]: 09:00–18:00
+              - term [ref=e78]: Margen para imprevistos
+              - definition [ref=e79]: 20 %
+            - link "Editar preferencias" [ref=e80] [cursor=pointer]:
+              - /url: /onboarding
+        - generic [ref=e81]:
+          - generic [ref=e82]:
+            - heading "Conexiones" [level=3] [ref=e83]
+            - paragraph [ref=e84]: Qué cuentas lee Meri y con qué permiso.
+          - generic [ref=e86]:
+            - generic [ref=e87]:
+              - generic [ref=e88]:
+                - text: Google Calendar
+                - generic [ref=e89]: Lectura de eventos y escritura solo en el calendario «Meri»
+                - generic [ref=e90]: "Última sincronización: mar, 20 oct, 10:40"
+              - generic [ref=e91]:
+                - generic [ref=e92]: Conectado
+                - button "Sincronizar ahora" [ref=e93] [cursor=pointer]
+                - button "Pausar" [ref=e94] [cursor=pointer]
+                - button "Desconectar" [ref=e95] [cursor=pointer]
+            - paragraph [ref=e96]: "Modo de pruebas: se conecta un calendario simulado con el mismo flujo que el real."
+            - generic [ref=e97]:
+              - generic [ref=e98]:
+                - text: Gmail
+                - generic [ref=e99]: Lectura y borradores. Sin permiso de envío
+              - generic [ref=e100]:
+                - generic [ref=e101]: Conectado
+                - button "Sincronizar ahora" [ref=e102] [cursor=pointer]
+            - generic [ref=e103]:
+              - generic [ref=e104]:
+                - text: Outlook y Notion
+                - generic [ref=e105]: Llegan después del lanzamiento
+              - generic [ref=e106]: Próximamente
+        - generic [ref=e107]:
+          - generic [ref=e108]:
+            - heading "IA y auto-confirmación" [level=3] [ref=e109]
+            - paragraph [ref=e110]: Cuánto gasta la IA y qué puede confirmar sola.
+          - generic [ref=e112]:
+            - generic [ref=e114] [cursor=pointer]:
+              - checkbox "Confirmar automáticamente compromisos explícitos de alta confianza Solo los que el correo deja claros y con fecha (confianza ≥ 90 %). Cada uno queda en Actividad y puedes deshacerlo. El resto siempre pasa por Entrada." [checked] [ref=e115]
+              - generic [ref=e116]:
+                - text: Confirmar automáticamente compromisos explícitos de alta confianza
+                - generic [ref=e117]: Solo los que el correo deja claros y con fecha (confianza ≥ 90 %). Cada uno queda en Actividad y puedes deshacerlo. El resto siempre pasa por Entrada.
+            - generic [ref=e118]:
+              - generic [ref=e119]: 0.00 USD de 6.00 USD este mes (300 créditos de IA en tu plan)
+              - paragraph [ref=e121]: "Al llegar al límite, la IA se pausa: las reglas, el calendario y el plan siguen funcionando."
+              - paragraph [ref=e122]: "Modo de pruebas: el extractor por reglas no consume créditos."
+        - generic [ref=e123]:
+          - generic [ref=e124]:
+            - heading "Plan" [level=3] [ref=e125]
+            - paragraph [ref=e126]: Prueba hasta el 3 de noviembre de 2026
+          - generic [ref=e128]: En prueba
+        - generic [ref=e129]:
+          - generic [ref=e130]:
+            - heading "Avisos" [level=3] [ref=e131]
+            - paragraph [ref=e132]: Riesgos y cambios del plan, agrupados y con un tope diario.
+          - list [ref=e134]:
+            - listitem [ref=e135]:
+              - generic [ref=e136]: Riesgo
+              - generic [ref=e137]:
+                - text: Una tarea ha entrado en riesgo.
+                - generic [ref=e138]: 20 oct 2026, 8:40
+              - link "Ver en Hoy" [ref=e139] [cursor=pointer]:
+                - /url: /hoy
+              - button "Marcar como leído" [ref=e140] [cursor=pointer]
+            - listitem [ref=e141]:
+              - generic [ref=e142]: Propuestas
+              - generic [ref=e143]:
+                - text: Una propuesta nueva en Entrada.
+                - generic [ref=e144]: 20 oct 2026, 8:40
+              - button "Marcar como leído" [ref=e145] [cursor=pointer]
+            - listitem [ref=e146]:
+              - generic [ref=e147]: Propuestas
+              - generic [ref=e148]:
+                - text: Una propuesta nueva en Entrada.
+                - generic [ref=e149]: 20 oct 2026, 8:40
+              - button "Marcar como leído" [ref=e150] [cursor=pointer]
+            - listitem [ref=e151]:
+              - generic [ref=e152]: Propuestas
+              - generic [ref=e153]:
+                - text: Una propuesta nueva en Entrada.
+                - generic [ref=e154]: 20 oct 2026, 8:40
+              - button "Marcar como leído" [ref=e155] [cursor=pointer]
+            - listitem [ref=e156]:
+              - generic [ref=e157]: Propuestas
+              - generic [ref=e158]:
+                - text: Una propuesta nueva en Entrada.
+                - generic [ref=e159]: 20 oct 2026, 8:40
+              - button "Marcar como leído" [ref=e160] [cursor=pointer]
+        - generic [ref=e161]:
+          - generic [ref=e162]:
+            - heading "Actividad" [level=3] [ref=e163]
+            - paragraph [ref=e164]: Todo lo que Meri hizo o propuso, con opción de deshacer.
+          - list [ref=e166]:
+            - listitem [ref=e167]:
+              - generic [ref=e168]: Tú
+              - generic [ref=e169]:
+                - text: Cambiaste tus preferencias.
+                - generic [ref=e170]: 19 oct 2026, 19:37
+            - listitem [ref=e171]:
+              - generic [ref=e172]: Tú
+              - generic [ref=e173]:
+                - text: Descartaste una propuesta.
+                - generic [ref=e174]: 19 oct 2026, 19:37
+            - listitem [ref=e175]:
+              - generic [ref=e176]: Sistema
+              - generic [ref=e177]:
+                - text: Meri generó tu plan.
+                - generic [ref=e178]: 19 oct 2026, 19:36
+              - button "Deshacer" [ref=e179] [cursor=pointer]:
+                - img [ref=e180]
+                - text: Deshacer
+            - listitem [ref=e183]:
+              - generic [ref=e184]: Tú
+              - generic [ref=e185]:
+                - text: Meri guardó un borrador de seguimiento en Gmail (sin enviar).
+                - generic [ref=e186]: 19 oct 2026, 19:36
+            - listitem [ref=e187]:
+              - generic [ref=e188]: Tú
+              - generic [ref=e189]:
+                - text: Confirmaste un compromiso.
+                - generic [ref=e190]: 19 oct 2026, 19:36
+            - listitem [ref=e191]:
+              - generic [ref=e192]: Tú
+              - generic [ref=e193]:
+                - text: Creaste una tarea «Esperando a».
+                - generic [ref=e194]: 19 oct 2026, 19:36
+            - listitem [ref=e195]:
+              - generic [ref=e196]: Tú
+              - generic [ref=e197]:
+                - text: Confirmaste un compromiso.
+                - generic [ref=e198]: 19 oct 2026, 19:36
+            - listitem [ref=e199]:
+              - generic [ref=e200]: Tú
+              - generic [ref=e201]:
+                - text: Conectaste Google Calendar.
+                - generic [ref=e202]: 19 oct 2026, 19:36
+            - listitem [ref=e203]:
+              - generic [ref=e204]: Tú
+              - generic [ref=e205]:
+                - text: Completaste la configuración inicial.
+                - generic [ref=e206]: 19 oct 2026, 19:36
+        - generic [ref=e207]:
+          - generic [ref=e208]:
+            - heading "Correo y privacidad" [level=3] [ref=e209]
+            - paragraph [ref=e210]: Qué lee Meri de tu Gmail y cómo lo olvida.
+          - generic [ref=e212]:
+            - generic [ref=e213]:
+              - generic [ref=e214]: Leyendo correo
+              - button "Pausar lectura de correo" [ref=e215] [cursor=pointer]
+              - button "Desconectar y purgar" [ref=e216] [cursor=pointer]
+            - paragraph [ref=e217]: Meri guarda solo metadatos y una cita de hasta 200 caracteres por hilo, y los borra a los 90 días.
+            - generic [ref=e218]:
+              - heading "Exclusiones" [level=4] [ref=e219]
+              - paragraph [ref=e220]: Remitentes, dominios o etiquetas que Meri no leerá nunca.
+              - generic [ref=e221]:
+                - generic [ref=e222]: Tipo de exclusión
+                - combobox "Tipo de exclusión" [ref=e223]:
+                  - option "Remitente" [selected]
+                  - option "Dominio"
+                  - option "Etiqueta"
+                - generic [ref=e224]: Valor
+                - textbox "Valor" [ref=e225]:
+                  - /placeholder: nombre@dominio.com
+                - button "Excluir" [disabled]
+              - list
+              - paragraph [ref=e226]: Sin exclusiones. Los boletines y correos automáticos ya se descartan por reglas.
+        - generic [ref=e227]:
+          - generic [ref=e228]:
+            - heading "Privacidad" [level=3] [ref=e229]
+            - paragraph [ref=e230]: Tus datos son tuyos.
+          - generic [ref=e231]:
+            - generic [ref=e232]:
+              - button "Exportar mis datos" [disabled]
+              - button "Eliminar mi cuenta" [disabled]
+            - paragraph [ref=e233]: Todavía no disponible. Llegará en una próxima versión.
+  - alert [ref=e234]
+  - status [ref=e235]:
+    - generic [ref=e236]: Auto-confirmación activada. Verás cada compromiso en Actividad.
+```

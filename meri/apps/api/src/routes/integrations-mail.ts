@@ -53,7 +53,7 @@ export function mailRoutes(app: FastifyInstance, options: MailRoutesOptions, don
           integrationAccountId: current.id,
           reason: "manual",
         },
-        { jobId: `gmail.sync:${current.id}:manual:${String(Math.floor(Date.now() / 5_000))}` },
+        { jobId: `gmail.sync_${current.id}_manual_${String(Math.floor(Date.now() / 5_000))}` },
       );
       return reply.status(202).send({ queued: true });
     },
@@ -84,7 +84,7 @@ export function mailRoutes(app: FastifyInstance, options: MailRoutesOptions, don
             integrationAccountId: parsed.data.accountId,
             reason: "webhook",
           },
-          { jobId: `gmail.sync:${parsed.data.accountId}:webhook:${String(Math.floor(Date.now() / 15_000))}` },
+          { jobId: `gmail.sync_${parsed.data.accountId}_webhook_${String(Math.floor(Date.now() / 15_000))}` },
         );
       }
       return reply.status(204).send(null);
