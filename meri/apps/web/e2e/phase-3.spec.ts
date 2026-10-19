@@ -86,7 +86,8 @@ test("client → meeting → briefing → agreements → weekly time → CSV →
   await expect(briefing).toContainText(/llamada semanal con acme/i);
   await expect(briefing.getByRole("link", { name: /ver fuente/i }).first()).toBeVisible();
   await expectAccessible(page, "briefing");
-  await briefing.getByRole("button", { name: /^cerrar$/i }).click();
+  await page.keyboard.press("Escape");
+  await expect(briefing).toBeHidden();
 
   // Client view (P3-08): header, month hours, timeline with the meeting and the task.
   await page.locator("li", { hasText: /^Acme/ }).first().getByRole("link", { name: "Acme" }).click();
@@ -109,7 +110,8 @@ test("client → meeting → briefing → agreements → weekly time → CSV →
     .fill("Enviaré la propuesta de honorarios el viernes\nNos envían el contrato firmado mañana");
   await agreements.getByRole("button", { name: /proponer 2 acuerdos/i }).click();
   await expect(agreements).toContainText(/2 propuestas en entrada/i);
-  await agreements.getByRole("button", { name: /^cerrar$/i }).click();
+  await page.keyboard.press("Escape");
+  await expect(agreements).toBeHidden();
   await page.goto("/entrada");
   await hydrated(page);
   const mine = page.locator("article", { hasText: /propuesta de honorarios/i }).first();

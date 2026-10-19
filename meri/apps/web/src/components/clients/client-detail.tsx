@@ -43,7 +43,7 @@ export function ClientDetail({
   const locale = useLocale();
   const now = useMemo(() => (nowIso ? new Date(nowIso) : new Date()), [nowIso]);
   const range = useMemo(
-    () => ({ from: new Date(now.getTime() - 45 * DAY).toISOString(), to: new Date(now.getTime() + 45 * DAY).toISOString() }),
+    () => ({ from: new Date(now.getTime() - 30 * DAY).toISOString(), to: new Date(now.getTime() + 30 * DAY).toISOString() }),
     [now],
   );
   const tasks = useTasks({ includeCompleted: true });
@@ -155,6 +155,11 @@ export function ClientDetail({
       <section aria-label={t("timeline")}>
         <h3 className="mb-1.5 font-head text-[15.5px] font-semibold">{t("timeline")}</h3>
         {loading ? <p className="py-4 text-ink3">{tApp("loading")}</p> : null}
+        {tasks.isError || commitments.isError || events.isError ? (
+          <p role="alert" className="py-2 text-risk">
+            {tApp("errorBody")}
+          </p>
+        ) : null}
         {items.length === 0 && !loading ? <EmptyState title={t("emptyTitle")} body={t("emptyBody")} /> : null}
         <ol className="divide-y divide-rule border-t border-rule">
           {items.map((i) => (
