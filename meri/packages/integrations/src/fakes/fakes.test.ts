@@ -179,7 +179,7 @@ describe("createIntegrations factory", () => {
   it("builds fake adapters by default and memoises per-account connectors", () => {
     const env = parseEnv(base);
     const integrations = createIntegrations(
-      { env, modes: resolveModes(env), isProduction: false, isTest: true },
+      { env, modes: resolveModes(env), isProduction: false, isTest: true, fakesOnProductionBuild: false },
       { now },
     );
     expect(integrations.ai.mode).toBe("fake");
@@ -193,7 +193,7 @@ describe("createIntegrations factory", () => {
   it("live modes without an adapter yet fail loudly instead of silently using fakes", () => {
     const env = parseEnv({ ...base, AI_MODE: "live", ANTHROPIC_API_KEY: "sk-test" });
     expect(() =>
-      createIntegrations({ env, modes: resolveModes(env), isProduction: false, isTest: true }, { now }),
+      createIntegrations({ env, modes: resolveModes(env), isProduction: false, isTest: true, fakesOnProductionBuild: false }, { now }),
     ).toThrow(/anthropic live adapter/);
   });
 });
