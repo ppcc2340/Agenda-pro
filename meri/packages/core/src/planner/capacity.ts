@@ -153,3 +153,31 @@ export interface DailyCapacity {
 export function computeDailyCapacity(input: PlanInput): DailyCapacity[] {
   return buildDays(normalize(input)).map((d) => ({ date: d.key, capacityMinutes: d.capacity }));
 }
+
+export interface DailyMargin {
+  /** "YYYY-MM-DD" in the user's zone. */
+  day: string;
+  /** Minutes reserved for the unexpected (never assigned): free minutes minus assignable capacity. */
+  minutes: number;
+  /** The reserve is drawn at the end of the work day: [workEnd − minutes, workEnd) in UTC ISO. */
+  startsAt: string;
+  endsAt: string;
+}
+
+const isoOfMinutes = (utcMinutes: number): string => new Date(utcMinutes * 60_000).toISOString();
+
+/**
+ * Public helper (D-051): the contingency reserve per local day, so the day line can draw the hatched margin
+ * without running the planner. Days without free time (or without reserve) are omitted.
+ */
+export function computeDailyMargin(input: PlanInput): DailyMargin[] {
+  return buildDays(normalize(input))
+    .map((d) => ({ day: d.key, minutes: slotMinutes(d.baseFree) - d.capacity, workEnd: d.workEnd }))
+    .filter((d) => d.minutes > 0)
+    .map((d) => ({
+      day: d.day,
+      minutes: d.minutes,
+      startsAt: isoOfMinutes(d.workEnd - d.minutes),
+      endsAt: isoOfMinutes(d.workEnd),
+    }));
+}

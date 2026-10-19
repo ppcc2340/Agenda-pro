@@ -18,8 +18,8 @@ Fuente para que backend y frontend se construyan en paralelo. El OpenAPI generad
 |---|---|
 | `GET /v1/me` | Usuario, workspace, plan, derechos |
 | `GET /v1/preferences` · `PUT /v1/preferences` | Horario, bloques de concentración, margen, autonomía |
-| `GET /v1/account/export` | Exportación completa (JSON y CSV en zip) |
-| `DELETE /v1/account` | Eliminación (lógica inmediata, borrado en job) |
+| `GET /v1/account/export` | Exportación de los datos del usuario (D-050/D-055). Prototipo: un JSON `meri-export/1` con listas blancas por entidad (clientes, asuntos, contactos, tareas, compromisos, propuestas, tiempo, eventos, bloques, avisos, actividad sin `before/after`, conexiones sin tokens ni claves); `Content-Disposition: attachment`, `Cache-Control: no-store`, 5/min, auditoría `account.exported`. El zip con CSV queda para el job de la fase 5 |
+| `DELETE /v1/account` | Eliminación lógica inmediata (D-054): `users.deleted_at`, `workspaces.deleted_at`, conexiones `revoked` (nada vuelve a sincronizarse), auditoría `account.deleted`; 204. La sesión deja de valer en todas las rutas (guardia con caché de 60 s) y el `bootstrap` de ese correo responde 409 hasta que el job `data.delete_account` purgue (fase 5) |
 
 ### Tareas y captura
 | `GET/POST /v1/tasks` · `GET/PATCH/DELETE /v1/tasks/:id` | CRUD con filtros `status`, `clientId`, `dueBefore` |
@@ -51,7 +51,7 @@ Fuente para que backend y frontend se construyan en paralelo. El OpenAPI generad
 | `GET/POST /v1/mail/exclusions` · `DELETE /v1/mail/exclusions/:id` | `{ kind: sender|domain|label, value }`; el valor se valida según el tipo (correo, dominio, etiqueta) y se normaliza en minúsculas salvo etiquetas |
 
 ### Plan y calendario
-| `GET /v1/plan?from=&to=` | Plan vigente: bloques persistidos, tareas referenciadas, riesgos/conflictos del último `plan_run`, propuesta `reschedule` pendiente. Nunca ejecuta el planificador en la petición |
+| `GET /v1/plan?from=&to=` | Plan vigente: bloques persistidos, tareas referenciadas, riesgos/conflictos del último `plan_run`, propuesta `reschedule` pendiente y `margin: [{ day, minutes, startsAt, endsAt }]` (D-051: reserva de imprevistos por día calculada por `core.computeDailyMargin` sobre preferencias y eventos fijos; se dibuja rayada al final de la jornada, nunca es un bloque). Nunca ejecuta el planificador en la petición |
 |---|---|
 | `POST /v1/plan/replan` | Ejecuta el planificador ahora. Diff seguro (solo añade bloques o retira los de tareas completadas) → se aplica como acción `system` auditada; cualquier movimiento de un bloque vivo → propuesta `reschedule` con `basePlanVersion` (ADR 0003) |
 | `POST /v1/plan/accept` `{ proposalId }` | Aplica la propuesta y escribe solo eventos Meri en Calendar. `CONFLICT` si el plan cambió desde la propuesta. Acepta `Idempotency-Key` |

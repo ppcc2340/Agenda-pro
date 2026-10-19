@@ -1,7 +1,8 @@
 import type { FastifyInstance } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import { z } from "zod";
-import { bootstrapAccount, type Db } from "@meri/db";
+import { AccountDeletedError, bootstrapAccount, type Db } from "@meri/db";
+import { ApiError } from "../errors";
 import { requireInternalSecret } from "../plugins/internal";
 
 export const BootstrapBody = z.object({
@@ -38,7 +39,13 @@ export function internalRoutes(
         },
       },
     },
-    (request) => bootstrapAccount(options.db, { ...request.body, now: options.now() }),
+    (request) =>
+      bootstrapAccount(options.db, { ...request.body, now: options.now() }).catch((err: unknown) => {
+        // D-054: a logically deleted account cannot sign in again until the purge job removes it.
+        if (err instanceof AccountDeletedError)
+          throw new ApiError("CONFLICT", "This account was deleted and is pending purge.");
+        throw err;
+      }),
   );
   done();
 }

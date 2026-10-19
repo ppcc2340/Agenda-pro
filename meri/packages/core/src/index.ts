@@ -12,7 +12,7 @@ export {
   type LocalParts,
 } from "./time/local";
 export { PlannerInputError } from "./planner/normalize";
-export { computeDailyCapacity, type DailyCapacity } from "./planner/capacity";
+export { computeDailyCapacity, computeDailyMargin, type DailyCapacity, type DailyMargin } from "./planner/capacity";
 export { MAX_RELEASED_BLOCKS } from "./planner/stability";
 export { buildAlerts, type AlertCandidate, type AlertRunInput, type AlertTemplate } from "./alerts/group";
 export {

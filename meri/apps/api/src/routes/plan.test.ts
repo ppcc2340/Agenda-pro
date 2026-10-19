@@ -15,6 +15,7 @@ interface BlockJson {
 }
 interface PlanJson {
   planVersion: number;
+  margin: { day: string; minutes: number; startsAt: string; endsAt: string }[];
   blocks: BlockJson[];
   tasks: { id: string; title: string; status: string }[];
   risks: { taskId: string }[];
@@ -70,6 +71,14 @@ describe("/v1/plan, /v1/audit/:id/undo (F-05, F-13, ADR 0003)", () => {
     expect(body.blocks.length).toBeGreaterThanOrEqual(2);
     expect(body.tasks.map((x) => x.status).every((s) => s === "scheduled")).toBe(true);
     expect(body.pendingProposal).toBeNull();
+    // D-051: the contingency reserve per work day comes from core's capacity math, not from a block.
+    expect(body.margin.length).toBeGreaterThan(0);
+    for (const m of body.margin) {
+      expect(m.day).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      expect(m.minutes).toBeGreaterThan(0);
+      expect(new Date(m.endsAt).getTime() - new Date(m.startsAt).getTime()).toBe(m.minutes * 60_000);
+      expect(body.blocks.some((b) => b.startsAt < m.endsAt && b.endsAt > m.startsAt)).toBe(false);
+    }
     // Tenant isolation: B sees nothing of A.
     const planB = (await getPlan(cookieB)).json<PlanJson>();
     expect(planB.blocks).toEqual([]);

@@ -1,5 +1,14 @@
-import { eq, sql } from "drizzle-orm";
-import { entitlements, memberships, preferences, subscriptions, users, workspaces } from "../schema";
+import { and, eq, isNull, sql } from "drizzle-orm";
+import {
+  entitlements,
+  integrationAccounts,
+  memberships,
+  preferences,
+  subscriptions,
+  users,
+  workspaces,
+} from "../schema";
+import { audit } from "./audit";
 import type { Db } from "../client";
 import { newId, newUserId, newWorkspaceId, type UserId, type WorkspaceId } from "../ids";
 import { withWorkspace, type WorkspaceTx } from "../workspace";
@@ -23,6 +32,14 @@ export interface AccountIdentity {
 }
 
 const TRIAL_DAYS = 14;
+
+/** Sign-in of an email whose account was logically deleted (D-054): refused until the purge job removes it. */
+export class AccountDeletedError extends Error {
+  override readonly name = "AccountDeletedError";
+  constructor(readonly email: string) {
+    super(`The account ${email} was deleted and is pending purge.`);
+  }
+}
 
 /**
  * Idempotent first-login bootstrap (F-01): user + workspace + membership + preferences + trial subscription + entitlements.
@@ -72,6 +89,7 @@ export async function bootstrapAccount(db: Db, input: BootstrapInput): Promise<A
 async function findExisting(db: Db, email: string, input: BootstrapInput): Promise<AccountIdentity | null> {
   const existing = await db.query.users.findFirst({ where: eq(users.email, email) });
   if (existing) {
+    if (existing.deletedAt) throw new AccountDeletedError(email);
     const membership = await db
       .select({ workspaceId: workspaces.id })
       .from(workspaces)
@@ -162,4 +180,60 @@ export async function hardDeleteAccountByEmail(db: Db, email: string): Promise<n
   const owned = await db.delete(workspaces).where(eq(workspaces.ownerId, found.id)).returning({ id: workspaces.id });
   await db.delete(users).where(eq(users.id, found.id));
   return owned.length;
+}
+
+/** Liveness check for the API session guard: false once the user or the workspace is logically deleted. */
+export async function isAccountActive(db: Db, userId: UserId, workspaceId: WorkspaceId): Promise<boolean> {
+  const [user] = await db.select({ deletedAt: users.deletedAt }).from(users).where(eq(users.id, userId)).limit(1);
+  const [ws] = await db
+    .select({ deletedAt: workspaces.deletedAt })
+    .from(workspaces)
+    .where(eq(workspaces.id, workspaceId))
+    .limit(1);
+  return user !== undefined && ws !== undefined && user.deletedAt === null && ws.deletedAt === null;
+}
+
+export interface SoftDeleteResult {
+  deleted: boolean;
+  revokedAccounts: number;
+}
+
+/**
+ * Logical deletion (D-050/D-054, `DELETE /v1/account`): user and workspace marked deleted, every integration
+ * account revoked so no dispatcher syncs it again, one audit row; all in one transaction. Idempotent. The
+ * physical purge is the phase 5 `data.delete_account` job.
+ */
+export async function softDeleteAccount(
+  db: Db,
+  input: { userId: UserId; workspaceId: WorkspaceId; now: Date },
+): Promise<SoftDeleteResult> {
+  return db.transaction(async (tx) => {
+    const marked = await tx
+      .update(users)
+      .set({ deletedAt: input.now })
+      .where(and(eq(users.id, input.userId), isNull(users.deletedAt)))
+      .returning({ id: users.id });
+    if (marked.length === 0) return { deleted: false, revokedAccounts: 0 };
+    await tx
+      .update(workspaces)
+      .set({ deletedAt: input.now })
+      .where(and(eq(workspaces.id, input.workspaceId), eq(workspaces.ownerId, input.userId)));
+    await tx.execute(sql`select set_config('app.workspace_id', ${input.workspaceId}, true)`);
+    const revoked = await tx
+      .update(integrationAccounts)
+      .set({ status: "revoked", lastError: "account deleted" })
+      .where(eq(integrationAccounts.workspaceId, input.workspaceId))
+      .returning({ id: integrationAccounts.id });
+    await audit(
+      tx,
+      { workspaceId: input.workspaceId, actor: "user", actorUserId: input.userId },
+      {
+        action: "account.deleted",
+        entityType: "workspace",
+        entityId: input.workspaceId,
+        after: { revokedAccounts: revoked.length, purge: "data.delete_account" },
+      },
+    );
+    return { deleted: true, revokedAccounts: revoked.length };
+  });
 }

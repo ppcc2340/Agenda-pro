@@ -1,7 +1,7 @@
 import { encode } from "@auth/core/jwt";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import type { AccountIdentity } from "@meri/db";
-import { createTestApp, csrf, type TestApp } from "../test/harness";
+import { isAccountActive, listAudit, withWorkspace, type AccountIdentity } from "@meri/db";
+import { createTestApp, csrf, INTERNAL_SECRET, type TestApp } from "../test/harness";
 
 describe("account routes: session, preferences, audit and tenant isolation", () => {
   let t: TestApp;
@@ -148,5 +148,113 @@ describe("preferences merged validation", () => {
     } finally {
       await t.close();
     }
+  });
+});
+
+describe("account export and deletion (D-050, D-054, D-055)", () => {
+  let t: TestApp;
+  beforeAll(async () => {
+    t = await createTestApp();
+  });
+  afterAll(() => t.close());
+
+  const walkKeys = (value: unknown, found: string[] = []): string[] => {
+    if (Array.isArray(value)) value.forEach((v) => walkKeys(v, found));
+    else if (value && typeof value === "object")
+      for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+        found.push(k);
+        walkKeys(v, found);
+      }
+    return found;
+  };
+
+  it("GET /v1/account/export returns an allow-listed JSON of the caller's data only, as an attachment", async () => {
+    const a = await t.createAccount("export-a");
+    const b = await t.createAccount("export-b");
+    const cookieA = await t.cookieFor(a);
+    const cookieB = await t.cookieFor(b);
+    const post = (cookie: string, url: string, payload: Record<string, unknown>) =>
+      t.app.inject({ method: "POST", url, headers: { cookie, ...csrf }, payload });
+    expect((await post(cookieA, "/v1/clients", { name: "Acme Corp", domains: ["acme.com"] })).statusCode).toBe(201);
+    expect((await post(cookieA, "/v1/tasks", { title: "Informe para Acme" })).statusCode).toBe(201);
+    expect((await post(cookieB, "/v1/tasks", { title: "Secreto de Bob" })).statusCode).toBe(201);
+
+    const res = await t.app.inject({ url: "/v1/account/export", headers: { cookie: cookieA } });
+    expect(res.statusCode).toBe(200);
+    expect(res.headers["content-disposition"]).toMatch(/^attachment; filename="meri-export-\d{4}-\d{2}-\d{2}\.json"$/);
+    expect(res.headers["cache-control"]).toBe("no-store");
+    const doc = res.json<Record<string, unknown>>();
+    expect(doc).toMatchObject({ format: "meri-export/1", user: { email: a.email } });
+    const text = JSON.stringify(doc);
+    expect(text).toContain("Informe para Acme");
+    expect(text).toContain("Acme Corp");
+    expect(text).not.toContain("Secreto de Bob");
+    expect(text).not.toContain(b.workspaceId);
+    // Nothing from the integration layer: no token, key, cursor or secret-like key anywhere in the document.
+    const suspicious = walkKeys(doc).filter((k) => /token|secret|encrypted|refresh|access|keyId|cursor/i.test(k));
+    expect(suspicious).toEqual([]);
+    expect(Object.keys(doc).sort()).toEqual(
+      [
+        "activity", "blocks", "calendarEvents", "clients", "commitments", "connections", "contacts", "exportedAt",
+        "format", "notifications", "preferences", "projects", "proposals", "tasks", "timeEntries", "user", "workspace",
+      ].sort(),
+    );
+    const activity = (await t.app.inject({ url: "/v1/audit", headers: { cookie: cookieA } })).json<{
+      items: { action: string }[];
+    }>();
+    expect(activity.items[0]?.action).toBe("account.exported");
+    expect((await t.app.inject({ url: "/v1/account/export" })).statusCode).toBe(401);
+  });
+
+  it("PUT /v1/preferences { autonomy } is audited as preferences.autonomy_changed (control centre selector)", async () => {
+    const e = await t.createAccount("autonomy-e");
+    const cookie = await t.cookieFor(e);
+    const res = await t.app.inject({
+      method: "PUT",
+      url: "/v1/preferences",
+      headers: { cookie, ...csrf },
+      payload: { autonomy: "auto_low_risk" },
+    });
+    expect(res.statusCode).toBe(200);
+    const activity = (await t.app.inject({ url: "/v1/audit", headers: { cookie } })).json<{ items: { action: string }[] }>();
+    expect(activity.items[0]?.action).toBe("preferences.autonomy_changed");
+    // Same value again: a plain preferences update, not a change of autonomy.
+    await t.app.inject({ method: "PUT", url: "/v1/preferences", headers: { cookie, ...csrf }, payload: { autonomy: "auto_low_risk" } });
+    const again = (await t.app.inject({ url: "/v1/audit", headers: { cookie } })).json<{ items: { action: string }[] }>();
+    expect(again.items[0]?.action).toBe("preferences.updated");
+  });
+
+  it("DELETE /v1/account needs CSRF, deletes logically, revokes connections, kills the session and refuses re-login", async () => {
+    const c = await t.createAccount("delete-c");
+    const d = await t.createAccount("delete-d");
+    const cookieC = await t.cookieFor(c);
+    const cookieD = await t.cookieFor(d);
+    expect((await t.app.inject({ method: "DELETE", url: "/v1/account", headers: { cookie: cookieC } })).statusCode).toBe(403);
+    expect((await t.app.inject({ url: "/v1/me", headers: { cookie: cookieC } })).statusCode).toBe(200);
+
+    const del = await t.app.inject({ method: "DELETE", url: "/v1/account", headers: { cookie: cookieC, ...csrf } });
+    expect(del.statusCode).toBe(204);
+    // The old cookie is dead for every route, not only /v1/me.
+    for (const url of ["/v1/me", "/v1/tasks", "/v1/account/export", "/v1/audit"]) {
+      const res = await t.app.inject({ url, headers: { cookie: cookieC } });
+      expect(res.statusCode, url).toBe(401);
+    }
+    // Idempotent, and the other tenant is untouched.
+    expect((await t.app.inject({ method: "DELETE", url: "/v1/account", headers: { cookie: cookieC, ...csrf } })).statusCode).toBe(401);
+    expect((await t.app.inject({ url: "/v1/me", headers: { cookie: cookieD } })).statusCode).toBe(200);
+    // Signing in again with the deleted email is refused until the purge job runs (D-054).
+    const again = await t.app.inject({
+      method: "POST",
+      url: "/internal/auth/bootstrap",
+      headers: { "x-internal-secret": INTERNAL_SECRET },
+      payload: { email: c.email },
+    });
+    expect(again.statusCode).toBe(409);
+    expect(again.json()).toMatchObject({ code: "CONFLICT" });
+    // Audit row and logical deletion, read through the repositories (the session is gone).
+    const page = await withWorkspace(t.handle.db, c.workspaceId, (tx) => listAudit(tx, c.workspaceId, 1));
+    expect(page.items[0]?.action).toBe("account.deleted");
+    expect(await isAccountActive(t.handle.db, c.userId, c.workspaceId)).toBe(false);
+    expect(await isAccountActive(t.handle.db, d.userId, d.workspaceId)).toBe(true);
   });
 });

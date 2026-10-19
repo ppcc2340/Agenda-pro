@@ -12,7 +12,7 @@ import {
   wallMinuteOfDay,
   weekdayOf,
 } from "./calendar-math";
-import { computeDailyCapacity } from "./capacity";
+import { computeDailyCapacity, computeDailyMargin } from "./capacity";
 import { TIMEZONES, demoInput } from "./fixtures";
 
 const minutes = (iso: string): number => isoToMinutes(iso, "floor");
@@ -124,5 +124,31 @@ describe("calendar-math", () => {
       }),
     );
     expect(madrid).toEqual([{ date: "2026-10-25", capacityMinutes: 486 }]);
+  });
+});
+
+describe("computeDailyMargin (D-051)", () => {
+  it("reserves contingencyPct of the free time at the end of each work day, skipping days without reserve", () => {
+    // Madrid, Sunday 2026-10-25 (CET after the fall-back): 09:00–18:00 = 08:00Z–17:00Z, 540 free minutes.
+    const base = demoInput({
+      now: "2026-10-24T00:00:00.000Z",
+      horizonStart: "2026-10-24T00:00:00.000Z",
+      horizonEnd: "2026-10-26T00:00:00.000Z",
+      preferences: { ...demoInput().preferences, workDays: [0], contingencyPct: 10 },
+    });
+    expect(computeDailyMargin(base)).toEqual([
+      { day: "2026-10-25", minutes: 54, startsAt: "2026-10-25T16:06:00.000Z", endsAt: "2026-10-25T17:00:00.000Z" },
+    ]);
+    // A busy event (plus its buffer) shrinks the free time, so the reserve shrinks with it.
+    const busy = computeDailyMargin({
+      ...base,
+      fixedEvents: [{ id: "e1", startsAt: "2026-10-25T10:00:00.000Z", endsAt: "2026-10-25T12:00:00.000Z", busy: true }],
+    });
+    const free = 540 - 120 - base.preferences.bufferMinutes;
+    expect(busy[0]?.minutes).toBe(free - Math.floor(free * 0.9));
+    expect(computeDailyMargin({ ...base, preferences: { ...base.preferences, contingencyPct: 0 } })).toEqual([]);
+    expect(
+      computeDailyMargin({ ...base, preferences: { ...base.preferences, workDays: [1] } }),
+    ).toEqual([]);
   });
 });

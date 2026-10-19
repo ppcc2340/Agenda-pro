@@ -20,6 +20,7 @@ import { createErrorHandler, problemFrom, sendProblem } from "./errors";
 import { contextPlugin } from "./plugins/context";
 import { csrfPlugin } from "./plugins/csrf";
 import { sessionPlugin } from "./plugins/session";
+import { accountGuardPlugin } from "./plugins/account-guard";
 import { accountRoutes } from "./routes/account";
 import { healthRoutes } from "./routes/health";
 import { internalRoutes } from "./routes/internal";
@@ -126,6 +127,7 @@ export async function buildApp(deps: AppDeps) {
   });
 
   await app.register(sessionPlugin, { secret: config.env.AUTH_SECRET, secure: config.isProduction });
+  await app.register(accountGuardPlugin, { db: deps.db });
   await app.register(csrfPlugin);
   await app.register(contextPlugin, { db: deps.db });
   await app.register(idempotencyPlugin, { now: deps.now });

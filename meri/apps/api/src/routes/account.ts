@@ -8,11 +8,25 @@ import {
   getMe,
   getPreferences,
   listAudit,
+  listBlocks,
+  listCalendarEvents,
+  listClientsFull,
+  listCommitments,
+  listContacts,
+  listIntegrationAccounts,
+  listNotifications,
+  listProjects,
+  listProposals,
+  listTasks,
+  listTimeEntries,
+  softDeleteAccount,
   updatePreferences,
   PreferencesValidationError,
   type Db,
+  type WorkspaceTx,
 } from "@meri/db";
 import { ApiError } from "../errors";
+import { markAccountDeleted } from "../plugins/account-guard";
 import { requireSession, sessionOf } from "../plugins/session";
 
 const PreferencesView = PreferencesSchema.extend({ onboardedAt: z.string().datetime().nullable() });
@@ -54,6 +68,163 @@ const AuditEntryView = z.object({
 });
 
 const iso = (d: Date | null) => (d ? d.toISOString() : null);
+
+/** Export (D-050/D-055): at most this many rows per collection; larger accounts get the phase 5 zip job. */
+const EXPORT_MAX_ROWS = 5000;
+const PAGE = 100;
+
+async function drain<T>(
+  fetchPage: (cursor: string | undefined) => Promise<{ items: T[]; nextCursor: string | null }>,
+): Promise<T[]> {
+  const all: T[] = [];
+  let cursor: string | undefined;
+  do {
+    const page = await fetchPage(cursor);
+    all.push(...page.items);
+    cursor = page.nextCursor ?? undefined;
+  } while (cursor && all.length < EXPORT_MAX_ROWS);
+  return all;
+}
+
+/**
+ * Allow-list serialisers (never `select *`, docs/06): the export carries the user's own records and nothing
+ * from the integration layer (no tokens, key ids, sync cursors, mail bodies or audit payloads of integrations).
+ */
+export async function buildAccountExport(
+  tx: WorkspaceTx,
+  input: { workspaceId: string; now: Date; me: { email: string; name: string | null; locale: string }; workspace: { name: string; vertical: string | null } },
+): Promise<Record<string, unknown>> {
+  const ws = input.workspaceId as Parameters<typeof listClientsFull>[1];
+  const prefs = await getPreferences(tx, ws);
+  const year = 366 * 86_400_000;
+  const [clients, projects, contacts, tasks, commitments, proposals, timeEntries, events, blocks, notifications, activity, accounts] =
+    await Promise.all([
+      listClientsFull(tx, ws, { includeArchived: true }),
+      listProjects(tx, ws),
+      listContacts(tx, ws),
+      drain((cursor) => listTasks(tx, ws, { includeCompleted: true }, { limit: PAGE, cursor })),
+      drain((cursor) => listCommitments(tx, ws, { includeProposed: true }, { limit: PAGE, cursor })),
+      drain((cursor) => listProposals(tx, ws, {}, { limit: PAGE, cursor })),
+      listTimeEntries(tx, ws, { from: "2000-01-01", to: "2100-01-01", includeRejected: true }),
+      listCalendarEvents(tx, ws, { from: new Date(input.now.getTime() - year), to: new Date(input.now.getTime() + year) }),
+      listBlocks(tx, ws),
+      drain((cursor) => listNotifications(tx, ws, { limit: PAGE, cursor })),
+      drain((cursor) => listAudit(tx, ws, PAGE, cursor)),
+      listIntegrationAccounts(tx, ws),
+    ]);
+  return {
+    format: "meri-export/1",
+    exportedAt: input.now.toISOString(),
+    user: { email: input.me.email, name: input.me.name, locale: input.me.locale },
+    workspace: { name: input.workspace.name, vertical: input.workspace.vertical },
+    preferences: prefs ? { ...prefs, onboardedAt: iso(prefs.onboardedAt) } : null,
+    clients: clients.map((c) => ({
+      id: c.id,
+      name: c.name,
+      color: c.color,
+      domains: c.domains,
+      notes: c.notes,
+      verticalTags: c.verticalTags,
+      followupsMuted: c.followupsMuted,
+      archivedAt: iso(c.archivedAt),
+      createdAt: c.createdAt.toISOString(),
+    })),
+    projects: projects.map((p) => ({ id: p.id, clientId: p.clientId, name: p.name, kind: p.kind, dueAt: iso(p.dueAt), status: p.status, createdAt: p.createdAt.toISOString() })),
+    contacts: contacts.map((c) => ({ id: c.id, clientId: c.clientId, email: c.email, name: c.name, muted: c.muted, createdAt: c.createdAt.toISOString() })),
+    tasks: tasks.map((t) => ({
+      id: t.id,
+      clientId: t.clientId,
+      projectId: t.projectId,
+      parentId: t.parentId,
+      title: t.title,
+      notes: t.notes,
+      status: t.status,
+      kind: t.kind,
+      priority: t.priority,
+      dueAt: iso(t.dueAt),
+      deadlineType: t.deadlineType,
+      estimateMinutes: t.estimateMinutes,
+      tags: t.tags,
+      origin: t.origin,
+      blockedBy: t.blockedBy,
+      completedAt: iso(t.completedAt),
+      createdAt: t.createdAt.toISOString(),
+    })),
+    commitments: commitments.map((c) => ({
+      id: c.id,
+      clientId: c.clientId,
+      direction: c.direction,
+      kind: c.kind,
+      status: c.status,
+      counterpartyEmail: c.counterpartyEmail,
+      action: c.action,
+      dueAt: iso(c.dueAt),
+      dueText: c.dueText,
+      confidence: c.confidence,
+      evidence: c.evidence,
+      taskId: c.taskId,
+      origin: c.origin,
+      createdAt: c.createdAt.toISOString(),
+    })),
+    proposals: proposals.map((p) => ({
+      id: p.id,
+      kind: p.kind,
+      status: p.status,
+      payload: p.payload,
+      confidence: p.confidence,
+      explanation: p.explanation,
+      resolution: p.resolution,
+      resolvedAt: iso(p.resolvedAt),
+      createdAt: p.createdAt.toISOString(),
+    })),
+    timeEntries: timeEntries.map((e) => ({
+      id: e.id,
+      clientId: e.clientId,
+      projectId: e.projectId,
+      taskId: e.taskId,
+      day: e.day,
+      minutes: e.minutes,
+      description: e.description,
+      status: e.status,
+      sourceType: e.sourceType,
+      approvedAt: iso(e.approvedAt),
+      createdAt: e.createdAt.toISOString(),
+    })),
+    calendarEvents: events.map((e) => ({
+      id: e.id,
+      title: e.title,
+      startsAt: e.startsAt.toISOString(),
+      endsAt: e.endsAt.toISOString(),
+      allDay: e.allDay,
+      attendees: e.attendees,
+      clientId: e.clientId,
+      origin: e.origin,
+      busy: e.busy,
+    })),
+    blocks: blocks.map((b) => ({
+      id: b.id,
+      taskId: b.taskId,
+      startsAt: b.startsAt.toISOString(),
+      endsAt: b.endsAt.toISOString(),
+      pinned: b.pinned,
+      reason: b.reason,
+      planVersion: b.planVersion,
+      completedAt: iso(b.completedAt),
+    })),
+    notifications: notifications.map((n) => ({ id: n.id, kind: n.kind, title: n.title, body: n.body, day: n.day, readAt: iso(n.readAt), createdAt: n.createdAt.toISOString() })),
+    activity: activity.map((a) => ({
+      id: a.id,
+      actor: a.actor,
+      action: a.action,
+      entityType: a.entityType,
+      entityId: a.entityId,
+      reason: a.reason,
+      undoneAt: iso(a.undoneAt),
+      createdAt: a.createdAt.toISOString(),
+    })),
+    connections: accounts.map((a) => ({ provider: a.provider, email: a.email, status: a.status, scopes: a.scopes, lastSyncAt: iso(a.lastSyncAt), createdAt: a.createdAt.toISOString() })),
+  };
+}
 
 export interface AccountRoutesOptions {
   db: Db;
@@ -124,7 +295,11 @@ export function accountRoutes(app: FastifyInstance, options: AccountRoutesOption
           { workspaceId: session.workspaceId, actor: "user", actorUserId: session.userId },
           {
             action:
-              completeOnboarding && !before?.onboardedAt ? "onboarding.completed" : "preferences.updated",
+              completeOnboarding && !before?.onboardedAt
+                ? "onboarding.completed"
+                : patch.autonomy !== undefined && before?.autonomy !== after.autonomy
+                  ? "preferences.autonomy_changed"
+                  : "preferences.updated",
             entityType: "preferences",
             before,
             after,
@@ -133,6 +308,55 @@ export function accountRoutes(app: FastifyInstance, options: AccountRoutesOption
         return after;
       });
       return { ...updated, onboardedAt: iso(updated.onboardedAt) };
+    },
+  );
+
+  /** D-050/D-055: one JSON document of the user's data (the zip with CSV is the phase 5 job). */
+  r.get(
+    "/v1/account/export",
+    {
+      preHandler: requireSession,
+      config: { rateLimit: { max: 5, timeWindow: "1 minute" } },
+      schema: { tags: ["account"], response: { 200: z.record(z.string(), z.unknown()) } },
+    },
+    async (request, reply) => {
+      const session = sessionOf(request);
+      const now = options.now();
+      const me = await getMe(options.db, session.userId, session.workspaceId);
+      if (!me) throw new ApiError("UNAUTHENTICATED", "This account no longer exists.");
+      const document = await request.withWorkspace(async (tx) => {
+        const doc = await buildAccountExport(tx, {
+          workspaceId: session.workspaceId,
+          now,
+          me: { email: me.user.email, name: me.user.name, locale: me.user.locale },
+          workspace: { name: me.workspace.name, vertical: me.workspace.vertical },
+        });
+        await audit(
+          tx,
+          { workspaceId: session.workspaceId, actor: "user", actorUserId: session.userId },
+          { action: "account.exported", entityType: "workspace", entityId: session.workspaceId, after: { format: doc["format"] } },
+        );
+        return doc;
+      });
+      void reply.header("content-disposition", `attachment; filename="meri-export-${now.toISOString().slice(0, 10)}.json"`);
+      void reply.header("cache-control", "no-store");
+      return document;
+    },
+  );
+
+  /** D-050/D-054: logical deletion now (user, workspace, revoked connections, audit); purge by the phase 5 job. */
+  r.delete(
+    "/v1/account",
+    {
+      preHandler: requireSession,
+      config: { rateLimit: { max: 5, timeWindow: "1 minute" } },
+      schema: { tags: ["account"], response: { 204: z.null() } },
+    },
+    async (request, reply) => {
+      const session = sessionOf(request);
+      await softDeleteAccount(options.db, { userId: session.userId, workspaceId: session.workspaceId, now: options.now() });
+      markAccountDeleted(session.userId, session.workspaceId);
+      return reply.status(204).send(null);
     },
   );
 
