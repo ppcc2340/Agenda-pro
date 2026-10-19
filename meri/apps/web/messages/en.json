@@ -188,7 +188,8 @@
         "project_created": "You created a matter.",
         "project_updated": "You edited a matter.",
         "proposal_confirmed": "You confirmed a proposal.",
-        "proposal_edited": "You confirmed a proposal with changes."
+        "proposal_edited": "You confirmed a proposal with changes.",
+        "agreements_recorded": "You recorded the agreements of a meeting."
       },
       "undoneOf": "Undone: {text}",
       "undoDone": "Action undone."

@@ -47,6 +47,21 @@ const ACTION_KEYS = [
   "mail_exclusion_removed",
   "integration_paused",
   "integration_resumed",
+  "time_approved",
+  "time_rejected",
+  "time_updated",
+  "event_client_assigned",
+  "briefing_generated",
+  "client_created",
+  "client_updated",
+  "client_archived",
+  "client_restored",
+  "client_deleted",
+  "project_created",
+  "project_updated",
+  "proposal_confirmed",
+  "proposal_edited",
+  "agreements_recorded",
 ] as const;
 type ActionKey = (typeof ACTION_KEYS)[number];
 const toKey = (action: string): ActionKey | null => {

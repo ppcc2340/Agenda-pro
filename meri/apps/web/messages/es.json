@@ -188,7 +188,8 @@
         "project_created": "Creaste un asunto.",
         "project_updated": "Editaste un asunto.",
         "proposal_confirmed": "Confirmaste una propuesta.",
-        "proposal_edited": "Confirmaste una propuesta con cambios."
+        "proposal_edited": "Confirmaste una propuesta con cambios.",
+        "agreements_recorded": "Registraste los acuerdos de una reunión."
       },
       "undoneOf": "Deshecho: {text}",
       "undoDone": "Acción deshecha."
