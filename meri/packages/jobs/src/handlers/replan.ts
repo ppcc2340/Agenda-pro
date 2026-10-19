@@ -132,9 +132,16 @@ export const ReschedulePayloadSchema = z.object({
   summary: z.object({ added: z.number(), removed: z.number(), moved: z.number() }),
 });
 
+interface DiffShape {
+  basePlanVersion: number;
+  added: { taskId: string; startsAt: string; endsAt: string; pinned: boolean }[];
+  removed: { blockId: string; startsAt: string; endsAt: string }[];
+  moved: { blockId: string; to: { startsAt: string; endsAt: string } }[];
+}
+
 /** Equality of two diffs ignoring explanation params (which may carry recomputed slack). */
-export function samePayload(a: ReschedulePayload, b: ReschedulePayload): boolean {
-  const key = (p: ReschedulePayload) =>
+export function samePayload(a: DiffShape, b: DiffShape): boolean {
+  const key = (p: DiffShape) =>
     JSON.stringify({
       v: p.basePlanVersion,
       a: p.added.map((x) => [x.taskId, x.startsAt, x.endsAt, x.pinned]),
@@ -383,7 +390,7 @@ export async function runReplan(
         await listProposals(tx, workspaceId, { kind: "reschedule", status: "pending" }, { limit: 1 })
       ).items[0];
       const existing = pending ? ReschedulePayloadSchema.safeParse(pending.payload) : null;
-      if (pending && existing?.success && samePayload(existing.data as ReschedulePayload, payload)) {
+      if (pending && existing?.success && samePayload(existing.data, payload)) {
         proposalId = pending.id;
         proposalReused = true;
       } else {

@@ -294,7 +294,7 @@ describe("planner.replan, accept and undo (ADR 0003)", () => {
       updateTask(
         tx,
         ws,
-        urgent?.id ?? ("" as never),
+        urgent?.id ?? "",
         { dueAt: new Date(NOW.getTime() + 10 * 86_400_000).toISOString(), estimateMinutes: 60 },
         NOW,
       ),
