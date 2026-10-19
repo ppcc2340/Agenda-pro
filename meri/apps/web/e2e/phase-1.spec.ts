@@ -77,20 +77,29 @@ test("onboarding → capture → plan → connect calendar → reorganize (accep
   await page.getByRole("button", { name: /crear tarea/i }).click();
   await expect(page.getByText("Revisar factura de Estudio Norte").first()).toBeVisible();
 
-  // The worker replans in the background (debounced); the day line shows the blocks.
+  // The worker replans in the background (debounced). Desktop shows the day line; mobile keeps the day in the
+  // Agenda tab (demo/mobile.html), so there the "¿Qué hago ahora?" card is the evidence.
   await page.goto("/hoy");
   await hydrated(page);
-  const blocks = page.locator('main button[aria-pressed][aria-label*="–"]');
-  await expect
-    .poll(async () => blocks.count(), { timeout: 60_000, intervals: [1000] })
-    .toBeGreaterThanOrEqual(1);
-  await expectAccessible(page, "hoy (plan)");
-
-  // Explanation and pin on the first block.
-  await blocks.first().click();
-  await expect(page.getByText(/por qué está aquí/i).first()).toBeVisible();
-  await page.getByRole("button", { name: /anclar/i }).click();
-  await expect(page.getByRole("status")).toContainText(/anclado/i);
+  if (isMobile) {
+    await expect(page.getByRole("button", { name: /marcar como hecho/i }).first()).toBeVisible({
+      timeout: 60_000,
+    });
+    await expectAccessible(page, "hoy (plan)");
+  } else {
+    const blocks = page.locator('main button[aria-pressed][aria-label*="–"]');
+    await expect
+      .poll(async () => blocks.count(), { timeout: 60_000, intervals: [1000] })
+      .toBeGreaterThanOrEqual(1);
+    await expectAccessible(page, "hoy (plan)");
+    // Explanation and pin on the first block (keyboard: the detail receives focus).
+    await blocks.first().click();
+    const detail = page.getByRole("region", { name: /./ }).first();
+    await expect(detail).toBeFocused();
+    await expect(page.getByText(/por qué está aquí/i).first()).toBeVisible();
+    await page.getByRole("button", { name: /anclar/i }).click();
+    await expect(page.getByRole("status")).toContainText(/anclado/i);
+  }
 
   // Connect the fake calendar: its sample meeting overlaps today's plan → reschedule proposal.
   await page.goto("/control");

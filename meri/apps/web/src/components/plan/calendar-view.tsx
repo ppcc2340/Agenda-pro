@@ -25,6 +25,7 @@ const HOUR_PX = 48;
 /** Calendario: week grid on desktop, day agenda with a day strip on mobile (demo/mobile.html "Agenda"). */
 export function CalendarView({ timezone, workStart, workEnd, clients, now: nowIso }: CalendarViewProps) {
   const t = useTranslations("calendario");
+  const tApp = useTranslations("app");
   const locale = useLocale();
   const now = useMemo(() => (nowIso ? new Date(nowIso) : new Date()), [nowIso]);
   const days = useMemo(() => weekDays(now, timezone), [now, timezone]);
@@ -56,6 +57,14 @@ export function CalendarView({ timezone, workStart, workEnd, clients, now: nowIs
   );
   const dayLabel = (d: Date) =>
     new Intl.DateTimeFormat(locale, { weekday: "short", day: "numeric", timeZone: timezone }).format(d);
+  const weekLabel = t("weekOf", {
+    from: new Intl.DateTimeFormat(locale, { day: "numeric", month: "short", timeZone: timezone }).format(
+      days[0] ?? now,
+    ),
+    to: new Intl.DateTimeFormat(locale, { day: "numeric", month: "short", timeZone: timezone }).format(
+      days[days.length - 1] ?? now,
+    ),
+  });
   const timeLabel = (i: DayItem) =>
     `${formatTime(i.startsAt, locale, timezone)}–${formatTime(i.endsAt, locale, timezone)}`;
 
@@ -77,6 +86,8 @@ export function CalendarView({ timezone, workStart, workEnd, clients, now: nowIs
           {t("error")}
         </p>
       ) : null}
+      {plan.isPending || events.isPending ? <p className="mt-3 text-ink3">{tApp("loading")}</p> : null}
+      <h2 className="mt-3 text-base text-ink2">{weekLabel}</h2>
 
       {/* Desktop week */}
       <div className="mt-3 hidden grid-cols-[48px_repeat(5,1fr)] md:grid" data-testid="week-view">
@@ -111,12 +122,17 @@ export function CalendarView({ timezone, workStart, workEnd, clients, now: nowIs
           return (
             <div
               key={d?.toISOString() ?? String(i)}
+              role="list"
+              aria-label={d ? dayLabel(d) : ""}
               className="relative border-l border-rule bg-[linear-gradient(var(--rule)_1px,transparent_1px)] [background-size:100%_48px]"
               style={{ height: hours.length * HOUR_PX }}
             >
               {items.map((it) => (
                 <div
                   key={it.id}
+                  role="listitem"
+                  tabIndex={0}
+                  aria-label={`${it.title}, ${timeLabel(it)}${it.kind === "event" ? `, ${t("fixed")}` : ""}`}
                   title={`${it.title} ${timeLabel(it)}`}
                   className={cn(
                     "absolute left-1 right-1 flex min-w-0 flex-col justify-center overflow-hidden rounded-lg px-1.5 py-0.5 text-left",
@@ -153,13 +169,12 @@ export function CalendarView({ timezone, workStart, workEnd, clients, now: nowIs
 
       {/* Mobile agenda */}
       <div className="md:hidden" data-testid="agenda-view">
-        <div className="mt-3 grid grid-cols-5 gap-1.5" role="tablist" aria-label={t("days")}>
+        <div className="mt-3 grid grid-cols-5 gap-1.5" role="group" aria-label={t("days")}>
           {days.map((d, i) => (
             <button
               key={d.toISOString()}
               type="button"
-              role="tab"
-              aria-selected={dayIdx === i}
+              aria-pressed={dayIdx === i}
               onClick={() => setDayIdx(i)}
               className={cn(
                 "flex flex-col items-center rounded-[10px] border border-rule bg-raised py-1.5 text-[12px]",
@@ -227,6 +242,8 @@ function Agenda({
       <div key={it.id} className="grid grid-cols-[52px_1fr] gap-2 py-1">
         <div className="num pt-2 text-[12.5px] text-ink3">{formatTime(it.startsAt, locale, timezone)}</div>
         <div
+          tabIndex={0}
+          aria-label={`${it.title}, ${timeLabel(it)}${it.kind === "event" ? `, ${t("fixed")}` : ""}`}
           className={cn(
             "rounded-[10px] px-3 py-2",
             it.kind === "event" ? "border" : "border-0 border-l-4",

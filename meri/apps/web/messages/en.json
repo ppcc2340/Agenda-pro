@@ -44,7 +44,7 @@
     "emptyImportant": "Nothing important pending for today.",
     "emptyRisksTitle": "No risks in sight",
     "emptyRisksBody": "If something threatens a deadline, you will see it here with a proposal.",
-    "emptyWaiting": "You are not waiting on anyone right now.",
+    "emptyWaiting": "Once you connect Gmail, Meri will show here what others owe you.",
     "dayLine": "Your day",
     "laneCalendar": "Calendar",
     "lanePlan": "Meri's plan",
@@ -63,7 +63,9 @@
     "whyHere": "See why it is here",
     "whyNow": "Why now.",
     "markDoneAria": "Mark {title} as done",
-    "nextBlock": "Nothing else today. Your next block: {title}, {when}."
+    "nextBlock": "Nothing else today. Your next block: {title}, {when}.",
+    "subtitleConflict": "There is more work than hours. {n, plural, one {One thing needs} other {# things need}} a decision.",
+    "doneLabel": "done"
   },
   "entrada": {
     "subtitle": "Meri proposes, you decide. Nothing here is final until you confirm it.",
@@ -92,7 +94,9 @@
     "error": "We could not load the calendar.",
     "days": "Days of the week",
     "fixed": "Fixed meeting",
-    "emptyDay": "Nothing scheduled this day."
+    "emptyDay": "Nothing scheduled this day.",
+    "connect": "Connect Google Calendar",
+    "weekOf": "Week of {from} to {to}"
   },
   "control": {
     "subtitle": "What Meri may do on its own, what data it uses and what it has done.",
@@ -199,10 +203,11 @@
       "templates": {
         "risk_grouped": "{count, plural, one {One task is} other {# tasks are}} now at risk.",
         "conflict_grouped": "{count, plural, one {One conflict} other {# conflicts}} in the plan ({tasks} tasks).",
-        "plan_proposed": "Meri proposes a reorganization: {moved} moved, {added} new, {removed} removed.",
-        "plan_applied": "Meri updated your plan: {added} new blocks, {removed} removed.",
+        "plan_proposed": "Meri proposes a reorganization: {moved, plural, one {one block moved} other {# blocks moved}}, {added, plural, one {one new} other {# new}}, {removed, plural, one {one removed} other {# removed}}.",
+        "plan_applied": "Meri updated your plan: {added, plural, one {one new block} other {# new blocks}}, {removed, plural, one {one removed} other {# removed}}.",
         "daily_digest": "Daily digest: {blocks} blocks, {risks} risks, {proposals} pending proposals."
-      }
+      },
+      "seeInHoy": "See in Today"
     }
   },
   "login": {
@@ -368,7 +373,7 @@
     },
     "toasts": {
       "confirmed": "Added. Meri will schedule it in the next gap.",
-      "dismissed": "Dismissed. Meri will learn from this.",
+      "dismissed": "Dismissed.",
       "batch": "{n} confirmed."
     },
     "editAction": "Action",
@@ -376,7 +381,7 @@
     "quote": "“{text}”",
     "reschedule": {
       "title": "Meri proposes to reorganize your plan",
-      "summary": "{moved} moved · {added} new · {removed} removed",
+      "summary": "{moved, plural, one {one moved} other {# moved}} · {added, plural, one {one new} other {# new}} · {removed, plural, one {one removed} other {# removed}}",
       "review": "Review the changes in Today"
     }
   },
@@ -474,10 +479,13 @@
       "replan": "Replan",
       "toasts": {
         "proposed": "Meri proposes changes. Review them under “What could go wrong?”.",
-        "replanned": "Plan updated."
+        "replanned": "Replanned: {added, plural, one {one new block} other {# new blocks}}, {removed, plural, one {one removed} other {# removed}}. You can undo it.",
+        "noop": "Nothing to change: the plan is already the best possible.",
+        "skipped": "Could not replan right now. Try again in a few seconds.",
+        "undone": "Replan undone."
       },
       "proposalTitle": "Meri proposes to reorganize your plan",
-      "proposalSummary": "{moved} moved · {added} new · {removed} removed. No meeting moves."
+      "proposalSummary": "{moved, plural, one {one block moved} other {# blocks moved}} · {added, plural, one {one new} other {# new}} · {removed, plural, one {one removed} other {# removed}}. No meeting moves."
     },
     "proposal": {
       "title": "Reorganize to protect your deadlines",

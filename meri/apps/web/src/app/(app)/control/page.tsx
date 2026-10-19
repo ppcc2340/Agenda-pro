@@ -54,32 +54,7 @@ export default async function ControlPage() {
     <>
       <PageHeader title={nav("control")} subtitle={t("subtitle")} action={<CaptureButton />} />
       <Panel title={t("autonomy.title")} desc={t("autonomy.desc")}>
-        <div
-          className="inline-flex overflow-hidden rounded-[10px] border border-rule bg-raised"
-          role="group"
-          aria-label={t("autonomy.current")}
-        >
-          <span
-            className={
-              autonomy === "suggest"
-                ? "bg-sea px-3.5 py-1.5 font-semibold text-on-sea"
-                : "px-3.5 py-1.5 font-semibold text-ink2"
-            }
-            aria-current={autonomy === "suggest" ? "true" : undefined}
-          >
-            {t("autonomy.suggest")}
-          </span>
-          <span
-            className={
-              autonomy === "low"
-                ? "bg-sea px-3.5 py-1.5 font-semibold text-on-sea"
-                : "px-3.5 py-1.5 font-semibold text-ink2"
-            }
-            aria-current={autonomy === "low" ? "true" : undefined}
-          >
-            {t("autonomy.low")}
-          </span>
-        </div>
+        <Pill variant="sea">{autonomy === "suggest" ? t("autonomy.suggest") : t("autonomy.low")}</Pill>
         <p className="mt-2.5 max-w-[60ch] text-ink2">
           {autonomy === "suggest" ? t("autonomy.suggestBody") : t("autonomy.lowBody")}
         </p>

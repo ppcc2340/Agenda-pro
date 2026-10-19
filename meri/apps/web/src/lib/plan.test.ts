@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { currentBlock, dayItems, dayKey, minuteOfDay, riskRows, startOfLocalDay, weekDays } from "./plan";
+import { isoToLocalInput, localInputToIso } from "./format";
 import type { Block, CalendarEvent } from "./types";
 
 const TZ = "Europe/Madrid";
@@ -114,5 +115,13 @@ describe("plan helpers", () => {
       ["a", "risk", "LOW_SLACK", "replan"],
       ["b", "conflict", "OVERLOAD", "replan"],
     ]);
+  });
+
+  it("round-trips datetime-local values through the user's time zone", () => {
+    expect(isoToLocalInput("2026-10-22T16:00:00.000Z", TZ)).toBe("2026-10-22T18:00");
+    expect(localInputToIso("2026-10-22T18:00", TZ)).toBe("2026-10-22T16:00:00.000Z");
+    // After the DST change Madrid is UTC+1.
+    expect(localInputToIso("2026-10-27T09:00", TZ)).toBe("2026-10-27T08:00:00.000Z");
+    expect(localInputToIso("2026-10-22T18:00", "America/Santiago")).toBe("2026-10-22T21:00:00.000Z");
   });
 });

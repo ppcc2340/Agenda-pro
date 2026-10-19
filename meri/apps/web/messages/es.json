@@ -44,7 +44,7 @@
     "emptyImportant": "Nada importante pendiente para hoy.",
     "emptyRisksTitle": "Sin riesgos a la vista",
     "emptyRisksBody": "Si algo pone en peligro una fecha, lo verás aquí con una propuesta.",
-    "emptyWaiting": "No esperas nada de nadie por ahora.",
+    "emptyWaiting": "Cuando conectes Gmail, Meri mostrará aquí lo que otras personas te deben.",
     "dayLine": "Tu día",
     "laneCalendar": "Calendario",
     "lanePlan": "Plan de Meri",
@@ -63,7 +63,9 @@
     "whyHere": "Ver por qué está aquí",
     "whyNow": "Por qué ahora.",
     "markDoneAria": "Marcar {title} como hecho",
-    "nextBlock": "Nada más por hoy. Tu siguiente bloque: {title}, {when}."
+    "nextBlock": "Nada más por hoy. Tu siguiente bloque: {title}, {when}.",
+    "subtitleConflict": "Hay más trabajo que horas. {n, plural, one {Una cosa pide} other {# cosas piden}} una decisión.",
+    "doneLabel": "hecho"
   },
   "entrada": {
     "subtitle": "Meri propone, tú decides. Nada de esto es definitivo hasta que lo confirmes.",
@@ -92,7 +94,9 @@
     "error": "No pudimos cargar el calendario.",
     "days": "Días de la semana",
     "fixed": "Reunión fija",
-    "emptyDay": "Nada programado este día."
+    "emptyDay": "Nada programado este día.",
+    "connect": "Conectar Google Calendar",
+    "weekOf": "Semana del {from} al {to}"
   },
   "control": {
     "subtitle": "Qué puede hacer Meri por su cuenta, qué datos usa y qué ha hecho.",
@@ -147,7 +151,7 @@
         "proposal_dismissed": "Descartaste una propuesta.",
         "plan_generated": "Meri generó tu plan.",
         "plan_accepted": "Aceptaste una reorganización del plan.",
-        "block_pinned": "Anclaste o soltaste un bloque.",
+        "block_pinned": "Anclaste o liberaste un bloque.",
         "block_completed": "Marcaste un bloque como hecho.",
         "integration_connected": "Conectaste Google Calendar.",
         "integration_disconnected": "Desconectaste Google Calendar.",
@@ -199,10 +203,11 @@
       "templates": {
         "risk_grouped": "{count, plural, one {Una tarea ha entrado} other {# tareas han entrado}} en riesgo.",
         "conflict_grouped": "{count, plural, one {Un conflicto} other {# conflictos}} en el plan ({tasks} tareas).",
-        "plan_proposed": "Meri propone reorganizar: {moved} movidos, {added} nuevos, {removed} retirados.",
-        "plan_applied": "Meri actualizó tu plan: {added} bloques nuevos, {removed} retirados.",
+        "plan_proposed": "Meri propone reorganizar: {moved, plural, one {un bloque movido} other {# bloques movidos}}, {added, plural, one {uno nuevo} other {# nuevos}}, {removed, plural, one {uno retirado} other {# retirados}}.",
+        "plan_applied": "Meri actualizó tu plan: {added, plural, one {un bloque nuevo} other {# bloques nuevos}}, {removed, plural, one {uno retirado} other {# retirados}}.",
         "daily_digest": "Resumen del día: {blocks} bloques, {risks} riesgos, {proposals} propuestas pendientes."
-      }
+      },
+      "seeInHoy": "Ver en Hoy"
     }
   },
   "login": {
@@ -368,7 +373,7 @@
     },
     "toasts": {
       "confirmed": "Añadida. Meri la programará en el siguiente hueco.",
-      "dismissed": "Descartada. Meri aprenderá de esto.",
+      "dismissed": "Descartada.",
       "batch": "{n} confirmadas."
     },
     "editAction": "Acción",
@@ -376,7 +381,7 @@
     "quote": "“{text}”",
     "reschedule": {
       "title": "Meri propone reorganizar tu plan",
-      "summary": "{moved} movidos · {added} nuevos · {removed} retirados",
+      "summary": "{moved, plural, one {un movido} other {# movidos}} · {added, plural, one {uno nuevo} other {# nuevos}} · {removed, plural, one {uno retirado} other {# retirados}}",
       "review": "Ver los cambios en Hoy"
     }
   },
@@ -429,7 +434,7 @@
     "shallow": "Trabajo corto.",
     "range": "{from} a {to}, {duration}.",
     "pin": "Anclar",
-    "unpin": "Soltar",
+    "unpin": "Desanclar",
     "pinned": "Anclado",
     "markDone": "Marcar como hecho",
     "toasts": {
@@ -465,7 +470,7 @@
       "alternatives": "Opciones:",
       "alternative": {
         "move_other_task": "mover otra tarea",
-        "split_task": "trocear la tarea",
+        "split_task": "dividir la tarea",
         "extend_deadline": "ampliar la fecha",
         "delegate": "delegar",
         "reduce_scope": "reducir el alcance"
@@ -474,10 +479,13 @@
       "replan": "Replanificar",
       "toasts": {
         "proposed": "Meri propone cambios. Revísalos en «¿Qué podría salir mal?».",
-        "replanned": "Plan actualizado."
+        "replanned": "Replanificado: {added, plural, one {un bloque nuevo} other {# bloques nuevos}}, {removed, plural, one {uno retirado} other {# retirados}}. Puedes deshacerlo.",
+        "noop": "Nada que cambiar: el plan ya es el mejor posible.",
+        "skipped": "No se pudo replanificar ahora. Vuelve a intentarlo en unos segundos.",
+        "undone": "Replanificación deshecha."
       },
       "proposalTitle": "Meri propone reorganizar tu plan",
-      "proposalSummary": "{moved} movidos · {added} nuevos · {removed} retirados. Ninguna reunión se mueve."
+      "proposalSummary": "{moved, plural, one {un bloque movido} other {# bloques movidos}} · {added, plural, one {uno nuevo} other {# nuevos}} · {removed, plural, one {uno retirado} other {# retirados}}. Ninguna reunión se mueve."
     },
     "proposal": {
       "title": "Reorganizar para proteger tus fechas",

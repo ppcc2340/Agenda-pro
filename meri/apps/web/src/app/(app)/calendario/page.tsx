@@ -27,7 +27,7 @@ export default async function CalendarioPage() {
           body={t("emptyBody")}
           action={
             <Button asChild>
-              <Link href="/control">{nav("control")}</Link>
+              <Link href="/control">{t("connect")}</Link>
             </Button>
           }
         />

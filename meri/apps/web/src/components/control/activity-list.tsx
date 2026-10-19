@@ -53,6 +53,7 @@ export const UNDOABLE = new Set([
 /** Activity feed (F-14): every automated action is visible and, when possible, undoable. */
 export function ActivityList({ items }: { items: ActivityItem[] }) {
   const t = useTranslations("control.activity");
+  const tApp = useTranslations("app");
   const format = useFormatter();
   const { toast } = useToast();
   const undo = useUndo();
@@ -82,7 +83,7 @@ export function ActivityList({ items }: { items: ActivityItem[] }) {
                 onClick={() => {
                   undo.mutate(
                     { auditId: item.id },
-                    { onSuccess: () => toast(t("undoDone")), onError: (e) => toast(e.message) },
+                    { onSuccess: () => toast(t("undoDone")), onError: () => toast(tApp("errorBody")) },
                   );
                 }}
               >

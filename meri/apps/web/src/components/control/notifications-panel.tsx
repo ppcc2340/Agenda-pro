@@ -1,6 +1,7 @@
 "use client";
 
 import { useFormatter, useTranslations } from "next-intl";
+import Link from "next/link";
 import { clientApi } from "@/lib/client-api";
 import { keys, useApiMutation, useNotifications } from "@/lib/hooks/use-api";
 import type { Notification } from "@/lib/types";
@@ -46,6 +47,11 @@ export function NotificationsPanel({ initial }: { initial: Notification[] }) {
               {format.dateTime(new Date(n.createdAt), { dateStyle: "medium", timeStyle: "short" })}
             </div>
           </div>
+          {n.kind === "risk" || n.kind === "plan" ? (
+            <Button size="sm" asChild>
+              <Link href="/hoy">{t("seeInHoy")}</Link>
+            </Button>
+          ) : null}
           {n.readAt ? null : (
             <Button
               size="sm"

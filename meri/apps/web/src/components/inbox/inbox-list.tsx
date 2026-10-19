@@ -9,7 +9,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Pill } from "@/components/ui/pill";
 import { useToast } from "@/components/ui/toast";
 import { clientApi } from "@/lib/client-api";
-import { formatDateTime, formatMinutes } from "@/lib/format";
+import { formatDateTime, formatMinutes, isoToLocalInput, localInputToIso } from "@/lib/format";
 import { idempotencyKey, keys, useApiMutation, useProposals } from "@/lib/hooks/use-api";
 import type { CapturePayload, Proposal, Task } from "@/lib/types";
 
@@ -117,7 +117,7 @@ export function InboxList({ timezone }: { timezone: string }) {
                           id: p.id,
                           edits: {
                             title: title || payload.title,
-                            dueAt: due ? new Date(due).toISOString() : null,
+                            dueAt: due ? localInputToIso(due, timezone) : null,
                           },
                         },
                         {
@@ -138,7 +138,7 @@ export function InboxList({ timezone }: { timezone: string }) {
                     <input
                       name="dueAt"
                       type="datetime-local"
-                      defaultValue={payload.dueAt ? payload.dueAt.slice(0, 16) : ""}
+                      defaultValue={payload.dueAt ? isoToLocalInput(payload.dueAt, timezone) : ""}
                       aria-label={t("editDate")}
                       className="num rounded-lg border border-rule bg-raised px-2.5 py-1.5"
                     />

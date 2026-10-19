@@ -2,6 +2,7 @@
 
 import { Check, Pin, PinOff } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
+import { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/cn";
@@ -15,6 +16,15 @@ export interface TimelineProps {
   items: DayItem[];
   nowMin: number | null;
   nowIso: string;
+  /** Proposal targets for today (dashed = suggested, docs/11). */
+  ghosts?: {
+    id: string;
+    title: string;
+    startMin: number;
+    endMin: number;
+    startsAt: string;
+    endsAt: string;
+  }[];
   /** Visible window in minutes of the day (work hours ± 1 h). */
   window: { start: number; end: number };
   timezone: string;
@@ -28,6 +38,7 @@ export function Timeline({
   items,
   nowMin,
   nowIso,
+  ghosts = [],
   window,
   timezone,
   clients,
@@ -58,7 +69,7 @@ export function Timeline({
             </span>
           ))}
         </div>
-        <Lane label={t("laneCalendar")}>
+        <Lane label={t("laneCalendar")} columns={hours.length - 1}>
           {events.map((e) => (
             <div
               key={e.id}
@@ -78,14 +89,30 @@ export function Timeline({
             </div>
           ))}
         </Lane>
-        <Lane label={t("lanePlan")}>
+        <Lane label={t("lanePlan")} columns={hours.length - 1}>
+          {ghosts.map((g) => {
+            const ghostLabel = `${formatTime(g.startsAt, locale, timezone)}–${formatTime(g.endsAt, locale, timezone)}`;
+            return (
+              <div
+                key={g.id}
+                className="absolute bottom-1 top-1 flex min-w-0 flex-col justify-center overflow-hidden rounded-lg border border-dashed border-sug bg-sug-soft px-2 py-1 text-left text-sug"
+                style={{ left: x(g.startMin), width: w(g.startMin, g.endMin) }}
+                title={`${g.title} · ${t("legendSuggested")}`}
+              >
+                <b className="truncate text-[12.5px] font-semibold leading-tight">{g.title}</b>
+                {narrow(g.startMin, g.endMin) ? null : (
+                  <i className="num text-[11.5px] not-italic">{ghostLabel}</i>
+                )}
+              </div>
+            );
+          })}
           {blocks.map((b) => (
             <button
               key={b.id}
               type="button"
               onClick={() => onSelect(selectedId === b.id ? null : b.id)}
               aria-pressed={selectedId === b.id}
-              aria-label={`${b.title}, ${label(b)}`}
+              aria-label={`${b.title}, ${label(b)}${b.done ? `, ${t("doneLabel")}` : ""}`}
               className={cn(
                 "absolute bottom-1 top-1 flex min-w-0 flex-col justify-center overflow-hidden rounded-lg border-0 border-l-4 px-2 py-1 text-left text-ink transition-shadow",
                 selectedId === b.id && "shadow-[0_0_0_2px_var(--cc)]",
@@ -141,11 +168,14 @@ export function Timeline({
   );
 }
 
-function Lane({ label, children }: { label: string; children: React.ReactNode }) {
+function Lane({ label, columns, children }: { label: string; columns: number; children: React.ReactNode }) {
   return (
     <div className="mt-2 grid grid-cols-[var(--lanel)_1fr] items-center">
       <span className="pr-2.5 text-[12.5px] font-semibold text-ink2">{label}</span>
-      <div className="relative h-[60px] rounded-[10px] bg-[linear-gradient(90deg,var(--rule)_1px,transparent_1px)] [background-size:calc(100%/11)_100%]">
+      <div
+        className="relative h-[60px] rounded-[10px] bg-[linear-gradient(90deg,var(--rule)_1px,transparent_1px)]"
+        style={{ backgroundSize: `calc(100% / ${String(Math.max(1, columns))}) 100%` }}
+      >
         {children}
       </div>
     </div>
@@ -170,18 +200,30 @@ export function BlockDetail({
   const tTasks = useTranslations("tasks");
   const locale = useLocale();
   const { toast } = useToast();
+  const tApp = useTranslations("app");
   const pin = usePinBlock();
   const complete = useCompleteBlock();
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    ref.current?.focus();
+  }, [block.id]);
   const minutes = Math.round(
     (new Date(block.endsAt).getTime() - new Date(block.startsAt).getTime()) / 60_000,
   );
+  const headingId = `block-detail-${block.id}`;
   return (
     <div
-      className="ml-0 mt-4 flex flex-col gap-4 rounded-r-[10px] border-l-[3px] bg-panel px-4 py-3.5 md:ml-[var(--lanel)] md:flex-row md:items-start md:justify-between"
+      ref={ref}
+      tabIndex={-1}
+      role="region"
+      aria-labelledby={headingId}
+      className="ml-0 mt-4 flex flex-col gap-4 rounded-r-[10px] border-l-[3px] bg-panel px-4 py-3.5 outline-none md:ml-[var(--lanel)] md:flex-row md:items-start md:justify-between"
       style={{ borderLeftColor: clientColorVar(task?.clientId ?? null, clients) }}
     >
       <div>
-        <h3 className="mb-0.5 text-base">{task?.title ?? ""}</h3>
+        <h3 id={headingId} className="mb-0.5 text-base">
+          {task?.title ?? ""}
+        </h3>
         <p className="num text-ink2">
           {t("range", {
             from: formatTime(block.startsAt, locale, timezone),
@@ -195,6 +237,9 @@ export function BlockDetail({
         </p>
       </div>
       <div className="flex flex-wrap gap-2">
+        <Button size="sm" variant="quiet" onClick={onClose}>
+          {tApp("dialogClose")}
+        </Button>
         <Button
           size="sm"
           onClick={() => {

@@ -29,7 +29,9 @@ if (page.url().includes("onboarding")) {
 }
 // One synchronous replan so the seed has a plan (also reports the planner's wall time on 500 tasks).
 const t0 = Date.now();
-const replan = await page.request.post(`${base}/api/v1/plan/replan`, { headers: { "x-requested-with": "meri" } });
+const replan = await page.request.post(`${base}/api/v1/plan/replan`, {
+  headers: { "x-requested-with": "meri" },
+});
 const replanMs = Date.now() - t0;
 const replanBody = await replan.json();
 console.log(`replan: ${replan.status()} ${JSON.stringify(replanBody)} in ${replanMs} ms`);

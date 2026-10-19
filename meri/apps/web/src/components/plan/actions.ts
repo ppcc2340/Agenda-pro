@@ -36,6 +36,7 @@ export interface ReplanResult {
   outcome: "applied" | "proposed" | "noop" | "skipped" | "invalid";
   proposalId: string | null;
   applied: { added: number; removed: number } | null;
+  auditId: string | null;
 }
 
 export function useReplan() {

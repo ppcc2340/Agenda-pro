@@ -1,4 +1,4 @@
-import { getFormatter, getLocale, getTranslations } from "next-intl/server";
+import { getFormatter, getLocale } from "next-intl/server";
 import { HoyView } from "@/components/plan/hoy-view";
 import { CaptureButton, PageHeader } from "@/components/shell/app-shell";
 import type { Task } from "@/lib/types";
@@ -6,7 +6,6 @@ import { apiFetch } from "@/server/api";
 import { getServerConfig } from "@/server/config";
 
 export default async function HoyPage() {
-  const t = await getTranslations("hoy");
   const format = await getFormatter();
   const locale = await getLocale();
   const [tasks, prefs, clients] = await Promise.all([
@@ -37,7 +36,6 @@ export default async function HoyPage() {
         now={demoNow ? now.toISOString() : undefined}
         pendingTasks={pending}
       />
-      <span className="sr-only">{t("dayLine")}</span>
     </>
   );
 }

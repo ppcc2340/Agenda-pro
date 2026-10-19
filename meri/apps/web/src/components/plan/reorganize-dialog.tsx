@@ -28,6 +28,7 @@ export function ReorganizeDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const t = useTranslations("plan.proposal");
+  const tApp = useTranslations("app");
   const locale = useLocale();
   const { toast } = useToast();
   const accept = useAcceptProposal();
@@ -60,7 +61,7 @@ export function ReorganizeDialog({
                         },
                       });
                     },
-                    onError: (e) => toast(e.message),
+                    onError: () => toast(tApp("errorBody")),
                   },
                 );
               }}

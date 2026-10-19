@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import {
   createContext,
   useCallback,
@@ -25,6 +26,7 @@ const ToastContext = createContext<ToastApi>({ toast: () => {} });
 
 /** One bottom toast like the demo: message + optional Deshacer (docs/11: every automatic action can be undone). */
 export function ToastProvider({ children }: { children: ReactNode }) {
+  const tApp = useTranslations("app");
   const [state, setState] = useState<ToastState | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const toast = useCallback((message: string, options: { undo?: () => void; undoLabel?: string } = {}) => {
@@ -60,7 +62,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                 setState(null);
               }}
             >
-              {state.undoLabel}
+              {state.undoLabel ?? tApp("undo")}
             </button>
           ) : null}
         </div>

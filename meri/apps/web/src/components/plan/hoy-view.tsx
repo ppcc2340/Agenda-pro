@@ -15,6 +15,7 @@ import {
   clientColorVar,
   currentBlock,
   dayItems,
+  dayKey,
   minuteOfDay,
   startOfLocalDay,
   type DayItem,
@@ -45,6 +46,7 @@ export function HoyView({ timezone, workStart, workEnd, clients, now: nowIso, pe
   const t = useTranslations("hoy");
   const tPlan = useTranslations("plan");
   const tTasks = useTranslations("tasks");
+  const tApp = useTranslations("app");
   const locale = useLocale();
   const { toast } = useToast();
   const now = useMemo(() => (nowIso ? new Date(nowIso) : new Date()), [nowIso]);
@@ -67,8 +69,31 @@ export function HoyView({ timezone, workStart, workEnd, clients, now: nowIso, pe
     [now, timezone, plan.data, events.data, tasks],
   );
   const nowMin = minuteOfDay(now.toISOString(), timezone);
+  const ghosts = useMemo(() => {
+    const p = plan.data?.pendingProposal;
+    if (!p) return [];
+    const todayKey = dayKey(now, timezone);
+    const targets = [
+      ...p.added.map((a) => ({ taskId: a.taskId, startsAt: a.startsAt, endsAt: a.endsAt })),
+      ...p.moved.map((m) => ({ taskId: m.taskId, startsAt: m.to.startsAt, endsAt: m.to.endsAt })),
+    ];
+    return targets
+      .filter((g) => dayKey(new Date(g.startsAt), timezone) === todayKey)
+      .map((g) => ({
+        id: `ghost-${g.taskId}-${g.startsAt}`,
+        title: tasks.get(g.taskId)?.title ?? "",
+        startMin: minuteOfDay(g.startsAt, timezone),
+        endMin: minuteOfDay(g.endsAt, timezone),
+        startsAt: g.startsAt,
+        endsAt: g.endsAt,
+      }));
+  }, [plan.data, now, timezone, tasks]);
   const current = currentBlock(items, nowMin);
-  const key = items.filter((i) => i.kind === "block" && !i.done).slice(0, 3);
+  const priorityOf = (i: DayItem) => tasks.get(i.taskId ?? "")?.priority ?? 3;
+  const key = items
+    .filter((i) => i.kind === "block" && !i.done)
+    .sort((a, b) => priorityOf(a) - priorityOf(b) || a.startMin - b.startMin)
+    .slice(0, 3);
   const window = {
     start: Math.min(hhmm(workStart), 8 * 60) - 60,
     end: Math.max(hhmm(workEnd), 18 * 60) + 60,
@@ -88,22 +113,31 @@ export function HoyView({ timezone, workStart, workEnd, clients, now: nowIso, pe
   return (
     <>
       <p className="-mt-3 mb-5 text-ink2">
-        {plan.data && plan.data.blocks.length > 0
-          ? riskCount > 0
-            ? t("subtitleRisk", { n: riskCount })
-            : t("subtitleCalm")
-          : t("subtitleEmpty")}
+        {plan.isPending
+          ? tApp("loading")
+          : plan.data && plan.data.blocks.length > 0
+            ? plan.data.conflicts.length > 0
+              ? t("subtitleConflict", { n: riskCount })
+              : riskCount > 0
+                ? t("subtitleRisk", { n: riskCount })
+                : t("subtitleCalm")
+            : t("subtitleEmpty")}
       </p>
-      <Section title={t("dayLine")} className="mt-0">
+      {/* The day line is a desktop view (demo/mobile.html keeps the day in the Agenda tab). */}
+      <Section title={t("dayLine")} className="mt-0 hidden md:block">
         {plan.isError ? (
-          <p role="alert" className="text-risk">
+          <p role="alert" className="flex items-center gap-3 text-risk">
             {t("errorPlan")}
+            <Button size="sm" onClick={() => void plan.refetch()}>
+              {tApp("retry")}
+            </Button>
           </p>
         ) : null}
         <Timeline
           items={items}
           nowMin={nowMin}
           nowIso={now.toISOString()}
+          ghosts={ghosts}
           window={window}
           timezone={timezone}
           clients={clients}
@@ -123,7 +157,9 @@ export function HoyView({ timezone, workStart, workEnd, clients, now: nowIso, pe
       <div className="mt-1.5 grid gap-10 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
         <div>
           <Section title={t("q1")} className="mt-2">
-            {current ? (
+            {plan.isPending ? (
+              <p className="py-4 text-ink3">{tApp("loading")}</p>
+            ) : current ? (
               <NowCard
                 block={current}
                 nowMin={nowMin}
@@ -158,7 +194,7 @@ export function HoyView({ timezone, workStart, workEnd, clients, now: nowIso, pe
                   <li key={b.id} className="flex items-start gap-3 py-3">
                     <button
                       type="button"
-                      className="mt-0.5 grid h-[22px] w-[22px] flex-shrink-0 place-items-center rounded-[7px] border-[1.5px] border-ink3 bg-raised p-0 text-transparent"
+                      className="relative mt-0.5 grid h-[22px] w-[22px] flex-shrink-0 place-items-center rounded-[7px] border-[1.5px] border-ink3 bg-raised p-0 text-transparent before:absolute before:-inset-3 before:content-['']"
                       aria-label={t("markDoneAria", { title: b.title })}
                       onClick={() => markDone(b)}
                     >

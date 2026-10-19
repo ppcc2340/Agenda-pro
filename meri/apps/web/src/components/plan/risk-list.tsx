@@ -7,7 +7,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { useToast } from "@/components/ui/toast";
 import { clientColorVar, riskRows } from "@/lib/plan";
 import type { Plan, Task } from "@/lib/types";
-import { useReplan } from "./actions";
+import { useReplan, useUndo } from "./actions";
 import { ReorganizeDialog } from "./reorganize-dialog";
 
 const RISK_CODES = ["LOW_SLACK", "BLOCKED_DEPENDENCY", "NO_CAPACITY"] as const;
@@ -46,6 +46,8 @@ export function RiskList({
   const tHoy = useTranslations("hoy");
   const { toast } = useToast();
   const replan = useReplan();
+  const undo = useUndo();
+  const tApp = useTranslations("app");
   const [open, setOpen] = useState(false);
   const rows = riskRows(plan);
   const tasks = new Map<string, Task>(plan.tasks.map((x) => [x.id, x]));
@@ -114,8 +116,21 @@ export function RiskList({
                   disabled={replan.isPending}
                   onClick={() => {
                     replan.mutate(undefined, {
-                      onSuccess: (r) =>
-                        toast(r.outcome === "proposed" ? t("toasts.proposed") : t("toasts.replanned")),
+                      onSuccess: (r) => {
+                        if (r.outcome === "proposed") toast(t("toasts.proposed"));
+                        else if (r.outcome === "applied" && r.applied) {
+                          const auditId = r.auditId;
+                          toast(t("toasts.replanned", r.applied), {
+                            undo: auditId
+                              ? () => {
+                                  undo.mutate({ auditId }, { onSuccess: () => toast(t("toasts.undone")) });
+                                }
+                              : undefined,
+                          });
+                        } else if (r.outcome === "noop") toast(t("toasts.noop"));
+                        else toast(t("toasts.skipped"));
+                      },
+                      onError: () => toast(tApp("errorBody")),
                     });
                   }}
                 >
