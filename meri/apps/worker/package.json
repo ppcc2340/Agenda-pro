@@ -3,12 +3,31 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "BullMQ: sincronización, IA, planificación y trabajos programados.",
+  "description": "BullMQ: sync, AI, planning and scheduled jobs.",
   "scripts": {
-    "typecheck": "echo \"implementar en la fase 0\"",
-    "lint": "echo \"implementar en la fase 0\"",
-    "test": "echo \"implementar en la fase 0\"",
-    "build": "echo \"implementar en la fase 0\"",
-    "dev": "echo \"implementar en la fase 0\""
+    "dev": "tsx watch src/main.ts",
+    "start": "node dist/main.js",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src",
+    "test": "vitest run",
+    "build": "tsup"
+  },
+  "dependencies": {
+    "@meri/config": "workspace:*",
+    "@meri/core": "workspace:*",
+    "@meri/db": "workspace:*",
+    "@meri/integrations": "workspace:*",
+    "bullmq": "^5.20.0",
+    "fastify": "^5.0.0",
+    "ioredis": "^5.4.0",
+    "pino": "^9.4.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "pino-pretty": "^11.3.0",
+    "tsup": "^8.3.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
   }
 }
