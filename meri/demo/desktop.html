@@ -1,0 +1,731 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Meri: demo de escritorio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;600;700&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#E9EEF1; --panel:#F5F8F9; --raised:#FFFFFF;
+  --ink:#0F1E2E; --ink2:#44566A; --ink3:#74869A; --rule:#D2DBE1;
+  --rail:#0F1E2E; --rail-ink:#C9DBE2; --rail-dim:#7F97A6;
+  --sea:#0E6B74; --on-sea:#FFFFFF; --sea-soft:#D5EBED;
+  --risk:#BF3A4A; --risk-soft:#F7DEE1;
+  --sug:#9A6A0C; --sug-soft:#FAEFD4;
+  --ok:#2A7B58; --ok-soft:#D9EFE5;
+  --c-acme:#3A6EDB; --c-norte:#2F8A5C; --c-luna:#B07414; --c-beta:#B0407E;
+  --f-head:"Bricolage Grotesque","Avenir Next","Segoe UI",system-ui,sans-serif;
+  --f-body:"Instrument Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#08121A; --panel:#0F1C27; --raised:#142431;
+    --ink:#E7EFF3; --ink2:#A7B9C6; --ink3:#7C91A1; --rule:#233545;
+    --rail:#060E15; --rail-ink:#C9DBE2; --rail-dim:#6F8796;
+    --sea:#5CC9CF; --on-sea:#06242A; --sea-soft:#12363C;
+    --risk:#F0707F; --risk-soft:#3A1B22;
+    --sug:#E3B04B; --sug-soft:#35290F;
+    --ok:#5CC79B; --ok-soft:#123428;
+    --c-acme:#7AA2F5; --c-norte:#5CC79B; --c-luna:#E3A64B; --c-beta:#E27BB0;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#08121A; --panel:#0F1C27; --raised:#142431;
+  --ink:#E7EFF3; --ink2:#A7B9C6; --ink3:#7C91A1; --rule:#233545;
+  --rail:#060E15; --rail-ink:#C9DBE2; --rail-dim:#6F8796;
+  --sea:#5CC9CF; --on-sea:#06242A; --sea-soft:#12363C;
+  --risk:#F0707F; --risk-soft:#3A1B22;
+  --sug:#E3B04B; --sug-soft:#35290F;
+  --ok:#5CC79B; --ok-soft:#123428;
+  --c-acme:#7AA2F5; --c-norte:#5CC79B; --c-luna:#E3A64B; --c-beta:#E27BB0;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);font:400 14.5px/1.5 var(--f-body);-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:var(--f-head);margin:0;letter-spacing:-.01em;font-weight:600}
+p{margin:0}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--sea);outline-offset:2px;border-radius:6px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.num{font-variant-numeric:tabular-nums}
+
+.btn{font:600 13.5px var(--f-body);padding:8px 14px;border-radius:9px;border:1px solid var(--rule);background:var(--raised);color:var(--ink);display:inline-flex;align-items:center;gap:7px;line-height:1.2}
+.btn:hover{border-color:var(--ink3)}
+.btn.primary{background:var(--sea);border-color:var(--sea);color:var(--on-sea)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.quiet{border-color:transparent;background:transparent;color:var(--ink2)}
+.btn.quiet:hover{background:var(--sea-soft);color:var(--ink)}
+.btn.risk{border-color:var(--risk);color:var(--risk)}
+.btn.sm{padding:5px 10px;font-size:12.5px;border-radius:8px}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink2);white-space:nowrap}
+.chip i{width:9px;height:9px;border-radius:3px;background:var(--cc);display:inline-block}
+.pill{display:inline-block;font-size:12px;font-weight:600;padding:2px 9px;border-radius:99px;background:var(--sea-soft);color:var(--sea)}
+.pill.risk{background:var(--risk-soft);color:var(--risk)}
+.pill.sug{background:var(--sug-soft);color:var(--sug);border:1px dashed var(--sug)}
+.pill.ok{background:var(--ok-soft);color:var(--ok)}
+.pill.plain{background:transparent;border:1px solid var(--rule);color:var(--ink2)}
+.muted{color:var(--ink2)} .dim{color:var(--ink3)}
+.conf{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--ink2)}
+.conf span{width:44px;height:5px;border-radius:9px;background:var(--rule);overflow:hidden;display:inline-block}
+.conf span b{display:block;height:100%;background:var(--sea)}
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:11px 16px;border-radius:12px;display:flex;gap:14px;align-items:center;z-index:90;box-shadow:0 10px 30px rgba(0,0,0,.25);font-size:13.5px;max-width:92vw}
+.toast[hidden]{display:none}
+.toast .link{background:none;border:0;color:var(--sea-soft);font-weight:700;text-decoration:underline;padding:0}
+:root[data-theme="dark"] .toast .link,:root:not([data-theme="light"]) .toast .link{color:var(--sea)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+.app{display:grid;grid-template-columns:240px 1fr;height:100vh}
+.rail{background:var(--rail);color:var(--rail-ink);display:flex;flex-direction:column;padding:22px 14px}
+.brand{display:flex;align-items:center;gap:10px;padding:0 8px 22px;font:700 24px var(--f-head);color:#fff;letter-spacing:-.02em}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav button{display:flex;align-items:center;gap:11px;padding:10px 10px;border-radius:10px;background:none;border:0;color:var(--rail-ink);text-align:left;font-weight:500;position:relative}
+.nav button:hover{background:rgba(255,255,255,.06)}
+.nav button[aria-current="page"]{background:rgba(92,201,207,.14);color:#fff}
+.nav button[aria-current="page"]::before{content:"";position:absolute;left:-14px;top:9px;bottom:9px;width:3px;border-radius:0 3px 3px 0;background:#5CC9CF}
+.nav .badge{margin-left:auto;font-size:12px;font-weight:700;background:#5CC9CF;color:#06242A;border-radius:99px;padding:0 7px;min-width:20px;text-align:center}
+.nav .badge.r{background:#F0707F;color:#2b0b10}
+.rail-foot{margin-top:auto;padding:12px 8px 0;border-top:1px solid rgba(255,255,255,.08);font-size:12.5px;color:var(--rail-dim);display:flex;flex-direction:column;gap:10px}
+.rail-foot button{background:none;border:0;color:var(--rail-ink);display:flex;gap:8px;align-items:center;padding:0}
+
+.main{overflow:auto;padding:26px 44px 70px}
+.wrap{max-width:1160px;margin:0 auto}
+.top{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin-bottom:22px}
+.top h1{font-size:34px;line-height:1.1}
+.top .sub{margin-top:8px;color:var(--ink2);max-width:60ch;font-size:15.5px}
+.kbtn{display:flex;align-items:center;gap:10px;padding:9px 12px 9px 14px;border:1px solid var(--rule);border-radius:11px;background:var(--raised);color:var(--ink2);min-width:260px}
+.kbtn:hover{border-color:var(--ink3)}
+kbd{font:600 11.5px var(--f-body);border:1px solid var(--rule);border-radius:6px;padding:1px 6px;color:var(--ink3);margin-left:auto;background:var(--panel)}
+
+.sec{margin-top:26px}
+.sec>h2{font-size:18px;margin-bottom:10px}
+.sec>.hint{color:var(--ink3);font-size:13px;margin:-6px 0 10px}
+.cols{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:40px;margin-top:6px}
+@media (max-width:1000px){.cols{grid-template-columns:1fr}.top{flex-direction:column}.app{grid-template-columns:76px 1fr}.nav button span,.brand span,.rail-foot span{display:none}}
+
+/* Línea del día */
+.tl{--lanel:104px;position:relative;margin-top:4px}
+.ticks{margin-left:var(--lanel);position:relative;height:20px;color:var(--ink3);font-size:12px}
+.ticks span{position:absolute;transform:translateX(-50%)}
+.lane{display:grid;grid-template-columns:var(--lanel) 1fr;margin-top:8px;align-items:center}
+.lane-l{font-size:12.5px;color:var(--ink2);font-weight:600;padding-right:10px}
+.track{position:relative;height:60px;background:linear-gradient(90deg,var(--rule) 1px,transparent 1px) 0 0/calc(100%/11) 100%;border-radius:10px}
+.ev,.blk{position:absolute;top:4px;bottom:4px;border-radius:8px;padding:6px 9px;overflow:hidden;text-align:left;display:flex;flex-direction:column;justify-content:center;min-width:0}
+.ev b,.blk b{font-weight:600;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.25}
+.ev i,.blk i{font-style:normal;font-size:11.5px;color:var(--ink2)}
+.ev{border:1px solid var(--cc);background:repeating-linear-gradient(135deg,transparent 0 6px,color-mix(in srgb,var(--cc) 30%,transparent) 6px 7px);color:var(--ink)}
+.blk{border:0;border-left:4px solid var(--cc);background:color-mix(in srgb,var(--cc) 17%,var(--raised));color:var(--ink);transition:box-shadow .12s}
+.blk:hover{box-shadow:0 0 0 1.5px var(--cc)}
+.blk.sel{box-shadow:0 0 0 2px var(--cc)}
+.blk.done{opacity:.5}.blk.done b{text-decoration:line-through}
+.mar{position:absolute;top:4px;bottom:4px;border-radius:8px;border:1px dashed var(--ink3);display:grid;place-items:center;font-size:11px;color:var(--ink3);background:repeating-linear-gradient(135deg,transparent 0 5px,var(--rule) 5px 6px)}
+.nowwrap{position:absolute;top:0;bottom:0;left:var(--lanel);right:0;pointer-events:none}
+.now{position:absolute;top:14px;bottom:-4px;width:2px;background:var(--sea);border-radius:2px}
+.now em{position:absolute;top:-17px;left:50%;transform:translateX(-50%);font:700 11px var(--f-body);background:var(--sea);color:var(--on-sea);padding:1px 6px;border-radius:99px}
+.legend{display:flex;gap:18px;margin:12px 0 0 var(--lanel);font-size:12.5px;color:var(--ink3);flex-wrap:wrap}
+.legend span{display:inline-flex;gap:7px;align-items:center}
+.sw{width:22px;height:11px;border-radius:4px;display:inline-block}
+.sw.s{background:color-mix(in srgb,var(--c-acme) 25%,var(--raised));border-left:3px solid var(--c-acme)}
+.sw.f{border:1px solid var(--ink3);background:repeating-linear-gradient(135deg,transparent 0 4px,var(--rule) 4px 5px)}
+.sw.p{border:1px dashed var(--sug);background:var(--sug-soft)}
+.detail{margin:16px 0 0 var(--lanel);padding:14px 16px;border-left:3px solid var(--cc);background:var(--panel);border-radius:0 10px 10px 0;display:flex;gap:20px;align-items:flex-start;justify-content:space-between}
+.detail h3{font-size:16px;margin-bottom:3px}
+.detail p{color:var(--ink2);max-width:62ch}
+.detail .why b{color:var(--ink)}
+
+/* Listas */
+.list{border-top:1px solid var(--rule)}
+.row{display:flex;gap:14px;align-items:flex-start;padding:13px 2px;border-bottom:1px solid var(--rule)}
+.row .grow{flex:1;min-width:0}
+.row .ttl{font-weight:600}
+.row .meta{display:flex;gap:12px;flex-wrap:wrap;color:var(--ink2);font-size:13px;margin-top:3px;align-items:center}
+.row .acts{display:flex;gap:6px;flex-shrink:0;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.check{width:22px;height:22px;border-radius:7px;border:1.5px solid var(--ink3);background:var(--raised);display:grid;place-items:center;flex-shrink:0;margin-top:1px;color:transparent;padding:0}
+.check.on{background:var(--sea);border-color:var(--sea);color:var(--on-sea)}
+.row.is-done .ttl{text-decoration:line-through;color:var(--ink3)}
+.risk-row{border-left:3px solid var(--risk);padding-left:14px;margin-left:-2px}
+.now-card{border:1px solid var(--rule);border-left:5px solid var(--cc);border-radius:12px;padding:18px 20px;background:var(--raised)}
+.now-card h3{font-size:22px;margin:4px 0 6px}
+.bar{height:6px;border-radius:9px;background:var(--rule);overflow:hidden;margin:12px 0 14px;max-width:420px}
+.bar b{display:block;height:100%;background:var(--cc)}
+
+/* Propuestas */
+.prop{display:flex;gap:16px;padding:16px 16px 16px 18px;border-bottom:1px solid var(--rule);border-left:3px dashed var(--sug);background:linear-gradient(90deg,var(--sug-soft),transparent 30%)}
+.prop .q{font-style:italic;color:var(--ink2);margin-top:8px;padding-left:12px;border-left:2px solid var(--rule);max-width:70ch}
+.prop .src{font-size:12.5px;color:var(--ink3);margin-top:6px;display:flex;gap:6px;align-items:center}
+.prop input{font:inherit;padding:7px 10px;border:1px solid var(--rule);border-radius:8px;background:var(--raised);color:var(--ink);width:100%}
+.prop .edit-grid{display:grid;grid-template-columns:2fr 1fr;gap:10px;margin-top:6px}
+.empty{padding:34px 4px;color:var(--ink2);max-width:52ch}
+.empty h3{font-size:18px;color:var(--ink);margin-bottom:4px}
+
+/* Pestañas */
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--rule);margin-bottom:6px}
+.tabs button{background:none;border:0;padding:10px 14px;font-weight:600;color:var(--ink2);border-bottom:2px solid transparent;margin-bottom:-1px}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--sea)}
+.seg{display:inline-flex;border:1px solid var(--rule);border-radius:10px;overflow:hidden;background:var(--raised)}
+.seg button{background:none;border:0;padding:7px 14px;font-weight:600;color:var(--ink2)}
+.seg button[aria-pressed="true"]{background:var(--sea);color:var(--on-sea)}
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 6px;align-items:center}
+.fchip{border:1px solid var(--rule);background:var(--raised);border-radius:99px;padding:4px 11px;display:inline-flex;gap:6px;align-items:center;font-size:13px}
+.fchip[aria-pressed="true"]{border-color:var(--cc,var(--sea));background:color-mix(in srgb,var(--cc,var(--sea)) 14%,var(--raised))}
+.fchip i{width:9px;height:9px;border-radius:3px;background:var(--cc)}
+
+/* Tabla de tiempo */
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-weight:600;font-size:13px;color:var(--ink2);padding:8px 10px;border-bottom:1px solid var(--rule)}
+td{padding:11px 10px;border-bottom:1px solid var(--rule);vertical-align:middle}
+td.r,th.r{text-align:right}
+tr.sug td{background:linear-gradient(90deg,var(--sug-soft),transparent 40%)}
+.stats{display:flex;gap:44px;margin:16px 0 10px;flex-wrap:wrap}
+.stat b{display:block;font:600 28px var(--f-head)}.stat span{color:var(--ink2);font-size:13px}
+
+/* Calendario semanal */
+.week{display:grid;grid-template-columns:48px repeat(5,1fr);margin-top:12px}
+.week .hd{padding:8px 6px;font-weight:600;border-bottom:1px solid var(--rule);text-align:center}
+.week .hd.today{color:var(--sea)}
+.hours{position:relative;height:528px}
+.hours span{position:absolute;right:8px;font-size:11.5px;color:var(--ink3);transform:translateY(-50%)}
+.dcol{position:relative;height:528px;border-left:1px solid var(--rule);background:linear-gradient(var(--rule) 1px,transparent 1px) 0 0/100% 48px}
+.dcol .ev,.dcol .blk{left:4px;right:4px;top:auto;bottom:auto;padding:3px 7px;cursor:default}
+.dcol .nowline{position:absolute;left:0;right:0;height:2px;background:var(--sea);z-index:2}
+
+/* Centro de control */
+.panel{padding:18px 0;border-bottom:1px solid var(--rule);display:grid;grid-template-columns:240px 1fr;gap:26px}
+.panel h3{font-size:16px}.panel .d{color:var(--ink2);font-size:13.5px;margin-top:3px}
+.conn{display:flex;justify-content:space-between;gap:14px;align-items:center;padding:9px 0;border-bottom:1px dashed var(--rule)}
+.conn:last-child{border:0}
+.meter{height:8px;border-radius:9px;background:var(--rule);overflow:hidden;max-width:360px;margin:8px 0 4px}
+.meter b{display:block;height:100%;background:var(--sea)}
+
+/* Overlays */
+.ov{position:fixed;inset:0;background:rgba(6,14,21,.55);display:flex;justify-content:center;align-items:flex-start;padding-top:12vh;z-index:80}
+.ov[hidden]{display:none}
+.dlg{background:var(--raised);border:1px solid var(--rule);border-radius:16px;width:min(680px,92vw);max-height:78vh;overflow:auto;box-shadow:0 24px 60px rgba(0,0,0,.35)}
+.dlg header{padding:18px 22px 6px}.dlg header h2{font-size:21px}.dlg header p{color:var(--ink2);margin-top:4px}
+.dlg .body{padding:8px 22px 6px}
+.dlg footer{padding:14px 22px 18px;display:flex;justify-content:flex-end;gap:8px;align-items:center}
+.dlg footer .note{margin-right:auto;font-size:12.5px;color:var(--ink3)}
+.dlg textarea{width:100%;min-height:150px;font:inherit;padding:10px 12px;border:1px solid var(--rule);border-radius:10px;background:var(--panel);color:var(--ink);resize:vertical}
+.diff{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--rule);align-items:flex-start}
+.diff .arrow{display:flex;gap:10px;align-items:center;color:var(--ink2);font-size:13.5px;flex-wrap:wrap;margin-top:3px}
+.diff s{color:var(--ink3)}
+.pal{width:min(640px,92vw);background:var(--raised);border:1px solid var(--rule);border-radius:16px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.35);align-self:flex-start}
+.pal input{width:100%;border:0;border-bottom:1px solid var(--rule);padding:17px 20px;font:500 17px var(--f-body);background:transparent;color:var(--ink);outline:none}
+.pal ul{list-style:none;margin:0;padding:8px;max-height:46vh;overflow:auto}
+.pal li button{width:100%;text-align:left;background:none;border:0;padding:10px 12px;border-radius:9px;display:flex;gap:10px;align-items:center;color:var(--ink)}
+.pal li button:hover,.pal li button.act{background:var(--sea-soft)}
+.pal .cap{padding:6px 12px 12px;display:flex;gap:8px;flex-wrap:wrap}
+.pal .cap .pill{border-style:dashed}
+.pal .tip{padding:10px 20px;border-top:1px solid var(--rule);font-size:12.5px;color:var(--ink3)}
+
+.tlc{position:relative}
+.narrow{padding:4px 6px!important}
+.narrow b{white-space:normal;font-size:11px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.narrow i{display:none}
+.prop .acts{display:flex;gap:6px}
+
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+<div class="ov" id="pal" hidden><div class="pal" role="dialog" aria-modal="true" aria-label="Capturar o buscar">
+  <input id="pal-in" placeholder="Captura algo o busca: Informe para Acme el jueves, 2 h" autocomplete="off" aria-label="Capturar o buscar">
+  <div id="pal-body"></div><div class="tip">Enter elige. Esc cierra. Meri entiende fechas, clientes y duraciones.</div></div></div>
+<div class="ov" id="modal" hidden></div>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+<script>
+/* ===== Datos de ejemplo y utilidades compartidas (demo de Meri) ===== */
+const BASE = new Date(2026, 9, 19);            // lunes 19 de octubre de 2026
+const T = (h, m = 0) => h * 60 + m;
+const NOW_MIN = T(10, 40);
+const hm = m => String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
+const fmtMin = m => m < 60 ? m + ' min' : (Math.round(m / 6) / 10).toString().replace('.', ',') + ' h';
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+
+const CLIENTS = {
+  acme:  { name: 'Acme Corp',       css: 'var(--c-acme)' },
+  norte: { name: 'Estudio Norte',   css: 'var(--c-norte)' },
+  luna:  { name: 'Luna Legal',      css: 'var(--c-luna)' },
+  beta:  { name: 'Beta Logística',  css: 'var(--c-beta)' },
+};
+const cc = c => c ? CLIENTS[c].css : 'var(--ink3)';
+const chip = c => c ? `<span class="chip" style="--cc:${CLIENTS[c].css}"><i></i>${esc(CLIENTS[c].name)}</span>` : '';
+
+const IC = {
+  sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  inbox:'<path d="M3 13l3-8h12l3 8v6H3z"/><path d="M3 13h5l1 3h6l1-3h5"/>',
+  layers:'<path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/>',
+  cal:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+  sliders:'<path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/>',
+  check:'<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+  x:'<path d="M6 6l12 12M18 6L6 18"/>',
+  edit:'<path d="M4 20h4l11-11-4-4L4 16z"/>',
+  search:'<circle cx="11" cy="11" r="6"/><path d="M20 20l-4-4"/>',
+  alert:'<path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18v.5"/>',
+  mail:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  undo:'<path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 010 12h-3"/>',
+  moon:'<path d="M20 14.5A8 8 0 019.5 4 8 8 0 1020 14.5z"/>',
+  clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  shield:'<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/>',
+  more:'<circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/>',
+  back:'<path d="M15 5l-7 7 7 7"/>',
+  chev:'<path d="M9 5l7 7-7 7"/>',
+  users:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.5 3-5.5 6.5-5.5s5.9 2 6.5 5.5"/><path d="M16 5a3.5 3.5 0 010 6.5M18 14.8c2 .6 3.3 2.4 3.7 5.2"/>',
+  download:'<path d="M12 4v11M7 11l5 5 5-5M5 20h14"/>',
+};
+const ic = (n, s = 18) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC[n]}</svg>`;
+const LOGO = (s = 26) => `<svg width="${s}" height="${s}" viewBox="0 0 32 32" fill="none" aria-hidden="true"><rect width="32" height="32" rx="9" fill="var(--sea)"/><path d="M5 13c3.5-3 7-3 10.5 0s7 3 11.5 0" stroke="var(--on-sea)" stroke-width="2.4" stroke-linecap="round"/><path d="M5 20c3.5-3 7-3 10.5 0s7 3 11.5 0" stroke="var(--on-sea)" stroke-width="2.4" stroke-linecap="round" opacity=".55"/></svg>`;
+
+const S = {
+  events: [
+    { id:'e1', title:'Llamada semanal con Acme',               client:'acme',  s:T(9,30),  e:T(10,15) },
+    { id:'e2', title:'Almuerzo',                                client:null,    s:T(12,30), e:T(13,30), personal:true },
+    { id:'e3', title:'Reunión de estrategia con Estudio Norte', client:'norte', s:T(16,30), e:T(17,30) },
+  ],
+  blocks: [
+    { id:'b1', title:'Responder consultas de Luna',        client:'luna',  s:T(8,45),  e:T(9,30),  kind:'shallow', pri:3, done:true,  why:'Prioridad alta y cabía antes de la llamada con Acme.' },
+    { id:'b2', title:'Informe trimestral de Acme',         client:'acme',  s:T(10,30), e:T(12,30), kind:'deep',    pri:1, done:false, why:'Vence el jueves y es tu bloque de concentración más largo de la semana. Lo protegí de reuniones y mensajes.' },
+    { id:'b3', title:'Borrador de contestación para Beta', client:'beta',  s:T(13,30), e:T(15,0),  kind:'deep',    pri:1, done:false, why:'Vence el miércoles y todavía necesita 4,5 h. Es la tarea con menos holgura de la semana.' },
+    { id:'b4', title:'Revisar factura de Estudio Norte',   client:'norte', s:T(15,0),  e:T(16,0),  kind:'shallow', pri:3, done:false, why:'Es corta y no tiene fecha límite esta semana. Llena el hueco antes de la reunión con Norte.' },
+    { id:'b5', title:'Preparar briefing de Luna Legal',    client:'luna',  s:T(17,30), e:T(18,15), kind:'shallow', pri:2, done:false, why:'Mañana tienes comité con Luna. Lo dejo después de la reunión con Norte para que llegues con contexto fresco.' },
+  ],
+  margin: [{ s:T(16,0), e:T(16,30) }],
+  moved: [],
+  unscheduled: [],
+  risks: [
+    { id:'r1', title:'El borrador para Beta vence el miércoles', detail:'Necesitas 4,5 h y solo te quedan 3 h de holgura.', client:'beta', fix:'reorganize' },
+    { id:'r2', title:'El briefing de Luna depende de un documento que no llega', detail:'Marta Díaz aún no envía el poder notarial firmado.', client:'luna', fix:'followup', cid:'c5' },
+  ],
+  proposals: [
+    { id:'p1', kind:'explicit',  dir:'owed_to_me', client:'acme',  who:'Ana Ruiz',    action:'Enviar el contrato firmado',           due:'miércoles 21 oct', conf:.94, evidence:'te envío el contrato firmado el miércoles',   source:'RE: Contrato de servicios 2026' },
+    { id:'p2', kind:'inferred',  dir:'owed_by_me', client:'beta',  who:'Pablo Soto',  action:'Revisar el presupuesto de transporte', due:'sin fecha',        conf:.71, evidence:'¿Podrías mirar el presupuesto cuando puedas?', source:'Presupuesto transporte Q4' },
+    { id:'p3', kind:'suggested', dir:'owed_by_me', client:'norte', who:'Laura Vidal', action:'Agendar la reunión de cierre',         due:'fin de mes',       conf:.55, evidence:'Quizá podríamos vernos a fin de mes',          source:'Cierre de proyecto' },
+  ],
+  commitments: [
+    { id:'c1', dir:'owed_by_me', client:'acme',  action:'Entregar el informe trimestral',          who:'Ana Ruiz',      due:'jueves 22 oct',    status:'confirmed' },
+    { id:'c2', dir:'owed_by_me', client:'acme',  action:'Enviar la propuesta revisada',            who:'Ana Ruiz',      due:'mañana',           status:'confirmed' },
+    { id:'c3', dir:'owed_by_me', client:'luna',  action:'Confirmar la fecha de audiencia',         who:'Marta Díaz',    due:'viernes 23 oct',   status:'confirmed' },
+    { id:'c4', dir:'owed_to_me', client:'acme',  action:'Datos de ventas del tercer trimestre',    who:'Carlos Ibáñez', due:'ayer',             status:'overdue' },
+    { id:'c5', dir:'owed_to_me', client:'luna',  action:'Poder notarial firmado',                  who:'Marta Díaz',    due:'miércoles 21 oct', status:'confirmed' },
+    { id:'c6', dir:'owed_to_me', client:'beta',  action:'Aprobación del presupuesto',              who:'Pablo Soto',    due:'viernes 23 oct',   status:'confirmed' },
+  ],
+  time: [
+    { id:'t1', day:'Lun 19', client:'luna',  desc:'Consultas de Luna',                   min:45,  src:'Bloque completado',   status:'suggested' },
+    { id:'t2', day:'Lun 19', client:'acme',  desc:'Llamada semanal con Acme',            min:45,  src:'Evento de calendario', status:'suggested' },
+    { id:'t3', day:'Jue 15', client:'beta',  desc:'Llamada con Beta Logística',          min:60,  src:'Evento sin tiempo registrado', status:'suggested' },
+    { id:'t4', day:'Vie 16', client:'norte', desc:'Reunión de cierre trimestral',        min:90,  src:'Evento de calendario', status:'approved' },
+    { id:'t5', day:'Vie 16', client:'beta',  desc:'Revisión de cláusulas de transporte', min:120, src:'Bloque completado',   status:'approved' },
+    { id:'t6', day:'Jue 15', client:'acme',  desc:'Redacción del informe',               min:150, src:'Bloque completado',   status:'approved' },
+  ],
+  audit: [
+    { id:'a0', who:'sistema', time:'08:00', text:'Meri generó el plan de hoy con 20 % de margen para imprevistos.' },
+    { id:'a00', who:'ia',     time:'08:12', text:'Detectó 3 posibles compromisos en tu correo y los dejó como propuestas.' },
+  ],
+  autonomy: 'suggest',
+};
+
+const BRIEFS = {
+  acme:  [['Entregas el informe trimestral el jueves. Hoy tienes 2 h reservadas.','Tarea','Informe trimestral de Acme'],['Carlos Ibáñez debía enviar los datos de ventas y lleva 1 día de retraso.','Compromiso','Datos de ventas del tercer trimestre'],['Ana Ruiz enviará el contrato firmado el miércoles.','Correo','RE: Contrato de servicios 2026'],['Hoy a las 9:30 tuviste la llamada semanal.','Evento','Llamada semanal con Acme']],
+  beta:  [['El borrador de contestación vence el miércoles y está en riesgo.','Tarea','Borrador de contestación para Beta'],['Pablo Soto pidió revisar el presupuesto de transporte, sin fecha.','Correo','Presupuesto transporte Q4'],['Pablo Soto prometió aprobar el presupuesto el viernes.','Compromiso','Aprobación del presupuesto']],
+  luna:  [['Falta el poder notarial firmado de Marta Díaz. Bloquea el briefing.','Compromiso','Poder notarial firmado'],['Debes confirmar la fecha de audiencia el viernes.','Compromiso','Confirmar la fecha de audiencia'],['Hoy respondiste las consultas de Luna (45 min).','Tarea','Responder consultas de Luna']],
+  norte: [['Hoy a las 16:30 tienes la reunión de estrategia.','Evento','Reunión de estrategia con Estudio Norte'],['Queda por revisar la factura del mes.','Tarea','Revisar factura de Estudio Norte'],['Laura Vidal sugirió reunirse a fin de mes. Aún sin confirmar.','Correo','Cierre de proyecto']],
+};
+
+const DAYS = ['Lun 19', 'Mar 20', 'Mié 21', 'Jue 22', 'Vie 23'];
+const WEEK = [
+  null,
+  { events:[{ id:'w1', title:'Comité con Luna Legal', client:'luna', s:T(11), e:T(12) }],
+    blocks:[{ id:'w2', title:'Enviar la propuesta revisada a Acme', client:'acme', s:T(14), e:T(15), kind:'shallow' }] },
+  { events:[], blocks:[{ id:'w3', title:'Cierre del borrador para Beta', client:'beta', s:T(9,30), e:T(11,30), kind:'deep' }] },
+  { events:[{ id:'w4', title:'Entrega del informe a Acme', client:'acme', s:T(16), e:T(16,30) }],
+    blocks:[{ id:'w5', title:'Revisión final del informe', client:'acme', s:T(10), e:T(12), kind:'deep' }] },
+  { events:[], blocks:[{ id:'w6', title:'Confirmar la fecha de audiencia', client:'luna', s:T(9), e:T(9,30), kind:'shallow' },
+                       { id:'w7', title:'Bloque de concentración libre', client:null, s:T(10), e:T(12), kind:'deep' }] },
+];
+function dayItems(i) {
+  if (i === 0) return { events: S.events, blocks: S.blocks };
+  return { events: WEEK[i].events, blocks: i === 1 ? [...WEEK[1].blocks, ...S.moved] : WEEK[i].blocks };
+}
+
+/* ---- Captura en lenguaje natural (reglas; en producto: reglas + IA) ---- */
+const WD = [['domingo'], ['lunes'], ['martes'], ['miércoles','miercoles'], ['jueves'], ['viernes'], ['sábado','sabado']];
+const fmtDay = d => d.toLocaleDateString('es', { weekday:'long', day:'numeric', month:'short' }).replace('.', '');
+function parseCapture(raw) {
+  const t = raw.trim(), low = t.toLowerCase();
+  const out = { title: t, client: null, due: null, est: null };
+  for (const k in CLIENTS) { if (low.includes(CLIENTS[k].name.split(' ')[0].toLowerCase())) { out.client = k; break; } }
+  let d = null, word = null;
+  if (/\bhoy\b/.test(low)) { d = new Date(BASE); word = 'hoy'; }
+  else if (/\bmañana\b|\bmanana\b/.test(low)) { d = new Date(BASE); d.setDate(d.getDate() + 1); word = /\bmañana\b/.test(low) ? 'mañana' : 'manana'; }
+  else {
+    for (let i = 0; i < 7 && !d; i++) for (const w of WD[i]) {
+      if (new RegExp('\\b' + w + '\\b').test(low)) { d = new Date(BASE); d.setDate(d.getDate() + ((i - d.getDay() + 7) % 7 || 7)); word = w; break; }
+    }
+  }
+  if (d) out.due = fmtDay(d);
+  const m = low.match(/(\d+(?:[.,]\d+)?)\s*(h|hs|hr|hrs|horas?|min|minutos?)\b/);
+  if (m) { const n = parseFloat(m[1].replace(',', '.')); out.est = /^h/.test(m[2]) ? Math.round(n * 60) : Math.round(n); }
+  let title = t;
+  if (m) title = title.replace(m[0], '');
+  if (word) title = title.replace(new RegExp('\\b(el |para el |para )?' + word + '\\b', 'i'), '');
+  out.title = title.replace(/\s{2,}/g, ' ').replace(/^[\s,;]+|[\s,;]+$/g, '') || t;
+  return out;
+}
+
+function followupDraft(c) {
+  const first = c.who.split(' ')[0];
+  return {
+    to: c.who,
+    subject: 'Seguimiento: ' + c.action.charAt(0).toLowerCase() + c.action.slice(1),
+    body: `Hola ${first},\n\nTe escribo por "${c.action.toLowerCase()}", que quedamos en tener para ${c.due}. ¿Podrías enviármelo hoy o mañana? Lo necesito para avanzar con el resto del trabajo.\n\nGracias de antemano.\nUn saludo`,
+  };
+}
+function csvOf(entries) {
+  const rows = [['dia','cliente','descripcion','minutos','origen','estado']];
+  entries.forEach(e => rows.push([e.day, CLIENTS[e.client].name, e.desc, e.min, e.src, e.status]));
+  return rows.map(r => r.map(v => '"' + String(v).replace(/"/g, '""') + '"').join(',')).join('\n');
+}
+function downloadText(name, text) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([text], { type: 'text/csv;charset=utf-8' }));
+  a.download = name; document.body.appendChild(a); a.click(); a.remove();
+}
+
+let view = 'hoy', tab = 'compromisos', dir = 'owed_by_me', cf = null, sel = 'b2', editing = null;
+let auditN = 0, idN = 100, tUndo = null, tTimer = null, palIdx = 0;
+const undoers = {};
+const NAV = [['hoy','sun','Hoy'],['entrada','inbox','Entrada'],['proyectos','layers','Proyectos y compromisos'],['calendario','cal','Calendario'],['control','sliders','Centro de control']];
+const TITLES = { hoy:'Lunes 19 de octubre', entrada:'Entrada', proyectos:'Proyectos y compromisos', calendario:'Calendario', control:'Centro de control' };
+
+function audit(who, text, undo) {
+  const id = 'a' + (++auditN);
+  S.audit.unshift({ id, who, text, time: hm(NOW_MIN + auditN), undoable: !!undo });
+  if (undo) undoers[id] = undo;
+  return id;
+}
+function toast(msg, undo) {
+  const t = $('#toast'); tUndo = undo || null;
+  t.innerHTML = `<span>${esc(msg)}</span>${undo ? '<button class="link" data-act="toast-undo">Deshacer</button>' : ''}`;
+  t.hidden = false; clearTimeout(tTimer); tTimer = setTimeout(() => t.hidden = true, 6500);
+}
+const curBlock = () => S.blocks.find(b => !b.done && b.s <= NOW_MIN && b.e > NOW_MIN) || S.blocks.find(b => !b.done && b.s > NOW_MIN);
+const pendingCount = () => S.proposals.length;
+const riskCount = () => S.risks.length + S.commitments.filter(c => c.status === 'overdue').length;
+
+/* ---------- Shell ---------- */
+function render() {
+  const sc = $('.main') ? $('.main').scrollTop : 0;
+  $('#app').innerHTML = `
+  <aside class="rail">
+    <div class="brand">${LOGO(30)}<span>meri</span></div>
+    <nav class="nav" aria-label="Áreas">
+      ${NAV.map(([k, i, l]) => `<button data-act="nav" data-v="${k}" ${view === k ? 'aria-current="page"' : ''}>${ic(i)}<span>${l}</span>
+        ${k === 'entrada' && pendingCount() ? `<em class="badge">${pendingCount()}</em>` : ''}
+        ${k === 'proyectos' && riskCount() ? `<em class="badge r">${riskCount()}</em>` : ''}</button>`).join('')}
+    </nav>
+    <div class="rail-foot">
+      <button data-act="theme">${ic('moon', 16)}<span>Cambiar tema</span></button>
+      <span>Demo con datos de ejemplo. Nada se envía ni se guarda.</span>
+    </div>
+  </aside>
+  <main class="main"><div class="wrap">${topbar()}${VIEWS[view]()}</div></main>`;
+  $('.main').scrollTop = sc;
+}
+function topbar() {
+  const subs = {
+    hoy: S.risks.length ? `Tu plan cabe con margen. ${S.risks.length === 1 ? 'Una cosa pide' : 'Dos cosas piden'} atención antes del miércoles.` : 'Tu plan cabe con margen y no hay nada en riesgo. Puedes concentrarte.',
+    entrada: 'Meri propone, tú decides. Nada de esto es definitivo hasta que lo confirmes.',
+    proyectos: 'Lo que debes, lo que te deben y el tiempo de cada cliente.',
+    calendario: 'Tus reuniones y los bloques de trabajo que Meri reserva para ti.',
+    control: 'Qué puede hacer Meri por su cuenta, qué datos usa y qué ha hecho.',
+  };
+  return `<div class="top"><div><h1>${TITLES[view]}</h1><p class="sub">${subs[view]}</p></div>
+    <button class="kbtn" data-act="pal">${ic('search', 16)}<span>Capturar o buscar</span><kbd>Ctrl K</kbd></button></div>`;
+}
+
+/* ---------- Hoy ---------- */
+function timeline() {
+  const A = T(8), B = T(19), sp = B - A, X = m => (m - A) / sp * 100, W = (a, b) => (b - a) / sp * 100;
+  const ticks = Array.from({ length: 12 }, (_, i) => `<span style="left:${X(T(8 + i))}%">${8 + i}</span>`).join('');
+  const evs = S.events.map(e => `<div class="ev ${W(e.s, e.e) < 12 ? 'narrow' : ''}" style="left:${X(e.s)}%;width:${W(e.s, e.e)}%;--cc:${cc(e.client)}" title="${esc(e.title)}"><b>${esc(e.title)}</b><i>${hm(e.s)} a ${hm(e.e)}</i></div>`).join('');
+  const mar = S.margin.map(m => `<div class="mar" style="left:${X(m.s)}%;width:${W(m.s, m.e)}%" title="Margen para imprevistos">margen</div>`).join('');
+  const blks = S.blocks.map(b => `<button class="blk ${W(b.s, b.e) < 12 ? 'narrow' : ''} ${b.done ? 'done' : ''} ${sel === b.id ? 'sel' : ''}" data-act="sel" data-id="${b.id}" style="left:${X(b.s)}%;width:${W(b.s, b.e)}%;--cc:${cc(b.client)}" aria-label="${esc(b.title)}, ${hm(b.s)} a ${hm(b.e)}"><b>${esc(b.title)}</b><i>${hm(b.s)} a ${hm(b.e)}</i></button>`).join('');
+  const sb = S.blocks.find(b => b.id === sel);
+  return `<div class="tl">
+    <div class="tlc"><div class="ticks" aria-hidden="true">${ticks}</div>
+    <div class="lane"><span class="lane-l">Calendario</span><div class="track">${evs}</div></div>
+    <div class="lane"><span class="lane-l">Plan de Meri</span><div class="track">${mar}${blks}</div></div>
+    <div class="nowwrap" aria-hidden="true"><div class="now" style="left:${X(NOW_MIN)}%"><em>${hm(NOW_MIN)}</em></div></div></div>
+    <div class="legend"><span><i class="sw f"></i>Reunión fija: Meri no la toca</span><span><i class="sw s"></i>Bloque de trabajo confirmado</span><span><i class="sw p"></i>Sugerido: espera tu decisión</span></div>
+    ${sb ? `<div class="detail" style="--cc:${cc(sb.client)}"><div><h3>${esc(sb.title)}</h3><p class="num">${hm(sb.s)} a ${hm(sb.e)}, ${fmtMin(sb.e - sb.s)}. ${sb.kind === 'deep' ? 'Trabajo profundo.' : 'Trabajo corto.'}</p><p class="why"><b>Por qué está aquí.</b> ${esc(sb.why)}</p></div>
+      <button class="btn ${sb.done ? '' : 'primary'}" data-act="done" data-id="${sb.id}">${ic('check', 16)}${sb.done ? 'Reabrir' : 'Marcar como hecho'}</button></div>` : ''}
+  </div>`;
+}
+function viewHoy() {
+  const cur = curBlock();
+  const key = S.blocks.filter(b => !b.done).sort((a, b) => a.pri - b.pri || a.s - b.s).slice(0, 3);
+  const waiting = S.commitments.filter(c => c.dir === 'owed_to_me').sort((a, b) => (b.status === 'overdue') - (a.status === 'overdue')).slice(0, 3);
+  const nowCard = cur ? (() => {
+    const live = cur.s <= NOW_MIN, pct = live ? Math.round((NOW_MIN - cur.s) / (cur.e - cur.s) * 100) : 0;
+    return `<div class="now-card" style="--cc:${cc(cur.client)}">${chip(cur.client)}<h3>${esc(cur.title)}</h3>
+      <p class="muted num">${live ? `Quedan ${fmtMin(cur.e - NOW_MIN)} de este bloque.` : `Empieza a las ${hm(cur.s)} y dura ${fmtMin(cur.e - cur.s)}.`}</p>
+      <div class="bar"><b style="width:${pct}%"></b></div>
+      <div style="display:flex;gap:8px"><button class="btn primary" data-act="done" data-id="${cur.id}">${ic('check', 16)}Marcar como hecho</button><button class="btn" data-act="sel" data-id="${cur.id}">Ver por qué está aquí</button></div></div>`;
+  })() : `<div class="empty"><h3>Has terminado el plan de hoy</h3><p>No queda nada programado. Mira Entrada por si hay compromisos nuevos.</p></div>`;
+  return `
+  <section class="sec" style="margin-top:0"><h2>Tu día</h2>${timeline()}</section>
+  <div class="cols">
+    <div>
+      <section class="sec" style="margin-top:8px"><h2>¿Qué hago ahora?</h2>${nowCard}</section>
+      <section class="sec"><h2>¿Qué es lo más importante hoy?</h2>
+        <div class="list">${key.map(b => `<div class="row"><button class="check ${b.done ? 'on' : ''}" data-act="done" data-id="${b.id}" aria-label="Marcar ${esc(b.title)} como hecho">${ic('check', 14)}</button>
+          <div class="grow"><div class="ttl">${esc(b.title)}</div><div class="meta">${chip(b.client)}<span class="num">${hm(b.s)} a ${hm(b.e)}</span></div></div></div>`).join('') || '<div class="empty">Todo lo importante de hoy está hecho.</div>'}</div></section>
+      ${S.unscheduled.length ? `<section class="sec"><h2>Por programar</h2><div class="list">${S.unscheduled.map(u => `<div class="row"><div class="grow"><div class="ttl">${esc(u.title)}</div><div class="meta">${u.client ? chip(u.client) : ''}${u.due ? `<span>Para el ${esc(u.due)}</span>` : ''}${u.est ? `<span>${fmtMin(u.est)}</span>` : ''}<span class="pill sug">Meri la programará en el siguiente hueco</span></div></div></div>`).join('')}</div></section>` : ''}
+    </div>
+    <div>
+      <section class="sec" style="margin-top:8px"><h2>¿Qué podría salir mal?</h2>
+        <div class="list">${S.risks.map(r => `<div class="row risk-row"><div class="grow"><div class="ttl">${esc(r.title)}</div><div class="meta">${chip(r.client)}<span>${esc(r.detail)}</span></div></div>
+          <div class="acts">${r.fix === 'reorganize' ? `<button class="btn sm primary" data-act="reorg">Ver cómo reorganizar</button>` : `<button class="btn sm" data-act="followup" data-id="${r.cid}">Preparar seguimiento</button>`}</div></div>`).join('') || '<div class="empty"><h3>Sin riesgos a la vista</h3><p>Si algo pone en peligro una fecha, lo verás aquí con una propuesta.</p></div>'}</div></section>
+      <section class="sec"><h2>¿Qué estoy esperando de otras personas?</h2>
+        <div class="list">${waiting.map(c => `<div class="row"><div class="grow"><div class="ttl">${esc(c.action)}</div><div class="meta">${chip(c.client)}<span>${esc(c.who)}</span><span class="pill ${c.status === 'overdue' ? 'risk' : 'plain'}">${c.status === 'overdue' ? 'Vencido ' + esc(c.due) : 'Para ' + esc(c.due)}</span></div></div>
+          ${c.status === 'overdue' ? `<div class="acts"><button class="btn sm" data-act="followup" data-id="${c.id}">${ic('mail', 14)}Seguimiento</button></div>` : ''}</div>`).join('')}</div></section>
+    </div>
+  </div>`;
+}
+
+/* ---------- Entrada ---------- */
+function viewEntrada() {
+  const explicit = S.proposals.filter(p => p.kind === 'explicit' && p.conf >= .9).length;
+  const kindLbl = { explicit:'Explícito', inferred:'Inferido', suggested:'Sugerencia', capture:'Captura' };
+  const rows = S.proposals.map(p => {
+    const ed = editing === p.id;
+    return `<article class="prop" style="--cc:${cc(p.client)}"><div class="grow" style="flex:1;min-width:0">
+      ${ed ? `<div class="edit-grid"><input id="e-action" value="${esc(p.action)}" aria-label="Acción"><input id="e-due" value="${esc(p.due || '')}" aria-label="Fecha"></div>`
+           : `<div class="ttl" style="font-weight:600;font-size:15.5px">${esc(p.action)}</div>`}
+      <div class="meta" style="display:flex;gap:12px;flex-wrap:wrap;color:var(--ink2);font-size:13px;margin-top:4px;align-items:center">
+        ${chip(p.client)}${p.kind !== 'capture' ? `<span>${p.dir === 'owed_to_me' ? 'Te lo debe' : 'Se lo debes a'} ${esc(p.who)}</span>` : ''}<span>${p.due ? 'Para: ' + esc(p.due) : 'Sin fecha'}</span>${p.est ? `<span>${fmtMin(p.est)}</span>` : ''}
+        <span class="pill sug">${kindLbl[p.kind]}</span>
+        ${p.conf ? `<span class="conf"><span><b style="width:${p.conf * 100}%"></b></span>${Math.round(p.conf * 100)} %</span>` : ''}</div>
+      ${p.evidence ? `<div class="q">“${esc(p.evidence)}”</div><div class="src">${ic('mail', 14)} Del hilo «${esc(p.source)}». <button class="btn quiet sm" style="padding:0 4px">Abrir en Gmail</button></div>` : ''}
+    </div>
+    <div class="acts" style="flex-direction:column;align-items:stretch;gap:6px;min-width:128px">
+      ${ed ? `<button class="btn primary sm" data-act="save" data-id="${p.id}">Guardar y confirmar</button><button class="btn sm" data-act="cancel">Cancelar</button>`
+           : `<button class="btn primary sm" data-act="confirm" data-id="${p.id}">${ic('check', 14)}Confirmar</button><button class="btn sm" data-act="edit" data-id="${p.id}">${ic('edit', 14)}Editar</button><button class="btn quiet sm" data-act="dismiss" data-id="${p.id}">Descartar</button>`}
+    </div></article>`;
+  }).join('');
+  return `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <span class="muted">${S.proposals.length ? `${S.proposals.length} por revisar` : ''}</span>
+      ${explicit ? `<button class="btn sm" data-act="confirm-explicit">${explicit === 1 ? 'Confirmar la explícita de alta confianza' : `Confirmar las ${explicit} explícitas de alta confianza`}</button>` : ''}</div>
+    <div style="border-top:1px solid var(--rule)">${rows || `<div class="empty"><h3>Todo al día</h3><p>Cuando llegue un correo con un compromiso, o captures algo con Ctrl K, aparecerá aquí para que lo revises.</p></div>`}</div>`;
+}
+
+/* ---------- Proyectos y compromisos ---------- */
+function viewProyectos() {
+  const tabs = [['compromisos','Compromisos'],['clientes','Clientes'],['tiempo','Tiempo']];
+  return `<div class="tabs" role="tablist">${tabs.map(([k, l]) => `<button role="tab" aria-selected="${tab === k}" data-act="tab" data-v="${k}">${l}</button>`).join('')}</div>` +
+    (tab === 'compromisos' ? tabCompromisos() : tab === 'clientes' ? tabClientes() : tabTiempo());
+}
+function tabCompromisos() {
+  const list = S.commitments.filter(c => c.dir === dir && (!cf || c.client === cf));
+  const cnt = d => S.commitments.filter(c => c.dir === d).length;
+  const st = { confirmed:['Confirmado','plain'], overdue:['Vencido','risk'], fulfilled:['Cumplido','ok'] };
+  return `<div class="filters"><div class="seg"><button data-act="dir" data-v="owed_by_me" aria-pressed="${dir === 'owed_by_me'}">Debo (${cnt('owed_by_me')})</button><button data-act="dir" data-v="owed_to_me" aria-pressed="${dir === 'owed_to_me'}">Me deben (${cnt('owed_to_me')})</button></div>
+    <span style="width:10px"></span>${Object.keys(CLIENTS).map(k => `<button class="fchip" style="--cc:${cc(k)}" data-act="cf" data-v="${k}" aria-pressed="${cf === k}"><i></i>${CLIENTS[k].name}</button>`).join('')}
+    ${cf ? '<button class="btn quiet sm" data-act="cf" data-v="">Quitar filtro</button>' : ''}</div>
+    <div class="list">${list.map(c => `<div class="row"><div class="grow"><div class="ttl">${esc(c.action)}</div><div class="meta">${chip(c.client)}<span>${esc(c.who)}</span><span class="pill ${st[c.status][1]}">${st[c.status][0]}, ${esc(c.due)}</span></div></div>
+      <div class="acts">${c.dir === 'owed_to_me' ? `<button class="btn sm ${c.status === 'overdue' ? 'primary' : ''}" data-act="followup" data-id="${c.id}">${ic('mail', 14)}Preparar seguimiento</button>` : `<button class="btn sm" data-act="fulfil" data-id="${c.id}">${ic('check', 14)}Cumplido</button>`}</div></div>`).join('') || '<div class="empty">No hay compromisos con este filtro.</div>'}</div>`;
+}
+function tabClientes() {
+  return `<div class="list" style="margin-top:12px">${Object.keys(CLIENTS).map(k => {
+    const open = S.commitments.filter(c => c.client === k && c.status !== 'fulfilled').length;
+    const risk = S.risks.filter(r => r.client === k).length + S.commitments.filter(c => c.client === k && c.status === 'overdue').length;
+    const mins = S.time.filter(t => t.client === k).reduce((a, t) => a + t.min, 0);
+    return `<div class="row" style="align-items:center"><span class="sw" style="background:${cc(k)};width:8px;height:38px;border-radius:4px;flex-shrink:0"></span>
+      <div class="grow"><div class="ttl">${CLIENTS[k].name}</div><div class="meta"><span>${open} compromisos abiertos</span><span>${fmtMin(mins)} esta semana</span>${risk ? `<span class="pill risk">${risk} en riesgo</span>` : '<span class="pill ok">Sin riesgos</span>'}</div></div>
+      <div class="acts"><button class="btn sm" data-act="brief" data-v="${k}">Generar briefing</button></div></div>`; }).join('')}</div>
+    <p class="dim" style="margin-top:14px;max-width:62ch">${ic('shield', 14)} Cada briefing usa solo los datos del cliente elegido. Nunca se mezcla información de otro cliente.</p>`;
+}
+function tabTiempo() {
+  const ap = S.time.filter(t => t.status === 'approved'), su = S.time.filter(t => t.status === 'suggested');
+  const sum = a => a.reduce((x, t) => x + t.min, 0);
+  return `<div class="stats"><div class="stat"><b class="num">${fmtMin(sum(ap))}</b><span>Aprobadas esta semana</span></div><div class="stat"><b class="num" style="color:var(--sug)">${fmtMin(sum(su))}</b><span>Sugeridas, esperan tu revisión</span></div></div>
+  <div style="display:flex;gap:8px;margin:6px 0 10px">${su.length ? `<button class="btn primary sm" data-act="approve-all">Aprobar las ${su.length} sugeridas</button>` : ''}<button class="btn sm" data-act="csv">${ic('download', 14)}Exportar CSV</button></div>
+  <table><thead><tr><th>Día</th><th>Cliente</th><th>Descripción</th><th>Origen</th><th class="r">Duración</th><th></th></tr></thead><tbody>
+  ${[...su, ...ap].map(t => `<tr class="${t.status === 'suggested' ? 'sug' : ''}"><td>${t.day}</td><td>${chip(t.client)}</td><td>${esc(t.desc)}</td><td class="muted">${esc(t.src)}</td><td class="r num">${fmtMin(t.min)}</td>
+    <td class="r">${t.status === 'approved' ? '<span class="pill ok">Aprobada</span>' : `<button class="btn sm" data-act="approve" data-id="${t.id}">Aprobar</button>`}</td></tr>`).join('')}</tbody></table>
+  <p class="dim" style="margin-top:12px">Meri infiere el tiempo desde tu calendario y tus bloques. Nada cuenta como facturable hasta que lo apruebas.</p>`;
+}
+
+/* ---------- Calendario ---------- */
+function viewCalendario() {
+  const A = T(8), H = 48, Y = m => (m - A) / 60 * H;
+  const cols = DAYS.map((d, i) => {
+    const { events, blocks } = dayItems(i);
+    const it = [...events.map(e => ({ ...e, ev: true })), ...blocks];
+    return `<div class="dcol">${it.map(x => `<div class="${x.ev ? 'ev' : 'blk'}" style="top:${Y(x.s)}px;height:${Y(x.e) - Y(x.s)}px;--cc:${cc(x.client)};position:absolute" title="${esc(x.title)}"><b>${esc(x.title)}</b>${Y(x.e) - Y(x.s) > 40 ? `<i>${hm(x.s)} a ${hm(x.e)}</i>` : ''}</div>`).join('')}${i === 0 ? `<div class="nowline" style="top:${Y(NOW_MIN)}px"></div>` : ''}</div>`;
+  }).join('');
+  return `<div class="legend" style="margin:0"><span><i class="sw f"></i>Reuniones</span><span><i class="sw s"></i>Bloques de Meri</span><span class="dim">Meri solo crea y mueve sus propios bloques en un calendario aparte.</span></div>
+  <div class="week"><div></div>${DAYS.map((d, i) => `<div class="hd ${i === 0 ? 'today' : ''}">${d}</div>`).join('')}
+  <div class="hours">${Array.from({ length: 12 }, (_, i) => `<span style="top:${i * H}px">${8 + i}:00</span>`).join('')}</div>${cols}</div>`;
+}
+
+/* ---------- Centro de control ---------- */
+function viewControl() {
+  const used = 412, cap = 1500;
+  return `
+  <div class="panel"><div><h3>Autonomía</h3><p class="d">Cuánto puede hacer Meri sin preguntarte.</p></div><div>
+    <div class="seg"><button data-act="auto" data-v="suggest" aria-pressed="${S.autonomy === 'suggest'}">Solo sugerir</button><button data-act="auto" data-v="low" aria-pressed="${S.autonomy === 'low'}">Actuar en lo de bajo riesgo</button></div>
+    <p class="muted" style="margin-top:10px;max-width:60ch">${S.autonomy === 'suggest' ? 'Meri propone y tú confirmas todo. Es la opción por defecto.' : 'Meri puede confirmar compromisos explícitos de alta confianza y mover sus propios bloques. Nunca toca reuniones ni envía correos.'}</p></div></div>
+  <div class="panel"><div><h3>Conexiones</h3><p class="d">Qué cuentas lee Meri y con qué permiso.</p></div><div>
+    <div class="conn"><div><b>Google Calendar</b><div class="muted">Lectura de eventos y escritura solo en el calendario «Meri»</div></div><span class="pill sug">Demo, sin conectar</span></div>
+    <div class="conn"><div><b>Gmail</b><div class="muted">Lectura y borradores. Sin permiso de envío</div></div><span class="pill sug">Demo, sin conectar</span></div>
+    <div class="conn"><div><b>Outlook y Notion</b><div class="muted">Llegan después del lanzamiento</div></div><span class="pill plain">Próximamente</span></div></div></div>
+  <div class="panel"><div><h3>Créditos de IA</h3><p class="d">Se usan al leer correos y generar borradores y briefings. El planificador no gasta créditos.</p></div><div>
+    <div class="num"><b style="font:600 24px var(--f-head)">${used}</b> <span class="muted">de ${cap} este mes</span></div><div class="meter"><b style="width:${used / cap * 100}%"></b></div>
+    <p class="muted">Al llegar al límite, la IA se pausa y el calendario y el plan siguen funcionando.</p></div></div>
+  <div class="panel"><div><h3>Actividad</h3><p class="d">Todo lo que Meri hizo o propuso, con opción de deshacer.</p></div><div class="list" style="border:0">
+    ${S.audit.slice(0, 8).map(a => `<div class="row"><span class="pill ${a.who === 'ia' ? 'sug' : a.who === 'user' ? 'ok' : 'plain'}">${{ ia:'IA', user:'Tú', sistema:'Sistema' }[a.who]}</span><div class="grow">${esc(a.text)}<div class="dim num" style="font-size:12.5px">${a.time}</div></div>
+      ${a.undoable && !a.undone ? `<button class="btn sm" data-act="undo" data-id="${a.id}">${ic('undo', 14)}Deshacer</button>` : a.undone ? '<span class="dim">Deshecho</span>' : ''}</div>`).join('')}</div></div>
+  <div class="panel" style="border:0"><div><h3>Privacidad</h3><p class="d">Tus datos son tuyos.</p></div><div style="display:flex;gap:8px;flex-wrap:wrap">
+    <button class="btn" data-act="toast-demo" data-m="En el producto real, esto pausa la lectura de correo al instante.">Pausar lectura de correo</button>
+    <button class="btn" data-act="toast-demo" data-m="Se descargaría un archivo con todos tus datos.">Exportar mis datos</button>
+    <button class="btn risk" data-act="toast-demo" data-m="En la demo no se elimina nada.">Eliminar mi cuenta</button></div></div>`;
+}
+const VIEWS = { hoy: viewHoy, entrada: viewEntrada, proyectos: viewProyectos, calendario: viewCalendario, control: viewControl };
+
+/* ---------- Modales ---------- */
+function openModal(html) { const m = $('#modal'); m.innerHTML = `<div class="dlg" role="dialog" aria-modal="true">${html}</div>`; m.hidden = false; const b = $('.dlg .primary,.dlg button', m); if (b) b.focus(); }
+function closeModal() { $('#modal').hidden = true; $('#modal').innerHTML = ''; }
+function openReorg() {
+  openModal(`<header><h2>Reorganizar para proteger la fecha de Beta</h2><p>Meri propone dos cambios. Ninguna reunión se mueve.</p></header>
+  <div class="body">
+    <div class="diff"><span class="chip" style="--cc:${cc('beta')}"><i></i></span><div><b>Borrador de contestación para Beta</b><div class="arrow"><s class="num">13:30 a 15:00</s>${ic('chev', 14)}<b class="num" style="color:var(--ink)">13:30 a 16:00</b><span class="pill ok">+1 h</span></div></div></div>
+    <div class="diff"><span class="chip" style="--cc:${cc('norte')}"><i></i></span><div><b>Revisar factura de Estudio Norte</b><div class="arrow"><s class="num">Hoy 15:00 a 16:00</s>${ic('chev', 14)}<b class="num" style="color:var(--ink)">Mañana 09:00 a 10:00</b></div></div></div>
+    <p class="muted" style="margin:14px 0 4px"><b style="color:var(--ink)">Qué cambia.</b> La holgura del borrador de Beta sube de 3 h a 5 h. La factura de Norte no tiene fecha límite esta semana, así que puede esperar.</p></div>
+  <footer><span class="note">Se guarda en Actividad y podrás deshacerlo.</span><button class="btn" data-act="close">Ahora no</button><button class="btn primary" data-act="accept-reorg">Aceptar cambios</button></footer>`);
+}
+function openFollowup(cid) {
+  const c = S.commitments.find(x => x.id === cid); const d = followupDraft(c);
+  openModal(`<header><h2>Seguimiento para ${esc(c.who)}</h2><p>Para: ${esc(c.who)}. Asunto: ${esc(d.subject)}</p></header>
+  <div class="body"><label class="sr" for="draft">Borrador</label><textarea id="draft">${esc(d.body)}</textarea></div>
+  <footer><span class="note">Meri solo crea borradores. Tú decides cuándo enviarlo.</span><button class="btn" data-act="close">Cancelar</button><button class="btn" data-act="remind" data-id="${c.id}">Recordarme mañana</button><button class="btn primary" data-act="save-draft" data-id="${c.id}">${ic('mail', 15)}Guardar borrador en Gmail</button></footer>`);
+}
+function openBrief(k) {
+  openModal(`<header><h2>Briefing de ${esc(CLIENTS[k].name)}</h2><p>${ic('shield', 14)} Contexto aislado: solo datos de este cliente. Cada punto enlaza a su fuente.</p></header>
+  <div class="body">${BRIEFS[k].map(([t, kind, src]) => `<div class="row"><div class="grow">${esc(t)}<div class="dim" style="font-size:12.5px;margin-top:2px">${kind}: ${esc(src)}</div></div></div>`).join('')}</div>
+  <footer><button class="btn primary" data-act="close">Cerrar</button></footer>`);
+}
+
+/* ---------- Paleta ⌘K ---------- */
+const CMDS = [
+  ['Ir a Hoy','sun',() => go('hoy')], ['Ir a Entrada','inbox',() => go('entrada')], ['Mostrar compromisos en riesgo','alert',() => { go('proyectos'); tab = 'compromisos'; dir = 'owed_to_me'; render(); }],
+  ['¿De quién espero una respuesta?','mail',() => { go('proyectos'); tab = 'compromisos'; dir = 'owed_to_me'; render(); }], ['Reorganizar mi semana','calendar',() => openReorg()],
+  ['Ver el calendario de la semana','cal',() => go('calendario')], ['Ir al Centro de control','sliders',() => go('control')],
+];
+function go(v) { view = v; closePal(); render(); }
+function openPal() { $('#pal').hidden = false; const i = $('#pal-in'); i.value = ''; palIdx = 0; palRender(); i.focus(); }
+function closePal() { $('#pal').hidden = true; }
+function palRender() {
+  const q = $('#pal-in').value.trim(), low = q.toLowerCase();
+  const cmds = CMDS.filter(c => !q || c[0].toLowerCase().includes(low));
+  let html = '';
+  if (q.length > 3 && !cmds.length || q.split(' ').length > 2) {
+    const p = parseCapture(q);
+    html += `<div class="cap" aria-label="Lo que Meri entendió"><span class="muted" style="width:100%">Meri entendió esto. Puedes corregirlo después.</span><span class="pill sug">${esc(p.title)}</span>${p.client ? chip(p.client) : ''}${p.due ? `<span class="pill sug">Para: ${esc(p.due)}</span>` : ''}${p.est ? `<span class="pill sug">${fmtMin(p.est)}</span>` : ''}</div>
+      <ul><li><button data-act="pal-capture" class="${palIdx === 0 ? 'act' : ''}">${ic('plus', 16)}Capturar «${esc(q)}» en Entrada</button></li></ul>`;
+  }
+  const rows = cmds.map((c, i) => `<li><button data-act="pal-cmd" data-i="${CMDS.indexOf(c)}" class="${!html && i === palIdx ? 'act' : ''}">${ic(IC[c[1]] ? c[1] : 'cal', 16)}${c[0]}</button></li>`).join('');
+  $('#pal-body').innerHTML = html + (rows ? `<ul>${rows}</ul>` : (!html ? '<div class="tip">Escribe una tarea con fecha y duración, por ejemplo: Informe para Acme el jueves, 2 h.</div>' : ''));
+}
+function capture() {
+  const q = $('#pal-in').value.trim(); if (!q) return; const p = parseCapture(q);
+  const id = 'p' + (++idN);
+  S.proposals.unshift({ id, kind:'capture', client:p.client, action:p.title, due:p.due, est:p.est, conf:null, dir:'owed_by_me', who:'' });
+  const aid = audit('user', `Capturaste «${p.title}».`, () => { S.proposals = S.proposals.filter(x => x.id !== id); });
+  closePal(); render(); toast('Capturado en Entrada. Revisa lo que Meri entendió.', () => H.undo({ id: aid }));
+}
+
+/* ---------- Acciones ---------- */
+const H = {
+  nav: d => { view = d.v; editing = null; render(); },
+  tab: d => { tab = d.v; render(); },
+  dir: d => { dir = d.v; render(); },
+  cf: d => { cf = d.v || null; render(); },
+  sel: d => { sel = d.id; if (view !== 'hoy') view = 'hoy'; render(); },
+  done: d => {
+    const b = S.blocks.find(x => x.id === d.id); b.done = !b.done;
+    if (b.done) {
+      const tid = 't' + (++idN); S.time.unshift({ id: tid, day: 'Lun 19', client: b.client, desc: b.title, min: b.e - b.s, src: 'Bloque completado', status: 'suggested' });
+      const aid = audit('user', `Completaste «${b.title}». Meri sugirió ${fmtMin(b.e - b.s)} de tiempo.`);
+      render(); toast(`Hecho. Añadí ${fmtMin(b.e - b.s)} sugeridas en Tiempo.`);
+    } else { render(); }
+  },
+  reorg: () => openReorg(),
+  'accept-reorg': () => {
+    const b3 = S.blocks.find(b => b.id === 'b3'), b4 = S.blocks.find(b => b.id === 'b4'), r1 = S.risks.find(r => r.id === 'r1');
+    const old = { e: b3.e, b4: { ...b4 }, r1 };
+    b3.e = T(16); S.blocks = S.blocks.filter(b => b.id !== 'b4'); S.moved.push({ ...b4, s: T(9), e: T(10) }); S.risks = S.risks.filter(r => r.id !== 'r1'); S.margin = [];
+    const aid = audit('user', 'Aceptaste reorganizar: ampliar el borrador de Beta y mover la factura de Norte a mañana.', () => {
+      b3.e = old.e; S.blocks.push(old.b4); S.blocks.sort((a, b) => a.s - b.s); S.moved = S.moved.filter(m => m.id !== 'b4'); S.risks.unshift(old.r1); S.margin = [{ s: T(16), e: T(16, 30) }];
+    });
+    closeModal(); render(); toast('Plan actualizado. La holgura de Beta sube a 5 h.', () => H.undo({ id: aid }));
+  },
+  undo: d => { const f = undoers[d.id]; if (!f) return; f(); const a = S.audit.find(x => x.id === d.id); a.undone = true; delete undoers[d.id]; closeModal(); render(); toast('Deshecho.'); },
+  confirm: d => {
+    const p = S.proposals.find(x => x.id === d.id);
+    if (p.kind === 'capture') S.unscheduled.push({ title: p.action, client: p.client, due: p.due, est: p.est });
+    else S.commitments.unshift({ id: 'c' + (++idN), dir: p.dir, client: p.client, action: p.action, who: p.who, due: p.due, status: 'confirmed' });
+    S.proposals = S.proposals.filter(x => x.id !== p.id);
+    audit('user', `Confirmaste «${p.action}».`); editing = null; render();
+    toast(p.kind === 'capture' ? 'Añadida. Meri la programará en el siguiente hueco.' : 'Confirmado. Ya está en tus compromisos.');
+  },
+  'confirm-explicit': () => { S.proposals.filter(p => p.kind === 'explicit' && p.conf >= .9).forEach(p => H.confirm({ id: p.id })); },
+  dismiss: d => { const p = S.proposals.find(x => x.id === d.id); S.proposals = S.proposals.filter(x => x.id !== d.id); audit('user', `Descartaste «${p.action}». Meri aprenderá de esto.`); render(); toast('Descartada. Meri aprenderá de esto.'); },
+  edit: d => { editing = d.id; render(); const i = $('#e-action'); if (i) i.focus(); },
+  cancel: () => { editing = null; render(); },
+  save: d => { const p = S.proposals.find(x => x.id === d.id); p.action = $('#e-action').value.trim() || p.action; p.due = $('#e-due').value.trim(); editing = null; H.confirm({ id: p.id }); },
+  fulfil: d => { const c = S.commitments.find(x => x.id === d.id); S.commitments = S.commitments.filter(x => x.id !== c.id); audit('user', `Marcaste como cumplido «${c.action}».`); render(); toast('Cumplido. Cuenta para tu informe de valor.'); },
+  followup: d => openFollowup(d.id),
+  'save-draft': d => { const c = S.commitments.find(x => x.id === d.id); audit('ia', `Preparó un borrador de seguimiento para ${c.who}.`); closeModal(); toast('Borrador guardado en Gmail. Meri no envía correos.'); },
+  remind: d => { closeModal(); toast('Te lo recordaré mañana a las 9:00.'); },
+  brief: d => openBrief(d.v),
+  approve: d => { S.time.find(t => t.id === d.id).status = 'approved'; render(); },
+  'approve-all': () => { S.time.forEach(t => t.status = t.status === 'suggested' ? 'approved' : t.status); audit('user', 'Aprobaste todo el tiempo sugerido.'); render(); toast('Todo el tiempo sugerido quedó aprobado.'); },
+  csv: () => { downloadText('meri-tiempo.csv', csvOf(S.time.filter(t => t.status === 'approved'))); toast('Exportadas las entradas aprobadas.'); },
+  auto: d => { S.autonomy = d.v; audit('user', d.v === 'suggest' ? 'Cambiaste la autonomía a «Solo sugerir».' : 'Cambiaste la autonomía a «Actuar en lo de bajo riesgo».'); render(); },
+  theme: () => { const r = document.documentElement, dark = r.dataset.theme === 'dark' || (!r.dataset.theme && matchMedia('(prefers-color-scheme:dark)').matches); r.dataset.theme = dark ? 'light' : 'dark'; },
+  close: () => closeModal(),
+  pal: () => openPal(),
+  'pal-capture': () => capture(),
+  'pal-cmd': d => { closePal(); CMDS[+d.i][2](); },
+  'toast-demo': (d, b) => toast(b.dataset.m),
+  'toast-undo': () => { const f = tUndo; $('#toast').hidden = true; if (f) f(); },
+};
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-act]');
+  if (b) { H[b.dataset.act]?.(b.dataset, b, e); return; }
+  if (e.target.id === 'modal') closeModal();
+  if (e.target.id === 'pal') closePal();
+});
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); $('#pal').hidden ? openPal() : closePal(); return; }
+  if (e.key === 'Escape') { closePal(); closeModal(); }
+  if (!$('#pal').hidden) {
+    const btns = $$('#pal-body button');
+    if (e.key === 'ArrowDown') { e.preventDefault(); palIdx = Math.min(palIdx + 1, btns.length - 1); palRender(); }
+    if (e.key === 'ArrowUp') { e.preventDefault(); palIdx = Math.max(palIdx - 1, 0); palRender(); }
+    if (e.key === 'Enter') { e.preventDefault(); const a = $('#pal-body button.act') || btns[0]; if (a) a.click(); }
+  }
+});
+document.addEventListener('input', e => { if (e.target.id === 'pal-in') { palIdx = 0; palRender(); } });
+render();
+
+</script>
+</body>
+</html>

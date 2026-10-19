@@ -1,0 +1,14 @@
+{
+  "name": "@meri/integrations",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Conectores (Google, Stripe, analítica, KMS) con adaptadores Fake*.",
+  "scripts": {
+    "typecheck": "echo \"implementar en la fase 0\"",
+    "lint": "echo \"implementar en la fase 0\"",
+    "test": "echo \"implementar en la fase 0\"",
+    "build": "echo \"implementar en la fase 0\"",
+    "dev": "echo \"implementar en la fase 0\""
+  }
+}

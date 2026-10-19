@@ -1,0 +1,71 @@
+:root{
+  --bg:#E9EEF1; --panel:#F5F8F9; --raised:#FFFFFF;
+  --ink:#0F1E2E; --ink2:#44566A; --ink3:#74869A; --rule:#D2DBE1;
+  --rail:#0F1E2E; --rail-ink:#C9DBE2; --rail-dim:#7F97A6;
+  --sea:#0E6B74; --on-sea:#FFFFFF; --sea-soft:#D5EBED;
+  --risk:#BF3A4A; --risk-soft:#F7DEE1;
+  --sug:#9A6A0C; --sug-soft:#FAEFD4;
+  --ok:#2A7B58; --ok-soft:#D9EFE5;
+  --c-acme:#3A6EDB; --c-norte:#2F8A5C; --c-luna:#B07414; --c-beta:#B0407E;
+  --f-head:"Bricolage Grotesque","Avenir Next","Segoe UI",system-ui,sans-serif;
+  --f-body:"Instrument Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#08121A; --panel:#0F1C27; --raised:#142431;
+    --ink:#E7EFF3; --ink2:#A7B9C6; --ink3:#7C91A1; --rule:#233545;
+    --rail:#060E15; --rail-ink:#C9DBE2; --rail-dim:#6F8796;
+    --sea:#5CC9CF; --on-sea:#06242A; --sea-soft:#12363C;
+    --risk:#F0707F; --risk-soft:#3A1B22;
+    --sug:#E3B04B; --sug-soft:#35290F;
+    --ok:#5CC79B; --ok-soft:#123428;
+    --c-acme:#7AA2F5; --c-norte:#5CC79B; --c-luna:#E3A64B; --c-beta:#E27BB0;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#08121A; --panel:#0F1C27; --raised:#142431;
+  --ink:#E7EFF3; --ink2:#A7B9C6; --ink3:#7C91A1; --rule:#233545;
+  --rail:#060E15; --rail-ink:#C9DBE2; --rail-dim:#6F8796;
+  --sea:#5CC9CF; --on-sea:#06242A; --sea-soft:#12363C;
+  --risk:#F0707F; --risk-soft:#3A1B22;
+  --sug:#E3B04B; --sug-soft:#35290F;
+  --ok:#5CC79B; --ok-soft:#123428;
+  --c-acme:#7AA2F5; --c-norte:#5CC79B; --c-luna:#E3A64B; --c-beta:#E27BB0;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);font:400 14.5px/1.5 var(--f-body);-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:var(--f-head);margin:0;letter-spacing:-.01em;font-weight:600}
+p{margin:0}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--sea);outline-offset:2px;border-radius:6px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.num{font-variant-numeric:tabular-nums}
+
+.btn{font:600 13.5px var(--f-body);padding:8px 14px;border-radius:9px;border:1px solid var(--rule);background:var(--raised);color:var(--ink);display:inline-flex;align-items:center;gap:7px;line-height:1.2}
+.btn:hover{border-color:var(--ink3)}
+.btn.primary{background:var(--sea);border-color:var(--sea);color:var(--on-sea)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.quiet{border-color:transparent;background:transparent;color:var(--ink2)}
+.btn.quiet:hover{background:var(--sea-soft);color:var(--ink)}
+.btn.risk{border-color:var(--risk);color:var(--risk)}
+.btn.sm{padding:5px 10px;font-size:12.5px;border-radius:8px}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink2);white-space:nowrap}
+.chip i{width:9px;height:9px;border-radius:3px;background:var(--cc);display:inline-block}
+.pill{display:inline-block;font-size:12px;font-weight:600;padding:2px 9px;border-radius:99px;background:var(--sea-soft);color:var(--sea)}
+.pill.risk{background:var(--risk-soft);color:var(--risk)}
+.pill.sug{background:var(--sug-soft);color:var(--sug);border:1px dashed var(--sug)}
+.pill.ok{background:var(--ok-soft);color:var(--ok)}
+.pill.plain{background:transparent;border:1px solid var(--rule);color:var(--ink2)}
+.muted{color:var(--ink2)} .dim{color:var(--ink3)}
+.conf{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--ink2)}
+.conf span{width:44px;height:5px;border-radius:9px;background:var(--rule);overflow:hidden;display:inline-block}
+.conf span b{display:block;height:100%;background:var(--sea)}
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:11px 16px;border-radius:12px;display:flex;gap:14px;align-items:center;z-index:90;box-shadow:0 10px 30px rgba(0,0,0,.25);font-size:13.5px;max-width:92vw}
+.toast[hidden]{display:none}
+.toast .link{background:none;border:0;color:var(--sea-soft);font-weight:700;text-decoration:underline;padding:0}
+:root[data-theme="dark"] .toast .link,:root:not([data-theme="light"]) .toast .link{color:var(--sea)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}

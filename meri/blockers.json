@@ -1,0 +1,72 @@
+{
+  "$comment": "Fuente de verdad de los bloqueos humanos. Lo lee scripts/check-blockers.mjs y el comando /connect-blocker.",
+  "blockers": [
+    {
+      "id": "google-oauth",
+      "title": "Proyecto OAuth de Google (Gmail y Calendar)",
+      "critical": true,
+      "modeVar": "GOOGLE_MODE",
+      "env": ["GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET"],
+      "fallback": "FakeCalendar y FakeGmail con datos de ejemplo",
+      "unlocks": ["Fase 1: calendario real", "Fase 2: Gmail real", "Beta (Fase 6)"],
+      "guide": "docs/blockers/google-oauth.md",
+      "leadTime": "Modo pruebas: minutos. Verificación de scopes de Gmail: semanas a meses. Empezar pronto."
+    },
+    {
+      "id": "anthropic",
+      "title": "Clave de API de Anthropic",
+      "critical": true,
+      "modeVar": "AI_MODE",
+      "env": ["ANTHROPIC_API_KEY"],
+      "fallback": "Cliente de IA falso con respuestas deterministas y parser por reglas",
+      "unlocks": ["Fase 1: captura con IA", "Fase 2: extracción de compromisos y evals reales", "Fase 3: briefings"],
+      "guide": "docs/blockers/anthropic.md",
+      "leadTime": "Minutos"
+    },
+    {
+      "id": "stripe",
+      "title": "Cuenta de Stripe (modo test)",
+      "critical": false,
+      "modeVar": "STRIPE_MODE",
+      "env": ["STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET", "STRIPE_PRICE_PRO", "STRIPE_PRICE_PRO_ANNUAL"],
+      "fallback": "Facturación simulada: planes y créditos gestionados localmente sin cobrar",
+      "unlocks": ["Fase 4: cobros, créditos y portal de cliente"],
+      "guide": "docs/blockers/stripe.md",
+      "leadTime": "Minutos en modo test. Activar cobros reales requiere verificar el negocio."
+    },
+    {
+      "id": "observability",
+      "title": "Sentry y PostHog",
+      "critical": false,
+      "modeVar": "ANALYTICS_MODE",
+      "env": ["SENTRY_DSN", "POSTHOG_KEY"],
+      "fallback": "Logs locales y analítica no-op",
+      "unlocks": ["Fase 4: analítica de producto", "Fase 6: panel de decisión de la beta"],
+      "guide": "docs/blockers/observability.md",
+      "leadTime": "Minutos"
+    },
+    {
+      "id": "domain-brand",
+      "title": "Dominio y marca de Meri",
+      "critical": true,
+      "modeVar": null,
+      "env": ["PUBLIC_DOMAIN"],
+      "fallback": "localhost. Las páginas /privacy y /terms funcionan, pero sin dominio verificado",
+      "unlocks": ["Verificación de Google (requiere dominio y política de privacidad públicos)", "Fase 6: beta con usuarios reales"],
+      "guide": "docs/blockers/domain-brand.md",
+      "leadTime": "Dominio: minutos. Registro de marca: meses (puede ir en paralelo)."
+    },
+    {
+      "id": "kms",
+      "title": "Gestión de claves (KMS) para producción",
+      "critical": false,
+      "modeVar": "KMS_PROVIDER",
+      "modeValuesLive": ["aws", "gcp"],
+      "env": ["KMS_KEY_ID"],
+      "fallback": "Clave maestra local (solo desarrollo). Nunca usar con datos reales",
+      "unlocks": ["Fase 5: cifrado de tokens en producción", "Fase 6: beta con correos reales"],
+      "guide": "docs/blockers/kms.md",
+      "leadTime": "Minutos"
+    }
+  ]
+}

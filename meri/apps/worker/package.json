@@ -1,0 +1,14 @@
+{
+  "name": "@meri/worker",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "BullMQ: sincronización, IA, planificación y trabajos programados.",
+  "scripts": {
+    "typecheck": "echo \"implementar en la fase 0\"",
+    "lint": "echo \"implementar en la fase 0\"",
+    "test": "echo \"implementar en la fase 0\"",
+    "build": "echo \"implementar en la fase 0\"",
+    "dev": "echo \"implementar en la fase 0\""
+  }
+}

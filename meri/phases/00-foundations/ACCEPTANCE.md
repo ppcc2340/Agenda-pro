@@ -1,0 +1,14 @@
+# Aceptación — Fase 0
+- [ ] `docker compose up -d && pnpm install && pnpm db:migrate && pnpm dev` levanta web, api y worker sin errores.
+- [ ] `pnpm verify` en verde; CI en verde.
+- [ ] Login con Google crea user + workspace + preferences; logout funciona.
+- [ ] **Test de aislamiento:** con RLS activo, una sesión del workspace A no puede leer ni escribir datos del workspace B (probado a nivel SQL y API).
+- [ ] Config inválida/ausente impide arrancar con mensaje claro.
+- [ ] Con `GOOGLE_MODE=live` y sin credenciales la app no arranca y cita `docs/blockers/google-oauth.md`. En producción, `fake` está prohibido.
+- [ ] `pnpm blockers` informa el estado; `pnpm smoke <id>` pasa contra todos los adaptadores `fake`.
+- [ ] Cifrado de sobre: round-trip OK; datos manipulados fallan; claves nunca en logs.
+- [ ] `audit_log` registra una acción de ejemplo desde la API.
+- [ ] Onboarding mínimo guarda preferencias y se ven en la UI.
+- [ ] i18n es/en operativo; ningún texto hardcodeado en componentes.
+- [ ] Páginas `/privacy` y `/terms` accesibles.
+- [ ] `STATE.md` actualizado.

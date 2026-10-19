@@ -1,0 +1,14 @@
+{
+  "name": "@meri/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Fastify: API REST y webhooks (contrato en docs/13-api-contract.md).",
+  "scripts": {
+    "typecheck": "echo \"implementar en la fase 0\"",
+    "lint": "echo \"implementar en la fase 0\"",
+    "test": "echo \"implementar en la fase 0\"",
+    "build": "echo \"implementar en la fase 0\"",
+    "dev": "echo \"implementar en la fase 0\""
+  }
+}

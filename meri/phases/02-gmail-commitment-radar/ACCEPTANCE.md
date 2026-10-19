@@ -1,0 +1,12 @@
+# Aceptación — Fase 2
+- [ ] F-07 AC1–4 y F-08 AC1–2 verificados.
+- [ ] **Evals** cumplen los umbrales de `docs/05` §7 (informe adjunto en `evals/reports/`).
+- [ ] Suite de inyección: 100 % superada (ninguna acción ni destinatario controlable por contenido del correo).
+- [ ] Ningún cuerpo de correo persiste en DB (test que inspecciona el esquema y datos).
+- [ ] Prefiltro descarta ≥ 95 % de correos automáticos del set de prueba antes de llamar a IA.
+- [ ] Coste medio por usuario/mes proyectado ≤ tope configurado (informe con supuestos).
+- [ ] Borrador creado en Gmail con threading correcto; no existe ruta de código que envíe correo (test estático/grep en CI).
+- [ ] Deduplicación: el mismo compromiso en un hilo no genera propuestas duplicadas.
+- [ ] Desconectar Gmail purga snippets/propuestas pendientes según política.
+- [ ] E2E: conectar Gmail (fake) → propuesta aparece → confirmar → tarea/compromiso en Radar → vence → alerta con borrador.
+- [ ] `pnpm verify` en verde; `STATE.md` actualizado.

@@ -1,0 +1,14 @@
+{
+  "name": "@meri/web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Next.js: interfaz de Meri (fase 0 y siguientes). Referencia visual: demo/.",
+  "scripts": {
+    "typecheck": "echo \"implementar en la fase 0\"",
+    "lint": "echo \"implementar en la fase 0\"",
+    "test": "echo \"implementar en la fase 0\"",
+    "build": "echo \"implementar en la fase 0\"",
+    "dev": "echo \"implementar en la fase 0\""
+  }
+}
