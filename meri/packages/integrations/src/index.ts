@@ -26,3 +26,6 @@ export {
   hasCalendarScopes,
   type GoogleFeature,
 } from "./oauth/scopes";
+export { AnthropicAiClient, type AnthropicClientOptions } from "./anthropic/client";
+export { parsePrices, costMicroUsd, DEFAULT_PRICES, type ModelPrice } from "./anthropic/prices";
+export { zodToJsonSchema } from "./ai/json-schema";

@@ -9,7 +9,8 @@
 2. Define un **límite de gasto mensual** bajo para la clave de desarrollo.
 3. Copia la clave a `.env` como `ANTHROPIC_API_KEY`. Pon `AI_MODE=live`.
 4. Confirma los identificadores de modelo vigentes en la documentación de Anthropic y actualiza `AI_MODEL_FAST` y `AI_MODEL_SMART` si hace falta. El código nunca los fija.
-5. `pnpm blockers`, luego `/connect-blocker anthropic`.
+5. Fija los precios vigentes en `AI_PRICES_JSON` (USD por millón de tokens: `input`, `output`, `cacheRead`, `cacheWrite`); los valores por defecto del código son marcadores de posición y el tope mensual se calcula con ellos.
+6. `pnpm blockers`, luego `/connect-blocker anthropic`.
 
 ## Antes de procesar correos reales
 - Revisa la política de retención de datos del plan que uses y, si está disponible, configura retención mínima. Documéntalo en `docs/06-security-privacy.md` §9.

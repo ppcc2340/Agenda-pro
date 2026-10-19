@@ -191,12 +191,33 @@ describe("createIntegrations factory", () => {
   });
 
   it("live modes without an adapter yet fail loudly instead of silently using fakes", () => {
-    const env = parseEnv({ ...base, AI_MODE: "live", ANTHROPIC_API_KEY: "sk-test" });
+    const env = parseEnv({
+      ...base,
+      STRIPE_MODE: "live",
+      STRIPE_SECRET_KEY: "k",
+      STRIPE_WEBHOOK_SECRET: "w",
+      STRIPE_PRICE_PRO: "p",
+      STRIPE_PRICE_PRO_ANNUAL: "p2",
+    });
     expect(() =>
       createIntegrations(
         { env, modes: resolveModes(env), isProduction: false, isTest: true, fakesOnProductionBuild: false },
         { now },
       ),
-    ).toThrow(/anthropic live adapter/);
+    ).toThrow(/stripe live adapter/);
+  });
+
+  it("AI live mode builds the Anthropic client from env (models and prices are configuration)", () => {
+    const env = parseEnv({
+      ...base,
+      AI_MODE: "live",
+      ANTHROPIC_API_KEY: "sk-test",
+      AI_MODEL_FAST: "claude-haiku-5-5",
+    });
+    const integrations = createIntegrations(
+      { env, modes: resolveModes(env), isProduction: false, isTest: true, fakesOnProductionBuild: false },
+      { now },
+    );
+    expect(integrations.ai.mode).toBe("live");
   });
 });

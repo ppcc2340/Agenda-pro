@@ -48,6 +48,8 @@ export const EnvSchema = z.object({
   ANTHROPIC_API_KEY: optionalString(),
   AI_MODEL_FAST: z.string().min(1).default("claude-haiku-5-5"),
   AI_MODEL_SMART: z.string().min(1).default("claude-sonnet-5-5"),
+  /** JSON map model → {input, output, cacheRead, cacheWrite} in USD per MTok (docs/blockers/anthropic.md). */
+  AI_PRICES_JSON: optionalString(),
   AI_MONTHLY_COST_CAP_USD_PER_USER: z.preprocess(emptyToUndefined, z.coerce.number().positive().default(6)),
 
   STRIPE_MODE: FakeLive.default("fake"),

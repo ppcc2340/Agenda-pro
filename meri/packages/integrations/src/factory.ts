@@ -10,6 +10,8 @@ import { NoopAnalytics } from "./fakes/analytics";
 import { FakeBilling } from "./fakes/billing";
 import { FakeCalendar } from "./fakes/calendar";
 import { FakeGmail } from "./fakes/mail";
+import { AnthropicAiClient } from "./anthropic/client";
+import { parsePrices } from "./anthropic/prices";
 import { FakeGoogleOAuth } from "./fakes/oauth";
 import type { GoogleOAuth } from "./oauth/types";
 import { FakeNotifier, type Notifier } from "./notify/types";
@@ -50,9 +52,11 @@ export function createIntegrations(config: AppConfig, deps: IntegrationsDeps): I
   const ai: AiClient =
     modes.ai === "fake"
       ? new FakeAiClient()
-      : (() => {
-          throw notYet("anthropic");
-        })();
+      : new AnthropicAiClient({
+          apiKey: env.ANTHROPIC_API_KEY ?? "",
+          models: { fast: env.AI_MODEL_FAST, smart: env.AI_MODEL_SMART },
+          prices: parsePrices(env.AI_PRICES_JSON),
+        });
   const oauth: GoogleOAuth =
     modes.google === "fake"
       ? new FakeGoogleOAuth(deps.now)
