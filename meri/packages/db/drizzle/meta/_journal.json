@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1792419937992,
+      "tag": "0000_funny_magneto",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792419963587,
+      "tag": "0001_rls_roles_grants",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792420121808,
+      "tag": "0002_preferences_onboarded_at",
+      "breakpoints": true
+    }
+  ]
+}

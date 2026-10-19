@@ -15,7 +15,7 @@ BEGIN
     EXECUTE format('ALTER TABLE %I FORCE ROW LEVEL SECURITY', t);
     EXECUTE format('DROP POLICY IF EXISTS ws_isolation ON %I', t);
     EXECUTE format(
-      'CREATE POLICY ws_isolation ON %I USING (workspace_id = current_setting(''app.workspace_id'', true)::uuid) WITH CHECK (workspace_id = current_setting(''app.workspace_id'', true)::uuid)',
+      'CREATE POLICY ws_isolation ON %I USING (workspace_id = NULLIF(current_setting(''app.workspace_id'', true), '''')::uuid) WITH CHECK (workspace_id = NULLIF(current_setting(''app.workspace_id'', true), '''')::uuid)',
       t
     );
   END LOOP;

@@ -83,6 +83,8 @@ export const preferences = pgTable("preferences", {
   maxAlertsPerDay: integer("max_alerts_per_day").notNull().default(5),
   autonomy: autonomyLevel("autonomy").notNull().default("suggest_only"),
   timeRoundingMinutes: integer("time_rounding_minutes").notNull().default(6),
+  /** Set when the user completes onboarding (F-01). Null = must onboard. */
+  onboardedAt: timestamp("onboarded_at", { withTimezone: true }),
   updatedAt: updatedAt(),
 });
 
