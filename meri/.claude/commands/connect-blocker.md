@@ -1,0 +1,1 @@
+Connect the human blocker `$ARGUMENTS` (see `blockers.json` and `docs/blockers/$ARGUMENTS.md`): never read `.env`; run `pnpm blockers --id $ARGUMENTS` and require 🟡 "listo para activar"; set its mode variable to live in `.env` using a shell edit that does not print values; run `pnpm smoke $ARGUMENTS`; run `pnpm verify`; mark it ✅ in `STATE.md`.

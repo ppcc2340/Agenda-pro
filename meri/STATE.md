@@ -24,6 +24,13 @@
 - D-007: Nombre del producto: **Meri**.
 - D-008: Toda integración externa tiene modo `fake` (por defecto) y `live`. Ver `docs/blockers/README.md`.
 - D-010: Construcción autónoma por fases con `prompts/build-phase.md`, subagentes revisores y puertas de calidad. Ver `KICKOFF.md`.
+- D-011: `PROTOTYPE.md` y `prompts/build-prototype.md` no venían en el kit; se redactan a partir del prompt maestro y de la demo (hito obligatorio tras la fase 3).
+- D-012: El kit vive en `meri/` dentro del repositorio `Agenda-pro`; CI en `.github/` de la raíz con `working-directory: meri`.
+- D-013: Auth.js v5 en `apps/web`; cookie JWT compartida con la API; arranque de usuario por ruta interna (ADR 0001).
+- D-014: Versiones fijadas: Next 15, React 19, Tailwind 4, Fastify 5, Zod 3, Drizzle 0.36, BullMQ 5, Vitest 2, TypeScript 5, ESLint 9.
+- D-015: Cifrado de sobre en `packages/config/src/crypto`; `KeyProvider` es la única interfaz de KMS.
+- D-016: Rol `meri_app` sin `BYPASSRLS` para la aplicación; migraciones con el propietario (`DATABASE_ADMIN_URL`).
+- D-017: Componentes propios con convención shadcn/ui, sin su CLI (ADR 0002).
 - D-009: La demo `demo/desktop.html` y `demo/mobile.html` es la referencia visual y de textos (ver `docs/11-design-system.md`).
 
 ## Bloqueos humanos

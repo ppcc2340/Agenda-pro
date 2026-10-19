@@ -1,0 +1,25 @@
+# dependencies
+node_modules/
+.pnpm-store/
+
+# builds
+dist/
+.next/
+out/
+coverage/
+.turbo/
+*.tsbuildinfo
+
+# env and secrets (never commit)
+.env
+.env.*
+!.env.example
+
+# test artefacts
+playwright-report/
+test-results/
+evals/reports/*.json
+
+# misc
+.DS_Store
+*.log

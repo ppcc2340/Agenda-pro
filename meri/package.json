@@ -1,6 +1,7 @@
 {
   "name": "meri",
   "private": true,
+  "type": "module",
   "packageManager": "pnpm@9.12.0",
   "engines": {
     "node": ">=22"
@@ -8,12 +9,14 @@
   "scripts": {
     "dev": "turbo run dev --parallel",
     "build": "turbo run build",
-    "lint": "turbo run lint",
+    "lint": "turbo run lint && pnpm lint:deps",
+    "lint:deps": "depcruise apps packages --config .dependency-cruiser.cjs",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
-    "verify": "turbo run lint typecheck test build",
+    "verify": "turbo run lint typecheck test build && pnpm lint:deps",
     "db:generate": "pnpm --filter @meri/db generate",
     "db:migrate": "pnpm --filter @meri/db migrate",
+    "db:seed": "pnpm --filter @meri/db seed",
     "eval": "pnpm --filter @meri/ai eval",
     "blockers": "node scripts/check-blockers.mjs",
     "format": "prettier --write .",
@@ -23,14 +26,20 @@
     "test:coverage": "turbo run test -- --coverage"
   },
   "devDependencies": {
-    "turbo": "^2.1.0",
-    "typescript": "^5.6.0",
-    "vitest": "^2.1.0",
+    "@eslint/js": "^9.12.0",
+    "@meri/config": "workspace:*",
+    "@meri/db": "workspace:*",
+    "@meri/integrations": "workspace:*",
+    "@types/node": "^22.7.0",
+    "@vitest/coverage-v8": "^2.1.0",
+    "dependency-cruiser": "^16.5.0",
     "eslint": "^9.12.0",
     "prettier": "^3.3.0",
-    "@eslint/js": "^9.12.0",
+    "tsx": "^4.19.0",
+    "turbo": "^2.1.0",
+    "typescript": "^5.6.0",
     "typescript-eslint": "^8.8.0",
-    "dependency-cruiser": "^16.5.0",
-    "@vitest/coverage-v8": "^2.1.0"
+    "vitest": "^2.1.0",
+    "zod": "^3.23.8"
   }
 }

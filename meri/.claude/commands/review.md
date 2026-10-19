@@ -1,0 +1,1 @@
+Run the subagents `code-reviewer`, `security-auditor`, `test-engineer` and (if UI changed) `ux-reviewer` on the current diff ($ARGUMENTS). Fix every high or medium finding, record the rest as technical debt in `STATE.md`.

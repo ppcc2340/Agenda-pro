@@ -3,13 +3,14 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "description": "AI client, prompts, Zod schemas, extraction pipeline and evals.",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "lint": "echo \"configure eslint in phase 0\"",
+    "lint": "eslint src",
     "test": "vitest run --passWithNoTests",
-    "build": "echo \"no build\"",
+    "build": "echo \"no build: consumed from src\"",
     "eval": "echo \"implement eval runner in phase 2 (see docs/05-ai-design.md section 7)\""
   },
   "dependencies": { "@anthropic-ai/sdk": "^0.30.0", "zod": "^3.23.8" },

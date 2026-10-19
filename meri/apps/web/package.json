@@ -3,12 +3,45 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "Next.js: interfaz de Meri (fase 0 y siguientes). Referencia visual: demo/.",
+  "description": "Next.js: Meri interface. Visual reference: demo/.",
   "scripts": {
-    "typecheck": "echo \"implementar en la fase 0\"",
-    "lint": "echo \"implementar en la fase 0\"",
-    "test": "echo \"implementar en la fase 0\"",
-    "build": "echo \"implementar en la fase 0\"",
-    "dev": "echo \"implementar en la fase 0\""
+    "dev": "next dev -p 3000",
+    "start": "next start -p 3000",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src",
+    "test": "vitest run",
+    "build": "next build"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "^5.1.0",
+    "@meri/config": "workspace:*",
+    "@meri/core": "workspace:*",
+    "@radix-ui/react-dialog": "^1.1.0",
+    "@radix-ui/react-slot": "^1.1.0",
+    "@tanstack/react-query": "^5.59.0",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.453.0",
+    "next": "^15.5.0",
+    "next-auth": "5.0.0-beta.32",
+    "next-intl": "^4.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-hook-form": "^7.53.0",
+    "tailwind-merge": "^2.5.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.0.0",
+    "@testing-library/react": "^16.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.3.0",
+    "eslint-plugin-react-hooks": "^5.0.0",
+    "jsdom": "^25.0.0",
+    "postcss": "^8.4.47",
+    "tailwindcss": "^4.0.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
   }
 }
