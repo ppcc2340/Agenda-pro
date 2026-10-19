@@ -475,7 +475,9 @@
       "toasts": {
         "proposed": "Meri proposes changes. Review them under “What could go wrong?”.",
         "replanned": "Plan updated."
-      }
+      },
+      "proposalTitle": "Meri proposes to reorganize your plan",
+      "proposalSummary": "{moved} moved · {added} new · {removed} removed. No meeting moves."
     },
     "proposal": {
       "title": "Reorganize to protect your deadlines",

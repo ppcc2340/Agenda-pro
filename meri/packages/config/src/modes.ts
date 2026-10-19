@@ -37,6 +37,10 @@ function isLive(def: BlockerDefinition, value: string | undefined): boolean {
  *  - live without its credentials -> fail, citing the variable and the guide;
  *  - production forbids fake/noop and KMS_PROVIDER=local.
  */
+/** Production = APP_ENV when set, otherwise NODE_ENV (D-029). */
+export const isProductionEnv = (env: Pick<Env, "NODE_ENV" | "APP_ENV">): boolean =>
+  (env.APP_ENV ?? env.NODE_ENV) === "production";
+
 export function resolveModes(env: Env, blockers: readonly BlockerDefinition[] = BLOCKERS): ResolvedModes {
   const raw = env as unknown as Record<string, unknown>;
   const errors: string[] = [];
@@ -59,12 +63,12 @@ export function resolveModes(env: Env, blockers: readonly BlockerDefinition[] = 
           `${def.modeVar}=${String(value)} requires ${missing.join(", ")}. See ${def.guide} or set ${def.modeVar} back to its fake value.`,
         );
       }
-    } else if (env.NODE_ENV === "production") {
+    } else if (isProductionEnv(env)) {
       errors.push(`${def.modeVar}=${String(value)} is forbidden in production. See ${def.guide}.`);
     }
   }
 
-  if (env.NODE_ENV === "production") {
+  if (isProductionEnv(env)) {
     const placeholders = (["AUTH_SECRET", "INTERNAL_API_SECRET"] as const).filter((k) =>
       /^change-me/i.test(env[k]),
     );

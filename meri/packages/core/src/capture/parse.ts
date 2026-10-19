@@ -50,19 +50,78 @@ function findDate(lower: string, ctx: CaptureContext): { dueAt: string; match: M
     return new Date(fromLocalParts({ ...d, hour: h, minute: m }, ctx.timezone)).toISOString();
   };
   let m: RegExpExecArray | null;
+  if ((m = /\b(pasado manana|day after tomorrow)\b/.exec(lower)))
+    return { dueAt: at(2), match: { text: m[0], index: m.index } };
   if ((m = /\b(hoy|today)\b/.exec(lower))) return { dueAt: at(0), match: { text: m[0], index: m.index } };
-  if ((m = /\b(manana|tomorrow)\b/.exec(lower)))
+  // "mañana" alone is tomorrow; "por/de la mañana" is a time of day, not a date.
+  if ((m = /\b(?<!(?:por|de|en) la )(manana|tomorrow)\b/.exec(lower)))
     return { dueAt: at(1), match: { text: m[0], index: m.index } };
+  if (
+    (m =
+      /\b(?:en|in)\s+(\d+|una|un|dos|tres|cuatro|one|two|three|four)\s+(dias?|days?|semanas?|weeks?)\b/.exec(
+        lower,
+      ))
+  ) {
+    const words: Record<string, number> = {
+      una: 1,
+      un: 1,
+      one: 1,
+      dos: 2,
+      two: 2,
+      tres: 3,
+      three: 3,
+      cuatro: 4,
+      four: 4,
+    };
+    const n = words[m[1] ?? ""] ?? Number(m[1]);
+    const days = /^(semana|week)/.test(m[2] ?? "") ? n * 7 : n;
+    if (Number.isFinite(days) && days > 0) return { dueAt: at(days), match: { text: m[0], index: m.index } };
+  }
   for (const wd of WEEKDAYS) {
     for (const name of wd.names) {
       const re = new RegExp(
-        `\\b(?:(?:el|para el|para|on|by|next|el proximo|proximo)\\s+)?${normalize(name)}\\b`,
+        `\\b(?:(?:el|para el|para|on|by|next|el proximo|proximo|este|this)\\s+)?${normalize(name)}\\b`,
       );
       const hit = re.exec(lower);
       if (hit) {
-        const offset = (wd.day - local.weekday + 7) % 7 || 7;
+        // "next lunes" / "el próximo lunes": the one in the following week; otherwise the coming occurrence.
+        const nextWeek = /^(next|el proximo|proximo)\s/.test(hit[0]);
+        let offset = (wd.day - local.weekday + 7) % 7 || 7;
+        if (nextWeek && offset < 7) offset += 7;
         return { dueAt: at(offset), match: { text: hit[0], index: hit.index } };
       }
+    }
+  }
+  if (
+    (m =
+      /\b(?:el\s+)?(\d{1,2})\s+de\s+(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|setiembre|octubre|noviembre|diciembre)\b/.exec(
+        lower,
+      ))
+  ) {
+    const months = [
+      "enero",
+      "febrero",
+      "marzo",
+      "abril",
+      "mayo",
+      "junio",
+      "julio",
+      "agosto",
+      "septiembre",
+      "octubre",
+      "noviembre",
+      "diciembre",
+    ];
+    const day = Number(m[1]);
+    const monthName = (m[2] ?? "") === "setiembre" ? "septiembre" : (m[2] ?? "");
+    const month = months.indexOf(monthName) + 1;
+    if (day >= 1 && day <= 31 && month >= 1) {
+      const year =
+        month < local.month || (month === local.month && day < local.day) ? local.year + 1 : local.year;
+      const dueAt = new Date(
+        fromLocalParts({ year, month, day, hour, minute: 0 }, ctx.timezone),
+      ).toISOString();
+      return { dueAt, match: { text: m[0], index: m.index } };
     }
   }
   if ((m = /\b(\d{1,2})[/-](\d{1,2})(?:[/-](\d{2,4}))?\b/.exec(lower))) {
@@ -80,6 +139,14 @@ function findDate(lower: string, ctx: CaptureContext): { dueAt: string; match: M
 }
 
 function findDuration(lower: string): { minutes: number; match: Match } | null {
+  const hm =
+    /(\d{1,2})\s*(?:h|hs|hr|hrs|horas?|hours?)\s*(?:y\s+|and\s+)?(\d{1,2})(?:\s*(?:min|mins|minutos?|minutes?))?\b/.exec(
+      lower,
+    );
+  if (hm) {
+    const minutes = Number(hm[1]) * 60 + Number(hm[2]);
+    if (minutes > 0) return { minutes, match: { text: hm[0], index: hm.index } };
+  }
   const m = /(\d+(?:[.,]\d+)?)\s*(h|hs|hr|hrs|horas?|hours?|min|mins|minutos?|minutes?)\b/.exec(lower);
   if (!m) return null;
   const n = parseFloat((m[1] ?? "0").replace(",", "."));
@@ -89,9 +156,13 @@ function findDuration(lower: string): { minutes: number; match: Match } | null {
 }
 
 function findPriority(lower: string): { priority: number; match: Match } | null {
-  const m = /\b(urgente|urgent|asap|prioridad alta|high priority|importante|important)\b/.exec(lower);
+  const m =
+    /\b(urgente|urgent|asap|prioridad alta|alta prioridad|high priority|importante|important|baja prioridad|prioridad baja|low priority|poco importante|sin prisa)\b/.exec(
+      lower,
+    );
   if (!m) return null;
-  return { priority: /urgente|urgent|asap/.test(m[0]) ? 1 : 2, match: { text: m[0], index: m.index } };
+  const priority = /urgente|urgent|asap/.test(m[0]) ? 1 : /baja|low|poco|sin prisa/.test(m[0]) ? 4 : 2;
+  return { priority, match: { text: m[0], index: m.index } };
 }
 
 function findClient(
@@ -122,9 +193,7 @@ export function parseCapture(raw: string, ctx: CaptureContext): CaptureSuggestio
   const client = findClient(lower, ctx.clients);
 
   // Remove recognised fragments from the title, keeping the user's wording otherwise.
-  const removals = [date?.match, duration?.match, priority?.match].filter(
-    (m): m is Match => m !== undefined,
-  );
+  const removals = [date?.match, duration?.match, priority?.match].filter((m): m is Match => m !== undefined);
   let title = text;
   for (const m of removals.sort((a, b) => b.index - a.index)) {
     title = title.slice(0, m.index) + title.slice(m.index + m.text.length);

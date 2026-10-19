@@ -78,6 +78,15 @@ describe("resolveModes", () => {
     }
   });
 
+  it("APP_ENV=development lets an optimized build (NODE_ENV=production) run against fakes (D-029)", () => {
+    const config = loadConfig({ ...BASE, NODE_ENV: "production", APP_ENV: "development" });
+    expect(config.isProduction).toBe(false);
+    expect(config.modes.google).toBe("fake");
+    expect(() => loadConfig({ ...BASE, NODE_ENV: "development", APP_ENV: "production" })).toThrow(
+      ConfigError,
+    );
+  });
+
   it("local KMS requires LOCAL_MASTER_KEY", () => {
     expect(() => resolveModes(parseEnv({ ...BASE, LOCAL_MASTER_KEY: "" }))).toThrow(/LOCAL_MASTER_KEY/);
   });

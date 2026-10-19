@@ -8,7 +8,7 @@
   --ink: #0f1e2e;
   --ink2: #44566a;
   /* ink3 and sug darkened vs the demo to reach AA (4.5:1) on bg/raised for small text. */
-  --ink3: #5e7084;
+  --ink3: #56687b;
   --rule: #d2dbe1;
   --rail: #0f1e2e;
   --rail-ink: #c9dbe2;
@@ -16,11 +16,11 @@
   --sea: #0e6b74;
   --on-sea: #ffffff;
   --sea-soft: #d5ebed;
-  --risk: #bf3a4a;
+  --risk: #ad3141;
   --risk-soft: #f7dee1;
   --sug: #86590a;
   --sug-soft: #faefd4;
-  --ok: #2a7b58;
+  --ok: #26704f;
   --ok-soft: #d9efe5;
   --c-1: #3a6edb;
   --c-2: #2f8a5c;
@@ -126,10 +126,13 @@ h3 {
   letter-spacing: -0.01em;
   font-weight: 600;
 }
-button {
-  font: inherit;
-  color: inherit;
-  cursor: pointer;
+/* In @layer base so utilities (text-on-sea, …) win: unlayered rules would beat Tailwind's layers. */
+@layer base {
+  button {
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+  }
 }
 :focus-visible {
   outline: 2px solid var(--sea);

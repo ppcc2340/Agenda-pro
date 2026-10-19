@@ -8,6 +8,14 @@ const FakeLive = z.enum(["fake", "live"]);
 
 export const EnvSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+  /**
+   * Deployment environment (D-029). Defaults to NODE_ENV, so a plain `next start` is production and refuses fake
+   * adapters; `APP_ENV=development` runs an optimized build against fakes (E2E, `pnpm demo`).
+   */
+  APP_ENV: z.preprocess(
+    emptyToUndefined,
+    z.enum(["development", "test", "staging", "production"]).optional(),
+  ),
   LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"]).default("info"),
   APP_URL: z.string().url().default("http://localhost:3000"),
   API_URL: z.string().url().default("http://localhost:4000"),

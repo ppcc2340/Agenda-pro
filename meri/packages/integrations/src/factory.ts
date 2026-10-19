@@ -92,6 +92,8 @@ export function createIntegrations(config: AppConfig, deps: IntegrationsDeps): I
       let c = fakeCalendars.get(accountEmail);
       if (!c) {
         c = new FakeCalendar({ now: deps.now });
+        // Sample meetings (D-021) so a connected fake account looks like the demo. Tests seed their own.
+        if (!config.isTest) seedSampleMeetings(c, deps.now());
         fakeCalendars.set(accountEmail, c);
       }
       return c;
@@ -106,4 +108,28 @@ export function createIntegrations(config: AppConfig, deps: IntegrationsDeps): I
       return m;
     },
   };
+}
+
+/** Demo meetings relative to `now`: today's weekly call, tomorrow's strategy meeting, a closing meeting in 3 days. */
+export function seedSampleMeetings(calendar: FakeCalendar, now: Date): void {
+  const at = (dayOffset: number, hourUtc: number, minute = 0) => {
+    const d = new Date(now);
+    d.setUTCDate(d.getUTCDate() + dayOffset);
+    d.setUTCHours(hourUtc, minute, 0, 0);
+    return d;
+  };
+  const iso = (d: Date) => d.toISOString();
+  const samples: { title: string; start: Date; minutes: number; attendees: string[] }[] = [
+    { title: "Llamada semanal con Acme", start: at(0, 10, 30), minutes: 45, attendees: ["ana@acme.com"] },
+    { title: "Reunión de estrategia con Estudio Norte", start: at(1, 14, 30), minutes: 60, attendees: ["laura@estudionorte.cl"] },
+    { title: "Reunión de cierre trimestral", start: at(3, 9, 0), minutes: 90, attendees: ["carlos@acme.com", "ana@acme.com"] },
+  ];
+  for (const s of samples) {
+    calendar.addExternalEvent({
+      title: s.title,
+      startsAt: iso(s.start),
+      endsAt: iso(new Date(s.start.getTime() + s.minutes * 60_000)),
+      attendees: s.attendees,
+    });
+  }
 }

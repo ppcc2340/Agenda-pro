@@ -475,7 +475,9 @@
       "toasts": {
         "proposed": "Meri propone cambios. Revísalos en «¿Qué podría salir mal?».",
         "replanned": "Plan actualizado."
-      }
+      },
+      "proposalTitle": "Meri propone reorganizar tu plan",
+      "proposalSummary": "{moved} movidos · {added} nuevos · {removed} retirados. Ninguna reunión se mueve."
     },
     "proposal": {
       "title": "Reorganizar para proteger tus fechas",

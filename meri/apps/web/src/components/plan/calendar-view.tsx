@@ -160,7 +160,6 @@ export function CalendarView({ timezone, workStart, workEnd, clients, now: nowIs
               type="button"
               role="tab"
               aria-selected={dayIdx === i}
-              aria-pressed={dayIdx === i}
               onClick={() => setDayIdx(i)}
               className={cn(
                 "flex flex-col items-center rounded-[10px] border border-rule bg-raised py-1.5 text-[12px]",

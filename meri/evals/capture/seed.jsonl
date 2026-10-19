@@ -1,0 +1,30 @@
+{"id":"cap-001","lang":"es","text":"Informe para Acme el jueves, 2 h","expected":{"clientName":"Acme Corp","dueDate":"2026-10-22","estimateMinutes":120,"kind":"deep"}}
+{"id":"cap-002","lang":"es","text":"Llamar a Beta hoy 30 min urgente","expected":{"clientName":"Beta Logística","dueDate":"2026-10-19","estimateMinutes":30,"priority":1}}
+{"id":"cap-003","lang":"en","text":"Review budget tomorrow 1.5 hours","expected":{"dueDate":"2026-10-20","estimateMinutes":90}}
+{"id":"cap-004","lang":"es","text":"Enviar contrato 03/11 importante","expected":{"dueDate":"2026-11-03","priority":2}}
+{"id":"cap-005","lang":"es","text":"Revisar factura de Estudio Norte","expected":{"clientName":"Estudio Norte","title":"Revisar factura de Estudio Norte"}}
+{"id":"cap-006","lang":"es","text":"Preparar presentación mañana 45 min","expected":{"dueDate":"2026-10-20","estimateMinutes":45,"kind":"shallow"}}
+{"id":"cap-007","lang":"en","text":"Draft reply to Acme next Monday 1h","expected":{"clientName":"Acme Corp","dueDate":"2026-10-26","estimateMinutes":60}}
+{"id":"cap-008","lang":"es","text":"Comprar material de oficina","expected":{"title":"Comprar material de oficina","dueDate":null}}
+{"id":"cap-009","lang":"es","text":"Reunión de seguimiento con Beta el viernes 1 h 30","expected":{"clientName":"Beta Logística","dueDate":"2026-10-23","estimateMinutes":90}}
+{"id":"cap-010","lang":"en","text":"Call Estudio Norte on Friday, 20 min","expected":{"clientName":"Estudio Norte","dueDate":"2026-10-23","estimateMinutes":20}}
+{"id":"cap-011","lang":"es","text":"Pagar impuestos antes del 15/11","expected":{"dueDate":"2026-11-15"}}
+{"id":"cap-012","lang":"es","text":"Escribir propuesta para Acme 3 horas","expected":{"clientName":"Acme Corp","estimateMinutes":180,"kind":"deep"}}
+{"id":"cap-013","lang":"en","text":"Send invoice to Beta today","expected":{"clientName":"Beta Logística","dueDate":"2026-10-19"}}
+{"id":"cap-014","lang":"es","text":"Revisar pliego el miércoles 2h baja prioridad","expected":{"dueDate":"2026-10-21","estimateMinutes":120,"priority":4}}
+{"id":"cap-015","lang":"es","text":"Contestar correo de Laura 10 min","expected":{"estimateMinutes":10,"kind":"shallow"}}
+{"id":"cap-016","lang":"en","text":"Prepare quarterly report for Acme by Thursday, 4h","expected":{"clientName":"Acme Corp","dueDate":"2026-10-22","estimateMinutes":240,"kind":"deep"}}
+{"id":"cap-017","lang":"es","text":"Actualizar web pasado mañana","expected":{"dueDate":"2026-10-21"}}
+{"id":"cap-018","lang":"es","text":"Llamada con Estudio Norte el lunes a las 10","expected":{"clientName":"Estudio Norte","dueDate":"2026-10-26"}}
+{"id":"cap-019","lang":"en","text":"Fix the Acme spreadsheet, 25 minutes, low priority","expected":{"clientName":"Acme Corp","estimateMinutes":25,"priority":4}}
+{"id":"cap-020","lang":"es","text":"Leer sentencia de Beta 1 h","expected":{"clientName":"Beta Logística","estimateMinutes":60}}
+{"id":"cap-021","lang":"es","text":"Firmar poder el 20/10","expected":{"dueDate":"2026-10-20"}}
+{"id":"cap-022","lang":"en","text":"Plan the offsite in two weeks","expected":{"dueDate":"2026-11-02"}}
+{"id":"cap-023","lang":"es","text":"Revisar contrato de Acme urgente 2 h","expected":{"clientName":"Acme Corp","priority":1,"estimateMinutes":120}}
+{"id":"cap-024","lang":"es","text":"Preparar briefing de Estudio Norte el jueves por la mañana","expected":{"clientName":"Estudio Norte","dueDate":"2026-10-22"}}
+{"id":"cap-025","lang":"en","text":"Write minutes of the Beta meeting, 40 min, tomorrow","expected":{"clientName":"Beta Logística","estimateMinutes":40,"dueDate":"2026-10-20"}}
+{"id":"cap-026","lang":"es","text":"Archivar expedientes","expected":{"title":"Archivar expedientes","dueDate":null}}
+{"id":"cap-027","lang":"es","text":"Entregar informe de Acme el 30 de octubre","expected":{"clientName":"Acme Corp","dueDate":"2026-10-30"}}
+{"id":"cap-028","lang":"en","text":"Renew domain next Friday","expected":{"dueDate":"2026-10-30"}}
+{"id":"cap-029","lang":"es","text":"Preparar demo 90 min alta prioridad","expected":{"estimateMinutes":90,"priority":2}}
+{"id":"cap-030","lang":"es","text":"Responder consultas de Beta hoy, 45 minutos","expected":{"clientName":"Beta Logística","dueDate":"2026-10-19","estimateMinutes":45}}

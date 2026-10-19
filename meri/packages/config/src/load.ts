@@ -1,5 +1,5 @@
 import { parseEnv, type Env } from "./env";
-import { resolveModes, type ResolvedModes } from "./modes";
+import { isProductionEnv, resolveModes, type ResolvedModes } from "./modes";
 
 export interface AppConfig {
   env: Env;
@@ -15,5 +15,10 @@ export interface AppConfig {
 export function loadConfig(source: Record<string, string | undefined> = process.env): AppConfig {
   const env = parseEnv(source);
   const modes = resolveModes(env);
-  return { env, modes, isProduction: env.NODE_ENV === "production", isTest: env.NODE_ENV === "test" };
+  return {
+    env,
+    modes,
+    isProduction: isProductionEnv(env),
+    isTest: (env.APP_ENV ?? env.NODE_ENV) === "test",
+  };
 }

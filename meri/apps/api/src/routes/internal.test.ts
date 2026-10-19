@@ -54,3 +54,27 @@ describe("POST /internal/auth/bootstrap (ADR 0001)", () => {
     expect(invalid.json()).toMatchObject({ code: "VALIDATION_FAILED" });
   });
 });
+
+describe("internal routes and the IP rate limit", () => {
+  it("never throttles server-to-server bootstrap calls (one web server IP serves every login)", async () => {
+    const strict = await createTestApp({ rateLimitMax: 1 });
+    try {
+      const headers = { [INTERNAL_HEADER]: INTERNAL_SECRET };
+      for (let i = 0; i < 3; i++) {
+        const res = await strict.app.inject({
+          method: "POST",
+          url: "/internal/auth/bootstrap",
+          headers,
+          payload: { email: `rl-${String(i)}-${Date.now().toString(36)}@test.local` },
+        });
+        expect(res.statusCode).toBe(200);
+      }
+      const limited = await strict.app.inject({ url: "/v1/me" });
+      await strict.app.inject({ url: "/v1/me" });
+      const third = await strict.app.inject({ url: "/v1/me" });
+      expect([limited.statusCode, third.statusCode]).toContain(429);
+    } finally {
+      await strict.close();
+    }
+  });
+});

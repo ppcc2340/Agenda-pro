@@ -49,10 +49,25 @@ export function RiskList({
   const [open, setOpen] = useState(false);
   const rows = riskRows(plan);
   const tasks = new Map<string, Task>(plan.tasks.map((x) => [x.id, x]));
-  if (rows.length === 0) return <EmptyState title={tHoy("emptyRisksTitle")} body={tHoy("emptyRisksBody")} />;
+  const pending = plan.pendingProposal;
+  if (rows.length === 0 && !pending)
+    return <EmptyState title={tHoy("emptyRisksTitle")} body={tHoy("emptyRisksBody")} />;
   return (
     <div>
       <ul className="divide-y divide-rule border-t border-rule">
+        {pending ? (
+          <li className="-ml-0.5 flex flex-col gap-2 border-l-[3px] border-dashed border-sug py-3 pl-3.5 md:flex-row md:items-start">
+            <div className="min-w-0 flex-1">
+              <div className="font-semibold">{t("proposalTitle")}</div>
+              <div className="mt-0.5 text-[13px] text-ink2">{t("proposalSummary", pending.summary)}</div>
+            </div>
+            <div className="flex-shrink-0">
+              <Button size="sm" variant="primary" onClick={() => setOpen(true)}>
+                {t("reorganize")}
+              </Button>
+            </div>
+          </li>
+        ) : null}
         {rows.map((r) => (
           <li
             key={r.taskId}

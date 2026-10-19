@@ -11,7 +11,7 @@
     "lint": "eslint src",
     "test": "vitest run",
     "build": "echo \"no build: consumed from src\"",
-    "eval": "echo \"implement eval runner in phase 2 (see docs/05-ai-design.md section 7)\""
+    "eval": "tsx src/evals/run.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.30.0",
@@ -21,6 +21,7 @@
   },
   "devDependencies": {
     "typescript": "^5.6.0",
-    "vitest": "^3.2.6"
+    "vitest": "^3.2.6",
+    "tsx": "^4.19.0"
   }
 }

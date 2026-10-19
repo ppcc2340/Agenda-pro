@@ -97,7 +97,10 @@ export async function buildApp(deps: AppDeps) {
     timeWindow: "1 minute",
     // Keyed by user when authenticated, by IP otherwise (docs/12 §3).
     keyGenerator: (request) => (request.session ? `u:${request.session.userId}` : `ip:${request.ip}`),
-    allowList: (request) => request.url === "/health" || request.url === "/ready",
+    // Internal routes are secret-authenticated server-to-server calls: every login from the web server would
+    // otherwise share one IP bucket. Health endpoints are probed by orchestrators.
+    allowList: (request) =>
+      request.url === "/health" || request.url === "/ready" || request.url.startsWith("/internal/"),
   });
   await app.register(swagger, {
     openapi: {
