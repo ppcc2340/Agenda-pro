@@ -29,3 +29,12 @@ export {
 export { AnthropicAiClient, type AnthropicClientOptions } from "./anthropic/client";
 export { parsePrices, costMicroUsd, DEFAULT_PRICES, type ModelPrice } from "./anthropic/prices";
 export { zodToJsonSchema } from "./ai/json-schema";
+export {
+  DEMO_MAIL_THREADS,
+  DEMO_MAIL_MESSAGE_COUNT,
+  demoMailDate,
+  demoMessageId,
+  demoThreadId,
+  seedDemoMail,
+  type DemoMailThread,
+} from "./fakes/demo-mail";

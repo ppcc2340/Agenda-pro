@@ -140,7 +140,6 @@ export function CalendarView({ timezone, workStart, workEnd, clients, now: nowIs
                   className={cn(
                     "absolute left-1 right-1 flex min-w-0 flex-col justify-center overflow-hidden rounded-lg px-1.5 py-0.5 text-left",
                     it.kind === "event" ? "border" : "border-0 border-l-4",
-                    it.done && "opacity-50",
                   )}
                   style={{
                     top: y(it.startMin),
@@ -152,7 +151,7 @@ export function CalendarView({ timezone, workStart, workEnd, clients, now: nowIs
                         : `color-mix(in srgb, ${clientColorVar(it.clientId, clients)} 17%, var(--raised))`,
                   }}
                 >
-                  <b className="truncate text-[12.5px] font-semibold leading-tight">{it.title}</b>
+                  <b className={cn("truncate text-[12.5px] font-semibold leading-tight", it.done && "line-through")}>{it.title}</b>
                   {y(it.endMin) - y(it.startMin) > 40 ? (
                     <i className="num text-[11.5px] not-italic text-ink2">{timeLabel(it)}</i>
                   ) : null}
@@ -254,7 +253,6 @@ function Agenda({
           className={cn(
             "rounded-[10px] px-3 py-2",
             it.kind === "event" ? "border" : "border-0 border-l-4",
-            it.done && "opacity-50",
           )}
           style={{
             borderColor: clientColorVar(it.clientId, clients),
@@ -264,7 +262,7 @@ function Agenda({
                 : `color-mix(in srgb, ${clientColorVar(it.clientId, clients)} 17%, var(--raised))`,
           }}
         >
-          <b className="block text-[14px]">{it.title}</b>
+          <b className={cn("block text-[14px]", it.done && "line-through")}>{it.title}</b>
           <span className="num text-[12.5px] text-ink2">
             {timeLabel(it)}
             {it.kind === "event" ? `. ${t("fixed")}` : ""}

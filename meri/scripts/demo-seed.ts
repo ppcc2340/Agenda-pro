@@ -5,7 +5,7 @@
  * (planner, time inference, follow-up scan). Idempotent: an already seeded workspace is left alone.
  * Usage: pnpm demo:seed [--reset]   (--reset deletes the demo workspace first; needs DATABASE_ADMIN_URL)
  */
-import { createLogger, loadConfig, loadDotenv } from "@meri/config";
+import { createLogger, DEMO_USER, loadConfig, loadDotenv } from "@meri/config";
 import { fromLocalParts, toLocalParts, addLocalDays } from "@meri/core";
 import {
   ADMIN_WORKSPACE_CONTEXT,
@@ -26,14 +26,15 @@ import {
   upsertCalendarEvent,
   upsertContact,
   upsertIntegrationAccount,
+  setSyncCursor,
   upsertThread,
   withWorkspace,
   type WorkspaceId,
 } from "@meri/db";
-import { CALENDAR_SCOPES, GMAIL_SCOPES, createIntegrations } from "@meri/integrations";
+import { CALENDAR_SCOPES, DEMO_MAIL_MESSAGE_COUNT, DEMO_MAIL_THREADS, GMAIL_SCOPES, createIntegrations, demoMailDate, demoMessageId, demoThreadId } from "@meri/integrations";
 import { encryptTokens, inferTime, runReplan, scanFollowups, type HandlerDeps } from "@meri/jobs";
 
-export const DEMO_EMAIL = "demo@meri.local";
+export const DEMO_EMAIL = DEMO_USER.email;
 export const DEMO_TIMEZONE = "Europe/Madrid";
 
 const CLIENTS = [
@@ -66,7 +67,7 @@ export async function seedDemo(options: { now: Date; reset?: boolean; databaseUr
   const deps: HandlerDeps = { db: handle.db, integrations, keys: integrations.kms.keys, logger: createLogger({ name: "demo-seed", level: "warn" }), now: () => now };
   try {
     if (options.reset) await resetDemo(options.adminUrl);
-    const account = await bootstrapAccount(handle.db, { email: DEMO_EMAIL, name: "Demo de Meri", now });
+    const account = await bootstrapAccount(handle.db, { email: DEMO_EMAIL, name: DEMO_USER.name, now });
     const ws = account.workspaceId;
     const existing = await withWorkspace(handle.db, ws, (tx) => listClients(tx, ws));
     if (existing.length > 0) return { status: "skipped", workspaceId: ws };
@@ -113,7 +114,7 @@ export async function seedDemo(options: { now: Date; reset?: boolean; databaseUr
         { id: "estrategia-norte", title: "Reunión de estrategia con Estudio Norte", day: 0, h: 16, m: 30, minutes: 60, client: "norte", attendees: ["laura@estudionorte.cl"] },
         { id: "comite-luna", title: "Comité con Luna Legal", day: 1, h: 11, m: 0, minutes: 60, client: "luna", attendees: ["marta@lunalegal.es"] },
         { id: "entrega-acme", title: "Entrega del informe a Acme", day: 3, h: 16, m: 0, minutes: 30, client: "acme", attendees: ["ana@acme.com", "carlos@acme.com"] },
-        { id: "llamada-beta", title: "Llamada con Beta Logística", day: -4, h: 10, m: 0, minutes: 60, client: null, attendees: ["externo@proveedor.test"] },
+        { id: "llamada-beta", title: "Llamada con Beta Logística", day: -1, h: 10, m: 0, minutes: 60, client: null, attendees: ["externo@proveedor.test"] },
         { id: "cierre-norte", title: "Reunión de cierre trimestral", day: -3, h: 15, m: 0, minutes: 90, client: "norte", attendees: ["laura@estudionorte.cl"] },
       ];
       for (const e of events) {
@@ -154,22 +155,19 @@ export async function seedDemo(options: { now: Date; reset?: boolean; databaseUr
 
       // Confirmed commitments (radar) and three proposals from indexed threads (Entrada).
       const threads: Record<string, string> = {};
-      const thread = async (key: string, subject: string, who: (typeof PEOPLE)[number], daysAgo: number, fromMe: boolean, client: ClientKey) => {
-        const { thread: t } = await upsertThread(tx, ws, { integrationAccountId: accountRow.id, externalThreadId: `demo-${key}`, subject, participants: [DEMO_EMAIL, who.email], clientId: ids[client], lastMessageAt: at(-daysAgo, 9), lastMessageFromMe: fromMe, lastExternalMessageId: `demo-${key}-m1` });
-        threads[key] = t.id;
-        return t;
-      };
-      await thread("contrato", "RE: Contrato de servicios 2026", PEOPLE[0], 1, false, "acme");
-      await thread("presupuesto", "Presupuesto transporte Q4", PEOPLE[4], 2, false, "beta");
-      await thread("cierre", "Cierre de proyecto", PEOPLE[2], 2, false, "norte");
-      await thread("ventas", "Datos de ventas Q3", PEOPLE[1], 8, true, "acme");
-      await thread("poder", "Poder notarial", PEOPLE[3], 5, false, "luna");
+      // Same threads and message ids as the demo FakeGmail (D-052): drafts reply to real messages.
+      for (const t of DEMO_MAIL_THREADS) {
+        const { thread: row } = await upsertThread(tx, ws, { integrationAccountId: accountRow.id, externalThreadId: demoThreadId(t.key), subject: t.subject, participants: [DEMO_EMAIL, t.from.email], clientId: ids[t.clientKey as ClientKey], lastMessageAt: new Date(demoMailDate(now, t.daysAgo)), lastMessageFromMe: t.fromMe, lastExternalMessageId: demoMessageId(t.key, 0) });
+        threads[t.key] = row.id;
+      }
+      // The mailbox is already indexed: the worker's incremental sync starts after the demo messages.
+      await setSyncCursor(tx, ws, accountRow.id, "gmail.history", String(DEMO_MAIL_MESSAGE_COUNT), now);
 
       const commit = (c: { client: ClientKey; dir: "owed_by_me" | "owed_to_me"; action: string; who: (typeof PEOPLE)[number]; due: Date | null; status: "confirmed" | "proposed"; kind: "explicit" | "inferred" | "suggested"; confidence: number; evidence: string | null; thread: string | null; dueText?: string }) =>
         createCommitment(
           tx,
           ws,
-          { clientId: ids[c.client], direction: c.dir, kind: c.kind, status: c.status, counterpartyEmail: c.who.email, action: c.action, dueAt: c.due, dueText: c.dueText ?? null, confidence: c.confidence, evidence: c.evidence, threadId: c.thread ? threads[c.thread] ?? null : null, externalMessageId: c.thread ? `demo-${c.thread}-m1` : null, dedupeHash: `demo:${c.dir}:${c.action}`, origin: c.status === "proposed" ? "ai_confirmed" : "user" },
+          { clientId: ids[c.client], direction: c.dir, kind: c.kind, status: c.status, counterpartyEmail: c.who.email, action: c.action, dueAt: c.due, dueText: c.dueText ?? null, confidence: c.confidence, evidence: c.evidence, threadId: c.thread ? threads[c.thread] ?? null : null, externalMessageId: c.thread ? demoMessageId(c.thread, 0) : null, dedupeHash: `demo:${c.dir}:${c.action}`, origin: c.status === "proposed" ? "ai_confirmed" : "user" },
           now,
         );
       await commit({ client: "acme", dir: "owed_by_me", action: "Entregar el informe trimestral", who: PEOPLE[0], due: at(3, 18), status: "confirmed", kind: "explicit", confidence: 0.95, evidence: null, thread: null });
@@ -196,8 +194,8 @@ export async function seedDemo(options: { now: Date; reset?: boolean; databaseUr
             confidence: p.confidence,
             explanation: p.kind,
             dedupeHash: `proposal:demo:${p.action}`,
-            sourceRef: { type: "thread", id: threads[p.thread] ?? "", url: `https://mail.google.com/mail/u/0/#all/demo-${p.thread}` },
-            payload: { commitmentId: c.id, direction: p.dir, action: p.action, dueAt: p.due ? p.due.toISOString() : null, dueText: p.dueText, kind: p.kind, confidence: p.confidence, evidence: p.evidence, counterpartyEmail: p.who.email, counterpartyName: p.who.name, clientId: ids[p.client], threadId: threads[p.thread] ?? null, externalThreadId: `demo-${p.thread}`, subject: p.subject, externalMessageId: `demo-${p.thread}-m1`, eventId: null },
+            sourceRef: { type: "thread", id: threads[p.thread] ?? "", url: `https://mail.google.com/mail/u/0/#all/${demoThreadId(p.thread)}` },
+            payload: { commitmentId: c.id, direction: p.dir, action: p.action, dueAt: p.due ? p.due.toISOString() : null, dueText: p.dueText, kind: p.kind, confidence: p.confidence, evidence: p.evidence, counterpartyEmail: p.who.email, counterpartyName: p.who.name, clientId: ids[p.client], threadId: threads[p.thread] ?? null, externalThreadId: demoThreadId(p.thread), subject: p.subject, externalMessageId: demoMessageId(p.thread, 0), eventId: null },
           },
           now,
         );

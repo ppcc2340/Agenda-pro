@@ -131,7 +131,6 @@ export function Timeline({
               className={cn(
                 "absolute bottom-1 top-1 flex min-w-0 flex-col justify-center overflow-hidden rounded-lg border-0 border-l-4 px-2 py-1 text-left text-ink transition-shadow",
                 selectedId === b.id && "shadow-[0_0_0_2px_var(--cc)]",
-                b.done && "opacity-50",
               )}
               style={{
                 left: x(b.startMin),
