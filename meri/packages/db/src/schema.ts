@@ -137,6 +137,8 @@ export const preferences = pgTable("preferences", {
   timeRoundingMinutes: integer("time_rounding_minutes").notNull().default(6),
   /** Set when the user completes onboarding (F-01). Null = must onboard. */
   onboardedAt: timestamp("onboarded_at", { withTimezone: true }),
+  /** Explicit plan version (ADR 0003): bumped in the same transaction as every plan change, restored on undo. */
+  planVersion: integer("plan_version").notNull().default(0),
   updatedAt: updatedAt(),
 });
 
@@ -466,7 +468,7 @@ export const planRuns = pgTable(
     proposalId: uuid("proposal_id"),
     createdAt: createdAt(),
   },
-  (t) => [index("plan_runs_ws_created_idx").on(t.workspaceId, t.createdAt)],
+  (t) => [index("plan_runs_ws_id_idx").on(t.workspaceId, t.id)],
 );
 
 // ---------- Idempotency (docs/13, D-024) ----------

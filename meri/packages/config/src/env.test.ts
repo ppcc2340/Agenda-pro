@@ -79,11 +79,23 @@ describe("resolveModes", () => {
   });
 
   it("APP_ENV=development lets an optimized build (NODE_ENV=production) run against fakes (D-029)", () => {
-    const config = loadConfig({ ...BASE, NODE_ENV: "production", APP_ENV: "development" });
+    expect(() => loadConfig({ ...BASE, NODE_ENV: "production", APP_ENV: "development" })).toThrow(
+      /ALLOW_FAKES_ON_PRODUCTION_BUILD/,
+    );
+    const config = loadConfig({
+      ...BASE,
+      NODE_ENV: "production",
+      APP_ENV: "development",
+      ALLOW_FAKES_ON_PRODUCTION_BUILD: "1",
+    });
     expect(config.isProduction).toBe(false);
+    expect(config.fakesOnProductionBuild).toBe(true);
     expect(config.modes.google).toBe("fake");
     expect(() => loadConfig({ ...BASE, NODE_ENV: "development", APP_ENV: "production" })).toThrow(
       ConfigError,
+    );
+    expect(() => loadConfig({ ...BASE, NODE_ENV: "development", APP_ENV: "staging" })).toThrow(
+      /forbidden in production/,
     );
   });
 
@@ -118,6 +130,14 @@ describe("production secrets", () => {
     expect(() => loadConfig(prod)).toThrow(/AUTH_URL is required in production/);
     expect(() =>
       loadConfig({ ...prod, AUTH_SECRET: "r".repeat(40), AUTH_URL: "https://app.meri.test" }),
+    ).toThrow(/GOOGLE_CALENDAR_CHANNEL_TOKEN/);
+    expect(() =>
+      loadConfig({
+        ...prod,
+        AUTH_SECRET: "r".repeat(40),
+        AUTH_URL: "https://app.meri.test",
+        GOOGLE_CALENDAR_CHANNEL_TOKEN: "t".repeat(24),
+      }),
     ).not.toThrow();
   });
 });

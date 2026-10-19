@@ -18,12 +18,19 @@ export interface Feasibility {
   conflicts: Conflict[];
 }
 
-function deadlineConflict(ctx: SchedulerContext, state: ScheduleState, task: NormalizedTask, deadline: number): Conflict {
+function deadlineConflict(
+  ctx: SchedulerContext,
+  state: ScheduleState,
+  task: NormalizedTask,
+  deadline: number,
+): Conflict {
   const { n } = ctx;
   const finish = finishOf(state, task.id);
   const unplaced = remainingOf(state, task);
   const noCapacity = grossCapacityBetween(state.days, n.preferences, n.now, deadline) === 0;
-  const othersBeforeDeadline = state.blocks.some((b) => !b.pinned && b.taskId !== task.id && b.start < deadline);
+  const othersBeforeDeadline = state.blocks.some(
+    (b) => !b.pinned && b.taskId !== task.id && b.start < deadline,
+  );
   const alternatives: Conflict["alternatives"] = [];
   if (!noCapacity && othersBeforeDeadline) alternatives.push("move_other_task");
   if (!noCapacity && task.remaining > n.preferences.minBlockMinutes) alternatives.push("split_task");

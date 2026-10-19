@@ -7,7 +7,13 @@ import fc from "fast-check";
 import { MINUTE_MS, minutesToIso } from "./calendar-math";
 import type { FixedEvent, PlanInput, PlannerPreferences, PlannerTask } from "./types";
 
-export const TIMEZONES = ["America/Santiago", "Europe/Madrid", "UTC", "America/New_York", "Asia/Kolkata"] as const;
+export const TIMEZONES = [
+  "America/Santiago",
+  "Europe/Madrid",
+  "UTC",
+  "America/New_York",
+  "Asia/Kolkata",
+] as const;
 
 /** Weeks containing DST transitions in Madrid (Mar 29, Oct 25) and Santiago (Apr 5, Sep 6). */
 export const BASE_DATES = [
@@ -80,7 +86,10 @@ const preferencesArb: fc.Arbitrary<PlannerPreferences> = fc.record({
   deepWorkWindows: fc.constantFrom(
     [],
     [{ start: "09:00", end: "12:00" }],
-    [{ start: "09:00", end: "11:00" }, { start: "15:00", end: "17:00" }],
+    [
+      { start: "09:00", end: "11:00" },
+      { start: "15:00", end: "17:00" },
+    ],
   ),
   minBlockMinutes: fc.constantFrom(15, 30),
   minDeepBlockMinutes: fc.constantFrom(45, 60, 90),
@@ -108,7 +117,15 @@ const taskSeedArb: fc.Arbitrary<TaskSeed> = fc.record({
   dueOffsetMinutes: fc.option(fc.integer({ min: -600, max: 11 * 1440 }), { nil: null }),
   deadlineType: fc.constantFrom("soft", "hard"),
   depSeeds: fc.array(fc.nat(100), { maxLength: 2 }),
-  status: fc.constantFrom("pending", "pending", "pending", "scheduled", "in_progress", "at_risk", "completed"),
+  status: fc.constantFrom(
+    "pending",
+    "pending",
+    "pending",
+    "scheduled",
+    "in_progress",
+    "at_risk",
+    "completed",
+  ),
 });
 
 interface EventSeed {
@@ -144,7 +161,9 @@ function buildInput(seed: InputSeed): PlanInput {
       priority: t.priority,
       kind: t.kind,
       estimateMinutes: t.estimateMinutes,
-      ...(t.remainingRatio === null ? {} : { remainingMinutes: Math.round((t.estimateMinutes * t.remainingRatio) / 100) }),
+      ...(t.remainingRatio === null
+        ? {}
+        : { remainingMinutes: Math.round((t.estimateMinutes * t.remainingRatio) / 100) }),
       dueAt: t.dueOffsetMinutes === null ? null : isoPlusMinutes(now, t.dueOffsetMinutes),
       deadlineType: t.deadlineType,
       blockedBy: deps,
@@ -154,9 +173,22 @@ function buildInput(seed: InputSeed): PlanInput {
   const fixedEvents = seed.events
     .filter((e) => e.offsetMinutes < seed.horizonDays * 1440)
     .map((e, index) =>
-      event(`e${String(index)}`, isoPlusMinutes(horizonStart, e.offsetMinutes), isoPlusMinutes(horizonStart, e.offsetMinutes + e.durationMinutes), e.busy),
+      event(
+        `e${String(index)}`,
+        isoPlusMinutes(horizonStart, e.offsetMinutes),
+        isoPlusMinutes(horizonStart, e.offsetMinutes + e.durationMinutes),
+        e.busy,
+      ),
     );
-  return { now, horizonStart, horizonEnd, tasks, fixedEvents, existingBlocks: [], preferences: seed.preferences };
+  return {
+    now,
+    horizonStart,
+    horizonEnd,
+    tasks,
+    fixedEvents,
+    existingBlocks: [],
+    preferences: seed.preferences,
+  };
 }
 
 /** Valid PlanInput values: 1-10 day horizons, up to 8 tasks forming a DAG, up to 5 events. */

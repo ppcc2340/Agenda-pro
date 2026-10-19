@@ -16,6 +16,8 @@ export const EnvSchema = z.object({
     emptyToUndefined,
     z.enum(["development", "test", "staging", "production"]).optional(),
   ),
+  /** Explicit opt-in for running fakes on an optimized build (E2E, `pnpm demo`); never set in a deployment. */
+  ALLOW_FAKES_ON_PRODUCTION_BUILD: z.preprocess(emptyToUndefined, z.enum(["1"]).optional()),
   LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"]).default("info"),
   APP_URL: z.string().url().default("http://localhost:3000"),
   API_URL: z.string().url().default("http://localhost:4000"),

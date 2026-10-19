@@ -22,7 +22,9 @@ export async function dispatchCalendarPolling(deps: DispatcherDeps, staleMinutes
     await deps.dispatcher.enqueue(
       CalendarSyncJob,
       { workspaceId: row.workspaceId, traceId: randomUUID(), integrationAccountId: row.id, reason: "poll" },
-      { jobId: `calendar.sync:${row.id}` },
+      // Bucketed per poll window: a retained completed job must never swallow the next poll (BullMQ ignores
+      // `add` for an existing id in any state).
+      { jobId: `calendar.sync:${row.id}:poll:${String(Math.floor(Date.now() / (staleMinutes * 60_000)))}` },
     );
   }
   if (rows.length > 0) deps.logger.info({ accounts: rows.length }, "calendar polling dispatched");

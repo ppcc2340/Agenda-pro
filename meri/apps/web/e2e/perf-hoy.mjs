@@ -1,7 +1,7 @@
 /**
  * "Hoy" load-time measurement (P1-10): 30 loads of /hoy as the perf-seed user (500 tasks / 5 000 events),
  * p50/p75/p95 of navigation start → network idle (server render + plan/events/notifications requests).
- * Usage: pnpm seed:perf && pnpm perf:hoy  (web, api and worker running; optimized web build: `APP_ENV=development pnpm --filter @meri/web build && pnpm --filter @meri/web start`)
+ * Usage: pnpm seed:perf && pnpm perf:hoy  (web, api and worker running; optimized web build: `APP_ENV=development ALLOW_FAKES_ON_PRODUCTION_BUILD=1 pnpm --filter @meri/web build && pnpm --filter @meri/web start`)
  */
 import { chromium } from "@playwright/test";
 

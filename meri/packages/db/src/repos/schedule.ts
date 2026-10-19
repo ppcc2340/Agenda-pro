@@ -1,5 +1,5 @@
 import { and, asc, eq, gte, inArray, isNull, lte, sql } from "drizzle-orm";
-import { scheduleBlocks, tasks } from "../schema";
+import { preferences, scheduleBlocks, tasks } from "../schema";
 import type { WorkspaceTx } from "../workspace";
 import { newId, type WorkspaceId } from "../ids";
 
@@ -141,17 +141,33 @@ export async function updateBlock(
   return row ? toView(row) : null;
 }
 
-/** Current plan version = max(plan_version) over the workspace blocks (0 when there is no plan yet). */
+/** Current plan version, stored explicitly in `preferences.plan_version` (0 when there is no plan yet). */
 export async function currentPlanVersion(tx: WorkspaceTx, workspaceId: WorkspaceId): Promise<number> {
-  const rows = await tx
-    .select({ v: sql<number>`coalesce(max(${scheduleBlocks.planVersion}), 0)` })
-    .from(scheduleBlocks)
-    .where(eq(scheduleBlocks.workspaceId, workspaceId));
-  return rows[0]?.v ?? 0;
+  const row = await tx.query.preferences.findFirst({
+    columns: { planVersion: true },
+    where: eq(preferences.workspaceId, workspaceId),
+  });
+  return row?.planVersion ?? 0;
 }
 
-/** Blocks whose task is completed or deleted: safe to remove (ADR 0003). */
-export async function orphanBlockIds(tx: WorkspaceTx, workspaceId: WorkspaceId): Promise<string[]> {
+/** Sets the plan version in the same transaction as the plan change (bump on apply/accept, restore on undo). */
+export async function setPlanVersion(
+  tx: WorkspaceTx,
+  workspaceId: WorkspaceId,
+  version: number,
+): Promise<void> {
+  await tx.update(preferences).set({ planVersion: version }).where(eq(preferences.workspaceId, workspaceId));
+}
+
+/**
+ * Blocks safe to remove (ADR 0003 §1): their task is completed or deleted, or the block is already in the past,
+ * not done and not pinned (the planner re-plans the remaining work).
+ */
+export async function orphanBlockIds(
+  tx: WorkspaceTx,
+  workspaceId: WorkspaceId,
+  now: Date,
+): Promise<string[]> {
   const rows = await tx
     .select({ id: scheduleBlocks.id })
     .from(scheduleBlocks)
@@ -159,8 +175,8 @@ export async function orphanBlockIds(tx: WorkspaceTx, workspaceId: WorkspaceId):
     .where(
       and(
         eq(scheduleBlocks.workspaceId, workspaceId),
-        sql`(${tasks.status} = 'completed' or ${tasks.deletedAt} is not null)`,
         isNull(scheduleBlocks.completedAt),
+        sql`(${tasks.status} = 'completed' or ${tasks.deletedAt} is not null or (${scheduleBlocks.endsAt} < ${now.toISOString()}::timestamptz and not ${scheduleBlocks.pinned}))`,
       ),
     );
   return rows.map((r) => r.id);

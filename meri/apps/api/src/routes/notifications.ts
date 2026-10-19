@@ -4,6 +4,7 @@ import { z } from "zod";
 import { listNotifications, markNotificationRead, type NotificationView } from "@meri/db";
 import { ApiError } from "../errors";
 import { requireSession, sessionOf } from "../plugins/session";
+import { boolParam } from "./tasks";
 
 const NotificationJson = z.object({
   id: z.string(),
@@ -39,7 +40,7 @@ export function notificationRoutes(
         querystring: z.object({
           cursor: z.string().uuid().optional(),
           limit: z.coerce.number().int().min(1).max(100).default(20),
-          unreadOnly: z.coerce.boolean().optional(),
+          unreadOnly: boolParam,
         }),
         response: { 200: z.object({ items: z.array(NotificationJson), nextCursor: z.string().nullable() }) },
       },

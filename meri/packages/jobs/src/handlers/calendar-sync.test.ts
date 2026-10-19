@@ -39,7 +39,7 @@ describe("calendar.sync (F-04)", () => {
       LOCAL_MASTER_KEY: Buffer.alloc(32, 5).toString("base64"),
     });
     integrations = createIntegrations(
-      { env, modes: resolveModes(env), isProduction: false, isTest: true },
+      { env, modes: resolveModes(env), isProduction: false, isTest: true, fakesOnProductionBuild: false },
       { now: () => NOW },
     );
     deps = {
@@ -167,5 +167,19 @@ describe("calendar.sync (F-04)", () => {
       }),
     );
     expect(events.length).toBeGreaterThan(0);
+  });
+
+  it("marks the account degraded on RateLimited (retryable, rethrown) and heals on the next successful sync", async () => {
+    const cal = integrations.calendarFor(email) as FakeCalendar;
+    const original = cal.listCalendars.bind(cal);
+    cal.listCalendars = () => Promise.reject(new IntegrationError("RateLimited", "google-calendar", "429"));
+    await expect(syncCalendarAccount(deps, ws, accountId)).rejects.toBeInstanceOf(IntegrationError);
+    cal.listCalendars = original;
+    let accounts = await withWorkspace(handle.db, ws, (tx) => listIntegrationAccounts(tx, ws));
+    expect(accounts[0]).toMatchObject({ status: "degraded", lastError: "RateLimited" });
+    const healed = await syncCalendarAccount(deps, ws, accountId);
+    expect(healed.status).toBe("synced");
+    accounts = await withWorkspace(handle.db, ws, (tx) => listIntegrationAccounts(tx, ws));
+    expect(accounts[0]).toMatchObject({ status: "healthy", lastError: null });
   });
 });

@@ -1,5 +1,5 @@
 import { and, asc, eq, isNull } from "drizzle-orm";
-import { clients } from "../schema";
+import { clients, projects } from "../schema";
 import type { WorkspaceTx } from "../workspace";
 import type { WorkspaceId } from "../ids";
 
@@ -18,4 +18,12 @@ export async function listClients(tx: WorkspaceTx, workspaceId: WorkspaceId): Pr
     .where(and(eq(clients.workspaceId, workspaceId), isNull(clients.deletedAt), isNull(clients.archivedAt)))
     .orderBy(asc(clients.name));
   return rows;
+}
+
+export async function projectExists(tx: WorkspaceTx, workspaceId: WorkspaceId, id: string): Promise<boolean> {
+  const row = await tx.query.projects.findFirst({
+    columns: { id: true },
+    where: and(eq(projects.workspaceId, workspaceId), eq(projects.id, id)),
+  });
+  return row !== undefined;
 }

@@ -1,4 +1,4 @@
-import { randomBytes } from "node:crypto";
+import { randomBytes, timingSafeEqual } from "node:crypto";
 import type { FastifyInstance } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import { z } from "zod";
@@ -56,6 +56,12 @@ const EventView = z.object({
 /** OAuth `state` cookie: short-lived, HttpOnly; verified on callback (docs/06 §7 redirect validation). */
 const STATE_COOKIE = "meri.oauth.state";
 const IdParams = z.object({ id: z.string().uuid() });
+
+const safeEqual = (a: string, b: string): boolean => {
+  const ab = Buffer.from(a);
+  const bb = Buffer.from(b);
+  return ab.length === bb.length && timingSafeEqual(ab, bb);
+};
 
 export interface IntegrationRoutesOptions {
   now: () => Date;
@@ -322,7 +328,7 @@ export function integrationRoutes(
     async (request, reply) => {
       const token = request.headers["x-goog-channel-token"];
       const channelId = request.headers["x-goog-channel-id"];
-      if (typeof token !== "string" || token !== options.calendarChannelToken)
+      if (typeof token !== "string" || !safeEqual(token, options.calendarChannelToken))
         throw new ApiError("FORBIDDEN", "Invalid channel token.");
       // Channel id format: "<workspaceId>:<integrationAccountId>" (set when the watch is created, phase 1 polling fallback otherwise).
       const [workspaceId, accountId] = typeof channelId === "string" ? channelId.split(":") : [];
@@ -338,7 +344,10 @@ export function integrationRoutes(
             integrationAccountId: parsed.data.accountId,
             reason: "webhook",
           },
-          { jobId: `calendar.sync:${parsed.data.accountId}:webhook` },
+          // Bucketed id: pushes within 15 s collapse, later ones are never dropped by a retained completed job.
+          {
+            jobId: `calendar.sync:${parsed.data.accountId}:webhook:${String(Math.floor(Date.now() / 15_000))}`,
+          },
         );
       }
       return reply.status(204).send(null);

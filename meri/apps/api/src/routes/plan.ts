@@ -3,6 +3,8 @@ import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import { z } from "zod";
 import {
   audit,
+  currentPlanVersion,
+  expirePending,
   getBlock,
   getTask,
   getTasksByIds,
@@ -104,6 +106,8 @@ const ReplanResultView = z.object({
   unscheduled: z.number(),
   calendar: z.object({ created: z.number(), deleted: z.number() }).nullable(),
   alerts: z.number(),
+  /** Audit entry of an applied safe diff (undo target); null otherwise. */
+  auditId: z.string().nullable(),
 });
 
 const IdParams = z.object({ id: z.string().uuid() });
@@ -149,6 +153,8 @@ export function planRoutes(app: FastifyInstance, options: PlanRoutesOptions, don
       const from = request.query.from ? new Date(request.query.from) : new Date(now.getTime() - 86_400_000);
       const to = request.query.to ? new Date(request.query.to) : new Date(now.getTime() + 14 * 86_400_000);
       if (from >= to) throw new ApiError("VALIDATION_FAILED", "`from` must be before `to`.");
+      if (to.getTime() - from.getTime() > 62 * 86_400_000)
+        throw new ApiError("VALIDATION_FAILED", "Range must be at most 62 days.");
       return request.withWorkspace(async (tx) => {
         const blocks = await listBlocks(tx, ws, { from, to });
         const run = await latestPlanRun(tx, ws);
@@ -165,7 +171,7 @@ export function planRoutes(app: FastifyInstance, options: PlanRoutesOptions, don
         ];
         const tasks = await getTasksByIds(tx, ws, [...new Set(taskIds)]);
         return {
-          planVersion: run?.planVersion ?? 0,
+          planVersion: await currentPlanVersion(tx, ws),
           generatedAt: run ? run.createdAt.toISOString() : null,
           blocks: blocks.map(serializeBlock),
           tasks: [...tasks.values()].map(serializeTask),
@@ -194,6 +200,8 @@ export function planRoutes(app: FastifyInstance, options: PlanRoutesOptions, don
     "/v1/plan/replan",
     {
       preHandler: requireSession,
+      // The planner runs inline: a tight per-user budget on top of the global limit (docs/12 §5).
+      config: { rateLimit: { max: 10, timeWindow: "1 minute" } },
       schema: { tags: ["plan"], response: { 200: ReplanResultView } },
     },
     async (request) => {
@@ -250,12 +258,14 @@ export function planRoutes(app: FastifyInstance, options: PlanRoutesOptions, don
     async (request) => {
       const session = sessionOf(request);
       const ws = session.workspaceId;
+      const now = options.deps.now();
       const block = await request.withWorkspace(async (tx) => {
         const before = await getBlock(tx, ws, request.params.id);
         if (!before) throw new ApiError("NOT_FOUND", "Block not found.");
         if (before.pinned === request.body.pinned) return before;
         const after = await updateBlock(tx, ws, before.id, { pinned: request.body.pinned });
         if (!after) throw new ApiError("NOT_FOUND", "Block not found.");
+        await expirePending(tx, ws, "reschedule", now); // the pending diff no longer describes this plan
         await audit(
           tx,
           { workspaceId: ws, actor: "user", actorUserId: session.userId },
@@ -296,6 +306,7 @@ export function planRoutes(app: FastifyInstance, options: PlanRoutesOptions, don
         if (before.completedAt) throw new ApiError("CONFLICT", "Block already completed.");
         const block = await updateBlock(tx, ws, before.id, { completedAt: now });
         if (!block) throw new ApiError("NOT_FOUND", "Block not found.");
+        await expirePending(tx, ws, "reschedule", now);
         const task = await getTask(tx, ws, before.taskId);
         let updated = task;
         if (request.body.taskDone && task && task.status !== "completed") {

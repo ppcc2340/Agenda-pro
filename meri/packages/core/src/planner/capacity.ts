@@ -133,7 +133,12 @@ export function buildDays(n: Normalized): DayState[] {
  * fall inside [from, to). Used for slack: how much work time exists between a
  * task's planned finish and its deadline.
  */
-export function grossCapacityBetween(days: readonly DayState[], prefs: NormalizedPreferences, from: number, to: number): number {
+export function grossCapacityBetween(
+  days: readonly DayState[],
+  prefs: NormalizedPreferences,
+  from: number,
+  to: number,
+): number {
   let total = 0;
   for (const day of days) total += overlapMinutes(day.baseFree, from, to);
   return Math.floor(total * capacityFactor(prefs));

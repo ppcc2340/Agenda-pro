@@ -2,13 +2,7 @@
  * Step 1 of docs/04: validate the raw input with Zod, convert instants to epoch
  * minutes, resolve dependency edges and detect circular dependencies.
  */
-import {
-  isValidTimeZone,
-  isoToMinutes,
-  parseWallTime,
-  wallToMinutes,
-  type WallTime,
-} from "./calendar-math";
+import { isValidTimeZone, isoToMinutes, parseWallTime, wallToMinutes, type WallTime } from "./calendar-math";
 import { PlanInput, type ExistingBlock, type PlannerTask } from "./types";
 
 export class PlannerInputError extends Error {
@@ -156,7 +150,10 @@ export function findCycleMembers(tasks: readonly Pick<PlannerTask, "id" | "block
   return members;
 }
 
-function normalizeTasks(input: PlanInput, issues: string[]): Pick<Normalized, "tasks" | "completedIds" | "cycleIds"> {
+function normalizeTasks(
+  input: PlanInput,
+  issues: string[],
+): Pick<Normalized, "tasks" | "completedIds" | "cycleIds"> {
   const seen = new Set<string>();
   for (const task of input.tasks) {
     if (seen.has(task.id)) issues.push(`tasks: duplicate id "${task.id}"`);
@@ -217,7 +214,11 @@ export function normalize(raw: unknown): Normalized {
   const taskParts = normalizeTasks(input, issues);
   const fixedEvents = input.fixedEvents
     .filter((e) => e.busy)
-    .map((e) => ({ id: e.id, start: isoToMinutes(e.startsAt, "floor"), end: isoToMinutes(e.endsAt, "ceil") }));
+    .map((e) => ({
+      id: e.id,
+      start: isoToMinutes(e.startsAt, "floor"),
+      end: isoToMinutes(e.endsAt, "ceil"),
+    }));
   input.fixedEvents.forEach((e, index) => {
     if (Date.parse(e.startsAt) > Date.parse(e.endsAt)) {
       issues.push(`fixedEvents.${String(index)}: startsAt must not be after endsAt`);

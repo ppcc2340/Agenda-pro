@@ -1,4 +1,4 @@
-import { and, asc, eq, gte, lte, sql } from "drizzle-orm";
+import { and, asc, eq, gte, inArray, lte } from "drizzle-orm";
 import { calendarEvents, integrationAccounts, scheduleBlocks, syncState } from "../schema";
 import type { WorkspaceTx } from "../workspace";
 import { newId, type WorkspaceId } from "../ids";
@@ -252,6 +252,39 @@ export async function upsertCalendarEvent(
   return toEvent(row);
 }
 
+/** Known etags for a batch of external ids (so a sync counts only real changes). */
+export async function findCalendarEventEtags(
+  tx: WorkspaceTx,
+  workspaceId: WorkspaceId,
+  accountId: string,
+  externalIds: string[],
+): Promise<Map<string, string | null>> {
+  const map = new Map<string, string | null>();
+  if (externalIds.length === 0) return map;
+  const rows = await tx
+    .select({ externalId: calendarEvents.externalId, etag: calendarEvents.etag })
+    .from(calendarEvents)
+    .where(
+      and(
+        eq(calendarEvents.workspaceId, workspaceId),
+        eq(calendarEvents.integrationAccountId, accountId),
+        inArray(calendarEvents.externalId, externalIds),
+      ),
+    );
+  for (const r of rows) map.set(r.externalId, r.etag);
+  return map;
+}
+
+export async function deleteCalendarEventById(
+  tx: WorkspaceTx,
+  workspaceId: WorkspaceId,
+  id: string,
+): Promise<void> {
+  await tx
+    .delete(calendarEvents)
+    .where(and(eq(calendarEvents.workspaceId, workspaceId), eq(calendarEvents.id, id)));
+}
+
 export async function deleteCalendarEventByExternalId(
   tx: WorkspaceTx,
   workspaceId: WorkspaceId,
@@ -310,7 +343,3 @@ export async function getCalendarEvent(
   });
   return row ? toEvent(row) : null;
 }
-
-/** Accounts of a provider that are due for a poll (healthy and not synced within `olderThan`). Admin dispatcher input. */
-export const pollableAccountsSql = (provider: "google", olderThan: Date) =>
-  sql`select id, workspace_id as "workspaceId" from integration_accounts where provider = ${provider} and status in ('healthy','degraded') and (last_sync_at is null or last_sync_at < ${olderThan}) order by last_sync_at nulls first`;

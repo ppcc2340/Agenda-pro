@@ -121,8 +121,18 @@ export function seedSampleMeetings(calendar: FakeCalendar, now: Date): void {
   const iso = (d: Date) => d.toISOString();
   const samples: { title: string; start: Date; minutes: number; attendees: string[] }[] = [
     { title: "Llamada semanal con Acme", start: at(0, 10, 30), minutes: 45, attendees: ["ana@acme.com"] },
-    { title: "Reunión de estrategia con Estudio Norte", start: at(1, 14, 30), minutes: 60, attendees: ["laura@estudionorte.cl"] },
-    { title: "Reunión de cierre trimestral", start: at(3, 9, 0), minutes: 90, attendees: ["carlos@acme.com", "ana@acme.com"] },
+    {
+      title: "Reunión de estrategia con Estudio Norte",
+      start: at(1, 14, 30),
+      minutes: 60,
+      attendees: ["laura@estudionorte.cl"],
+    },
+    {
+      title: "Reunión de cierre trimestral",
+      start: at(3, 9, 0),
+      minutes: 90,
+      attendees: ["carlos@acme.com", "ana@acme.com"],
+    },
   ];
   for (const s of samples) {
     calendar.addExternalEvent({

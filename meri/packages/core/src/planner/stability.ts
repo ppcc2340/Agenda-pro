@@ -148,12 +148,22 @@ export function shouldMoveKeptBlocks(
   const kept = blocksOf(state, task.id).filter((b) => b.kept);
   if (kept.length === 0) return false;
   // Alternative A: keep the blocks and place only the rest.
-  const keepResult = placeTask(state, n, { task, remaining: remainingOf(state, task), earliest, deadline: null });
+  const keepResult = placeTask(state, n, {
+    task,
+    remaining: remainingOf(state, task),
+    earliest,
+    deadline: null,
+  });
   const keepFinish = finishOf(state, task.id) ?? n.horizonEnd;
   for (const b of keepResult.placed) removeBlock(state, n, b);
   // Alternative B: release the kept blocks and place everything fresh.
   for (const b of kept) removeBlock(state, n, b);
-  const freshResult = placeTask(state, n, { task, remaining: remainingOf(state, task), earliest, deadline: null });
+  const freshResult = placeTask(state, n, {
+    task,
+    remaining: remainingOf(state, task),
+    earliest,
+    deadline: null,
+  });
   const freshFinish = finishOf(state, task.id) ?? n.horizonEnd;
   for (const b of freshResult.placed) removeBlock(state, n, b);
   for (const b of kept) addBlock(state, n, b);

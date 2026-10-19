@@ -3,6 +3,7 @@
  * the provider contract refuses to modify third-party events (docs/07).
  */
 import {
+  deleteCalendarEventById,
   getCalendarEvent,
   listIntegrationAccounts,
   updateBlock,
@@ -11,9 +12,15 @@ import {
   type ScheduleBlockView,
   type WorkspaceId,
 } from "@meri/db";
-import type { CalendarProvider } from "@meri/integrations";
+import { IntegrationError, type CalendarProvider } from "@meri/integrations";
 import { readTokens } from "./calendar-sync";
 import type { HandlerDeps } from "./context";
+
+/** Never log provider error objects whole: a live client may attach request headers (docs/06). */
+const describe = (err: unknown) =>
+  err instanceof IntegrationError
+    ? { kind: err.kind, message: err.message }
+    : { message: err instanceof Error ? err.message : String(err) };
 
 export interface CalendarWriteResult {
   created: number;
@@ -55,7 +62,7 @@ export async function writeBlocksToCalendar(
   try {
     calendarId = await target.calendar.ensureMeriCalendar();
   } catch (err) {
-    deps.logger.warn({ err, workspaceId }, "meri calendar unavailable; blocks kept locally");
+    deps.logger.warn({ err: describe(err), workspaceId }, "meri calendar unavailable; blocks kept locally");
     return result;
   }
   for (const block of changes.remove) {
@@ -66,9 +73,10 @@ export async function writeBlocksToCalendar(
       );
       if (!event || event.origin !== "meri") continue;
       await target.calendar.deleteMeriEvent(calendarId, event.externalId);
+      await withWorkspace(deps.db, workspaceId, (tx) => deleteCalendarEventById(tx, workspaceId, event.id));
       result.deleted++;
     } catch (err) {
-      deps.logger.warn({ err, blockId: block.id }, "could not delete meri event");
+      deps.logger.warn({ err: describe(err), blockId: block.id }, "could not delete meri event");
     }
   }
   for (const block of changes.create) {
@@ -100,7 +108,7 @@ export async function writeBlocksToCalendar(
       });
       result.created++;
     } catch (err) {
-      deps.logger.warn({ err, blockId: block.id }, "could not create meri event");
+      deps.logger.warn({ err: describe(err), blockId: block.id }, "could not create meri event");
     }
   }
   return result;

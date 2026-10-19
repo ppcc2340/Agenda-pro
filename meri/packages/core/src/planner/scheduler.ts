@@ -11,7 +11,14 @@
  */
 import type { Normalized, NormalizedTask } from "./normalize";
 import { placeTask } from "./placement";
-import { addBlock, blocksOf, finishOf, removeBlock, type ScheduledBlock, type ScheduleState } from "./schedule-state";
+import {
+  addBlock,
+  blocksOf,
+  finishOf,
+  removeBlock,
+  type ScheduledBlock,
+  type ScheduleState,
+} from "./schedule-state";
 import { compareByScore, type ScoredTask } from "./scoring";
 import { MAX_RELEASED_BLOCKS, releaseCandidates, remainingOf, shouldMoveKeptBlocks } from "./stability";
 import type { Weights } from "./weights";
@@ -89,7 +96,13 @@ export function processingOrder(ctx: SchedulerContext): NormalizedTask[] {
 }
 
 /** Places before `deadline` and keeps the result only when everything fits. */
-function tryPlaceBeforeDeadline(state: ScheduleState, n: Normalized, task: NormalizedTask, earliest: number, deadline: number): boolean {
+function tryPlaceBeforeDeadline(
+  state: ScheduleState,
+  n: Normalized,
+  task: NormalizedTask,
+  earliest: number,
+  deadline: number,
+): boolean {
   const result = placeTask(state, n, { task, remaining: remainingOf(state, task), earliest, deadline });
   if (result.unplaced === 0) return true;
   for (const b of result.placed) removeBlock(state, n, b);
@@ -102,7 +115,13 @@ function tryPlaceBeforeDeadline(state: ScheduleState, n: Normalized, task: Norma
  * the task fits; on failure the releases are undone. Released tasks that were
  * already processed are re-placed right away.
  */
-function tryWithReleases(ctx: SchedulerContext, state: ScheduleState, task: NormalizedTask, earliest: number, deadline: number): boolean {
+function tryWithReleases(
+  ctx: SchedulerContext,
+  state: ScheduleState,
+  task: NormalizedTask,
+  earliest: number,
+  deadline: number,
+): boolean {
   const released: ScheduledBlock[] = [];
   const keptReleased = (): number => released.filter((b) => b.kept).length;
   while (released.length < MAX_RELEASED_BLOCKS) {
@@ -130,7 +149,12 @@ function tryWithReleases(ctx: SchedulerContext, state: ScheduleState, task: Norm
  * Places one task's remaining work. The "initial" mode (first visit) may move
  * kept blocks and backtrack; "fill" (re-placements, fixpoint pass) only adds.
  */
-function placeOne(ctx: SchedulerContext, state: ScheduleState, task: NormalizedTask, mode: "initial" | "fill"): void {
+function placeOne(
+  ctx: SchedulerContext,
+  state: ScheduleState,
+  task: NormalizedTask,
+  mode: "initial" | "fill",
+): void {
   const { n } = ctx;
   const facts: TaskFacts = { blocked: false, dependencyAfterDeadline: null };
   ctx.facts.set(task.id, facts);
@@ -160,7 +184,12 @@ function placeOne(ctx: SchedulerContext, state: ScheduleState, task: NormalizedT
   }
   // ...and, for soft deadlines, the rest afterwards so the work is still visible.
   if (task.deadlineType === "soft") {
-    placeTask(state, n, { task, remaining: remainingOf(state, task), earliest: deps.earliest, deadline: null });
+    placeTask(state, n, {
+      task,
+      remaining: remainingOf(state, task),
+      earliest: deps.earliest,
+      deadline: null,
+    });
   }
 }
 
@@ -182,7 +211,11 @@ function fillToFixpoint(ctx: SchedulerContext, state: ScheduleState, order: read
 }
 
 /** Runs the greedy loop over every schedulable task, mutating `state`. */
-export function scheduleAll(ctx: SchedulerContext, state: ScheduleState, order: readonly NormalizedTask[]): void {
+export function scheduleAll(
+  ctx: SchedulerContext,
+  state: ScheduleState,
+  order: readonly NormalizedTask[],
+): void {
   for (const task of order) {
     placeOne(ctx, state, task, "initial");
     ctx.processed.add(task.id);

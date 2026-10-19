@@ -37,9 +37,19 @@ function isLive(def: BlockerDefinition, value: string | undefined): boolean {
  *  - live without its credentials -> fail, citing the variable and the guide;
  *  - production forbids fake/noop and KMS_PROVIDER=local.
  */
-/** Production = APP_ENV when set, otherwise NODE_ENV (D-029). */
-export const isProductionEnv = (env: Pick<Env, "NODE_ENV" | "APP_ENV">): boolean =>
-  (env.APP_ENV ?? env.NODE_ENV) === "production";
+/**
+ * Production = APP_ENV when set, otherwise NODE_ENV (D-029). `staging` counts as production for the fake/KMS
+ * prohibition: only `development`/`test` may run fakes, and on an optimized build (NODE_ENV=production) they also need
+ * the explicit `ALLOW_FAKES_ON_PRODUCTION_BUILD=1`, so a stray APP_ENV can never de-harden a deployment silently.
+ */
+export const isProductionEnv = (env: Pick<Env, "NODE_ENV" | "APP_ENV">): boolean => {
+  const app = env.APP_ENV ?? env.NODE_ENV;
+  return app === "production" || app === "staging";
+};
+
+/** True when fakes run on an optimized build (dev/E2E/demo); apps log a loud warning at startup. */
+export const fakesOnProductionBuild = (env: Pick<Env, "NODE_ENV" | "APP_ENV">): boolean =>
+  env.NODE_ENV === "production" && !isProductionEnv(env);
 
 export function resolveModes(env: Env, blockers: readonly BlockerDefinition[] = BLOCKERS): ResolvedModes {
   const raw = env as unknown as Record<string, unknown>;
@@ -68,10 +78,19 @@ export function resolveModes(env: Env, blockers: readonly BlockerDefinition[] = 
     }
   }
 
+  if (fakesOnProductionBuild(env) && env.ALLOW_FAKES_ON_PRODUCTION_BUILD !== "1") {
+    errors.push(
+      `APP_ENV=${String(env.APP_ENV)} on a production build (NODE_ENV=production) requires ALLOW_FAKES_ON_PRODUCTION_BUILD=1 (never in a real deployment; see docs/blockers/README.md).`,
+    );
+  }
   if (isProductionEnv(env)) {
     const placeholders = (["AUTH_SECRET", "INTERNAL_API_SECRET"] as const).filter((k) =>
       /^change-me/i.test(env[k]),
     );
+    if (/^dev-/.test(env.GOOGLE_CALENDAR_CHANNEL_TOKEN) || env.GOOGLE_CALENDAR_CHANNEL_TOKEN.length < 16)
+      errors.push(
+        "GOOGLE_CALENDAR_CHANNEL_TOKEN must be a random secret of at least 16 characters in production.",
+      );
     if (placeholders.length > 0)
       errors.push(`${placeholders.join(", ")} still hold the .env.example placeholder; set real secrets.`);
     if (!env.AUTH_URL)

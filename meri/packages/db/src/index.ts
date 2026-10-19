@@ -1,6 +1,6 @@
 export * from "./schema";
 export { createDb, pingDb, assertAppRole, type Db, type DbHandle } from "./client";
-export { withWorkspace, type WorkspaceTx } from "./workspace";
+export { lockWorkspace, withWorkspace, type WorkspaceTx } from "./workspace";
 export * from "./ids";
 export { runMigrations, ensureDevRoles } from "./migrate";
 export {
@@ -42,7 +42,6 @@ export {
   updateTask,
   softDeleteTask,
   replaceDependencies,
-  setTaskStatuses,
   applyTaskRisks,
   type TaskStatus,
   type TaskRisk,
@@ -63,8 +62,15 @@ export {
   type ProposalView,
   type NewProposal,
 } from "./repos/proposals";
-export { getIdempotentResponse, storeIdempotentResponse, type StoredResponse } from "./repos/idempotency";
-export { listClients, type ClientSummary } from "./repos/clients";
+export {
+  getIdempotentResponse,
+  storeIdempotentResponse,
+  reserveIdempotencyKey,
+  finalizeIdempotencyKey,
+  releaseIdempotencyKey,
+  type StoredResponse,
+} from "./repos/idempotency";
+export { listClients, projectExists, type ClientSummary } from "./repos/clients";
 export * from "./repos/integrations";
 export * from "./repos/schedule";
 export * from "./repos/notifications";

@@ -12,6 +12,10 @@ loadDotenv("../../.env");
 async function main(): Promise<void> {
   const config = loadConfig(process.env);
   const logger = createLogger({ name: "api", level: config.env.LOG_LEVEL, pretty: !config.isProduction });
+  if (config.fakesOnProductionBuild)
+    logger.warn(
+      "fake adapters on a production build (ALLOW_FAKES_ON_PRODUCTION_BUILD=1): never use this in a deployment",
+    );
   const now = config.env.DEMO_NOW ? () => new Date(config.env.DEMO_NOW ?? 0) : () => new Date();
   const handle = createDb(config.env.DATABASE_URL);
   await assertAppRole(handle.db);

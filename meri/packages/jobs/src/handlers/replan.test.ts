@@ -4,6 +4,9 @@ import {
   bootstrapAccount,
   createDb,
   createTask,
+  currentPlanVersion,
+  insertBlocks,
+  setPlanVersion,
   getAuditEntry,
   getProposal,
   latestPlanRun,
@@ -53,7 +56,7 @@ describe("planner.replan, accept and undo (ADR 0003)", () => {
       LOCAL_MASTER_KEY: Buffer.alloc(32, 7).toString("base64"),
     });
     integrations = createIntegrations(
-      { env, modes: resolveModes(env), isProduction: false, isTest: true },
+      { env, modes: resolveModes(env), isProduction: false, isTest: true, fakesOnProductionBuild: false },
       { now: () => NOW },
     );
     deps = {
@@ -284,9 +287,141 @@ describe("planner.replan, accept and undo (ADR 0003)", () => {
     expect(blocks.some((b) => b.taskId === done.id)).toBe(false);
     const open = await withWorkspace(handle.db, ws, (tx) => listOpenTasks(tx, ws));
     const urgent = open.find((t) => t.title === "Entrega urgente");
-    expect(urgent?.status === "at_risk" || result.conflicts > 0).toBe(true);
+    expect(urgent?.status).toBe("at_risk");
+    expect(urgent?.risk?.cause).toBe("NO_CAPACITY");
+    // Risk is rule-computed (F-03 AC2): once the deadline is realistic the task leaves at_risk.
+    await withWorkspace(handle.db, ws, (tx) =>
+      updateTask(
+        tx,
+        ws,
+        urgent?.id ?? ("" as never),
+        { dueAt: new Date(NOW.getTime() + 10 * 86_400_000).toISOString(), estimateMinutes: 60 },
+        NOW,
+      ),
+    );
+    await runReplan(deps, ws, { reason: "tasks_changed" });
+    const relaxed = (await withWorkspace(handle.db, ws, (tx) => listOpenTasks(tx, ws))).find(
+      (t) => t.id === urgent?.id,
+    );
+    expect(relaxed?.status).toBe("scheduled");
+    expect(relaxed?.risk).toBeNull();
     const notes = await withWorkspace(handle.db, ws, (tx) => listNotifications(tx, ws, { limit: 20 }));
     // maxAlertsPerDay = 2 for this workspace: never more than two alerts a day, however noisy the run.
     expect(notes.items.filter((n) => n.day === "2026-10-19").length).toBeLessThanOrEqual(2);
+  });
+
+  it("accept rejects a stale basePlanVersion and leaves the proposal pending", async () => {
+    await withWorkspace(handle.db, ws, (tx) =>
+      createTask(tx, ws, { title: "Tarea para proponer", kind: "shallow", estimateMinutes: 30 }, NOW),
+    );
+    await runReplan(deps, ws, { reason: "tasks_changed" });
+    const [first] = (await blocksOf(ws)).filter((b) => b.completedAt === null && b.startsAt > NOW);
+    if (!first) throw new Error("expected a live block");
+    await withWorkspace(handle.db, ws, async (tx) => {
+      const [account] = await listIntegrationAccounts(tx, ws);
+      await upsertCalendarEvent(
+        tx,
+        ws,
+        {
+          integrationAccountId: account?.id ?? "",
+          externalId: "ext-meeting-2",
+          etag: "1",
+          title: "Reunión imprevista",
+          startsAt: new Date(first.startsAt.getTime() + 60_000),
+          endsAt: new Date(first.startsAt.getTime() + 10 * 60_000),
+          allDay: false,
+          attendees: [],
+          busy: true,
+          origin: "external",
+        },
+        NOW,
+      );
+    });
+    const proposed = await runReplan(deps, ws, { reason: "calendar_changed" });
+    expect(proposed.outcome).toBe("proposed");
+    // Someone bumps the plan version behind the proposal's back (a newer applied plan).
+    await withWorkspace(handle.db, ws, async (tx) => {
+      const version = await currentPlanVersion(tx, ws);
+      await setPlanVersion(tx, ws, version + 1);
+      await insertBlocks(
+        tx,
+        ws,
+        [
+          {
+            taskId: first.taskId,
+            startsAt: new Date(NOW.getTime() + 5 * 86_400_000),
+            endsAt: new Date(NOW.getTime() + 5 * 86_400_000 + 1_800_000),
+            reason: [],
+          },
+        ],
+        version + 1,
+        NOW,
+      );
+    });
+    await expect(acceptProposal(deps, ws, proposed.proposalId ?? "", userId)).rejects.toMatchObject({
+      code: "CONFLICT",
+      message: expect.stringContaining("Replan first") as string,
+    });
+    const still = await withWorkspace(handle.db, ws, (tx) => getProposal(tx, ws, proposed.proposalId ?? ""));
+    expect(still?.status).toBe("pending");
+  });
+
+  it("undo of an older plan change conflicts while a newer plan exists; third-party events stay byte-identical", async () => {
+    const cal = integrations.calendarFor(email) as FakeCalendar;
+    const foreignBefore = [...cal.events.values()].filter((e) => !e.meri).map((e) => ({ ...e }));
+    const generated = (await auditOf(ws)).items.filter((e) => e.action === "plan.generated" && !e.undoneAt);
+    const older = generated[generated.length - 1];
+    const newest = generated[0];
+    if (!older || !newest || older.id === newest.id) throw new Error("expected two applied plans");
+    await expect(undoAuditEntry(deps, ws, older.id, userId)).rejects.toMatchObject({ code: "CONFLICT" });
+    const foreignAfter = [...cal.events.values()].filter((e) => !e.meri).map((e) => ({ ...e }));
+    expect(foreignAfter).toEqual(foreignBefore);
+    expect((await auditOf(ws)).items.filter((e) => e.action.startsWith("integration."))).toEqual([]);
+  });
+
+  it("serializes concurrent replans of one workspace: no duplicate blocks or versions", async () => {
+    const fresh = (
+      await bootstrapAccount(handle.db, { email: `replan-c-${Date.now().toString(36)}@test.local`, now: NOW })
+    ).workspaceId;
+    await withWorkspace(handle.db, fresh, async (tx) => {
+      await updatePreferences(tx, fresh, { timezone: "Europe/Madrid" }, { now: NOW });
+      await createTask(tx, fresh, { title: "Una", kind: "shallow", estimateMinutes: 30 }, NOW);
+      await createTask(tx, fresh, { title: "Dos", kind: "deep", estimateMinutes: 90 }, NOW);
+    });
+    const results = await Promise.all([
+      runReplan(deps, fresh, { reason: "tasks_changed" }),
+      runReplan(deps, fresh, { reason: "calendar_changed" }),
+      runReplan(deps, fresh, { reason: "manual" }),
+    ]);
+    expect(results.filter((r) => r.outcome === "applied")).toHaveLength(1);
+    expect(results.filter((r) => r.outcome === "noop")).toHaveLength(2);
+    const blocks = await blocksOf(fresh);
+    const perTask = new Map<string, number>();
+    for (const b of blocks) perTask.set(b.taskId, (perTask.get(b.taskId) ?? 0) + 1);
+    expect([...perTask.values()].every((n) => n === 1)).toBe(true);
+    expect(await withWorkspace(handle.db, fresh, (tx) => currentPlanVersion(tx, fresh))).toBe(1);
+  });
+
+  it("a removal-only safe diff bumps the explicit version and can be undone (restores the block)", async () => {
+    const fresh = (
+      await bootstrapAccount(handle.db, { email: `replan-r-${Date.now().toString(36)}@test.local`, now: NOW })
+    ).workspaceId;
+    const taskId = await withWorkspace(handle.db, fresh, async (tx) => {
+      await updatePreferences(tx, fresh, { timezone: "Europe/Madrid" }, { now: NOW });
+      return (await createTask(tx, fresh, { title: "Breve", kind: "shallow", estimateMinutes: 30 }, NOW)).id;
+    });
+    expect((await runReplan(deps, fresh, { reason: "manual" })).planVersion).toBe(1);
+    await withWorkspace(handle.db, fresh, (tx) =>
+      updateTask(tx, fresh, taskId, { status: "completed" }, NOW),
+    );
+    const removal = await runReplan(deps, fresh, { reason: "tasks_changed" });
+    expect(removal).toMatchObject({ outcome: "applied", planVersion: 2, applied: { added: 0, removed: 1 } });
+    expect(await blocksOf(fresh)).toEqual([]);
+    // Undo the removal: the explicit version makes the entry current even though no block carries v2.
+    await withWorkspace(handle.db, fresh, (tx) => updateTask(tx, fresh, taskId, { status: "pending" }, NOW));
+    const undone = await undoAuditEntry(deps, fresh, removal.auditId ?? "", userId);
+    expect(undone.action).toBe("plan.generated");
+    expect((await blocksOf(fresh)).map((b) => b.taskId)).toEqual([taskId]);
+    expect(await withWorkspace(handle.db, fresh, (tx) => currentPlanVersion(tx, fresh))).toBe(1);
   });
 });

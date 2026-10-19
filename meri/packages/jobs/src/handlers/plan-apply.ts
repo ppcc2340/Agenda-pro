@@ -7,13 +7,16 @@ import {
   deleteBlocks,
   expirePending,
   getAuditEntry,
+  getBlocksByIds,
   getPreferences,
   getProposal,
   getTask,
   getTasksByIds,
   insertBlocks,
   listOpenTasks,
+  lockWorkspace,
   resolveProposal,
+  setPlanVersion,
   softDeleteTask,
   updateBlock,
   updateTask,
@@ -25,9 +28,10 @@ import {
   type WorkspaceId,
   type WorkspaceTx,
 } from "@meri/db";
+import { z } from "zod";
 import type { HandlerDeps } from "./context";
 import { writeBlocksToCalendar } from "./meri-calendar";
-import type { ReschedulePayload } from "./replan";
+import { ReschedulePayloadSchema } from "./replan";
 
 export class PlanApplyError extends Error {
   constructor(
@@ -49,7 +53,6 @@ const serializeBlock = (b: ScheduleBlockView) => ({
   calendarEventId: b.calendarEventId,
   planVersion: b.planVersion,
 });
-type SerializedBlock = ReturnType<typeof serializeBlock>;
 
 async function titlesFor(
   tx: WorkspaceTx,
@@ -77,11 +80,14 @@ export async function acceptProposal(
 ): Promise<AcceptResult> {
   const now = deps.now();
   const applied = await withWorkspace(deps.db, workspaceId, async (tx) => {
+    await lockWorkspace(tx, workspaceId);
     const proposal = await getProposal(tx, workspaceId, proposalId);
     if (!proposal || proposal.kind !== "reschedule")
       throw new PlanApplyError("NOT_FOUND", "Proposal not found.");
     if (proposal.status !== "pending") throw new PlanApplyError("CONFLICT", "Proposal is no longer pending.");
-    const payload = proposal.payload as unknown as ReschedulePayload;
+    const parsed = ReschedulePayloadSchema.safeParse(proposal.payload);
+    if (!parsed.success) throw new PlanApplyError("VALIDATION_FAILED", "Proposal payload is not readable.");
+    const payload = parsed.data;
     const base = await currentPlanVersion(tx, workspaceId);
     if (payload.basePlanVersion !== base) {
       throw new PlanApplyError(
@@ -91,6 +97,28 @@ export async function acceptProposal(
     }
     const planVersion = base + 1;
     const removeIds = [...payload.removed.map((r) => r.blockId), ...payload.moved.map((m) => m.blockId)];
+    // Every block the diff touches must still exist, unchanged and unpinned; otherwise the diff is stale.
+    const current = new Map((await getBlocksByIds(tx, workspaceId, removeIds)).map((b) => [b.id, b]));
+    const intervals = [
+      ...payload.removed.map((r) => ({ id: r.blockId, startsAt: r.startsAt, endsAt: r.endsAt })),
+      ...payload.moved.map((m) => ({ id: m.blockId, startsAt: m.from.startsAt, endsAt: m.from.endsAt })),
+    ];
+    for (const i of intervals) {
+      const b = current.get(i.id);
+      if (
+        !b ||
+        b.pinned ||
+        b.completedAt ||
+        b.startsAt.toISOString() !== i.startsAt ||
+        b.endsAt.toISOString() !== i.endsAt
+      ) {
+        throw new PlanApplyError(
+          "CONFLICT",
+          "A block in this proposal changed (pinned, done or moved). Replan first.",
+        );
+      }
+    }
+    await setPlanVersion(tx, workspaceId, planVersion);
     const removed = await deleteBlocks(tx, workspaceId, removeIds);
     const open = new Set<string>((await listOpenTasks(tx, workspaceId)).map((t) => t.id));
     const toInsert = [
@@ -122,7 +150,14 @@ export async function acceptProposal(
       planVersion,
       now,
     );
-    await resolveProposal(tx, workspaceId, proposalId, { status: "confirmed", action: "accepted" }, now);
+    const resolved = await resolveProposal(
+      tx,
+      workspaceId,
+      proposalId,
+      { status: "confirmed", action: "accepted" },
+      now,
+    );
+    if (!resolved) throw new PlanApplyError("CONFLICT", "Proposal is no longer pending.");
     const auditId = await audit(
       tx,
       { workspaceId, actor: "user", actorUserId },
@@ -172,11 +207,21 @@ export interface UndoResult {
   calendar: { created: number; deleted: number } | null;
 }
 
-interface PlanAuditShape {
-  planVersion: number;
-  added?: SerializedBlock[];
-  removed?: SerializedBlock[];
-}
+const SerializedBlockSchema = z.object({
+  id: z.string(),
+  taskId: z.string(),
+  startsAt: z.string(),
+  endsAt: z.string(),
+  pinned: z.boolean(),
+  reason: z.array(z.object({ code: z.string(), params: z.record(z.unknown()) })),
+  calendarEventId: z.string().nullable(),
+  planVersion: z.number(),
+});
+const PlanAuditSchema = z.object({
+  planVersion: z.number().int().nonnegative(),
+  added: z.array(SerializedBlockSchema).optional(),
+  removed: z.array(SerializedBlockSchema).optional(),
+});
 
 async function undoPlan(
   tx: WorkspaceTx,
@@ -184,12 +229,17 @@ async function undoPlan(
   entry: AuditEntry,
   now: Date,
 ): Promise<{ create: ScheduleBlockView[]; remove: ScheduleBlockView[] }> {
-  const after = entry.after as PlanAuditShape;
-  const before = entry.before as PlanAuditShape;
+  const afterParsed = PlanAuditSchema.safeParse(entry.after);
+  const beforeParsed = PlanAuditSchema.safeParse(entry.before);
+  if (!afterParsed.success || !beforeParsed.success)
+    throw new PlanApplyError("VALIDATION_FAILED", "Entry has no restorable plan state.");
+  const after = afterParsed.data;
+  const before = beforeParsed.data;
   const current = await currentPlanVersion(tx, workspaceId);
   if (after.planVersion !== current) {
     throw new PlanApplyError("CONFLICT", "A newer plan exists; undo the most recent plan change first.");
   }
+  await setPlanVersion(tx, workspaceId, before.planVersion);
   const remove = await deleteBlocks(
     tx,
     workspaceId,
@@ -243,6 +293,7 @@ export async function undoAuditEntry(
 ): Promise<UndoResult> {
   const now = deps.now();
   const done = await withWorkspace(deps.db, workspaceId, async (tx) => {
+    await lockWorkspace(tx, workspaceId);
     const entry = await getAuditEntry(tx, workspaceId, auditId);
     if (!entry) throw new PlanApplyError("NOT_FOUND", "Audit entry not found.");
     if (entry.undoOfAuditId)

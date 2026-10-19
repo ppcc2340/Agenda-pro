@@ -47,7 +47,7 @@ Reglas (las implementa `packages/config` en la Fase 0):
 - En `fake`, la app usa los adaptadores falsos y **nunca** llama a servicios externos.
 - En `live`, si falta una credencial la app **no arranca** y el error indica qué variable falta y qué guía seguir.
 - Pasar de `fake` a `live` no cambia código: solo la configuración.
-- En producción (`APP_ENV=production`, o `NODE_ENV=production` si `APP_ENV` no está definido) está prohibido `fake` y `KMS_PROVIDER=local`. La app se niega a arrancar. Para ejecutar un build optimizado contra adaptadores `fake` (E2E, `pnpm demo`) usa `APP_ENV=development`.
+- En producción (`APP_ENV=production`, o `NODE_ENV=production` si `APP_ENV` no está definido) está prohibido `fake` y `KMS_PROVIDER=local`. La app se niega a arrancar. `staging` cuenta como producción. Para ejecutar un build optimizado contra adaptadores `fake` (E2E, `pnpm demo`) hacen falta `APP_ENV=development` **y** `ALLOW_FAKES_ON_PRODUCTION_BUILD=1`; la app lo avisa en el arranque.
 
 ## Seguridad de las credenciales
 - `.env` está en `.gitignore`. Claude Code tiene denegada su lectura (`.claude/settings.json`).

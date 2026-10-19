@@ -3,7 +3,14 @@
  */
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
-import { MINUTE_MS, localDateKey, localParts, localToUtcMinutes, parseWallTime, weekdayOf } from "./calendar-math";
+import {
+  MINUTE_MS,
+  localDateKey,
+  localParts,
+  localToUtcMinutes,
+  parseWallTime,
+  weekdayOf,
+} from "./calendar-math";
 import { computeDailyCapacity } from "./capacity";
 import { extraTask, extraTaskSeedArb, planInputArb } from "./fixtures";
 import { plan } from "./plan";
@@ -13,7 +20,8 @@ import type { ExistingBlock, PlanInput, PlannedBlock, PlanResult } from "./types
 const RUNS = { numRuns: 1000 };
 const toMin = (iso: string): number => Date.parse(iso) / MINUTE_MS;
 const minutesOf = (b: PlannedBlock): number => toMin(b.endsAt) - toMin(b.startsAt);
-const overlaps = (aStart: number, aEnd: number, bStart: number, bEnd: number): boolean => aStart < bEnd && bStart < aEnd;
+const overlaps = (aStart: number, aEnd: number, bStart: number, bEnd: number): boolean =>
+  aStart < bEnd && bStart < aEnd;
 
 function wall(text: string): { hour: number; minute: number } {
   const parsed = parseWallTime(text);
@@ -86,30 +94,62 @@ function assertMinutesBound(input: PlanInput, out: PlanResult): void {
 }
 
 function asExisting(blocks: readonly PlannedBlock[], pinned: boolean): ExistingBlock[] {
-  return blocks.map((b, i) => ({ id: `b${String(i)}`, taskId: b.taskId, startsAt: b.startsAt, endsAt: b.endsAt, pinned }));
+  return blocks.map((b, i) => ({
+    id: `b${String(i)}`,
+    taskId: b.taskId,
+    startsAt: b.startsAt,
+    endsAt: b.endsAt,
+    pinned,
+  }));
 }
 
-const key = (b: { taskId: string; startsAt: string; endsAt: string }): string => `${b.taskId}|${b.startsAt}|${b.endsAt}`;
+const key = (b: { taskId: string; startsAt: string; endsAt: string }): string =>
+  `${b.taskId}|${b.startsAt}|${b.endsAt}`;
 
 describe("planner properties (docs/04)", () => {
   it("1. no overlaps between blocks nor with busy fixed events", () => {
-    fc.assert(fc.property(planInputArb, (input) => { assertNoOverlaps(input, plan(input)); }), RUNS);
+    fc.assert(
+      fc.property(planInputArb, (input) => {
+        assertNoOverlaps(input, plan(input));
+      }),
+      RUNS,
+    );
   });
 
   it("2. no block outside work hours, work days, `now` or the horizon", () => {
-    fc.assert(fc.property(planInputArb, (input) => { assertWorkHours(input, plan(input)); }), RUNS);
+    fc.assert(
+      fc.property(planInputArb, (input) => {
+        assertWorkHours(input, plan(input));
+      }),
+      RUNS,
+    );
   });
 
   it("3. daily capacity with contingency is never exceeded", () => {
-    fc.assert(fc.property(planInputArb, (input) => { assertCapacity(input, plan(input)); }), RUNS);
+    fc.assert(
+      fc.property(planInputArb, (input) => {
+        assertCapacity(input, plan(input));
+      }),
+      RUNS,
+    );
   });
 
   it("4. dependencies are respected (fully placed, then +buffer)", () => {
-    fc.assert(fc.property(planInputArb, (input) => { assertDependencies(input, plan(input)); }), RUNS);
+    fc.assert(
+      fc.property(planInputArb, (input) => {
+        assertDependencies(input, plan(input));
+      }),
+      RUNS,
+    );
   });
 
   it("5. determinism: same input, same result", () => {
-    fc.assert(fc.property(planInputArb, (input) => { expect(plan(input)).toEqual(plan(input)); }), RUNS);
+    fc.assert(
+      fc.property(planInputArb, (input) => {
+        expect(plan(input)).toEqual(plan(input));
+      }),
+      RUNS,
+    );
   });
 
   it("6. idempotency: re-planning with the output pinned changes nothing", () => {
@@ -152,6 +192,11 @@ describe("planner properties (docs/04)", () => {
   });
 
   it("8. minutes assigned per task never exceed the remaining estimate", () => {
-    fc.assert(fc.property(planInputArb, (input) => { assertMinutesBound(input, plan(input)); }), RUNS);
+    fc.assert(
+      fc.property(planInputArb, (input) => {
+        assertMinutesBound(input, plan(input));
+      }),
+      RUNS,
+    );
   });
 });

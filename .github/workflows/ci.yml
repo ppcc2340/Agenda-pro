@@ -109,6 +109,7 @@ jobs:
       DEMO_NOW: 2026-10-20T08:40:00Z
       # Optimized build running against fake adapters (D-029).
       APP_ENV: development
+      ALLOW_FAKES_ON_PRODUCTION_BUILD: "1"
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4

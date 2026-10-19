@@ -1,11 +1,13 @@
 import { parseEnv, type Env } from "./env";
-import { isProductionEnv, resolveModes, type ResolvedModes } from "./modes";
+import { fakesOnProductionBuild, isProductionEnv, resolveModes, type ResolvedModes } from "./modes";
 
 export interface AppConfig {
   env: Env;
   modes: ResolvedModes;
   isProduction: boolean;
   isTest: boolean;
+  /** Fakes on an optimized build (explicitly allowed): apps must log a warning at startup. */
+  fakesOnProductionBuild: boolean;
 }
 
 /**
@@ -20,5 +22,6 @@ export function loadConfig(source: Record<string, string | undefined> = process.
     modes,
     isProduction: isProductionEnv(env),
     isTest: (env.APP_ENV ?? env.NODE_ENV) === "test",
+    fakesOnProductionBuild: fakesOnProductionBuild(env),
   };
 }

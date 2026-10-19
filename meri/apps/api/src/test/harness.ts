@@ -32,7 +32,7 @@ export function testConfig(): AppConfig {
     LOCAL_MASTER_KEY: Buffer.alloc(32, 3).toString("base64"),
     GOOGLE_CALENDAR_CHANNEL_TOKEN: "test-channel-token",
   });
-  return { env, modes: resolveModes(env), isProduction: false, isTest: true };
+  return { env, modes: resolveModes(env), isProduction: false, isTest: true, fakesOnProductionBuild: false };
 }
 
 export interface TestApp {

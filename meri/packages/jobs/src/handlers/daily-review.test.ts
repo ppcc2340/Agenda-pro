@@ -33,7 +33,7 @@ describe("daily.review digest (D-020)", () => {
       LOCAL_MASTER_KEY: Buffer.alloc(32, 9).toString("base64"),
     });
     integrations = createIntegrations(
-      { env, modes: resolveModes(env), isProduction: false, isTest: true },
+      { env, modes: resolveModes(env), isProduction: false, isTest: true, fakesOnProductionBuild: false },
       { now: () => NOW },
     );
     deps = {

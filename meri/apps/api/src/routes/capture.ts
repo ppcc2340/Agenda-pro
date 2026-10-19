@@ -190,7 +190,7 @@ export function captureRoutes(app: FastifyInstance, options: CaptureRoutesOption
         now,
       );
       const edited = edits !== undefined && Object.keys(edits).length > 0;
-      await resolveProposal(
+      const resolved = await resolveProposal(
         tx,
         session.workspaceId,
         id,
@@ -201,6 +201,8 @@ export function captureRoutes(app: FastifyInstance, options: CaptureRoutesOption
         },
         now,
       );
+      // A concurrent confirm won the race: roll back this task instead of creating a duplicate.
+      if (!resolved) throw new ApiError("CONFLICT", "Proposal was already resolved.");
       await audit(
         tx,
         { workspaceId: session.workspaceId, actor: "user", actorUserId: session.userId },

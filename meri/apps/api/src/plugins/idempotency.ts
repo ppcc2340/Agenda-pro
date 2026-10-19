@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import fp from "fastify-plugin";
-import { getIdempotentResponse, storeIdempotentResponse } from "@meri/db";
+import { finalizeIdempotencyKey, releaseIdempotencyKey, reserveIdempotencyKey } from "@meri/db";
 import { ApiError } from "../errors";
 
 export const IDEMPOTENCY_HEADER = "idempotency-key";
@@ -33,10 +33,16 @@ export const idempotencyPlugin = fp<{ now: () => Date }>((app: FastifyInstance, 
       throw new ApiError("VALIDATION_FAILED", "Idempotency-Key must be at most 128 characters.");
     const hash = hashRequest(request);
     const session = request.session;
-    const stored = await request.withWorkspace((tx) => getIdempotentResponse(tx, session.workspaceId, key));
-    if (stored) {
+    // Reserve before running the handler so two concurrent requests with the same key never both execute.
+    const outcome = await request.withWorkspace((tx) =>
+      reserveIdempotencyKey(tx, session.workspaceId, key, hash, options.now()),
+    );
+    if (!outcome.reserved) {
+      const stored = outcome.existing;
       if (stored.requestHash !== hash)
         throw new ApiError("CONFLICT", "Idempotency-Key was already used with a different request.");
+      if (stored.statusCode === 0)
+        throw new ApiError("CONFLICT", "A request with this Idempotency-Key is in progress.");
       return reply.status(stored.statusCode).header("idempotency-replayed", "true").send(stored.response);
     }
     request.idempotency = { key, hash };
@@ -44,8 +50,13 @@ export const idempotencyPlugin = fp<{ now: () => Date }>((app: FastifyInstance, 
 
   app.addHook("onSend", async (request: FastifyRequest, reply: FastifyReply, payload: unknown) => {
     const idem = request.idempotency;
-    if (!idem || !request.session || reply.statusCode >= 500) return payload;
+    if (!idem || !request.session) return payload;
     const session = request.session;
+    // Only successful outcomes are replayable; a failed attempt frees the key for a retry.
+    if (reply.statusCode < 200 || reply.statusCode >= 300) {
+      await request.withWorkspace((tx) => releaseIdempotencyKey(tx, session.workspaceId, idem.key));
+      return payload;
+    }
     let response: unknown = null;
     if (typeof payload === "string" && payload.length > 0) {
       try {
@@ -55,13 +66,7 @@ export const idempotencyPlugin = fp<{ now: () => Date }>((app: FastifyInstance, 
       }
     }
     await request.withWorkspace((tx) =>
-      storeIdempotentResponse(
-        tx,
-        session.workspaceId,
-        idem.key,
-        { requestHash: idem.hash, statusCode: reply.statusCode, response },
-        options.now(),
-      ),
+      finalizeIdempotencyKey(tx, session.workspaceId, idem.key, { statusCode: reply.statusCode, response }),
     );
     return payload;
   });

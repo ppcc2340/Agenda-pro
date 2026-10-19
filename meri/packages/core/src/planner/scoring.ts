@@ -55,7 +55,12 @@ interface ScoreParts {
   unblocks: number;
 }
 
-function combine(parts: ScoreParts, slackHours: number | null, deadlineType: "soft" | "hard", w: Weights): number {
+function combine(
+  parts: ScoreParts,
+  slackHours: number | null,
+  deadlineType: "soft" | "hard",
+  w: Weights,
+): number {
   const slackBonus = slackHours === null ? 1 : clamp01(slackHours / SLACK_SATURATION_HOURS);
   return (
     w.priority * parts.priority +
@@ -67,7 +72,9 @@ function combine(parts: ScoreParts, slackHours: number | null, deadlineType: "so
 }
 
 /** Deterministic order: score desc, dueAt asc (none last), priority asc, id asc. */
-export function compareByScore(scores: ReadonlyMap<string, ScoredTask>): (a: NormalizedTask, b: NormalizedTask) => number {
+export function compareByScore(
+  scores: ReadonlyMap<string, ScoredTask>,
+): (a: NormalizedTask, b: NormalizedTask) => number {
   return (a, b) => {
     const sa = scores.get(a.id)?.score ?? 0;
     const sb = scores.get(b.id)?.score ?? 0;
@@ -102,14 +109,23 @@ function entryFor(n: Normalized, days: readonly DayState[], task: NormalizedTask
       costOfDelay: hoursUntilDue === null ? 0 : clamp01(1 - hoursUntilDue / horizonHours),
       unblocks: Math.min(descendants, MAX_REWARDED_DESCENDANTS) / MAX_REWARDED_DESCENDANTS,
     },
-    capacityHoursUntilDue: task.dueAt === null ? null : grossCapacityBetween(days, n.preferences, n.now, task.dueAt) / 60,
+    capacityHoursUntilDue:
+      task.dueAt === null ? null : grossCapacityBetween(days, n.preferences, n.now, task.dueAt) / 60,
     descendants,
   };
 }
 
 function scored(e: Entry, higherScoredHours: number, w: Weights): ScoredTask {
-  const slack = e.capacityHoursUntilDue === null ? null : e.capacityHoursUntilDue - higherScoredHours - e.task.remaining / 60;
-  return { id: e.task.id, score: combine(e.parts, slack, e.task.deadlineType, w), estimatedSlackHours: slack, descendants: e.descendants };
+  const slack =
+    e.capacityHoursUntilDue === null
+      ? null
+      : e.capacityHoursUntilDue - higherScoredHours - e.task.remaining / 60;
+  return {
+    id: e.task.id,
+    score: combine(e.parts, slack, e.task.deadlineType, w),
+    estimatedSlackHours: slack,
+    descendants: e.descendants,
+  };
 }
 
 export function scoreTasks(n: Normalized, days: readonly DayState[], w: Weights): Map<string, ScoredTask> {

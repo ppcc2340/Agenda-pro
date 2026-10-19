@@ -17,7 +17,10 @@ function sameInterval(a: Interval, b: Interval): boolean {
   return a.startsAt === b.startsAt && a.endsAt === b.endsAt;
 }
 
-export function computeDiff(existing: readonly NormalizedExistingBlock[], blocks: readonly PlannedBlock[]): PlanDiff {
+export function computeDiff(
+  existing: readonly NormalizedExistingBlock[],
+  blocks: readonly PlannedBlock[],
+): PlanDiff {
   const diff: PlanDiff = { added: [], removed: [], moved: [] };
   const taskIds = [...new Set([...existing.map((b) => b.taskId), ...blocks.map((b) => b.taskId)])].sort();
   for (const taskId of taskIds) {

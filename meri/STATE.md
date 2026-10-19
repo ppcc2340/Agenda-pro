@@ -42,7 +42,7 @@
 - D-026: Las tareas sin estimación se planifican con 60 min (`deep`) o 30 min (`shallow`); el usuario lo ve como estimación por defecto y puede corregirla.
 - D-027: `notifications` guarda `template` + `params` (la UI traduce es/en) además de `title`/`body` renderizados en español como respaldo para correo.
 - D-028: El debounce de `planner.replan` usa el reloj de pared para el `jobId`, nunca el reloj inyectado (`DEMO_NOW` congelado colapsaría todos los replans en un solo job).
-- D-029: `APP_ENV` (entorno de despliegue) separado de `NODE_ENV` (modo de build). `production` prohíbe `fake`; `APP_ENV=development` permite ejecutar un build optimizado contra `fake` para E2E y `pnpm demo`.
+- D-029: `APP_ENV` (entorno de despliegue) separado de `NODE_ENV` (modo de build). `production` prohíbe `fake`; `staging` cuenta como producción; `APP_ENV=development` + `ALLOW_FAKES_ON_PRODUCTION_BUILD=1` permiten ejecutar un build optimizado contra `fake` para E2E y `pnpm demo` (con aviso en el arranque).
 - D-009: La demo `demo/desktop.html` y `demo/mobile.html` es la referencia visual y de textos (ver `docs/11-design-system.md`).
 
 ## Bloqueos humanos

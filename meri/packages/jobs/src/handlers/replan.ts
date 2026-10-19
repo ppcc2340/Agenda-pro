@@ -2,6 +2,7 @@
  * planner.replan (docs/13, ADR 0003): builds PlanInput from persisted state, runs the pure planner, applies safe
  * diffs automatically (audited, undoable) and turns anything that moves a live block into a `reschedule` proposal.
  */
+import { z } from "zod";
 import {
   buildAlerts,
   localDateKey,
@@ -30,7 +31,10 @@ import {
   listBlocks,
   listCalendarEvents,
   listOpenTasks,
+  listProposals,
+  lockWorkspace,
   orphanBlockIds,
+  setPlanVersion,
   withWorkspace,
   type NotificationView,
   type PreferencesView,
@@ -65,6 +69,8 @@ export interface ReplanResult {
   unscheduled: number;
   calendar: { created: number; deleted: number } | null;
   alerts: number;
+  /** Audit entry of the applied safe diff (undo target), null otherwise. */
+  auditId: string | null;
 }
 
 const skipped = (planVersion = 0): ReplanResult => ({
@@ -77,6 +83,7 @@ const skipped = (planVersion = 0): ReplanResult => ({
   unscheduled: 0,
   calendar: null,
   alerts: 0,
+  auditId: null,
 });
 
 /** Reschedule proposal payload (ADR 0003 §2). Block ids let `accept` apply the diff without re-planning. */
@@ -92,6 +99,49 @@ export interface ReschedulePayload {
     reasons: PlannedBlock["reasons"];
   }[];
   summary: { added: number; removed: number; moved: number };
+}
+
+const Interval = z.object({ startsAt: z.string(), endsAt: z.string() });
+const ReasonSchema = z.object({
+  code: z.string(),
+  params: z.record(z.union([z.string(), z.number(), z.boolean()])),
+});
+const PlannedBlockSchema = z.object({
+  taskId: z.string(),
+  startsAt: z.string(),
+  endsAt: z.string(),
+  pinned: z.boolean(),
+  reasons: z.array(ReasonSchema),
+});
+/** Boundary validation of proposal payloads read back from the database (docs/12 §2). */
+export const ReschedulePayloadSchema = z.object({
+  basePlanVersion: z.number().int().nonnegative(),
+  added: z.array(PlannedBlockSchema),
+  removed: z.array(
+    z.object({ blockId: z.string(), taskId: z.string(), startsAt: z.string(), endsAt: z.string() }),
+  ),
+  moved: z.array(
+    z.object({
+      blockId: z.string(),
+      taskId: z.string(),
+      from: Interval,
+      to: Interval,
+      reasons: z.array(ReasonSchema),
+    }),
+  ),
+  summary: z.object({ added: z.number(), removed: z.number(), moved: z.number() }),
+});
+
+/** Equality of two diffs ignoring explanation params (which may carry recomputed slack). */
+export function samePayload(a: ReschedulePayload, b: ReschedulePayload): boolean {
+  const key = (p: ReschedulePayload) =>
+    JSON.stringify({
+      v: p.basePlanVersion,
+      a: p.added.map((x) => [x.taskId, x.startsAt, x.endsAt, x.pinned]),
+      r: p.removed.map((x) => [x.blockId, x.startsAt, x.endsAt]),
+      m: p.moved.map((x) => [x.blockId, x.to.startsAt, x.to.endsAt]),
+    });
+  return key(a) === key(b);
 }
 
 export function toPlannerTask(task: TaskView, openIds: Set<string>, doneMinutes: number): PlannerTask {
@@ -141,7 +191,7 @@ async function snapshot(tx: WorkspaceTx, workspaceId: WorkspaceId, now: Date): P
     (b) =>
       openIds.has(b.taskId) && b.completedAt === null && (b.pinned || b.startsAt.getTime() >= now.getTime()),
   );
-  const orphans = await orphanBlockIds(tx, workspaceId);
+  const orphans = await orphanBlockIds(tx, workspaceId, now);
   const input: PlanInput = {
     now: now.toISOString(),
     horizonStart: horizonStart.toISOString(),
@@ -266,6 +316,7 @@ export async function runReplan(
   const auditCtx = { workspaceId, actor, actorUserId: options.actorUserId ?? null };
 
   const outcome = await withWorkspace(deps.db, workspaceId, async (tx) => {
+    await lockWorkspace(tx, workspaceId); // one plan writer per workspace at a time
     const snap = await snapshot(tx, workspaceId, now);
     if (!snap) return { kind: "skipped" as const };
     let result: PlanResult;
@@ -297,11 +348,13 @@ export async function runReplan(
     let auditId: string | null = null;
     let payload: ReschedulePayload | null = null;
     let pendingAudit: { before: unknown; after: unknown } | null = null;
+    let proposalReused = false;
 
     if (!live) {
       removedBlocks = await deleteBlocks(tx, workspaceId, snap.orphans);
       if (result.diff.added.length > 0 || removedBlocks.length > 0) {
         planVersion = baseVersion + 1;
+        await setPlanVersion(tx, workspaceId, planVersion);
         created = await insertBlocks(
           tx,
           workspaceId,
@@ -324,21 +377,31 @@ export async function runReplan(
       // Any older reschedule proposal is stale once the plan changed or is confirmed unnecessary.
       await expirePending(tx, workspaceId, "reschedule", now);
     } else {
-      await expirePending(tx, workspaceId, "reschedule", now);
       payload = buildProposalPayload(result, snap.liveBlocks, baseVersion);
-      const proposal = await createProposal(
-        tx,
-        workspaceId,
-        {
-          kind: "reschedule",
-          payload: payload as unknown as Record<string, unknown>,
-          confidence: null,
-          explanation: options.reason,
-          sourceRef: { type: "plan_run", id: options.reason },
-        },
-        now,
-      );
-      proposalId = proposal.id;
+      // Same diff as the pending proposal → keep it (stable id, no duplicate alert); otherwise replace it.
+      const pending = (
+        await listProposals(tx, workspaceId, { kind: "reschedule", status: "pending" }, { limit: 1 })
+      ).items[0];
+      const existing = pending ? ReschedulePayloadSchema.safeParse(pending.payload) : null;
+      if (pending && existing?.success && samePayload(existing.data as ReschedulePayload, payload)) {
+        proposalId = pending.id;
+        proposalReused = true;
+      } else {
+        await expirePending(tx, workspaceId, "reschedule", now);
+        const proposal = await createProposal(
+          tx,
+          workspaceId,
+          {
+            kind: "reschedule",
+            payload: payload as unknown as Record<string, unknown>,
+            confidence: null,
+            explanation: options.reason,
+            sourceRef: { type: "plan_run", id: options.reason },
+          },
+          now,
+        );
+        proposalId = proposal.id;
+      }
     }
 
     const scheduled = new Set(
@@ -375,7 +438,7 @@ export async function runReplan(
       {
         newlyAtRisk,
         newConflicts: result.conflicts.filter((c) => !known.has(conflictKey(c))),
-        proposal: proposalId && payload ? { id: proposalId, ...payload.summary } : null,
+        proposal: proposalId && payload && !proposalReused ? { id: proposalId, ...payload.summary } : null,
         applied,
       },
       {
@@ -436,5 +499,6 @@ export async function runReplan(
     ...outcome.counts,
     calendar,
     alerts: outcome.alerts,
+    auditId: outcome.auditId,
   };
 }

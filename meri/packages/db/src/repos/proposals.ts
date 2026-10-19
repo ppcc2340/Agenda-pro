@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray, lt } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, lt } from "drizzle-orm";
 import { proposals } from "../schema";
 import type { WorkspaceTx } from "../workspace";
 import { newId, type WorkspaceId } from "../ids";
@@ -124,7 +124,6 @@ export async function expirePending(
   workspaceId: WorkspaceId,
   kind: ProposalKind,
   now: Date,
-  except?: string[],
 ): Promise<number> {
   const pending = await tx
     .select({ id: proposals.id })
@@ -133,7 +132,7 @@ export async function expirePending(
       and(eq(proposals.workspaceId, workspaceId), eq(proposals.kind, kind), eq(proposals.status, "pending")),
     )
     .orderBy(asc(proposals.id));
-  const ids = pending.map((p) => p.id).filter((i) => !(except ?? []).includes(i));
+  const ids = pending.map((p) => p.id);
   if (ids.length === 0) return 0;
   await tx
     .update(proposals)
@@ -143,9 +142,9 @@ export async function expirePending(
 }
 
 export async function countPending(tx: WorkspaceTx, workspaceId: WorkspaceId): Promise<number> {
-  const rows = await tx
-    .select({ id: proposals.id })
+  const [row] = await tx
+    .select({ n: count() })
     .from(proposals)
     .where(and(eq(proposals.workspaceId, workspaceId), eq(proposals.status, "pending")));
-  return rows.length;
+  return row?.n ?? 0;
 }

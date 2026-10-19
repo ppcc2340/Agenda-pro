@@ -1,7 +1,7 @@
 import { Redis } from "ioredis";
 import postgres from "postgres";
 import { registerFakeAiHandlers } from "@meri/ai";
-import { createLogger, loadConfig, loadDotenv } from "@meri/config";
+import { ConfigError, createLogger, loadConfig, loadDotenv } from "@meri/config";
 import { assertAppRole, createDb } from "@meri/db";
 import { createIntegrations, FakeAiClient } from "@meri/integrations";
 import { createDispatcher } from "@meri/jobs";
@@ -19,6 +19,10 @@ loadDotenv("../../.env");
 async function main(): Promise<void> {
   const config = loadConfig(process.env);
   const logger = createLogger({ name: "worker", level: config.env.LOG_LEVEL, pretty: !config.isProduction });
+  if (config.fakesOnProductionBuild)
+    logger.warn(
+      "fake adapters on a production build (ALLOW_FAKES_ON_PRODUCTION_BUILD=1): never use this in a deployment",
+    );
   const now = config.env.DEMO_NOW ? () => new Date(config.env.DEMO_NOW ?? 0) : () => new Date();
   const connection = new Redis(config.env.REDIS_URL, { maxRetriesPerRequest: null });
   const handle = createDb(config.env.DATABASE_URL, { max: 5 });
@@ -34,7 +38,13 @@ async function main(): Promise<void> {
   registry.register(dailyReviewJob(handlerDeps));
 
   // Cross-tenant dispatchers (D-025) use the owner connection only to enumerate accounts.
-  const adminSql = postgres(config.env.DATABASE_ADMIN_URL ?? config.env.DATABASE_URL, {
+  // Cross-tenant dispatchers need the owner connection: under the app role + forced RLS they would silently
+  // enumerate nothing and no poll or digest would ever fire.
+  if (!config.env.DATABASE_ADMIN_URL)
+    throw new ConfigError("Invalid worker configuration", [
+      "DATABASE_ADMIN_URL is required by the worker (cross-tenant dispatchers).",
+    ]);
+  const adminSql = postgres(config.env.DATABASE_ADMIN_URL, {
     max: 1,
     onnotice: () => {},
   });

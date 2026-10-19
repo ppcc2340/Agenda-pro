@@ -28,3 +28,11 @@ export async function withWorkspace<T>(
     return fn(tx);
   });
 }
+
+/**
+ * Serializes plan writers of one workspace (replan, accept, undo, confirm): a transaction-scoped advisory lock,
+ * released at commit/rollback. Call it first inside `withWorkspace`.
+ */
+export async function lockWorkspace(tx: WorkspaceTx, workspaceId: WorkspaceId): Promise<void> {
+  await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${workspaceId}))`);
+}

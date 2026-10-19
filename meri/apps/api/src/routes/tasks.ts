@@ -7,6 +7,10 @@ import {
   TaskInputSchema,
   TaskPatchSchema,
   audit,
+  listClients,
+  projectExists,
+  type WorkspaceId,
+  type WorkspaceTx,
   createTask,
   getTask,
   listOpenTasks,
@@ -59,11 +63,34 @@ export const serializeTask = (t: TaskView) => ({
 });
 
 const IdParams = z.object({ id: z.string().uuid() });
+/** `z.coerce.boolean()` turns "false" into true; query flags are parsed explicitly. */
+export const boolParam = z
+  .enum(["true", "false"])
+  .transform((v) => v === "true")
+  .optional();
+/** Soft cap so one workspace cannot make every replan unbounded (docs/12 §5). */
+export const MAX_OPEN_TASKS = 2_000;
 
 export interface TaskRoutesOptions {
   now: () => Date;
   /** Called after any change that may affect the plan (replan trigger, phase 1 step 5). */
   onTasksChanged?: (workspaceId: string, traceId: string) => Promise<void>;
+}
+
+/** clientId/projectId/parentId must exist in this workspace: FK checks bypass RLS (docs/06). */
+async function assertReferences(
+  tx: WorkspaceTx,
+  workspaceId: WorkspaceId,
+  body: { clientId?: string | null; parentId?: string | null; projectId?: string | null },
+): Promise<void> {
+  const errors: { path: string; message: string }[] = [];
+  if (body.clientId && !(await listClients(tx, workspaceId)).some((c) => c.id === body.clientId))
+    errors.push({ path: "clientId", message: "Unknown client." });
+  if (body.parentId && !(await getTask(tx, workspaceId, body.parentId)))
+    errors.push({ path: "parentId", message: "Unknown parent task." });
+  if (body.projectId && !(await projectExists(tx, workspaceId, body.projectId)))
+    errors.push({ path: "projectId", message: "Unknown project." });
+  if (errors.length > 0) throw new ApiError("VALIDATION_FAILED", "Invalid references.", errors);
 }
 
 export function taskRoutes(app: FastifyInstance, options: TaskRoutesOptions, done: () => void): void {
@@ -82,7 +109,7 @@ export function taskRoutes(app: FastifyInstance, options: TaskRoutesOptions, don
           status: z.enum(TASK_STATUSES).optional(),
           clientId: z.string().uuid().optional(),
           dueBefore: z.string().datetime({ offset: true }).optional(),
-          includeCompleted: z.coerce.boolean().optional(),
+          includeCompleted: boolParam,
           cursor: z.string().uuid().optional(),
           limit: z.coerce.number().int().min(1).max(200).default(50),
         }),
@@ -119,6 +146,12 @@ export function taskRoutes(app: FastifyInstance, options: TaskRoutesOptions, don
       const session = sessionOf(request);
       const now = options.now();
       const task = await request.withWorkspace(async (tx) => {
+        await assertReferences(tx, session.workspaceId, request.body);
+        if ((await listOpenTasks(tx, session.workspaceId)).length >= MAX_OPEN_TASKS)
+          throw new ApiError(
+            "VALIDATION_FAILED",
+            `At most ${String(MAX_OPEN_TASKS)} open tasks per workspace.`,
+          );
         const created = await createTask(tx, session.workspaceId, request.body, now);
         await audit(
           tx,
@@ -158,6 +191,7 @@ export function taskRoutes(app: FastifyInstance, options: TaskRoutesOptions, don
       const task = await request.withWorkspace(async (tx) => {
         const before = await getTask(tx, session.workspaceId, request.params.id);
         if (!before) throw new ApiError("NOT_FOUND", "Task not found.");
+        await assertReferences(tx, session.workspaceId, request.body);
         const after = await updateTask(tx, session.workspaceId, request.params.id, request.body, now);
         if (!after) throw new ApiError("NOT_FOUND", "Task not found.");
         await audit(

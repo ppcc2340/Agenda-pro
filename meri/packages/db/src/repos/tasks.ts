@@ -321,25 +321,3 @@ export async function applyTaskRisks(
   }
   return { newlyAtRisk };
 }
-
-/** Bulk status update used by the planner to persist `at_risk`/`scheduled` (D-022). Never touches completed tasks. */
-export async function setTaskStatuses(
-  tx: WorkspaceTx,
-  workspaceId: WorkspaceId,
-  updates: { id: string; status: TaskStatus }[],
-  now: Date,
-): Promise<void> {
-  for (const u of updates) {
-    await tx
-      .update(tasks)
-      .set({ status: u.status, updatedAt: now })
-      .where(
-        and(
-          eq(tasks.workspaceId, workspaceId),
-          eq(tasks.id, u.id),
-          sql`${tasks.status} <> 'completed'`,
-          isNull(tasks.deletedAt),
-        ),
-      );
-  }
-}

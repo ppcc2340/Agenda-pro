@@ -5,7 +5,7 @@ Objetivo (P1-10): «Hoy» < 1,5 s p75 con un workspace cargado.
 ## Cómo reproducir
 ```
 DEMO_NOW=2026-10-20T08:40:00Z pnpm seed:perf          # perf@meri.local: 500 tareas (30 % completadas), 5 000 eventos ±180 días
-APP_ENV=development DEMO_NOW=2026-10-20T08:40:00Z pnpm --filter @meri/web build && pnpm --filter @meri/web start
+APP_ENV=development ALLOW_FAKES_ON_PRODUCTION_BUILD=1 DEMO_NOW=2026-10-20T08:40:00Z pnpm --filter @meri/web build && pnpm --filter @meri/web start
 pnpm perf:hoy                                         # 30 cargas de /hoy con Playwright (Chromium), p50/p75/p95
 ```
 `seed:perf` usa los mismos repositorios que la app (RLS activo) y es idempotente por correo. `perf:hoy` inicia sesión con el proveedor de desarrollo, lanza un `POST /v1/plan/replan` síncrono y mide navegación → red inactiva (render de servidor + `GET /v1/plan`, eventos y avisos).

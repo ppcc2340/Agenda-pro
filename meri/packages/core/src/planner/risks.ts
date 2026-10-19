@@ -18,9 +18,15 @@ function round2(x: number): number {
 }
 
 /** Work hours of margin between the task's planned finish and its deadline `dueAt`. */
-export function slackHoursFor(ctx: SchedulerContext, state: ScheduleState, task: NormalizedTask, dueAt: number): number {
+export function slackHoursFor(
+  ctx: SchedulerContext,
+  state: ScheduleState,
+  task: NormalizedTask,
+  dueAt: number,
+): number {
   const { n } = ctx;
-  const capacity = (from: number, to: number): number => grossCapacityBetween(state.days, n.preferences, from, to) / 60;
+  const capacity = (from: number, to: number): number =>
+    grossCapacityBetween(state.days, n.preferences, from, to) / 60;
   if (remainingOf(state, task) > 0) return round2(capacity(n.now, dueAt) - task.remaining / 60);
   const finish = finishOf(state, task.id) ?? n.now;
   return round2(finish <= dueAt ? capacity(finish, dueAt) : -capacity(dueAt, finish));
@@ -34,14 +40,16 @@ export function computeRisks(ctx: SchedulerContext, state: ScheduleState): RiskI
     const slackHours = slackHoursFor(ctx, state, task, task.dueAt);
     const facts = ctx.facts.get(task.id);
     if (facts?.blocked === true && blocksOf(state, task.id).length === 0) {
-      if (task.dueAt <= n.horizonEnd) risks.push({ taskId: task.id, slackHours, cause: "BLOCKED_DEPENDENCY" });
+      if (task.dueAt <= n.horizonEnd)
+        risks.push({ taskId: task.id, slackHours, cause: "BLOCKED_DEPENDENCY" });
       continue;
     }
     if (remainingOf(state, task) > 0) {
       risks.push({ taskId: task.id, slackHours, cause: "NO_CAPACITY" });
       continue;
     }
-    if (slackHours < n.preferences.riskThresholdHours) risks.push({ taskId: task.id, slackHours, cause: "LOW_SLACK" });
+    if (slackHours < n.preferences.riskThresholdHours)
+      risks.push({ taskId: task.id, slackHours, cause: "LOW_SLACK" });
   }
   return risks;
 }

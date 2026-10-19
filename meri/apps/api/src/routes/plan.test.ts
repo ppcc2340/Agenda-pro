@@ -162,7 +162,7 @@ describe("/v1/plan, /v1/audit/:id/undo (F-05, F-13, ADR 0003)", () => {
     expect(replan.json<{ outcome: string; proposalId: string | null }>().outcome).toBe("proposed");
     const plan = (await getPlan(cookieA)).json<PlanJson>();
     expect(
-      plan.pendingProposal?.summary.moved ?? 0 + (plan.pendingProposal?.summary.removed ?? 0),
+      (plan.pendingProposal?.summary.moved ?? 0) + (plan.pendingProposal?.summary.removed ?? 0),
     ).toBeGreaterThan(0);
     const proposalId = plan.pendingProposal?.id ?? "";
 
@@ -213,6 +213,55 @@ describe("/v1/plan, /v1/audit/:id/undo (F-05, F-13, ADR 0003)", () => {
     const read = await post(cookieA, `/v1/notifications/${proposed?.id ?? ""}/read`);
     expect(read.statusCode).toBe(200);
     expect(read.json<{ readAt: string | null }>().readAt).toBe(NOW.toISOString());
+  });
+
+  it("isolates tenants on complete, audit listing and plan version", async () => {
+    const plan = (await getPlan(cookieA)).json<PlanJson>();
+    const block = plan.blocks.find((b) => b.completedAt === null);
+    if (!block) throw new Error("expected a live block");
+    expect((await post(cookieB, `/v1/plan/blocks/${block.id}/complete`)).statusCode).toBe(404);
+    const auditA = (
+      await t.app.inject({ url: "/v1/audit?limit=100", headers: { cookie: cookieA } })
+    ).json<AuditJson>();
+    const auditB = (
+      await t.app.inject({ url: "/v1/audit?limit=100", headers: { cookie: cookieB } })
+    ).json<AuditJson>();
+    const idsA = new Set(auditA.items.map((e) => e.id));
+    expect(auditB.items.some((e) => idsA.has(e.id))).toBe(false);
+    expect((await getPlan(cookieB)).json<PlanJson>().planVersion).toBe(0);
+  });
+
+  it("Idempotency-Key: concurrent duplicates execute once (replay or in-progress), failed attempts free the key", async () => {
+    const key = `k-${Date.now().toString(36)}`;
+    const headers = { cookie: cookieA, ...csrf, "idempotency-key": key };
+    const payload = { title: "Tarea idempotente" };
+    const results = await Promise.all(
+      Array.from({ length: 4 }, () => t.app.inject({ method: "POST", url: "/v1/tasks", headers, payload })),
+    );
+    const created = results.filter(
+      (r) => r.statusCode === 201 && r.headers["idempotency-replayed"] !== "true",
+    );
+    expect(created).toHaveLength(1);
+    expect(results.every((r) => r.statusCode === 201 || r.statusCode === 409)).toBe(true);
+    const list = (await t.app.inject({ url: "/v1/tasks?limit=200", headers: { cookie: cookieA } })).json<{
+      items: { title: string }[];
+    }>();
+    expect(list.items.filter((x) => x.title === "Tarea idempotente")).toHaveLength(1);
+    // A failed attempt (validation error) does not poison the key.
+    const bad = await t.app.inject({
+      method: "POST",
+      url: "/v1/tasks",
+      headers: { ...headers, "idempotency-key": `${key}-2` },
+      payload: { title: "" },
+    });
+    expect(bad.statusCode).toBe(400);
+    const retry = await t.app.inject({
+      method: "POST",
+      url: "/v1/tasks",
+      headers: { ...headers, "idempotency-key": `${key}-2` },
+      payload: { title: "Ahora sí" },
+    });
+    expect(retry.statusCode).toBe(201);
   });
 
   it("rejects unauthenticated and CSRF-less calls", async () => {

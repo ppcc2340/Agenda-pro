@@ -1,4 +1,4 @@
-import { and, desc, eq, isNull, lt } from "drizzle-orm";
+import { and, count, desc, eq, isNull, lt } from "drizzle-orm";
 import { notifications } from "../schema";
 import type { WorkspaceTx } from "../workspace";
 import { newId, type WorkspaceId } from "../ids";
@@ -52,8 +52,8 @@ export async function countNotificationsForDay(
   day: string,
   kind?: NotificationKind,
 ): Promise<number> {
-  const rows = await tx
-    .select({ id: notifications.id })
+  const [row] = await tx
+    .select({ n: count() })
     .from(notifications)
     .where(
       and(
@@ -62,7 +62,7 @@ export async function countNotificationsForDay(
         kind ? eq(notifications.kind, kind) : undefined,
       ),
     );
-  return rows.length;
+  return row?.n ?? 0;
 }
 
 export async function listNotifications(

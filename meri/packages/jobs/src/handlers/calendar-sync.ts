@@ -2,6 +2,7 @@ import { decryptEnvelopeToString, encryptEnvelope } from "@meri/config/crypto";
 import {
   audit,
   deleteCalendarEventByExternalId,
+  findCalendarEventEtags,
   getEncryptedTokens,
   getIntegrationAccount,
   getSyncCursor,
@@ -73,6 +74,12 @@ async function applyPage(
 ): Promise<{ upserted: number; removed: number }> {
   let upserted = 0;
   let removed = 0;
+  const known = await findCalendarEventEtags(
+    tx,
+    workspaceId,
+    accountId,
+    events.map((e) => e.externalId),
+  );
   for (const ev of events) {
     if (ev.status === "cancelled") {
       await deleteCalendarEventByExternalId(tx, workspaceId, accountId, ev.externalId);
@@ -96,7 +103,8 @@ async function applyPage(
       },
       now,
     );
-    upserted++;
+    // Unchanged etags are re-sent on full resyncs and by some providers: count only real changes.
+    if (!known.has(ev.externalId) || known.get(ev.externalId) !== ev.etag) upserted++;
   }
   return { upserted, removed };
 }
@@ -191,7 +199,7 @@ export async function syncCalendarAccount(
             action: "integration.needs_reauth",
             entityType: "integration_account",
             entityId: accountId,
-            reason: err.message,
+            reason: `${err.kind}: ${err.message.slice(0, 200)}`,
           },
         );
       });
