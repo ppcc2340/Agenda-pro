@@ -5,9 +5,10 @@ import { createLogger, loadConfig, loadDotenv } from "@meri/config";
 import { assertAppRole, createDb } from "@meri/db";
 import { createIntegrations, FakeAiClient } from "@meri/integrations";
 import { createDispatcher } from "@meri/jobs";
-import { dispatchCalendarPolling, schedule } from "./dispatchers";
+import { dispatchCalendarPolling, dispatchDailyReview, schedule } from "./dispatchers";
 import { buildHealthServer } from "./health";
 import { calendarSyncJob } from "./queues/calendar-sync";
+import { dailyReviewJob } from "./queues/daily-review";
 import { plannerReplanJob } from "./queues/planner-replan";
 import { examplePing } from "./queues/example";
 import { QueueRegistry } from "./registry";
@@ -30,6 +31,7 @@ async function main(): Promise<void> {
   const handlerDeps = { db: handle.db, integrations, keys: integrations.kms.keys, now };
   registry.register(calendarSyncJob(handlerDeps, dispatcher));
   registry.register(plannerReplanJob(handlerDeps));
+  registry.register(dailyReviewJob(handlerDeps));
 
   // Cross-tenant dispatchers (D-025) use the owner connection only to enumerate accounts.
   const adminSql = postgres(config.env.DATABASE_ADMIN_URL ?? config.env.DATABASE_URL, {
@@ -43,14 +45,25 @@ async function main(): Promise<void> {
     logger,
   );
 
+  const stopDigest = schedule(
+    "daily.review",
+    15 * 60_000,
+    () => dispatchDailyReview({ adminSql, dispatcher, logger, now }),
+    logger,
+  );
+
   const health = await buildHealthServer(registry, logger);
   const port = config.env.PORT ?? 4100;
   await health.listen({ port, host: "0.0.0.0" });
-  logger.info({ port, queues: ["example.ping", "calendar.sync", "planner.replan"] }, "worker started");
+  logger.info(
+    { port, queues: ["example.ping", "calendar.sync", "planner.replan", "daily.review"] },
+    "worker started",
+  );
 
   const shutdown = async (signal: string) => {
     logger.info({ signal }, "worker shutting down");
     stopPolling();
+    stopDigest();
     await health.close();
     await registry.close();
     await dispatcher.close();

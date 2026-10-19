@@ -31,3 +31,4 @@ export {
 } from "./handlers/plan-apply";
 export { writeBlocksToCalendar, type CalendarWriteResult } from "./handlers/meri-calendar";
 export { enqueueReplan, REPLAN_DEBOUNCE_MS } from "./replan-trigger";
+export { runDailyReview, dueForDigest, renderDigest, type DailyReviewResult } from "./handlers/daily-review";

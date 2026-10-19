@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { Logger } from "@meri/config";
-import { CalendarSyncJob, type JobDispatcher } from "@meri/jobs";
+import { CalendarSyncJob, DailyReviewJob, dueForDigest, type JobDispatcher } from "@meri/jobs";
 import type postgres from "postgres";
 
 export interface DispatcherDeps {
@@ -27,6 +27,29 @@ export async function dispatchCalendarPolling(deps: DispatcherDeps, staleMinutes
   }
   if (rows.length > 0) deps.logger.info({ accounts: rows.length }, "calendar polling dispatched");
   return rows.length;
+}
+
+/**
+ * Start-of-day digest (D-020): every onboarded workspace whose local clock passed its work start and that has no
+ * digest for today gets one `daily.review` job (jobId per workspace and day, so re-runs are harmless).
+ */
+export async function dispatchDailyReview(deps: DispatcherDeps): Promise<number> {
+  const rows = await deps.adminSql<
+    { workspaceId: string; timezone: string; workStart: string; lastDigestDay: string | null }[]
+  >`
+    select p.workspace_id as "workspaceId", p.timezone, p.work_start as "workStart",
+      (select max(n.day) from notifications n where n.workspace_id = p.workspace_id and n.kind = 'digest') as "lastDigestDay"
+    from preferences p where p.onboarded_at is not null limit 5000`;
+  const due = dueForDigest(rows, deps.now());
+  for (const d of due) {
+    await deps.dispatcher.enqueue(
+      DailyReviewJob,
+      { workspaceId: d.workspaceId, traceId: randomUUID(), date: d.date },
+      { jobId: `daily.review:${d.workspaceId}:${d.date}` },
+    );
+  }
+  if (due.length > 0) deps.logger.info({ workspaces: due.length }, "daily review dispatched");
+  return due.length;
 }
 
 /** Runs `fn` every `everyMs`, never overlapping, with errors logged (not thrown). Returns a stop function. */

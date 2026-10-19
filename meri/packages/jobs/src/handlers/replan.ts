@@ -32,6 +32,7 @@ import {
   listOpenTasks,
   orphanBlockIds,
   withWorkspace,
+  type NotificationView,
   type PreferencesView,
   type ScheduleBlockView,
   type TaskRisk,
@@ -227,9 +228,10 @@ async function persistAlerts(
   alerts: AlertCandidate[],
   day: string,
   now: Date,
-): Promise<void> {
+): Promise<NotificationView[]> {
+  const rows: NotificationView[] = [];
   for (const a of alerts) {
-    await insertNotification(
+    const row = await insertNotification(
       tx,
       workspaceId,
       {
@@ -243,7 +245,9 @@ async function persistAlerts(
       },
       now,
     );
+    rows.push(row);
   }
+  return rows;
 }
 
 const conflictKey = (c: Conflict) => `${c.code}:${[...c.taskIds].sort().join(",")}`;
@@ -379,9 +383,10 @@ export async function runReplan(
         sentToday: await countNotificationsForDay(tx, workspaceId, day),
       },
     );
-    await persistAlerts(tx, workspaceId, alerts, day, now);
+    const notifications = await persistAlerts(tx, workspaceId, alerts, day, now);
     return {
       kind: "done" as const,
+      notifications,
       runId: run.id,
       auditId,
       planVersion,
@@ -403,6 +408,16 @@ export async function runReplan(
   if (outcome.kind === "skipped") return skipped();
   if (outcome.kind === "invalid") return { ...skipped(), outcome: "invalid" };
 
+  // Outbound copies after commit (fake notifier in development; never the user's Gmail).
+  for (const n of outcome.notifications) {
+    await deps.integrations.notifier.deliver({
+      workspaceId,
+      kind: n.kind,
+      title: n.title,
+      body: n.body,
+      refs: n.refs,
+    });
+  }
   // Calendar writes happen after commit (ADR 0003 §3): safe diffs reach Google only with `auto_low_risk`.
   let calendar: ReplanResult["calendar"] = null;
   if (outcome.applied && outcome.autonomy === "auto_low_risk") {
