@@ -18,6 +18,9 @@ importers:
       '@meri/config':
         specifier: workspace:*
         version: link:packages/config
+      '@meri/core':
+        specifier: workspace:*
+        version: link:packages/core
       '@meri/db':
         specifier: workspace:*
         version: link:packages/db

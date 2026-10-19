@@ -8,6 +8,8 @@
   },
   "scripts": {
     "dev": "turbo run dev --parallel",
+    "demo": "node scripts/demo.mjs",
+    "demo:seed": "tsx scripts/demo-seed.ts",
     "build": "turbo run build",
     "lint": "turbo run lint && pnpm lint:deps",
     "lint:deps": "depcruise apps packages --config .dependency-cruiser.cjs",
@@ -32,8 +34,10 @@
   "devDependencies": {
     "@eslint/js": "^9.12.0",
     "@meri/config": "workspace:*",
+    "@meri/core": "workspace:*",
     "@meri/db": "workspace:*",
     "@meri/integrations": "workspace:*",
+    "@meri/jobs": "workspace:*",
     "@types/node": "^22.7.0",
     "@vitest/coverage-v8": "^3.2.6",
     "dependency-cruiser": "^16.5.0",
@@ -44,8 +48,7 @@
     "typescript": "^5.6.0",
     "typescript-eslint": "^8.8.0",
     "vitest": "^3.2.6",
-    "zod": "^3.23.8",
-    "@meri/jobs": "workspace:*"
+    "zod": "^3.23.8"
   },
   "pnpm": {
     "overrides": {

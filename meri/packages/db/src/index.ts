@@ -28,6 +28,7 @@ export {
   getMe,
   getEntitlementRetentionDays,
   getEntitlementMaxClients,
+  hardDeleteAccountByEmail,
   type AccountIdentity,
   type BootstrapInput,
   type MeView,

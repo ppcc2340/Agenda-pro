@@ -150,3 +150,16 @@ export async function getEntitlementMaxClients(tx: WorkspaceTx, workspaceId: Wor
   const ent = await tx.query.entitlements.findFirst({ where: eq(entitlements.workspaceId, workspaceId) });
   return ent?.maxClients ?? 10;
 }
+
+/**
+ * Hard delete of an account and the workspaces it owns (cascades through every workspace table). Demo/test
+ * tooling only: production deletion is the logical `DELETE /v1/account` plus the `data.delete_account` job.
+ * Needs an owner connection with the admin read context (RLS lets the owner delete only through its policies).
+ */
+export async function hardDeleteAccountByEmail(db: Db, email: string): Promise<number> {
+  const found = await db.query.users.findFirst({ where: eq(users.email, email.trim().toLowerCase()) });
+  if (!found) return 0;
+  const owned = await db.delete(workspaces).where(eq(workspaces.ownerId, found.id)).returning({ id: workspaces.id });
+  await db.delete(users).where(eq(users.id, found.id));
+  return owned.length;
+}

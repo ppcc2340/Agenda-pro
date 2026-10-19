@@ -20,7 +20,11 @@ export default async function LoginPage({
   if (session?.user) redirect(next);
   const t = await getTranslations("login");
   const tApp = await getTranslations("app");
-  const { modes } = getServerConfig();
+  const { modes, env } = getServerConfig();
+  // DEMO_MODE (PROTOTYPE.md, D-049): sign in as the demo user without a form. Only reachable with the dev
+  // provider (GOOGLE_MODE=fake outside production); the provider itself is never mounted in production.
+  if (env.DEMO_MODE && modes.google !== "live")
+    await signIn("dev", { email: "demo@meri.local", name: "Demo de Meri", redirectTo: next });
 
   async function devSignIn(formData: FormData): Promise<void> {
     "use server";
