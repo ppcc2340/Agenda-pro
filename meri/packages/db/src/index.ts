@@ -47,3 +47,17 @@ export {
   type TaskView,
   type TaskFilters,
 } from "./repos/tasks";
+export {
+  createProposal,
+  getProposal,
+  listProposals,
+  resolveProposal,
+  expirePending,
+  countPending,
+  type ProposalKind,
+  type ProposalStatus,
+  type ProposalView,
+  type NewProposal,
+} from "./repos/proposals";
+export { getIdempotentResponse, storeIdempotentResponse, type StoredResponse } from "./repos/idempotency";
+export { listClients, type ClientSummary } from "./repos/clients";

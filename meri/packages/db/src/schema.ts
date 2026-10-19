@@ -203,6 +203,12 @@ export const tasks = pgTable(
     deadlineType: deadlineType("deadline_type").notNull().default("soft"),
     estimateMinutes: integer("estimate_minutes"),
     tags: jsonb("tags").$type<string[]>().notNull().default([]),
+    /** Rule-computed risk (D-022). Null = no risk. */
+    risk: jsonb("risk").$type<{
+      cause: "LOW_SLACK" | "BLOCKED_DEPENDENCY" | "NO_CAPACITY";
+      slackHours: number;
+      since: string;
+    } | null>(),
     origin: origin("origin").notNull().default("user"),
     sourceCommitmentId: uuid("source_commitment_id"),
     completedAt: timestamp("completed_at", { withTimezone: true }),
@@ -272,6 +278,8 @@ export const scheduleBlocks = pgTable(
       .default([]),
     calendarEventId: uuid("calendar_event_id"),
     planVersion: integer("plan_version").notNull().default(1),
+    /** Marked by the user as done (feeds time inference in phase 3). */
+    completedAt: timestamp("completed_at", { withTimezone: true }),
     createdAt: createdAt(),
   },
   (t) => [index("blocks_ws_start_idx").on(t.workspaceId, t.startsAt)],
@@ -416,10 +424,56 @@ export const auditLog = pgTable(
     reason: text("reason"),
     before: jsonb("before"),
     after: jsonb("after"),
+    /** Legacy column (never written by the app role); "undone" is derived from undo_of_audit_id rows (ADR 0003). */
     undoneAt: timestamp("undone_at", { withTimezone: true }),
+    /** Set on the compensating row that undoes another entry (append-only undo, ADR 0003). */
+    undoOfAuditId: uuid("undo_of_audit_id"),
     createdAt: createdAt(),
   },
-  (t) => [index("audit_ws_created_idx").on(t.workspaceId, t.createdAt)],
+  (t) => [
+    index("audit_ws_created_idx").on(t.workspaceId, t.createdAt),
+    index("audit_ws_undo_idx").on(t.workspaceId, t.undoOfAuditId),
+  ],
+);
+
+// ---------- Idempotency (docs/13, D-024) ----------
+export const idempotencyKeys = pgTable(
+  "idempotency_keys",
+  {
+    workspaceId: workspaceId(),
+    key: text("key").notNull(),
+    requestHash: text("request_hash").notNull(),
+    statusCode: integer("status_code").notNull(),
+    response: jsonb("response"),
+    createdAt: createdAt(),
+  },
+  (t) => [primaryKey({ columns: [t.workspaceId, t.key] })],
+);
+
+// ---------- Notifications (F-13 AC2, D-020) ----------
+export const notificationKind = pgEnum("notification_kind", [
+  "digest",
+  "risk",
+  "proposals",
+  "plan",
+  "integration",
+]);
+export const notifications = pgTable(
+  "notifications",
+  {
+    id: id(),
+    workspaceId: workspaceId(),
+    kind: notificationKind("kind").notNull(),
+    title: text("title").notNull(),
+    body: text("body").notNull(),
+    /** Entities grouped into this notification (ids only, never content). */
+    refs: jsonb("refs").$type<{ type: string; id: string }[]>().notNull().default([]),
+    /** YYYY-MM-DD in the user's time zone; used for the daily cap. */
+    day: text("day").notNull(),
+    readAt: timestamp("read_at", { withTimezone: true }),
+    createdAt: createdAt(),
+  },
+  (t) => [index("notifications_ws_day_idx").on(t.workspaceId, t.day, t.createdAt)],
 );
 
 export const aiUsage = pgTable(

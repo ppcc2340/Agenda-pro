@@ -9,12 +9,14 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",
-    "test": "vitest run --passWithNoTests",
+    "test": "vitest run",
     "build": "echo \"no build: consumed from src\"",
     "eval": "echo \"implement eval runner in phase 2 (see docs/05-ai-design.md section 7)\""
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.30.0",
+    "@meri/core": "workspace:*",
+    "@meri/integrations": "workspace:*",
     "zod": "^3.23.8"
   },
   "devDependencies": {

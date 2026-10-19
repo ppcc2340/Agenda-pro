@@ -5,7 +5,14 @@ import rateLimit from "@fastify/rate-limit";
 import swagger from "@fastify/swagger";
 import Fastify from "fastify";
 import { jsonSchemaTransform, serializerCompiler, validatorCompiler } from "fastify-type-provider-zod";
-import { createObservability, type AppConfig, type Logger, type Observability } from "@meri/config";
+import {
+  createObservability,
+  InMemoryFlagStore,
+  type AppConfig,
+  type FeatureFlagStore,
+  type Logger,
+  type Observability,
+} from "@meri/config";
 import type { Db } from "@meri/db";
 import type { Integrations } from "@meri/integrations";
 import { createErrorHandler, problemFrom, sendProblem } from "./errors";
@@ -16,6 +23,8 @@ import { accountRoutes } from "./routes/account";
 import { healthRoutes } from "./routes/health";
 import { internalRoutes } from "./routes/internal";
 import { taskRoutes } from "./routes/tasks";
+import { captureRoutes } from "./routes/capture";
+import { idempotencyPlugin } from "./plugins/idempotency";
 
 export interface AppDeps {
   config: AppConfig;
@@ -27,6 +36,7 @@ export interface AppDeps {
   /** Override for tests. */
   rateLimitMax?: number;
   observability?: Observability;
+  flags?: FeatureFlagStore;
   /** Hook for the replan trigger (set by main.ts to enqueue planner.replan). */
   onTasksChanged?: (workspaceId: string, traceId: string) => Promise<void>;
 }
@@ -100,11 +110,18 @@ export async function buildApp(deps: AppDeps) {
   await app.register(sessionPlugin, { secret: config.env.AUTH_SECRET, secure: config.isProduction });
   await app.register(csrfPlugin);
   await app.register(contextPlugin, { db: deps.db });
+  await app.register(idempotencyPlugin, { now: deps.now });
 
   await app.register(healthRoutes, { db: deps.db });
   await app.register(internalRoutes, { db: deps.db, secret: config.env.INTERNAL_API_SECRET, now: deps.now });
   await app.register(accountRoutes, { db: deps.db, now: deps.now });
   await app.register(taskRoutes, { now: deps.now, onTasksChanged: deps.onTasksChanged });
+  await app.register(captureRoutes, {
+    now: deps.now,
+    ai: deps.integrations.ai,
+    flags: deps.flags ?? new InMemoryFlagStore(),
+    onTasksChanged: deps.onTasksChanged,
+  });
 
   app.get("/docs/json", { schema: { hide: true } }, () => app.swagger());
 

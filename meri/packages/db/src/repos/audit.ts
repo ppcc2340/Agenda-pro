@@ -1,4 +1,4 @@
-import { and, desc, eq, lt } from "drizzle-orm";
+import { and, desc, eq, lt, inArray } from "drizzle-orm";
 import { auditLog } from "../schema";
 import type { WorkspaceTx } from "../workspace";
 import { newAuditId, type AuditId, type UserId, type WorkspaceId } from "../ids";
@@ -18,6 +18,8 @@ export interface AuditEntryInput {
   reason?: string;
   before?: unknown;
   after?: unknown;
+  /** For compensating rows (ADR 0003): the id of the entry being undone. */
+  undoOfAuditId?: string | null;
 }
 
 export interface AuditEntry {
@@ -30,6 +32,8 @@ export interface AuditEntry {
   reason: string | null;
   before: unknown;
   after: unknown;
+  undoOfAuditId: string | null;
+  /** Derived: timestamp of the compensating row, if any. */
   undoneAt: Date | null;
   createdAt: Date;
 }
@@ -51,6 +55,7 @@ export async function audit(tx: WorkspaceTx, ctx: AuditContext, entry: AuditEntr
     reason: entry.reason ?? null,
     before: entry.before ?? null,
     after: entry.after ?? null,
+    undoOfAuditId: entry.undoOfAuditId ?? null,
   });
   return id;
 }
@@ -58,6 +63,50 @@ export async function audit(tx: WorkspaceTx, ctx: AuditContext, entry: AuditEntr
 export interface AuditPage {
   items: AuditEntry[];
   nextCursor: string | null;
+}
+
+type Row = typeof auditLog.$inferSelect;
+
+async function undoneMap(
+  tx: WorkspaceTx,
+  workspaceId: WorkspaceId,
+  ids: string[],
+): Promise<Map<string, Date>> {
+  const map = new Map<string, Date>();
+  if (ids.length === 0) return map;
+  const rows = await tx
+    .select({ undoOf: auditLog.undoOfAuditId, createdAt: auditLog.createdAt })
+    .from(auditLog)
+    .where(and(eq(auditLog.workspaceId, workspaceId), inArray(auditLog.undoOfAuditId, ids)));
+  for (const r of rows) if (r.undoOf) map.set(r.undoOf, r.createdAt);
+  return map;
+}
+
+const toEntry = (r: Row, undone: Map<string, Date>): AuditEntry => ({
+  id: r.id as AuditId,
+  actor: r.actor,
+  actorUserId: r.actorUserId,
+  action: r.action,
+  entityType: r.entityType,
+  entityId: r.entityId,
+  reason: r.reason,
+  before: r.before,
+  after: r.after,
+  undoOfAuditId: r.undoOfAuditId,
+  undoneAt: undone.get(r.id) ?? null,
+  createdAt: r.createdAt,
+});
+
+export async function getAuditEntry(
+  tx: WorkspaceTx,
+  workspaceId: WorkspaceId,
+  id: string,
+): Promise<AuditEntry | null> {
+  const row = await tx.query.auditLog.findFirst({
+    where: and(eq(auditLog.workspaceId, workspaceId), eq(auditLog.id, id)),
+  });
+  if (!row) return null;
+  return toEntry(row, await undoneMap(tx, workspaceId, [row.id]));
 }
 
 /**
@@ -76,19 +125,13 @@ export async function listAudit(
     .where(and(eq(auditLog.workspaceId, workspaceId), cursor ? lt(auditLog.id, cursor) : undefined))
     .orderBy(desc(auditLog.id))
     .limit(limit + 1);
-  const items = rows.slice(0, limit).map((r) => ({
-    id: r.id as AuditId,
-    actor: r.actor,
-    actorUserId: r.actorUserId,
-    action: r.action,
-    entityType: r.entityType,
-    entityId: r.entityId,
-    reason: r.reason,
-    before: r.before,
-    after: r.after,
-    undoneAt: r.undoneAt,
-    createdAt: r.createdAt,
-  }));
+  const slice = rows.slice(0, limit);
+  const undone = await undoneMap(
+    tx,
+    workspaceId,
+    slice.map((r) => r.id),
+  );
+  const items = slice.map((r) => toEntry(r, undone));
   const last = items[items.length - 1];
   return { items, nextCursor: rows.length > limit && last ? last.id : null };
 }

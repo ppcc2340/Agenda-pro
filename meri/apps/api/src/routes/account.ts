@@ -48,6 +48,7 @@ const AuditEntryView = z.object({
   reason: z.string().nullable(),
   before: z.unknown().nullable(),
   after: z.unknown().nullable(),
+  undoOfAuditId: z.string().nullable(),
   undoneAt: z.string().datetime().nullable(),
   createdAt: z.string().datetime(),
 });

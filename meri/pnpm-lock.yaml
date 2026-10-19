@@ -75,6 +75,9 @@ importers:
       '@fastify/swagger':
         specifier: ^9.1.0
         version: 9.9.2
+      '@meri/ai':
+        specifier: workspace:*
+        version: link:../../packages/ai
       '@meri/config':
         specifier: workspace:*
         version: link:../../packages/config
@@ -270,6 +273,12 @@ importers:
       '@anthropic-ai/sdk':
         specifier: ^0.30.0
         version: 0.30.1
+      '@meri/core':
+        specifier: workspace:*
+        version: link:../core
+      '@meri/integrations':
+        specifier: workspace:*
+        version: link:../integrations
       zod:
         specifier: ^3.23.8
         version: 3.25.76

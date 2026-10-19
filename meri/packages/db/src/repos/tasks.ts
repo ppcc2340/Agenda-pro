@@ -4,7 +4,15 @@ import { taskDependencies, tasks } from "../schema";
 import type { WorkspaceTx } from "../workspace";
 import { newId, type TaskId, type WorkspaceId } from "../ids";
 
-export const TASK_STATUSES = ["pending", "scheduled", "in_progress", "blocked", "waiting_on_third_party", "at_risk", "completed"] as const;
+export const TASK_STATUSES = [
+  "pending",
+  "scheduled",
+  "in_progress",
+  "blocked",
+  "waiting_on_third_party",
+  "at_risk",
+  "completed",
+] as const;
 export type TaskStatus = (typeof TASK_STATUSES)[number];
 
 const isoDate = z.string().datetime({ offset: true });
@@ -20,7 +28,13 @@ export const TaskInputSchema = z.object({
   priority: z.number().int().min(1).max(4).optional(),
   dueAt: isoDate.nullable().optional(),
   deadlineType: z.enum(["soft", "hard"]).optional(),
-  estimateMinutes: z.number().int().min(5).max(60 * 24 * 10).nullable().optional(),
+  estimateMinutes: z
+    .number()
+    .int()
+    .min(5)
+    .max(60 * 24 * 10)
+    .nullable()
+    .optional(),
   tags: z.array(z.string().trim().min(1).max(40)).max(20).optional(),
 });
 export type TaskInput = z.infer<typeof TaskInputSchema>;
@@ -63,7 +77,11 @@ function toView(row: Row, blockedBy: string[]): TaskView {
   return { ...rest, id: row.id as TaskId, blockedBy };
 }
 
-async function dependenciesFor(tx: WorkspaceTx, workspaceId: WorkspaceId, taskIds: string[]): Promise<Map<string, string[]>> {
+async function dependenciesFor(
+  tx: WorkspaceTx,
+  workspaceId: WorkspaceId,
+  taskIds: string[],
+): Promise<Map<string, string[]>> {
   const map = new Map<string, string[]>();
   if (taskIds.length === 0) return map;
   const rows = await tx
@@ -87,10 +105,17 @@ export async function listTasks(
     filters.status ? eq(tasks.status, filters.status) : undefined,
     filters.clientId ? eq(tasks.clientId, filters.clientId) : undefined,
     filters.dueBefore ? lte(tasks.dueAt, filters.dueBefore) : undefined,
-    filters.includeCompleted || filters.status === "completed" ? undefined : sql`${tasks.status} <> 'completed'`,
+    filters.includeCompleted || filters.status === "completed"
+      ? undefined
+      : sql`${tasks.status} <> 'completed'`,
     page.cursor ? lt(tasks.id, page.cursor) : undefined,
   );
-  const rows = await tx.select().from(tasks).where(where).orderBy(desc(tasks.id)).limit(page.limit + 1);
+  const rows = await tx
+    .select()
+    .from(tasks)
+    .where(where)
+    .orderBy(desc(tasks.id))
+    .limit(page.limit + 1);
   const slice = rows.slice(0, page.limit);
   const deps = await dependenciesFor(
     tx,
@@ -107,7 +132,9 @@ export async function listOpenTasks(tx: WorkspaceTx, workspaceId: WorkspaceId): 
   const rows = await tx
     .select()
     .from(tasks)
-    .where(and(eq(tasks.workspaceId, workspaceId), isNull(tasks.deletedAt), sql`${tasks.status} <> 'completed'`))
+    .where(
+      and(eq(tasks.workspaceId, workspaceId), isNull(tasks.deletedAt), sql`${tasks.status} <> 'completed'`),
+    )
     .orderBy(asc(tasks.id));
   const deps = await dependenciesFor(
     tx,
@@ -117,8 +144,14 @@ export async function listOpenTasks(tx: WorkspaceTx, workspaceId: WorkspaceId): 
   return rows.map((r) => toView(r, deps.get(r.id) ?? []));
 }
 
-export async function getTask(tx: WorkspaceTx, workspaceId: WorkspaceId, id: string): Promise<TaskView | null> {
-  const row = await tx.query.tasks.findFirst({ where: and(eq(tasks.workspaceId, workspaceId), eq(tasks.id, id), isNull(tasks.deletedAt)) });
+export async function getTask(
+  tx: WorkspaceTx,
+  workspaceId: WorkspaceId,
+  id: string,
+): Promise<TaskView | null> {
+  const row = await tx.query.tasks.findFirst({
+    where: and(eq(tasks.workspaceId, workspaceId), eq(tasks.id, id), isNull(tasks.deletedAt)),
+  });
   if (!row) return null;
   const deps = await dependenciesFor(tx, workspaceId, [row.id]);
   return toView(row, deps.get(row.id) ?? []);
@@ -159,7 +192,13 @@ export async function createTask(
   return toView(row, []);
 }
 
-export async function updateTask(tx: WorkspaceTx, workspaceId: WorkspaceId, id: string, patch: TaskPatch, now: Date): Promise<TaskView | null> {
+export async function updateTask(
+  tx: WorkspaceTx,
+  workspaceId: WorkspaceId,
+  id: string,
+  patch: TaskPatch,
+  now: Date,
+): Promise<TaskView | null> {
   const current = await getTask(tx, workspaceId, id);
   if (!current) return null;
   const nextStatus = patch.status ?? current.status;
@@ -186,30 +225,61 @@ export async function updateTask(tx: WorkspaceTx, workspaceId: WorkspaceId, id: 
   return row ? toView(row, current.blockedBy) : null;
 }
 
-export async function softDeleteTask(tx: WorkspaceTx, workspaceId: WorkspaceId, id: string, now: Date): Promise<TaskView | null> {
+export async function softDeleteTask(
+  tx: WorkspaceTx,
+  workspaceId: WorkspaceId,
+  id: string,
+  now: Date,
+): Promise<TaskView | null> {
   const current = await getTask(tx, workspaceId, id);
   if (!current) return null;
-  await tx.update(tasks).set({ deletedAt: now, updatedAt: now }).where(and(eq(tasks.workspaceId, workspaceId), eq(tasks.id, id)));
-  await tx.delete(taskDependencies).where(and(eq(taskDependencies.workspaceId, workspaceId), eq(taskDependencies.blockedByTaskId, id)));
+  await tx
+    .update(tasks)
+    .set({ deletedAt: now, updatedAt: now })
+    .where(and(eq(tasks.workspaceId, workspaceId), eq(tasks.id, id)));
+  await tx
+    .delete(taskDependencies)
+    .where(and(eq(taskDependencies.workspaceId, workspaceId), eq(taskDependencies.blockedByTaskId, id)));
   return current;
 }
 
 /** Replaces the blockedBy set of a task. Cycle validation happens in the caller with @meri/core (pure). */
-export async function replaceDependencies(tx: WorkspaceTx, workspaceId: WorkspaceId, id: string, blockedBy: string[]): Promise<string[]> {
-  await tx.delete(taskDependencies).where(and(eq(taskDependencies.workspaceId, workspaceId), eq(taskDependencies.taskId, id)));
+export async function replaceDependencies(
+  tx: WorkspaceTx,
+  workspaceId: WorkspaceId,
+  id: string,
+  blockedBy: string[],
+): Promise<string[]> {
+  await tx
+    .delete(taskDependencies)
+    .where(and(eq(taskDependencies.workspaceId, workspaceId), eq(taskDependencies.taskId, id)));
   const unique = [...new Set(blockedBy)].sort();
   if (unique.length > 0) {
-    await tx.insert(taskDependencies).values(unique.map((blockedByTaskId) => ({ workspaceId, taskId: id, blockedByTaskId })));
+    await tx
+      .insert(taskDependencies)
+      .values(unique.map((blockedByTaskId) => ({ workspaceId, taskId: id, blockedByTaskId })));
   }
   return unique;
 }
 
 /** Bulk status update used by the planner to persist `at_risk`/`scheduled` (D-022). Never touches completed tasks. */
-export async function setTaskStatuses(tx: WorkspaceTx, workspaceId: WorkspaceId, updates: { id: string; status: TaskStatus }[], now: Date): Promise<void> {
+export async function setTaskStatuses(
+  tx: WorkspaceTx,
+  workspaceId: WorkspaceId,
+  updates: { id: string; status: TaskStatus }[],
+  now: Date,
+): Promise<void> {
   for (const u of updates) {
     await tx
       .update(tasks)
       .set({ status: u.status, updatedAt: now })
-      .where(and(eq(tasks.workspaceId, workspaceId), eq(tasks.id, u.id), sql`${tasks.status} <> 'completed'`, isNull(tasks.deletedAt)));
+      .where(
+        and(
+          eq(tasks.workspaceId, workspaceId),
+          eq(tasks.id, u.id),
+          sql`${tasks.status} <> 'completed'`,
+          isNull(tasks.deletedAt),
+        ),
+      );
   }
 }

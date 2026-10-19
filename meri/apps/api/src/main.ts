@@ -1,6 +1,7 @@
 import { createLogger, loadConfig, loadDotenv } from "@meri/config";
 import { assertAppRole, createDb } from "@meri/db";
-import { createIntegrations } from "@meri/integrations";
+import { createIntegrations, FakeAiClient } from "@meri/integrations";
+import { registerFakeAiHandlers } from "@meri/ai";
 import { buildApp } from "./app";
 
 loadDotenv(".env");
@@ -13,6 +14,7 @@ async function main(): Promise<void> {
   const handle = createDb(config.env.DATABASE_URL);
   await assertAppRole(handle.db);
   const integrations = createIntegrations(config, { now });
+  if (integrations.ai instanceof FakeAiClient) registerFakeAiHandlers(integrations.ai);
   const app = await buildApp({ config, db: handle.db, integrations, logger, now });
   const port = config.env.PORT ?? 4000;
   const shutdown = async (signal: string) => {

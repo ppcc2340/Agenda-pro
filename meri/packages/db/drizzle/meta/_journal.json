@@ -22,6 +22,20 @@
       "when": 1792420121808,
       "tag": "0002_preferences_onboarded_at",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792424218427,
+      "tag": "0003_phase1_risk_undo_idempotency_notifications",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792424252470,
+      "tag": "0004_rls_phase1_tables",
+      "breakpoints": true
     }
   ]
 }

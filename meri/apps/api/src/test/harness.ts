@@ -8,7 +8,8 @@ import {
   type AccountIdentity,
   type DbHandle,
 } from "@meri/db";
-import { createIntegrations } from "@meri/integrations";
+import { createIntegrations, FakeAiClient } from "@meri/integrations";
+import { registerFakeAiHandlers } from "@meri/ai";
 import { buildApp, type App } from "../app";
 import { sessionCookieName } from "../plugins/session";
 import { CSRF_HEADER, CSRF_VALUE } from "../plugins/csrf";
@@ -52,10 +53,12 @@ export async function migrateTestDb(): Promise<void> {
 export async function createTestApp(options: { rateLimitMax?: number } = {}): Promise<TestApp> {
   const config = testConfig();
   const handle = createDb(TEST_APP_URL, { max: 3 });
+  const integrations = createIntegrations(config, { now: () => NOW });
+  if (integrations.ai instanceof FakeAiClient) registerFakeAiHandlers(integrations.ai);
   const app = await buildApp({
     config,
     db: handle.db,
-    integrations: createIntegrations(config, { now: () => NOW }),
+    integrations,
     logger: createLogger({ name: "api-test", level: "silent" }),
     now: () => NOW,
     rateLimitMax: options.rateLimitMax ?? 1000,
