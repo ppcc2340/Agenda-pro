@@ -51,6 +51,11 @@ const VERB_FORMS: [RegExp, string][] = [
   [/\b(agendo|agendare|agendaré|agendaremos)\b/i, "agendar"],
   [/\b(respondo|respondere|responderé|responderemos|contesto|contestare|contestaré)\b/i, "responder"],
   [/\b(tendras|tendrás|tendran|tendrán|tendra|tendrá)\b/i, "entregar"],
+  // Hedged proposals keep their own verb ("podríamos revisar…", "maybe we could look at…").
+  [
+    /\b(podriamos|podríamos|podamos|podemos|we could|could we|we might|maybe we|perhaps we)\s+(\p{L}+)\b/iu,
+    "$2",
+  ],
   [
     /\b(i'?ll|i will|we'?ll|we will|i am going to|i'?m going to|we are going to)\s+(send|get|deliver|share|review|prepare|call|confirm|sign|pay|schedule|reply|follow up|forward|draft|book|have|finish|complete|circulate|submit|update)\b/i,
     "$2",
@@ -68,15 +73,15 @@ const REQUEST_PATTERNS: RegExp[] = [
   /\b(por favor|porfa)[,]?\s+(env[ií]a(me)?|manda(me)?|pasa(me)?|confirma(me)?|revisa|prepara|firma|responde|comparte|devu[eé]lve(me)?)\b/i,
   /\b(could you|can you|would you|please)\s+(send|share|confirm|review|prepare|sign|return|reply|forward|call|book|update|let me know|get back)\b/i,
   /\b(te pido|le pido|les pido|ruego)\s+(que\s+)?(me\s+)?(\p{L}+)/iu,
-  /\b(quedo a la espera de|espero)\s+(tu|su|el|la)\s+\p{L}+/iu,
-  /\b(waiting for|looking forward to receiving|awaiting)\s+(your|the)\s+\p{L}+/iu,
+  /\b(quedo a la espera de|espero)\s+(tu|su|el|la|los|las)\s+(\p{L}+)/iu,
+  /\b(waiting for|looking forward to receiving|awaiting)\s+(your|the)\s+(\p{L}+)/iu,
 ];
 const SUGGESTION_WORDS =
   /\b(quiza|quizas|quizá|quizás|tal vez|a lo mejor|podriamos|podríamos|maybe|perhaps|we could|might|sometime|cuando puedas|when you get a chance|si te parece|if you like|igual)\b/i;
 /** Hedged proposals ("maybe we could look at…", "podríamos vernos…") become `suggested` commitments. */
 const HEDGED_ACTION =
   /\b(we could|could we|we might|maybe we|perhaps we|podriamos|podríamos|tal vez podamos|quizas podamos|quizás podamos|igual podemos|si te parece)\b.*\b(look|review|send|discuss|meet|talk|revisar|ver|enviar|hablar|reunirnos|mirar|vernos|comentar)/iu;
-const NEGATION = /\b(no|nunca|jamas|jamás|not|never|n't)\b/i;
+const NEGATION = /\b(no|nunca|jamas|jamás|not|never|won't|can't|cannot|couldn't|wouldn't|shan't)\b|n't\b/i;
 const OWN_PROMISE_FROM_SENDER =
   /\b(te|le|les|os)\s+(envio|envío|enviare|enviaré|mando|mandare|mandaré|paso|pasare|pasaré|llamo|llamare|llamaré|confirmo|confirmare|confirmaré)\b|\b(enviare|enviaré|mandare|mandaré|preparare|prepararé|revisare|revisaré|entregare|entregaré|confirmare|confirmaré|llamare|llamaré|presentare|presentaré|firmare|firmaré|pagare|pagaré|respondere|responderé|contestare|contestaré|i'?ll|i will|we'?ll|we will|i'?m going to|me comprometo|quedo en)\b/i;
 
@@ -156,8 +161,9 @@ export function deriveAction(sentence: string, ctx: CaptureContext): string {
   }
   let verb: string | null = null;
   let rest = s;
+  const plain = normalizeText(s); // same length as `s` for precomposed input: indexes are shared
   for (const [re, inf] of VERB_FORMS) {
-    const m = re.exec(s);
+    const m = re.exec(plain);
     if (m) {
       verb = inf.startsWith("$") ? (m[Number(inf.slice(1))] ?? "").toLowerCase() : inf;
       rest = s.slice(m.index + m[0].length);
@@ -166,11 +172,22 @@ export function deriveAction(sentence: string, ctx: CaptureContext): string {
   }
   if (!verb) {
     for (const re of REQUEST_PATTERNS) {
-      const m = re.exec(s);
+      const m = re.exec(plain);
       if (m) {
-        const requested = (m[m.length - 1] ?? "").toLowerCase().replace(/(me|te|nos)$/i, "");
-        verb = requestVerb(requested);
-        rest = s.slice(m.index + m[0].length);
+        // Last *defined* group: the requested verb, or the awaited noun for "quedo a la espera de…" forms.
+        const last =
+          m
+            .slice(1)
+            .filter((g): g is string => typeof g === "string")
+            .pop() ?? "";
+        const waiting = /^(quedo|espero|waiting|awaiting|looking)/i.test(m[0]);
+        if (waiting) {
+          verb = /^(quedo|espero)/i.test(m[0]) ? "recibir" : "receive";
+          rest = s.slice(m.index + m[0].length - last.length);
+        } else {
+          verb = requestVerb(last.toLowerCase().replace(/(me|te|nos)$/i, ""));
+          rest = s.slice(m.index + m[0].length);
+        }
         break;
       }
     }
@@ -284,10 +301,11 @@ export function extractCommitmentsByRules(
   };
   const out: RuleCommitment[] = [];
   for (const sentence of splitSentences(message.text)) {
+    // Patterns run on the accent-free text: JS `\b` treats "é" as a non-word char, so "enviaré " would not match.
     const lower = normalizeText(sentence);
-    const promise = OWN_PROMISE_FROM_SENDER.test(sentence);
-    const request = !promise && REQUEST_PATTERNS.some((re) => re.test(sentence));
-    const hedged = !promise && !request && HEDGED_ACTION.test(sentence);
+    const promise = OWN_PROMISE_FROM_SENDER.test(lower);
+    const request = !promise && REQUEST_PATTERNS.some((re) => re.test(lower));
+    const hedged = !promise && !request && HEDGED_ACTION.test(lower);
     if (!promise && !request && !hedged) continue;
     if (NEGATION.test(lower.split(" ").slice(0, 4).join(" "))) continue;
     const direction: RuleCommitment["direction"] = promise

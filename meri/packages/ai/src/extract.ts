@@ -33,14 +33,20 @@ export interface ExtractedCommitment extends CommitmentExtraction {
 export interface ExtractOutcome {
   commitments: ExtractedCommitment[];
   /** Items the model returned that were dropped by the policy layer, with the reason (for evals and logs). */
-  rejected: { reason: "evidence" | "injection" | "message" | "date" | "counterparty"; action: string }[];
+  rejected: {
+    reason: "evidence" | "injection" | "address" | "message" | "date" | "counterparty";
+    action: string;
+  }[];
   usage: AiUsage[];
   context: string;
   escalated: boolean;
 }
 
 const COMMITMENT_VERB =
-  /\b(envi|mand|entreg|prepar|revis|llam|confirm|firm|pag|agend|respond|contest|present|adjunt|remit|send|deliver|share|review|prepare|call|confirm|sign|pay|schedule|reply|submit|update|get back|circulate|draft|book)/i;
+  /\b(envi|mand|entreg|prepar|revis|llam|confirm|firm|pag|agend|respond|contest|present|adjunt|remit|pas(o|ar|e)|hago llegar|send|deliver|share|review|prepare|call|confirm|sign|pay|schedule|reply|submit|update|get back|circulate|draft|book)/i;
+const REQUEST_HINT =
+  /\b(podrias|podria|podriais|puedes|pueden|necesito|necesitamos|necesitaria|por favor|porfa|te pido|le pido|les pido|ruego|quedo a la espera|espero (tu|su)|could you|can you|would you|please|waiting for|awaiting|looking forward to receiving)\b/i;
+const ADDRESS_OR_LINK = /[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+|https?:\/\/|\bwww\./i;
 const DATE_HINT =
   /\b(hoy|mañana|manana|lunes|martes|miercoles|miércoles|jueves|viernes|sabado|sábado|domingo|semana|mes|\d{1,2}\/\d{1,2}|\d{1,2} de \w+|today|tomorrow|monday|tuesday|wednesday|thursday|friday|week|month|antes del?|before|by |eod|asap)\b/i;
 const HEDGE =
@@ -54,7 +60,8 @@ export function classifyKind(
   if (HEDGE.test(text) || c.kind === "suggested") return "suggested";
   const hasVerb = COMMITMENT_VERB.test(text);
   const hasDate = Boolean(c.dueAt) || Boolean(c.dueText) || DATE_HINT.test(text);
-  if (hasVerb && hasDate) return "explicit";
+  // A request ("could you send… by Friday") is an obligation we infer, not a commitment the sender made.
+  if (hasVerb && hasDate && !REQUEST_HINT.test(text)) return "explicit";
   return "inferred";
 }
 
@@ -150,6 +157,11 @@ export async function extractCommitments(
       looksLikeInjection(raw.dueText ?? "")
     ) {
       rejected.push({ reason: "injection", action: raw.action });
+      continue;
+    }
+    // docs/05 §6.4: recipients and links never come from the model. An address inside an action is an attack.
+    if ([raw.action, raw.evidence, raw.dueText ?? ""].some((f) => ADDRESS_OR_LINK.test(f))) {
+      rejected.push({ reason: "address", action: raw.action });
       continue;
     }
     if (raw.dueAt) {

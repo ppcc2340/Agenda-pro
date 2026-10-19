@@ -11,7 +11,8 @@
     "lint": "eslint src",
     "test": "vitest run",
     "build": "echo \"no build: consumed from src\"",
-    "eval": "tsx src/evals/run.ts"
+    "eval": "tsx src/evals/run.ts",
+    "eval:generate": "tsx ../../evals/commitments/generate.ts"
   },
   "dependencies": {
     "@meri/core": "workspace:*",

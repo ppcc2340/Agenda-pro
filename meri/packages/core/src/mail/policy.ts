@@ -14,6 +14,15 @@ const INJECTION_PATTERNS = [
   /you are (now )?(an?|the) (assistant|ai|model)/i,
   /(env[ií]a|send)\s+(to|a)\s+[^\s@]+@[^\s@]+\.[^\s@]+/i,
   /(contraseñ|password|api key|token de acceso|access token)/i,
+  /\b(eres|you are)\s+(now\s+|ahora\s+)?(un|una|an?|the|el)?\s*(asistente|assistant|modelo|model|ia|ai|llm)\b/i,
+  /\b(cambia|cambie|cambiar|change|set|update)\s+(el|the|la)?\s*(destinatario|recipient|counterparty|contraparte)\b/i,
+  /\b(nota|note)\s+(para|to|for)\s+(el|the)\s+(modelo|model|asistente|assistant)\b/i,
+  /\b(devuelve|return|include|incluye|añade|anade|agrega|add)\s+(tambi[eé]n\s+|also\s+)?(el|the|un|a)?\s*(campo|field|enlace|link)\b/i,
+  /\b(olvida|olvide|forget)\s+(todas?\s+|every\s+|all\s+)?(las\s+|los\s+|the\s+)?(reglas?|rules?|instrucciones|instructions?)\b/i,
+  /\b(cc|bcc|copia a|con copia a)\s+[^\s@]+@[^\s@]+/i,
+  /\b(a partir de ahora|from now on)\b/i,
+  /\b(modo|mode)\s*(administrador|admin)\b|\badmin mode\b/i,
+  /\[\s*(fin|end)\s+(del|of)\s+(correo|e-?mail|message)\s*\]/i,
 ];
 
 export function looksLikeInjection(text: string): boolean {

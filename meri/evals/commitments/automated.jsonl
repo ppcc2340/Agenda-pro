@@ -1,0 +1,73 @@
+{"id":"a-001","message":{"subject":"Weekly update from shop.example","to":["me@firm.example"],"labels":["INBOX"],"headers":{},"from":"news@shop.example"},"expected":{"keep":false}}
+{"id":"a-002","message":{"subject":"Weekly update from saas.example","to":["me@firm.example"],"labels":["INBOX"],"headers":{},"from":"news@saas.example"},"expected":{"keep":false}}
+{"id":"a-003","message":{"subject":"Weekly update from bank.example","to":["me@firm.example"],"labels":["INBOX"],"headers":{},"from":"news@bank.example"},"expected":{"keep":false}}
+{"id":"a-004","message":{"subject":"Weekly update from airline.example","to":["me@firm.example"],"labels":["INBOX"],"headers":{},"from":"news@airline.example"},"expected":{"keep":false}}
+{"id":"a-005","message":{"subject":"Weekly update from social.example","to":["me@firm.example"],"labels":["INBOX"],"headers":{},"from":"news@social.example"},"expected":{"keep":false}}
+{"id":"a-006","message":{"subject":"Weekly update from shop.example","to":["me@firm.example"],"labels":["INBOX"],"headers":{},"from":"newsletter@shop.example"},"expected":{"keep":false}}
+{"id":"a-007","message":{"subject":"Weekly update from saas.example","to":["me@firm.example"],"labels":["INBOX"],"headers":{},"from":"newsletter@saas.example"},"expected":{"keep":false}}
+{"id":"a-008","message":{"subject":"Weekly update from bank.example","to":["me@firm.example"],"labels":["INBOX"],"headers":{},"from":"newsletter@bank.example"},"expected":{"keep":false}}
+{"id":"a-009","message":{"subject":"Weekly update from airline.example","to":["me@firm.example"],"labels":["INBOX"],"headers":{},"from":"newsletter@airline.example"},"expected":{"keep":false}}
+{"id":"a-010","message":{"subject":"Weekly update from social.example","to":["me@firm.example"],"labels":["INBOX"],"headers":{},"from":"newsletter@social.example"},"expected":{"keep":false}}
+{"id":"a-011","message":{"subject":"Weekly update from shop.example","to":["me@firm.example"],"labels":["INBOX"],"headers":{},"from":"no-reply@shop.example"},"expected":{"keep":false}}
+{"id":"a-012","message":{"subject":"Weekly update from saas.example","to":["me@firm.example"],"labels":["INBOX"],"headers":{},"from":"no-reply@saas.example"},"expected":{"keep":false}}
+{"id":"a-013","message":{"subject":"Weekly update from bank.example","to":["me@firm.example"],"labels":["INBOX"],"headers":{},"from":"no-reply@bank.example"},"expected":{"keep":false}}
+{"id":"a-014","message":{"subject":"Weekly update from airline.example","to":["me@firm.example"],"labels":["INBOX"],"headers":{},"from":"no-reply@airline.example"},"expected":{"keep":false}}
+{"id":"a-015","message":{"subject":"Weekly update from social.example","to":["me@firm.example"],"labels":["INBOX"],"headers":{},"from":"no-reply@social.example"},"expected":{"keep":false}}
+{"id":"a-016","message":{"subject":"Weekly update from shop.example","to":["me@firm.example"],"labels":["INBOX"],"headers":{},"from":"noreply@shop.example"},"expected":{"keep":false}}
+{"id":"a-017","message":{"subject":"Weekly update from saas.example","to":["me@firm.example"],"labels":["INBOX"],"headers":{},"from":"noreply@saas.example"},"expected":{"keep":false}}
+{"id":"a-018","message":{"subject":"Weekly update from bank.example","to":["me@firm.example"],"labels":["INBOX"],"headers":{},"from":"noreply@bank.example"},"expected":{"keep":false}}
+{"id":"a-019","message":{"subject":"Weekly update from airline.example","to":["me@firm.example"],"labels":["INBOX"],"headers":{},"from":"noreply@airline.example"},"expected":{"keep":false}}
+{"id":"a-020","message":{"subject":"Weekly update from social.example","to":["me@firm.example"],"labels":["INBOX"],"headers":{},"from":"noreply@social.example"},"expected":{"keep":false}}
+{"id":"a-021","message":{"subject":"Weekly update from shop.example","to":["me@firm.example"],"labels":["INBOX"],"headers":{},"from":"notifications@shop.example"},"expected":{"keep":false}}
+{"id":"a-022","message":{"subject":"Weekly update from saas.example","to":["me@firm.example"],"labels":["INBOX"],"headers":{},"from":"notifications@saas.example"},"expected":{"keep":false}}
+{"id":"a-023","message":{"subject":"Weekly update from bank.example","to":["me@firm.example"],"labels":["INBOX"],"headers":{},"from":"notifications@bank.example"},"expected":{"keep":false}}
+{"id":"a-024","message":{"subject":"Weekly update from airline.example","to":["me@firm.example"],"labels":["INBOX"],"headers":{},"from":"notifications@airline.example"},"expected":{"keep":false}}
+{"id":"a-025","message":{"subject":"Weekly update from social.example","to":["me@firm.example"],"labels":["INBOX"],"headers":{},"from":"notifications@social.example"},"expected":{"keep":false}}
+{"id":"a-026","message":{"subject":"Weekly update from shop.example","to":["me@firm.example"],"labels":["INBOX"],"headers":{},"from":"alerts@shop.example"},"expected":{"keep":false}}
+{"id":"a-027","message":{"subject":"Weekly update from saas.example","to":["me@firm.example"],"labels":["INBOX"],"headers":{},"from":"alerts@saas.example"},"expected":{"keep":false}}
+{"id":"a-028","message":{"subject":"Weekly update from bank.example","to":["me@firm.example"],"labels":["INBOX"],"headers":{},"from":"alerts@bank.example"},"expected":{"keep":false}}
+{"id":"a-029","message":{"subject":"Weekly update from airline.example","to":["me@firm.example"],"labels":["INBOX"],"headers":{},"from":"alerts@airline.example"},"expected":{"keep":false}}
+{"id":"a-030","message":{"subject":"Weekly update from social.example","to":["me@firm.example"],"labels":["INBOX"],"headers":{},"from":"alerts@social.example"},"expected":{"keep":false}}
+{"id":"a-031","message":{"subject":"Weekly update from shop.example","to":["me@firm.example"],"labels":["INBOX"],"headers":{},"from":"marketing@shop.example"},"expected":{"keep":false}}
+{"id":"a-032","message":{"subject":"Weekly update from saas.example","to":["me@firm.example"],"labels":["INBOX"],"headers":{},"from":"marketing@saas.example"},"expected":{"keep":false}}
+{"id":"a-033","message":{"subject":"Weekly update from bank.example","to":["me@firm.example"],"labels":["INBOX"],"headers":{},"from":"marketing@bank.example"},"expected":{"keep":false}}
+{"id":"a-034","message":{"subject":"Weekly update from airline.example","to":["me@firm.example"],"labels":["INBOX"],"headers":{},"from":"marketing@airline.example"},"expected":{"keep":false}}
+{"id":"a-035","message":{"subject":"Weekly update from social.example","to":["me@firm.example"],"labels":["INBOX"],"headers":{},"from":"marketing@social.example"},"expected":{"keep":false}}
+{"id":"a-036","message":{"subject":"Weekly update from shop.example","to":["me@firm.example"],"labels":["INBOX"],"headers":{},"from":"info@shop.example"},"expected":{"keep":false}}
+{"id":"a-037","message":{"subject":"Weekly update from saas.example","to":["me@firm.example"],"labels":["INBOX"],"headers":{},"from":"info@saas.example"},"expected":{"keep":false}}
+{"id":"a-038","message":{"subject":"Weekly update from bank.example","to":["me@firm.example"],"labels":["INBOX"],"headers":{},"from":"info@bank.example"},"expected":{"keep":false}}
+{"id":"a-039","message":{"subject":"Weekly update from airline.example","to":["me@firm.example"],"labels":["INBOX"],"headers":{},"from":"info@airline.example"},"expected":{"keep":false}}
+{"id":"a-040","message":{"subject":"Weekly update from social.example","to":["me@firm.example"],"labels":["INBOX"],"headers":{},"from":"info@social.example"},"expected":{"keep":false}}
+{"id":"a-041","message":{"subject":"Our October offers","to":["me@firm.example"],"labels":["INBOX"],"headers":{"List-Unsubscribe":"<mailto:unsub@shop.example>"},"from":"hello@shop.example"},"expected":{"keep":false}}
+{"id":"a-042","message":{"subject":"Product news","to":["me@firm.example"],"labels":["INBOX"],"headers":{"Precedence":"bulk"},"from":"team@shop.example"},"expected":{"keep":false}}
+{"id":"a-043","message":{"subject":"Your receipt","to":["me@firm.example"],"labels":["INBOX"],"headers":{"Auto-Submitted":"auto-generated"},"from":"system@shop.example"},"expected":{"keep":false}}
+{"id":"a-044","message":{"subject":"Sale ends tonight","to":["me@firm.example"],"labels":["INBOX","CATEGORY_PROMOTIONS"],"headers":{},"from":"promo@shop.example"},"expected":{"keep":false}}
+{"id":"a-045","message":{"subject":"Someone mentioned you","to":["me@firm.example"],"labels":["INBOX","CATEGORY_SOCIAL"],"headers":{},"from":"updates@shop.example"},"expected":{"keep":false}}
+{"id":"a-046","message":{"subject":"Our October offers","to":["me@firm.example"],"labels":["INBOX"],"headers":{"List-Unsubscribe":"<mailto:unsub@saas.example>"},"from":"hello@saas.example"},"expected":{"keep":false}}
+{"id":"a-047","message":{"subject":"Product news","to":["me@firm.example"],"labels":["INBOX"],"headers":{"Precedence":"bulk"},"from":"team@saas.example"},"expected":{"keep":false}}
+{"id":"a-048","message":{"subject":"Your receipt","to":["me@firm.example"],"labels":["INBOX"],"headers":{"Auto-Submitted":"auto-generated"},"from":"system@saas.example"},"expected":{"keep":false}}
+{"id":"a-049","message":{"subject":"Sale ends tonight","to":["me@firm.example"],"labels":["INBOX","CATEGORY_PROMOTIONS"],"headers":{},"from":"promo@saas.example"},"expected":{"keep":false}}
+{"id":"a-050","message":{"subject":"Someone mentioned you","to":["me@firm.example"],"labels":["INBOX","CATEGORY_SOCIAL"],"headers":{},"from":"updates@saas.example"},"expected":{"keep":false}}
+{"id":"a-051","message":{"subject":"Our October offers","to":["me@firm.example"],"labels":["INBOX"],"headers":{"List-Unsubscribe":"<mailto:unsub@bank.example>"},"from":"hello@bank.example"},"expected":{"keep":false}}
+{"id":"a-052","message":{"subject":"Product news","to":["me@firm.example"],"labels":["INBOX"],"headers":{"Precedence":"bulk"},"from":"team@bank.example"},"expected":{"keep":false}}
+{"id":"a-053","message":{"subject":"Your receipt","to":["me@firm.example"],"labels":["INBOX"],"headers":{"Auto-Submitted":"auto-generated"},"from":"system@bank.example"},"expected":{"keep":false}}
+{"id":"a-054","message":{"subject":"Sale ends tonight","to":["me@firm.example"],"labels":["INBOX","CATEGORY_PROMOTIONS"],"headers":{},"from":"promo@bank.example"},"expected":{"keep":false}}
+{"id":"a-055","message":{"subject":"Someone mentioned you","to":["me@firm.example"],"labels":["INBOX","CATEGORY_SOCIAL"],"headers":{},"from":"updates@bank.example"},"expected":{"keep":false}}
+{"id":"a-056","message":{"subject":"Our October offers","to":["me@firm.example"],"labels":["INBOX"],"headers":{"List-Unsubscribe":"<mailto:unsub@airline.example>"},"from":"hello@airline.example"},"expected":{"keep":false}}
+{"id":"a-057","message":{"subject":"Product news","to":["me@firm.example"],"labels":["INBOX"],"headers":{"Precedence":"bulk"},"from":"team@airline.example"},"expected":{"keep":false}}
+{"id":"a-058","message":{"subject":"Your receipt","to":["me@firm.example"],"labels":["INBOX"],"headers":{"Auto-Submitted":"auto-generated"},"from":"system@airline.example"},"expected":{"keep":false}}
+{"id":"a-059","message":{"subject":"Sale ends tonight","to":["me@firm.example"],"labels":["INBOX","CATEGORY_PROMOTIONS"],"headers":{},"from":"promo@airline.example"},"expected":{"keep":false}}
+{"id":"a-060","message":{"subject":"Someone mentioned you","to":["me@firm.example"],"labels":["INBOX","CATEGORY_SOCIAL"],"headers":{},"from":"updates@airline.example"},"expected":{"keep":false}}
+{"id":"a-061","message":{"subject":"Our October offers","to":["me@firm.example"],"labels":["INBOX"],"headers":{"List-Unsubscribe":"<mailto:unsub@social.example>"},"from":"hello@social.example"},"expected":{"keep":false}}
+{"id":"a-062","message":{"subject":"Product news","to":["me@firm.example"],"labels":["INBOX"],"headers":{"Precedence":"bulk"},"from":"team@social.example"},"expected":{"keep":false}}
+{"id":"a-063","message":{"subject":"Your receipt","to":["me@firm.example"],"labels":["INBOX"],"headers":{"Auto-Submitted":"auto-generated"},"from":"system@social.example"},"expected":{"keep":false}}
+{"id":"a-064","message":{"subject":"Sale ends tonight","to":["me@firm.example"],"labels":["INBOX","CATEGORY_PROMOTIONS"],"headers":{},"from":"promo@social.example"},"expected":{"keep":false}}
+{"id":"a-065","message":{"subject":"Someone mentioned you","to":["me@firm.example"],"labels":["INBOX","CATEGORY_SOCIAL"],"headers":{},"from":"updates@social.example"},"expected":{"keep":false}}
+{"id":"a-066","message":{"subject":"Invitation: Sync @ Tue","to":["me@firm.example"],"labels":["INBOX"],"headers":{"Content-Type":"text/calendar"},"from":"calendar-notification@google.example"},"expected":{"keep":false}}
+{"id":"a-067","message":{"subject":"Delivery Status Notification (Failure)","to":["me@firm.example"],"labels":["INBOX"],"headers":{},"from":"mailer-daemon@mx.example"},"expected":{"keep":false}}
+{"id":"a-068","message":{"subject":"Undeliverable","to":["me@firm.example"],"labels":["INBOX"],"headers":{},"from":"postmaster@mx.example"},"expected":{"keep":false}}
+{"id":"a-069","message":{"subject":"RE: Contrato","to":["me@firm.example"],"labels":["INBOX"],"headers":{},"from":"Ana Ruiz <ana.ruiz@acme.example>"},"expected":{"keep":true}}
+{"id":"a-070","message":{"subject":"Weekly update","to":["me@firm.example"],"labels":["INBOX"],"headers":{},"from":"bob@client.example"},"expected":{"keep":true}}
+{"id":"a-071","message":{"subject":"Newsletter de la firma (borrador)","to":["me@firm.example"],"labels":["INBOX"],"headers":{},"from":"marta.diaz@lunaabogados.example"},"expected":{"keep":true}}
+{"id":"a-072","message":{"subject":"Invoice question","to":["me@firm.example"],"labels":["INBOX"],"headers":{},"from":"tom@harbor.example"},"expected":{"keep":true}}
+{"id":"a-073","message":{"subject":null,"to":["me@firm.example"],"labels":["INBOX"],"headers":{},"from":"priya@orbit.example"},"expected":{"keep":true}}

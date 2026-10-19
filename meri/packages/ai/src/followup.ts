@@ -49,8 +49,8 @@ export async function draftFollowup(
     maxTokens: 600,
   });
   const body = res.output.body.trim();
-  if (looksLikeInjection(body) || /https?:\/\//i.test(body)) {
-    throw new Error("draft rejected by policy: contains instructions or links");
+  if (looksLikeInjection(body) || /https?:\/\/|\bwww\.|[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+/i.test(body)) {
+    throw new Error("draft rejected by policy: contains instructions, links or addresses");
   }
   return { body, usage: res.usage };
 }

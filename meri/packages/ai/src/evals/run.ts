@@ -1,7 +1,23 @@
+/**
+ * `pnpm eval`: capture (F-02), prefilter (F-07 AC4), commitments (F-07 AC1) and injection (docs/05 §6) evals.
+ * Runs against the fake client (rules) by default; with AI_MODE=live and ANTHROPIC_API_KEY the same runners use
+ * the live client (see docs/blockers/anthropic.md). Exits 1 when any suite is under its threshold.
+ */
 import { resolve } from "node:path";
-import { main } from "./capture";
+import { main as captureMain } from "./capture";
+import { commitmentsMain } from "./commitments";
+import { injectionMain } from "./injection";
+import { prefilterMain } from "./prefilter";
 
-main(resolve(import.meta.dirname, "../../../..")).catch((err: unknown) => {
+const root = resolve(import.meta.dirname, "../../../..");
+
+async function run(): Promise<void> {
+  await captureMain(root);
+  const results = [prefilterMain(root), await commitmentsMain(root), await injectionMain(root)];
+  if (results.some((ok) => !ok)) process.exit(1);
+}
+
+run().catch((err: unknown) => {
   console.error(err instanceof Error ? err.message : err);
   process.exit(1);
 });

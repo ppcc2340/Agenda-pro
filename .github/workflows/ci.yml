@@ -66,7 +66,7 @@ jobs:
         run: pnpm verify
       - name: Coverage thresholds (api ≥ 80 %, core ≥ 90 %)
         run: pnpm --filter @meri/api test -- --coverage && pnpm --filter @meri/core test -- --coverage
-      - name: Capture evals (F-02 AC2, ≥ 85 % against rules and the fake client)
+      - name: AI evals (capture ≥ 85 %, prefilter ≥ 95 %, commitments docs/05 §7, injection 100 %)
         run: pnpm eval
       - name: Start the web app for the domain smoke test
         run: (pnpm --filter @meri/web start > /tmp/web.log 2>&1 &) && for i in $(seq 1 30); do curl -sf localhost:3000/privacy > /dev/null && break; sleep 1; done
