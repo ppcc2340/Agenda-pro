@@ -1,11 +1,11 @@
 # STATE — estado vivo del proyecto
 
-**Fase actual:** 0 — Foundations (sin empezar)
+**Fase actual:** 1 — Tareas, calendario y planificador (sin empezar). Fase 0 cerrada el 2026-10-19.
 
 ## Fases
 | # | Fase | Estado |
 |---|---|---|
-| 0 | Foundations | pendiente |
+| 0 | Foundations | ✅ cerrada (2026-10-19) |
 | 1 | Tareas, calendario y planificador | pendiente |
 | 2 | Gmail + Radar de compromisos | pendiente |
 | 3 | Clientes, tiempo y briefings | pendiente |
@@ -49,8 +49,23 @@ Comprobar estado: `pnpm blockers`. Incorporar uno: `/connect-blocker <id>`.
 
 La verificación de scopes de Gmail tarda semanas: conviene empezarla en cuanto exista el dominio.
 
+## Fase 0 — qué se construyó
+- Monorepo pnpm + Turborepo con `pnpm verify` (lint, typecheck, test, build, dependency-cruiser) en verde y CI en `.github/workflows/ci.yml` (raíz del repo, `working-directory: meri`): servicios Postgres/Redis, migración sobre base limpia, verify, 6 pruebas de humo, artefacto OpenAPI, gitleaks y `pnpm audit`.
+- `packages/config`: entorno Zod, modos fake/live desde `blockers.json`, logger pino con censura, flags, cifrado de sobre (`KeyProvider` + `LocalKeyProvider`), wrappers de observabilidad no-op.
+- `packages/db`: 3 migraciones (esquema, RLS + rol `meri_app` + grants, `preferences.onboarded_at`), `withWorkspace` transaccional, ids UUID v7 con marca, repositorios (cuenta, preferencias, auditoría), seed de desarrollo, tests de aislamiento sobre Postgres real.
+- `packages/integrations`: interfaces + `FakeCalendar`, `FakeGmail` (sin método de envío), `FakeAiClient`, `FakeBilling`, `NoopAnalytics`, `LocalKms`; `pnpm smoke <id>` ×6.
+- `apps/api`: Fastify 5 + Zod, problem+json con códigos estables, sesión JWT de Auth.js, CSRF por cabecera, rate limit por usuario/IP, OpenAPI, `/v1/me`, `/v1/preferences`, `/v1/audit`, `/internal/auth/bootstrap` (ADR 0001).
+- `apps/worker`: BullMQ con sobre `{workspaceId, traceId}`, backoff con jitter, cola de errores, panel `/ready`.
+- `apps/web`: Next 15, tokens de `docs/11`, barra lateral y pestañas móviles con las cinco áreas (estados vacíos), login (Google en live, desarrollo en fake), onboarding, Centro de control, `/privacy`, `/terms`, `/mobile`, i18n es/en, tema claro/oscuro, manifest PWA.
+
+Cómo ejecutarlo: `cp .env.example .env`, Postgres y Redis (`docker compose up -d` o locales), `pnpm install`, `pnpm db:migrate`, `pnpm dev` → web `http://localhost:3000`, api `:4000`, worker `:4100`.
+
 ## Deuda técnica
-(ninguna todavía)
+- Observabilidad: los wrappers son no-op/log; los SDK reales de Sentry, OpenTelemetry y PostHog se conectan al resolver el bloqueo `observability` (fase 4).
+- `/v1/audit/:id/undo`, exportación y eliminación de cuenta: botones deshabilitados en Centro de control hasta sus fases (1 y 5).
+- Cobertura: umbrales activos en `core` (90 %) y `api` (80 %) vía `vitest --coverage`; `core` aún no tiene código ejecutable (fase 1).
+- La fuente tipográfica se carga desde Google Fonts en tiempo de ejecución (sin dependencia en el build); evaluar auto-hospedaje con el dominio.
 
 ## Registro de sesiones
 (Claude Code: añade una línea por sesión con fecha, fase y resumen.)
+- 2026-10-19 · Fase 0 · Kit sin `.claude/`, `PROTOTYPE.md` ni CI: se crearon (D-011). Construida la base completa (config, db+RLS, integraciones fake, api, worker, web, auth, onboarding, legales, CI, runbook); `pnpm verify` en verde; flujo login→onboarding→Hoy→control verificado en Chromium; revisores code/security/test/ux ejecutados y hallazgos altos/medios corregidos.
