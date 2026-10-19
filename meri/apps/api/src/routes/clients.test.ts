@@ -2,14 +2,17 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
   calendarEvents,
   contacts,
+  createCommitment,
+  createTask,
   entitlements,
   listAudit,
   newId,
   threadsIndex,
+  upsertCalendarEvent,
   withWorkspace,
   type AccountIdentity,
 } from "@meri/db";
-import { createTestApp, csrf, type TestApp } from "../test/harness";
+import { createTestApp, csrf, NOW, type TestApp } from "../test/harness";
 
 interface ClientJson {
   id: string;
@@ -262,5 +265,71 @@ describe("clients and matters (F-09, D-039)", () => {
       payload: { clientId: id, name: "Ajeno" },
     });
     expect(foreign.statusCode).toBe(400);
+  });
+});
+
+describe("clients: idempotent creation, matters patch, freemail guard, list filters (ADR 0005, F-09 AC2)", () => {
+  let t: TestApp;
+  let a: AccountIdentity;
+  let cookie: string;
+  beforeAll(async () => {
+    t = await createTestApp();
+    a = await t.createAccount("clients-x");
+    cookie = await t.cookieFor(a);
+  });
+  afterAll(() => t.close());
+
+  it("replays POST /v1/clients with the same Idempotency-Key without creating a second client", async () => {
+    const headers = { cookie, ...csrf, "idempotency-key": `k-${Date.now().toString(36)}` };
+    const first = await t.app.inject({ method: "POST", url: "/v1/clients", headers, payload: { name: "Replay" } });
+    const second = await t.app.inject({ method: "POST", url: "/v1/clients", headers, payload: { name: "Replay" } });
+    expect(first.statusCode).toBe(201);
+    expect(second.statusCode).toBe(201);
+    expect(second.headers["idempotency-replayed"]).toBe("true");
+    expect(second.json<{ id: string }>().id).toBe(first.json<{ id: string }>().id);
+    const list = await t.app.inject({ url: "/v1/clients", headers: { cookie } });
+    expect(list.json<{ items: { name: string }[] }>().items.filter((c) => c.name === "Replay")).toHaveLength(1);
+  });
+
+  it("rejects consumer mail domains as client domains", async () => {
+    const res = await t.app.inject({ method: "POST", url: "/v1/clients", headers: { cookie, ...csrf }, payload: { name: "Mal", domains: ["gmail.com"] } });
+    expect(res.statusCode).toBe(400);
+  });
+
+  it("patches a matter (name, kind, archived) but never its client; other tenants get 404", async () => {
+    const acme = (await t.app.inject({ method: "POST", url: "/v1/clients", headers: { cookie, ...csrf }, payload: { name: "Acme" } })).json<{ id: string }>().id;
+    const project = (await t.app.inject({ method: "POST", url: "/v1/projects", headers: { cookie, ...csrf }, payload: { clientId: acme, name: "Asunto" } })).json<{ id: string; status: string }>();
+    const patched = await t.app.inject({ method: "PATCH", url: `/v1/projects/${project.id}`, headers: { cookie, ...csrf }, payload: { name: "Asunto 2", kind: "contrato", archived: true } });
+    expect(patched.statusCode).toBe(200);
+    expect(patched.json<{ name: string; kind: string | null; status: string }>()).toMatchObject({ name: "Asunto 2", kind: "contrato", status: "closed" });
+    expect((await t.app.inject({ method: "PATCH", url: `/v1/projects/${project.id}`, headers: { cookie, ...csrf }, payload: { clientId: acme } })).statusCode).toBe(400);
+    expect((await t.app.inject({ method: "PATCH", url: `/v1/projects/${project.id}`, headers: { cookie, ...csrf }, payload: {} })).statusCode).toBe(400);
+    const other = await t.cookieFor(await t.createAccount("clients-y"));
+    expect((await t.app.inject({ method: "PATCH", url: `/v1/projects/${project.id}`, headers: { cookie: other, ...csrf }, payload: { name: "x" } })).statusCode).toBe(404);
+    expect((await t.app.inject({ url: `/v1/projects?clientId=${acme}`, headers: { cookie: other } })).json<{ items: unknown[] }>().items).toHaveLength(0);
+    expect((await t.app.inject({ url: "/v1/projects", headers: { cookie: other } })).json<{ items: unknown[] }>().items).toHaveLength(0);
+  });
+
+  it("filters tasks, commitments and calendar events by clientId (F-09 AC2)", async () => {
+    const mk = (name: string) => t.app.inject({ method: "POST", url: "/v1/clients", headers: { cookie, ...csrf }, payload: { name } });
+    const a1 = (await mk("Filtro A")).json<{ id: string }>().id;
+    const b1 = (await mk("Filtro B")).json<{ id: string }>().id;
+    await withWorkspace(t.handle.db, a.workspaceId, async (tx) => {
+      const base = { dueAt: null, kind: "shallow" as const, priority: 3, deadlineType: "soft" as const, estimateMinutes: 30, tags: [], origin: "user" as const };
+      await createTask(tx, a.workspaceId, { ...base, title: "Tarea de A", clientId: a1 }, NOW);
+      await createTask(tx, a.workspaceId, { ...base, title: "Tarea de B", clientId: b1 }, NOW);
+      for (const [clientId, action] of [[a1, "Compromiso A"], [b1, "Compromiso B"]] as const)
+        await createCommitment(tx, a.workspaceId, { clientId, direction: "owed_by_me", kind: "explicit", status: "confirmed", counterpartyEmail: null, action, dueAt: null, dueText: null, confidence: 0.9, evidence: null, threadId: null, externalMessageId: null, dedupeHash: `f-${action}-${Date.now().toString(36)}` }, NOW);
+      for (const [clientId, externalId] of [[a1, "ev-a"], [b1, "ev-b"]] as const)
+        await upsertCalendarEvent(tx, a.workspaceId, { integrationAccountId: "01a15596-f037-71e4-bfce-25b2f4a80b66", externalId, etag: null, title: externalId, startsAt: new Date("2026-10-20T09:00:00Z"), endsAt: new Date("2026-10-20T10:00:00Z"), allDay: false, attendees: [], busy: true, origin: "external", clientId }, NOW);
+    });
+    const tasks = (await t.app.inject({ url: `/v1/tasks?clientId=${a1}`, headers: { cookie } })).json<{ items: { title: string }[] }>().items;
+    expect(tasks.map((x) => x.title)).toEqual(["Tarea de A"]);
+    const commitments = (await t.app.inject({ url: `/v1/commitments?clientId=${a1}`, headers: { cookie } })).json<{ items: { action: string }[] }>().items;
+    expect(commitments.map((x) => x.action)).toEqual(["Compromiso A"]);
+    const events = (await t.app.inject({ url: `/v1/calendar/events?from=2026-10-19T00:00:00Z&to=2026-10-21T00:00:00Z&clientId=${a1}`, headers: { cookie } })).json<{ items: { title: string }[] }>().items;
+    expect(events.map((x) => x.title)).toEqual(["ev-a"]);
+    const other = await t.cookieFor(await t.createAccount("clients-z"));
+    expect((await t.app.inject({ url: `/v1/tasks?clientId=${a1}`, headers: { cookie: other } })).json<{ items: unknown[] }>().items).toHaveLength(0);
   });
 });

@@ -169,5 +169,24 @@ describe("time entries review and CSV (F-10 AC1/AC2, D-042, D-046)", () => {
     const other = await t.cookieFor(await t.createAccount("time-b"));
     expect((await t.app.inject({ url: "/v1/time-entries", headers: { cookie: other } })).json<WeekJson>().items).toHaveLength(0);
     expect((await t.app.inject({ method: "POST", url: `/v1/time-entries/${second ?? ""}/approve`, headers: { cookie: other, ...csrf } })).statusCode).toBe(404);
+    expect((await t.app.inject({ method: "POST", url: `/v1/time-entries/${second ?? ""}/reject`, headers: { cookie: other, ...csrf } })).statusCode).toBe(404);
+    expect((await t.app.inject({ method: "PATCH", url: `/v1/time-entries/${second ?? ""}`, headers: { cookie: other, ...csrf }, payload: { minutes: 5 } })).statusCode).toBe(404);
+    const foreignBatch = await t.app.inject({ method: "POST", url: "/v1/time-entries/approve-batch", headers: { cookie: other, ...csrf }, payload: { ids: [second] } });
+    expect(foreignBatch.json<{ approved: string[]; skipped: { reason: string }[] }>()).toEqual({ approved: [], skipped: [{ id: second, reason: "not_found" }] });
+    const foreignCsv = await t.app.inject({ url: "/v1/time-entries/export.csv?week=2026-W43", headers: { cookie: other } });
+    expect(parseCsv(foreignCsv.body.slice(1))).toHaveLength(1);
+  });
+
+  it("edits the client and description of an entry, validates references, and rejects re-approval of a rejected entry", async () => {
+    const [, second, third] = ids;
+    const moved = await t.app.inject({ method: "PATCH", url: `/v1/time-entries/${second ?? ""}`, headers: { cookie, ...csrf }, payload: { clientId: beta, description: null } });
+    expect(moved.json<Entry>()).toMatchObject({ clientId: beta, clientName: 'Beta "Dos"' });
+    expect((await t.app.inject({ method: "PATCH", url: `/v1/time-entries/${second ?? ""}`, headers: { cookie, ...csrf }, payload: { clientId: "01a15596-f037-71e4-bfce-25b2f4a80b00" } })).statusCode).toBe(400);
+    expect((await t.app.inject({ method: "PATCH", url: `/v1/time-entries/01a15596-f037-71e4-bfce-25b2f4a80b00`, headers: { cookie, ...csrf }, payload: { minutes: 5 } })).statusCode).toBe(404);
+    // A rejected entry is not pending: approving it is a conflict; rejecting an approved one is allowed.
+    expect((await t.app.inject({ method: "POST", url: `/v1/time-entries/${third ?? ""}/approve`, headers: { cookie, ...csrf } })).statusCode).toBe(409);
+    expect((await t.app.inject({ method: "POST", url: `/v1/time-entries/${third ?? ""}/reject`, headers: { cookie, ...csrf } })).statusCode).toBe(409);
+    expect((await t.app.inject({ method: "POST", url: `/v1/time-entries/01a15596-f037-71e4-bfce-25b2f4a80b00/reject`, headers: { cookie, ...csrf } })).statusCode).toBe(404);
+    expect((await t.app.inject({ url: "/v1/time-entries/export.csv?week=2026-13", headers: { cookie } })).statusCode).toBe(400);
   });
 });

@@ -78,7 +78,6 @@ export function ClientForm({
               <input
                 name="domains"
                 defaultValue={client?.domains.join(", ") ?? ""}
-                placeholder="acme.com, acme.es"
                 className={field}
               />
               <span className="text-[12px] text-ink3">{t("form.domainsHint")}</span>
@@ -86,11 +85,11 @@ export function ClientForm({
             <fieldset className="flex flex-col gap-1 text-[13px] text-ink2">
               <legend>{t("form.color")}</legend>
               <div className="flex flex-wrap gap-2">
-                {PALETTE.map((c) => (
+                {PALETTE.map((c, i) => (
                   <button
                     key={c}
                     type="button"
-                    aria-label={c}
+                    aria-label={t(`form.colors.${String(i) as "0"}`)}
                     aria-pressed={color === c}
                     onClick={() => setColor(color === c ? null : c)}
                     style={{ background: c }}

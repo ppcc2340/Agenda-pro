@@ -5,7 +5,7 @@
 import type { FastifyInstance } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import { z } from "zod";
-import { localDateKey } from "@meri/core";
+import { FREEMAIL_DOMAINS, localDateKey } from "@meri/core";
 import {
   audit,
   clientStats,
@@ -53,7 +53,17 @@ export const ClientJson = z.object({
 });
 const ClientBody = z.object({
   name: z.string().trim().min(1).max(120),
-  domains: z.array(z.string().trim().toLowerCase().regex(DOMAIN)).max(20).default([]),
+  domains: z
+    .array(
+      z
+        .string()
+        .trim()
+        .toLowerCase()
+        .regex(DOMAIN)
+        .refine((d) => !FREEMAIL_DOMAINS.has(d), { message: "Consumer mail domains cannot identify a client." }),
+    )
+    .max(20)
+    .default([]),
   color: z.string().regex(COLOR).nullable().optional(),
   notes: z.string().max(2000).nullable().optional(),
   verticalTags: z.array(z.string().trim().min(1).max(40)).max(20).optional(),
@@ -77,8 +87,10 @@ const ProjectBody = z.object({
   kind: z.string().trim().max(60).nullable().optional(),
   dueAt: z.string().datetime({ offset: true }).nullable().optional(),
 });
-const ProjectPatch = ProjectBody.partial()
-  .extend({ status: z.enum(["active", "closed"]).optional() })
+/** ADR 0005: a matter keeps its client; only name, kind, due date and archived state change. */
+const ProjectPatch = ProjectBody.omit({ clientId: true })
+  .partial()
+  .extend({ archived: z.boolean().optional() })
   .refine((b) => Object.keys(b).length > 0, { message: "Nothing to update." });
 
 export const serializeClient = (c: ClientView, stats: z.infer<typeof ClientJson>["stats"] = null) => ({
@@ -381,16 +393,11 @@ export function clientRoutes(app: FastifyInstance, options: ClientRoutesOptions,
       const session = sessionOf(request);
       const b = request.body;
       const updated = await request.withWorkspace(async (tx) => {
-        if (b.clientId && !(await getClient(tx, session.workspaceId, b.clientId)))
-          throw new ApiError("VALIDATION_FAILED", "Invalid references.", [
-            { path: "clientId", message: "Unknown client." },
-          ]);
         const project = await updateProject(tx, session.workspaceId, request.params.id, {
           ...(b.name !== undefined ? { name: b.name } : {}),
           ...(b.kind !== undefined ? { kind: b.kind } : {}),
           ...(b.dueAt !== undefined ? { dueAt: b.dueAt ? new Date(b.dueAt) : null } : {}),
-          ...(b.status !== undefined ? { status: b.status } : {}),
-          ...(b.clientId !== undefined ? { clientId: b.clientId } : {}),
+          ...(b.archived !== undefined ? { status: b.archived ? "closed" : "active" } : {}),
         });
         if (!project) throw new ApiError("NOT_FOUND", "Project not found.");
         await audit(tx, actor(request), {

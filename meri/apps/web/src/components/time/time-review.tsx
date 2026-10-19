@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, ChevronLeft, ChevronRight, Download, X } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Download, Pencil, X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -175,13 +175,19 @@ export function TimeReview({ clients, timezone }: { clients: { id: string; name:
                       <Button size="sm" variant="quiet" type="button" onClick={() => setEditing(null)}>{t("cancel")}</Button>
                     </form>
                   ) : (
-                    <button type="button" className="num text-[15px] font-semibold underline-offset-2 hover:underline" onClick={() => setEditing(e.id)} title={t("edit")}>
+                    <button
+                      type="button"
+                      className="num inline-flex items-center gap-1 text-[15px] font-semibold underline-offset-2 hover:underline"
+                      onClick={() => setEditing(e.id)}
+                      aria-label={t("editAria", { h: hours(e.minutes) })}
+                    >
                       {hours(e.minutes)}
+                      <Pencil size={12} aria-hidden="true" />
                     </button>
                   )}
                   {pending ? (
                     <div className="flex gap-1">
-                      <Button size="sm" variant="primary" disabled={one.isPending} onClick={() => one.mutate({ id: e.id, action: "approve" })}>
+                      <Button size="sm" disabled={one.isPending} onClick={() => one.mutate({ id: e.id, action: "approve" })}>
                         <Check size={14} aria-hidden="true" />
                         {t("approve")}
                       </Button>
@@ -195,6 +201,7 @@ export function TimeReview({ clients, timezone }: { clients: { id: string; name:
               );
             })}
           </ul>
+          <p className="mt-3 text-[12.5px] text-ink3">{t("note")}</p>
           {data.unassignedEvents.length > 0 ? (
             <section aria-label={t("unassignedTitle")} className="mt-5">
               <h3 className="mb-1 font-head text-[15.5px] font-semibold">{t("unassignedTitle")}</h3>

@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { InMemoryFlagStore } from "@meri/config";
-import { createCommitment, createTask, listAudit, upsertIntegrationAccount, upsertThread, withWorkspace, type AccountIdentity } from "@meri/db";
+import { createCommitment, createTask, listAudit, updateTask, upsertCalendarEvent, upsertIntegrationAccount, upsertThread, withWorkspace, type AccountIdentity } from "@meri/db";
 import type { FakeAiClient } from "@meri/integrations";
 import { createTestApp, csrf, NOW, type TestApp } from "../test/harness";
 
@@ -19,8 +19,10 @@ describe("client briefing (F-11 AC1/AC2, F-09 AC1, D-043)", () => {
   const CANARY = "CANARIO-BETA-7731";
 
   beforeAll(async () => {
-    t = await createTestApp({ flags: new InMemoryFlagStore({ ai_briefings: true }) });
+    const flags = new InMemoryFlagStore();
+    t = await createTestApp({ flags });
     a = await t.createAccount("briefing-a");
+    flags.set("ai_briefings", true, a.workspaceId);
     cookie = await t.cookieFor(a);
     const mk = (name: string, domains: string[]) =>
       t.app.inject({ method: "POST", url: "/v1/clients", headers: { cookie, ...csrf }, payload: { name, domains } });
@@ -101,5 +103,44 @@ describe("client briefing (F-11 AC1/AC2, F-09 AC1, D-043)", () => {
     const other = await t.cookieFor(await t.createAccount("briefing-b"));
     expect((await t.app.inject({ method: "POST", url: `/v1/clients/${acme}/briefing`, headers: { cookie: other, ...csrf }, payload: {} })).statusCode).toBe(404);
     expect((await t.app.inject({ url: `/v1/clients/${acme}/briefing`, headers: { cookie: other } })).statusCode).toBe(404);
+  });
+
+  it("stores a meeting briefing apart from the client one, validates the event, surfaces at-risk tasks and hides unconfirmed commitments", async () => {
+    const eventId = await withWorkspace(t.handle.db, a.workspaceId, async (tx) => {
+      const tasks = (await t.app.inject({ url: `/v1/tasks?clientId=${acme}`, headers: { cookie } })).json<{ items: { id: string; title: string }[] }>().items;
+      const informe = tasks.find((x) => x.title === "Informe para Acme");
+      if (informe) await updateTask(tx, a.workspaceId, informe.id, { status: "at_risk" }, NOW);
+      await createCommitment(
+        tx,
+        a.workspaceId,
+        { clientId: acme, direction: "owed_by_me", kind: "inferred", confidence: 0.6, status: "proposed", action: "Compromiso sin confirmar NUNCA-EN-BRIEFING", dueAt: null, dueText: null, counterpartyEmail: null, threadId: null, evidence: null, dedupeHash: `brief-p-${Date.now().toString(36)}`, externalMessageId: null },
+        NOW,
+      );
+      const ev = await upsertCalendarEvent(tx, a.workspaceId, { integrationAccountId: "01a15596-f037-71e4-bfce-25b2f4a80b77", externalId: "acme-meeting", etag: null, title: "Reunión Acme", startsAt: new Date("2026-10-21T09:00:00Z"), endsAt: new Date("2026-10-21T10:00:00Z"), allDay: false, attendees: [], busy: true, origin: "external", clientId: acme }, NOW);
+      const foreign = await upsertCalendarEvent(tx, a.workspaceId, { integrationAccountId: "01a15596-f037-71e4-bfce-25b2f4a80b77", externalId: "beta-meeting", etag: null, title: "Reunión Beta", startsAt: new Date("2026-10-21T11:00:00Z"), endsAt: new Date("2026-10-21T12:00:00Z"), allDay: false, attendees: [], busy: true, origin: "external", clientId: beta }, NOW);
+      return { ok: ev.id, foreign: foreign.id };
+    });
+    const bad = await t.app.inject({ method: "POST", url: `/v1/clients/${acme}/briefing`, headers: { cookie, ...csrf }, payload: { eventId: eventId.foreign } });
+    expect(bad.statusCode).toBe(400);
+    expect((await t.app.inject({ url: `/v1/clients/${acme}/briefing?eventId=${eventId.foreign}`, headers: { cookie } })).statusCode).toBe(400);
+    const meeting = await t.app.inject({ method: "POST", url: `/v1/clients/${acme}/briefing`, headers: { cookie, ...csrf }, payload: { eventId: eventId.ok } });
+    expect(meeting.statusCode).toBe(200);
+    const body = meeting.json<BriefingJson & { eventId: string | null }>();
+    expect(body.eventId).toBe(eventId.ok);
+    expect(body.items.some((i) => i.kind === "risk" && i.sourceTitle === "Informe para Acme")).toBe(true);
+    expect(JSON.stringify(body)).not.toContain("NUNCA-EN-BRIEFING");
+    const stored = await t.app.inject({ url: `/v1/clients/${acme}/briefing?eventId=${eventId.ok}`, headers: { cookie } });
+    expect(stored.json<{ eventId: string }>().eventId).toBe(eventId.ok);
+    const clientLevel = await t.app.inject({ url: `/v1/clients/${acme}/briefing`, headers: { cookie } });
+    expect(clientLevel.json<{ eventId: string | null }>().eventId).toBeNull();
+    // Flag off (another workspace): rules only, no model call.
+    const ai = t.integrations.ai as FakeAiClient;
+    const other = await t.createAccount("briefing-c");
+    const cookieC = await t.cookieFor(other);
+    const c = (await t.app.inject({ method: "POST", url: "/v1/clients", headers: { cookie: cookieC, ...csrf }, payload: { name: "Gamma" } })).json<{ id: string }>().id;
+    const before = ai.calls.length;
+    const off = await t.app.inject({ method: "POST", url: `/v1/clients/${c}/briefing`, headers: { cookie: cookieC, ...csrf }, payload: {} });
+    expect(off.json<BriefingJson>()).toMatchObject({ source: "rules", items: [] });
+    expect(ai.calls.length).toBe(before);
   });
 });

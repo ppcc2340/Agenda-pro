@@ -66,4 +66,18 @@ describe("POST /v1/events/:id/agreements (D-044, P3-06)", () => {
     const other = await t.cookieFor(await t.createAccount("agree-b"));
     expect((await t.app.inject({ method: "POST", url: `/v1/events/${eventId}/agreements`, headers: { cookie: other, ...csrf }, payload: { lines: ["x y z"] } })).statusCode).toBe(404);
   });
+
+  it("requires a client on the meeting, keeps the counterparty null when no attendee is the client's, validates lines", async () => {
+    const ids = await withWorkspace(t.handle.db, a.workspaceId, async (tx) => {
+      const noClient = await upsertCalendarEvent(tx, a.workspaceId, { integrationAccountId: "01a15596-f037-71e4-bfce-25b2f4a80b88", externalId: "no-client", etag: null, title: "Sin cliente", startsAt: new Date("2026-10-19T10:00:00Z"), endsAt: new Date("2026-10-19T11:00:00Z"), allDay: false, attendees: ["x@otro.test"], busy: true, origin: "external", clientId: null }, NOW);
+      const noAttendee = await upsertCalendarEvent(tx, a.workspaceId, { integrationAccountId: "01a15596-f037-71e4-bfce-25b2f4a80b88", externalId: "no-attendee", etag: null, title: "Interna", startsAt: new Date("2026-10-19T12:00:00Z"), endsAt: new Date("2026-10-19T13:00:00Z"), allDay: false, attendees: ["yo@mifirma.test", "x@otro.test"], busy: true, origin: "external", clientId: acme }, NOW);
+      return { noClient: noClient.id, noAttendee: noAttendee.id };
+    });
+    expect((await t.app.inject({ method: "POST", url: `/v1/events/${ids.noClient}/agreements`, headers: { cookie, ...csrf }, payload: { lines: ["Enviaré el informe mañana"] } })).statusCode).toBe(400);
+    const res = await t.app.inject({ method: "POST", url: `/v1/events/${ids.noAttendee}/agreements`, headers: { cookie, ...csrf }, payload: { lines: ["Enviaré el informe mañana"] } });
+    expect(res.statusCode).toBe(201);
+    expect(res.json<{ proposals: ProposalJson[] }>().proposals[0]?.payload).toMatchObject({ counterpartyEmail: null, clientId: acme });
+    expect((await t.app.inject({ method: "POST", url: `/v1/events/${ids.noAttendee}/agreements`, headers: { cookie, ...csrf }, payload: { lines: [] } })).statusCode).toBe(400);
+    expect((await t.app.inject({ method: "POST", url: `/v1/events/${ids.noAttendee}/agreements`, headers: { cookie, ...csrf }, payload: { lines: ["ab"] } })).statusCode).toBe(400);
+  });
 });

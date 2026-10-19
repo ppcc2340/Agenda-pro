@@ -14,16 +14,17 @@ type Tab = (typeof TABS)[number];
 export default async function ProyectosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string; dir?: string; clientId?: string }>;
+  searchParams: Promise<{ tab?: string; dir?: string; clientId?: string; edit?: string }>;
 }) {
   const t = await getTranslations("proyectos");
   const nav = await getTranslations("nav");
-  const { tab: raw, dir, clientId } = await searchParams;
+  const { tab: raw, dir, clientId, edit } = await searchParams;
+  const editId = edit && /^[0-9a-f-]{36}$/i.test(edit) ? edit : null;
   const initialClientId = clientId && /^[0-9a-f-]{36}$/i.test(clientId) ? clientId : null;
   const demoNow = getServerConfig().env.DEMO_NOW;
   const tab: Tab = (TABS as readonly string[]).includes(raw ?? "") ? (raw as Tab) : "tareas";
   const [clients, prefs] = await Promise.all([
-    apiFetch<{ items: { id: string; name: string }[] }>("/v1/clients").catch(() => ({ items: [] })),
+    apiFetch<{ items: { id: string; name: string; color: string | null }[] }>("/v1/clients").catch(() => ({ items: [] })),
     apiFetch<{ timezone: string }>("/v1/preferences"),
   ]);
   return (
@@ -56,7 +57,7 @@ export default async function ProyectosPage({
           initialClientId={initialClientId}
         />
       ) : tab === "clientes" ? (
-        <ClientList />
+        <ClientList editId={editId} />
       ) : (
         <TimeReview clients={clients.items} timezone={prefs.timezone} />
       )}

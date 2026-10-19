@@ -105,7 +105,8 @@ async function applyPage(
         attendees: ev.attendees,
         busy: ev.busy,
         origin: ev.meri ? "meri" : "external",
-        clientId: ev.meri ? undefined : (resolveClient(ev.attendees, me, refs)?.id ?? null),
+        // D-040: never for Meri blocks nor all-day events (holidays, OOO) — only real meetings get a client.
+        clientId: ev.meri || ev.allDay ? undefined : (resolveClient(ev.attendees, me, refs)?.id ?? null),
       },
       now,
     );

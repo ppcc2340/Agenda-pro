@@ -126,6 +126,10 @@ h3 {
   letter-spacing: -0.01em;
   font-weight: 600;
 }
+/* Dashed left edge = "sugerido" (docs/11): Tailwind v4 has no border-l-dashed utility. */
+@utility border-l-dashed {
+  border-left-style: dashed;
+}
 /* In @layer base so utilities (text-on-sea, …) win: unlayered rules would beat Tailwind's layers. */
 @layer base {
   button {

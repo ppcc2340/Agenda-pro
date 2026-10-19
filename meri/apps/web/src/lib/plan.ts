@@ -152,8 +152,11 @@ export function currentBlock(items: DayItem[], nowMin: number): DayItem | null {
 }
 
 /** Stable client color index (1..4) from the client id; null → neutral. */
-export function clientColorVar(clientId: string | null, clients: { id: string }[]): string {
+/** The client's own colour when it has one; otherwise a stable slot of the four-colour palette (docs/11). */
+export function clientColorVar(clientId: string | null, clients: { id: string; color?: string | null }[]): string {
   if (!clientId) return "var(--ink3)";
+  const own = clients.find((c) => c.id === clientId)?.color;
+  if (own) return own;
   const idx = clients.findIndex((c) => c.id === clientId);
   const n = (idx >= 0 ? idx : clientId.charCodeAt(clientId.length - 1)) % 4;
   return `var(--c-${String(n + 1)})`;

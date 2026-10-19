@@ -125,6 +125,11 @@ export function proposalRoutes(app: FastifyInstance, options: ProposalRoutesOpti
       if (proposal.kind !== "capture")
         throw new ApiError("CONFLICT", "This proposal kind cannot be confirmed as a task.");
       const payload = CapturePayload.parse(proposal.payload);
+      // FK checks run as table owner and bypass RLS: the client must be this workspace's.
+      if (edits?.clientId && !(await listClients(tx, session.workspaceId)).some((c) => c.id === edits.clientId))
+        throw new ApiError("VALIDATION_FAILED", "Invalid references.", [
+          { path: "clientId", message: "Unknown client." },
+        ]);
       const task = await createTask(
         tx,
         session.workspaceId,

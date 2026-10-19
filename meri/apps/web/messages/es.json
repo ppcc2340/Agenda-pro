@@ -244,7 +244,8 @@
         "briefing_suggested": "Reunión «{title}» con {clientName}: abre el briefing antes de ir."
       },
       "seeInHoy": "Ver en Hoy",
-      "seeClients": "Ver clientes"
+      "seeClients": "Ver clientes",
+      "openBriefing": "Abrir el briefing"
     },
     "ai": {
       "title": "IA y auto-confirmación",
@@ -541,7 +542,9 @@
       "task": "Tarea",
       "commitment": "Compromiso",
       "client": "Cliente",
-      "scope": "Buscando en {client}"
+      "scope": "Buscando en",
+      "searching": "Buscando…",
+      "empty": "Nada con «{q}» en tus tareas, compromisos ni clientes. Escribe más palabras y Meri lo captura."
     }
   },
   "connections": {
@@ -718,7 +721,15 @@
       "tagsPlaceholder": "fiscal, litigio…",
       "notes": "Notas",
       "save": "Guardar cliente",
-      "cancel": "Cancelar"
+      "cancel": "Cancelar",
+      "colors": {
+        "0": "Azul",
+        "1": "Coral",
+        "2": "Turquesa",
+        "3": "Ámbar",
+        "4": "Violeta",
+        "5": "Verde"
+      }
     },
     "stats": {
       "commitments": "Compromisos abiertos",
@@ -736,7 +747,7 @@
     "briefing": {
       "open": "Briefing",
       "title": "Briefing de {name}",
-      "desc": "Pendientes, compromisos, últimas comunicaciones, decisiones y riesgos. Cada punto enlaza a su fuente.",
+      "desc": "Contexto aislado: solo datos de este cliente. Pendientes, compromisos, últimas comunicaciones, decisiones y riesgos; cada punto enlaza a su fuente.",
       "generated": "Generado el {when} ({source}).",
       "sourceAi": "IA, verificado por reglas",
       "sourceRules": "reglas",
@@ -755,10 +766,12 @@
         "task": "Tarea",
         "commitment": "Compromiso",
         "thread": "Correo",
-        "event": "Reunión"
+        "event": "Reunión",
+        "label": "Fuente: {title}"
       },
       "openSource": "Ver fuente: {title}"
-    }
+    },
+    "isolationNote": "Cada briefing usa solo los datos del cliente elegido. Nunca se mezcla información de otro cliente."
   },
   "time": {
     "week": "Semana {week}",
@@ -803,7 +816,9 @@
       "rejected": "Entrada rechazada.",
       "updated": "Minutos guardados.",
       "assigned": "Cliente asignado. Meri sugerirá la entrada en unos segundos."
-    }
+    },
+    "note": "Meri infiere el tiempo desde tu calendario y tus bloques. Nada cuenta como facturable hasta que lo apruebas.",
+    "editAria": "Editar minutos ({h})"
   },
   "agreements": {
     "title": "Acuerdos de «{title}»",

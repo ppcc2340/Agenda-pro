@@ -30,8 +30,8 @@ export function VerticalCards({
             key={id}
             className={
               on
-                ? "flex cursor-pointer flex-col gap-1 rounded-2xl border-2 border-sea bg-sea-soft px-4 py-3"
-                : "flex cursor-pointer flex-col gap-1 rounded-2xl border border-rule bg-raised px-4 py-3 hover:border-sea"
+                ? "flex cursor-pointer flex-col gap-1 rounded-2xl border-2 border-sea bg-sea-soft px-4 py-3 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-sea"
+                : "flex cursor-pointer flex-col gap-1 rounded-2xl border border-rule bg-raised px-4 py-3 hover:border-sea has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-sea"
             }
           >
             <input
@@ -71,6 +71,18 @@ export function VerticalSettings({ vertical }: { vertical: VerticalId }) {
     { onSuccess: () => toast(t("saved")), onError: () => setValue(vertical) },
   );
   const tpl = VERTICAL_TEMPLATES[value];
+  // The templates keep accent-less duplicates for matching; show each word once, accented form first.
+  const unique = (words: string[]) => {
+    const seen = new Set<string>();
+    return [...words]
+      .sort((a, b) => Number(/[\u0300-\u036f]/.test(b.normalize("NFD"))) - Number(/[\u0300-\u036f]/.test(a.normalize("NFD"))))
+      .filter((w) => {
+        const k = w.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        if (seen.has(k)) return false;
+        seen.add(k);
+        return true;
+      });
+  };
   return (
     <div className="grid gap-3">
       <VerticalCards
@@ -83,11 +95,11 @@ export function VerticalSettings({ vertical }: { vertical: VerticalId }) {
       />
       <dl className="grid gap-x-6 gap-y-1 text-[13px] md:grid-cols-[auto_1fr]">
         <dt className="text-ink2">{t("matterKinds")}</dt>
-        <dd>{tpl.matterKinds.join(" · ")}</dd>
+        <dd>{unique(tpl.matterKinds).join(" · ")}</dd>
         <dt className="text-ink2">{t("deadlineNouns")}</dt>
-        <dd>{t("sample", { words: tpl.vocabulary.deadlineNouns.slice(0, 8).join(", ") })}</dd>
+        <dd>{t("sample", { words: unique(tpl.vocabulary.deadlineNouns).slice(0, 8).join(", ") })}</dd>
         <dt className="text-ink2">{t("deliverableNouns")}</dt>
-        <dd>{t("sample", { words: tpl.vocabulary.deliverableNouns.slice(0, 8).join(", ") })}</dd>
+        <dd>{t("sample", { words: unique(tpl.vocabulary.deliverableNouns).slice(0, 8).join(", ") })}</dd>
       </dl>
       <p className="text-[12.5px] text-ink3">{t("note")}</p>
     </div>

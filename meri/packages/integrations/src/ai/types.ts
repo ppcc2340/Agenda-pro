@@ -18,6 +18,8 @@ export interface StructuredRequest<T extends z.ZodTypeAny> {
   user: string;
   schema: T;
   maxTokens?: number;
+  /** Caller budget (e.g. `AbortSignal.timeout(8_000)`): the HTTP request is aborted, so no tokens are billed past it. */
+  signal?: AbortSignal;
 }
 
 export interface StructuredResponse<T> {

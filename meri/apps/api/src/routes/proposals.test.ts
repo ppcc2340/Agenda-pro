@@ -84,6 +84,10 @@ describe("proposals: client_link and followup confirmation (D-040, F-08)", () =>
       await withWorkspace(t.handle.db, a.workspaceId, (tx) => listAudit(tx, a.workspaceId, 20))
     ).items.map((e) => e.action);
     expect(actions).toContain("client.created");
+    // Another tenant cannot confirm or dismiss A's pending proposal.
+    const other = await t.cookieFor(await t.createAccount("proposals-b"));
+    expect((await t.app.inject({ method: "POST", url: `/v1/proposals/${second?.id ?? ""}/confirm`, headers: { cookie: other, ...csrf }, payload: {} })).statusCode).toBe(404);
+    expect((await t.app.inject({ method: "POST", url: `/v1/proposals/${second?.id ?? ""}/dismiss`, headers: { cookie: other, ...csrf }, payload: {} })).statusCode).toBe(404);
   });
 
   it("confirming a followup proposal creates a waiting task and resolves it", async () => {

@@ -77,29 +77,44 @@ export interface BriefingResult {
  * Generates the briefing for a built context. Any failure path (timeout, provider error, policy leaves nothing)
  * ends in the rules briefing, so the caller always gets a fully traceable result within the time budget.
  */
+/** The rules briefing goes through the same policy as the model's output: hostile titles never become claims. */
+export function safeRulesBriefing(items: readonly ContextItem[], now: string): BriefingItem[] {
+  return applyBriefingPolicy({ items: rulesBriefing(items, now) }, items);
+}
+
 export async function generateBriefing(
   ai: AiClient,
   ctx: ClientContext,
   options: { now: string; timeoutMs?: number; useAi: boolean },
 ): Promise<BriefingResult> {
-  if (!options.useAi) return { items: rulesBriefing(ctx.items, options.now), source: "rules", usage: null };
+  if (!options.useAi) return { items: safeRulesBriefing(ctx.items, options.now), source: "rules", usage: null };
   const user = renderClientContext(ctx, { now: options.now });
+  const budgetMs = options.timeoutMs ?? BRIEFING_TIMEOUT_MS;
   let timer: ReturnType<typeof setTimeout> | undefined;
   const timeout = new Promise<never>((_, reject) => {
     timer = setTimeout(() => {
       reject(new Error("briefing timed out"));
-    }, options.timeoutMs ?? BRIEFING_TIMEOUT_MS);
+    }, budgetMs);
   });
   try {
     const res = await Promise.race([
-      ai.complete({ operation: "brief_client", model: "smart", system: BRIEFING_SYSTEM_PROMPT, user, schema: Briefing, maxTokens: 1_500 }),
+      ai.complete({
+        operation: "brief_client",
+        model: "smart",
+        system: BRIEFING_SYSTEM_PROMPT,
+        user,
+        schema: Briefing,
+        maxTokens: 1_500,
+        // The HTTP request itself is aborted at the budget: no tokens are billed for a briefing nobody waits for.
+        signal: AbortSignal.timeout(budgetMs),
+      }),
       timeout,
     ]);
     const items = applyBriefingPolicy(res.output, ctx.items);
-    if (items.length === 0) return { items: rulesBriefing(ctx.items, options.now), source: "rules", usage: res.usage };
+    if (items.length === 0) return { items: safeRulesBriefing(ctx.items, options.now), source: "rules", usage: res.usage };
     return { items, source: ai.mode === "live" ? "ai" : "rules", usage: res.usage };
   } catch {
-    return { items: rulesBriefing(ctx.items, options.now), source: "rules", usage: null };
+    return { items: safeRulesBriefing(ctx.items, options.now), source: "rules", usage: null };
   } finally {
     if (timer) clearTimeout(timer);
   }

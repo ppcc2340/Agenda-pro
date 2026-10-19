@@ -13,7 +13,7 @@ export default async function CalendarioPage() {
   const nav = await getTranslations("nav");
   const [prefs, clients, integrations] = await Promise.all([
     apiFetch<{ timezone: string; workStart: string; workEnd: string }>("/v1/preferences"),
-    apiFetch<{ items: { id: string; name: string }[] }>("/v1/clients").catch(() => ({ items: [] })),
+    apiFetch<{ items: { id: string; name: string; color: string | null }[] }>("/v1/clients").catch(() => ({ items: [] })),
     apiFetch<{ items: IntegrationAccount[] }>("/v1/integrations").catch(() => ({ items: [] })),
   ]);
   const demoNow = getServerConfig().env.DEMO_NOW;

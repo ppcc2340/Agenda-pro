@@ -1,9 +1,9 @@
 "use client";
 
-import { Archive, ArchiveRestore, FileText, Pencil, Plus } from "lucide-react";
+import { Archive, ArchiveRestore, FileText, Pencil, Plus, ShieldCheck } from "lucide-react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Pill } from "@/components/ui/pill";
@@ -17,7 +17,7 @@ import { BriefingDialog } from "./briefing-dialog";
 import { ClientForm, type ClientFormValues } from "./client-form";
 
 /** Clientes tab (F-09, demo tabClientes): colour, open commitments, week hours, risks; create / edit / archive. */
-export function ClientList() {
+export function ClientList({ editId = null }: { editId?: string | null }) {
   const t = useTranslations("clients");
   const tApp = useTranslations("app");
   const tTasks = useTranslations("tasks");
@@ -26,6 +26,7 @@ export function ClientList() {
   const [showArchived, setShowArchived] = useState(false);
   const [editing, setEditing] = useState<Client | null>(null);
   const [open, setOpen] = useState(false);
+  const [autoEdited, setAutoEdited] = useState(false);
   const [briefing, setBriefing] = useState<{ clientId: string; clientName: string } | null>(null);
   const list = useClients({ stats: true, includeArchived: showArchived });
   const invalidate = [keys.clients, keys.audit];
@@ -45,8 +46,17 @@ export function ClientList() {
       clientApi<Client>(`/v1/clients/${id}`, { method: "PATCH", json: { archived } }),
     invalidate,
   );
-  const items = list.data?.items ?? [];
+  const items = useMemo(() => list.data?.items ?? [], [list.data]);
   const active = items.filter((c) => !c.archivedAt);
+  // Deep link from the client view ("Editar"): open the form once for that client.
+  useEffect(() => {
+    if (!editId || autoEdited) return;
+    const target = items.find((c) => c.id === editId);
+    if (!target) return;
+    setEditing(target);
+    setOpen(true);
+    setAutoEdited(true);
+  }, [editId, autoEdited, items]);
   const onError = (err: unknown) => {
     toast(err instanceof ClientApiError && err.problem.code === "ENTITLEMENT_REQUIRED" ? t("limit") : tApp("errorBody"));
   };
@@ -117,9 +127,9 @@ export function ClientList() {
                     <dd className="num text-[15px] font-semibold text-ink">
                       {hours(s.minutesApproved)}
                       {s.minutesSuggested > 0 ? (
-                        <span className="ml-1 text-[12px] font-normal text-sug">
+                        <Pill variant="sug" className="ml-1 font-normal">
                           {t("stats.suggested", { h: hours(s.minutesSuggested) })}
-                        </span>
+                        </Pill>
                       ) : null}
                     </dd>
                   </div>
@@ -143,7 +153,6 @@ export function ClientList() {
               <div className="mt-auto flex flex-wrap gap-1.5 pt-1">
                 <Button
                   size="sm"
-                  variant="primary"
                   disabled={Boolean(c.archivedAt)}
                   onClick={() => setBriefing({ clientId: c.id, clientName: c.name })}
                 >
@@ -179,8 +188,13 @@ export function ClientList() {
           );
         })}
       </ul>
+      <p className="mt-3 flex items-center gap-2 text-[12.5px] text-ink3">
+        <ShieldCheck size={14} aria-hidden="true" />
+        {t("isolationNote")}
+      </p>
       <BriefingDialog target={briefing} onClose={() => setBriefing(null)} />
       <ClientForm
+        key={editing?.id ?? "new"}
         open={open}
         onOpenChange={setOpen}
         client={editing}

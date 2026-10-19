@@ -2,7 +2,7 @@
  * D-041: loads the client-scoped slice of the workspace that feeds `buildClientContext`. The builder in core is
  * the isolation guard; this loader just keeps the query cheap (one client, bounded windows).
  */
-import { and, desc, eq, gte, lte } from "drizzle-orm";
+import { and, desc, eq, gte, isNull, lte, sql } from "drizzle-orm";
 import type { PgColumn } from "drizzle-orm/pg-core";
 import type { WorkspaceSnapshot } from "@meri/core";
 import { calendarEvents, clients, commitments, contacts, tasks, threadsIndex, timeEntries } from "../schema";
@@ -30,10 +30,16 @@ export async function loadClientSnapshot(
       tx
         .select()
         .from(tasks)
-        .where(and(byClient(tasks), eq(tasks.status, "pending")))
+        .where(and(byClient(tasks), isNull(tasks.deletedAt), sql`${tasks.status} <> 'completed'`))
         .orderBy(desc(tasks.dueAt))
         .limit(100),
-      tx.select().from(commitments).where(byClient(commitments)).orderBy(desc(commitments.dueAt)).limit(100),
+      // Confirmed vs suggested stay apart: unconfirmed (`proposed`) extractions never read as facts in a briefing.
+      tx
+        .select()
+        .from(commitments)
+        .where(and(byClient(commitments), sql`${commitments.status} not in ('proposed', 'dismissed')`))
+        .orderBy(desc(commitments.dueAt))
+        .limit(100),
       tx
         .select()
         .from(threadsIndex)
@@ -70,11 +76,9 @@ export async function loadClientSnapshot(
       title: t.title,
       status: t.status,
       dueAt: iso(t.dueAt),
-      atRisk: t.risk !== null,
+      atRisk: t.risk !== null || t.status === "at_risk",
     })),
-    commitments: commitmentRows
-      .filter((c) => c.status !== "dismissed")
-      .map((c) => ({
+    commitments: commitmentRows.map((c) => ({
         id: c.id,
         clientId: c.clientId,
         direction: c.direction,
@@ -82,7 +86,7 @@ export async function loadClientSnapshot(
         status: c.status,
         dueAt: iso(c.dueAt),
         counterparty: c.counterpartyEmail,
-      })),
+    })),
     threads: threadRows.map((t) => ({
       id: t.id,
       clientId: t.clientId,

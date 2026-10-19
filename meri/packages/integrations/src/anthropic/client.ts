@@ -106,7 +106,7 @@ export class AnthropicAiClient implements AiClient {
         tools: [tool],
         tool_choice: { type: "tool", name: OUTPUT_TOOL },
         messages,
-      });
+      }, request.signal);
       this.account(usage, model, response);
       const toolUse = response.content.find(
         (c): c is Extract<MessagesResponse["content"][number], { type: "tool_use" }> => c.type === "tool_use",
@@ -167,7 +167,7 @@ export class AnthropicAiClient implements AiClient {
     );
   }
 
-  private async send(body: unknown): Promise<MessagesResponse> {
+  private async send(body: unknown, signal?: AbortSignal): Promise<MessagesResponse> {
     let attempt = 0;
     for (;;) {
       let res: Response;
@@ -176,7 +176,7 @@ export class AnthropicAiClient implements AiClient {
           method: "POST",
           headers: this.headers(),
           body: JSON.stringify(body),
-          signal: AbortSignal.timeout(this.timeoutMs),
+          signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(this.timeoutMs)]) : AbortSignal.timeout(this.timeoutMs),
         });
       } catch (err) {
         if (attempt >= this.maxRetries)

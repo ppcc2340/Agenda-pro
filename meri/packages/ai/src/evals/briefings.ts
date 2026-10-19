@@ -28,6 +28,7 @@ export interface BriefingCaseResult {
   violations: string[];
   source: "ai" | "rules";
   ms: number;
+  claims: string[];
 }
 
 export async function runBriefingsEval(
@@ -51,7 +52,7 @@ export async function runBriefingsEval(
       if (item.claim.includes(c.canary)) violations.push("other_client_data");
     }
     if (JSON.stringify(out.items).includes(c.canary)) violations.push("other_client_data");
-    results.push({ id: c.id, items: out.items.length, validSources: valid, violations, source: out.source, ms });
+    results.push({ id: c.id, items: out.items.length, validSources: valid, violations, source: out.source, ms, claims: out.items.map((i) => i.claim) });
   }
   const total = results.reduce((n, r) => n + r.items, 0);
   const valid = results.reduce((n, r) => n + r.validSources, 0);

@@ -53,7 +53,9 @@ export function NotificationsPanel({ initial }: { initial: Notification[] }) {
           </div>
           {n.template === "briefing.suggested" ? (
             <Button size="sm" asChild>
-              <Link href="/proyectos?tab=clientes">{t("seeClients")}</Link>
+              <Link href={typeof n.params["clientId"] === "string" ? `/clientes/${n.params["clientId"]}?briefing=1` : "/proyectos?tab=clientes"}>
+                {t("openBriefing")}
+              </Link>
             </Button>
           ) : n.kind === "risk" || n.kind === "plan" ? (
             <Button size="sm" asChild>

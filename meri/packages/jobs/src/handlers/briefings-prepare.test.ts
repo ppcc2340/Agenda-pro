@@ -74,4 +74,19 @@ describe("briefings.prepare (D-043)", () => {
     await withWorkspace(handle.db, ws, (tx) => updatePreferences(tx, ws, { briefingBeforeMeetings: false }, { now: NOW }));
     expect(await prepareBriefings(deps, ws)).toEqual({ status: "skipped", meetings: 0, notified: 0 });
   });
+
+  it("stops at the daily alert cap and resumes on a later run", async () => {
+    const ws2 = (await bootstrapAccount(handle.db, { email: `bp2-${Date.now().toString(36)}@test.local`, now: NOW })).workspaceId;
+    await withWorkspace(handle.db, ws2, async (tx) => {
+      await updatePreferences(tx, ws2, { maxAlertsPerDay: 1 }, { now: NOW });
+      const acme = await createClient(tx, ws2, { name: "Acme", domains: [] }, NOW);
+      for (const [externalId, start] of [["m1", h(20)], ["m2", h(30)]] as const)
+        await upsertCalendarEvent(tx, ws2, { integrationAccountId: "01a15596-f037-71e4-bfce-25b2f4a80b33", externalId, etag: null, title: externalId, startsAt: start, endsAt: new Date(start.getTime() + 3_600_000), allDay: false, attendees: [], busy: true, origin: "external", clientId: acme.id }, NOW);
+    });
+    expect(await prepareBriefings(deps, ws2)).toEqual({ status: "done", meetings: 2, notified: 1 });
+    expect(await prepareBriefings(deps, ws2)).toEqual({ status: "done", meetings: 2, notified: 0 });
+    const tomorrow = { ...deps, now: () => new Date(NOW.getTime() + 86_400_000) };
+    // Next day: m1 has started (out of the window), m2 is still ahead and gets its alert.
+    expect(await prepareBriefings(tomorrow, ws2)).toEqual({ status: "done", meetings: 1, notified: 1 });
+  });
 });

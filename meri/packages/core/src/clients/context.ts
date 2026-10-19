@@ -181,7 +181,7 @@ export function buildClientContext(
 const factsOf = (facts: ContextItem["facts"]) =>
   Object.entries(facts)
     .filter(([, v]) => v !== null)
-    .map(([k, v]) => `${k}=${escapeDelims(String(v)).replace(/["\r\n]/g, " ")}`)
+    .map(([k, v]) => `${k}=${escapeDelims(String(v)).replace(/["<>\r\n]/g, " ")}`)
     .join(" ");
 
 /** The prompt payload: one line per item inside the untrusted-data block, size-capped. */

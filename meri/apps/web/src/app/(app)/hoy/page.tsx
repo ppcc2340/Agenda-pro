@@ -11,7 +11,7 @@ export default async function HoyPage() {
   const [tasks, prefs, clients, integrations] = await Promise.all([
     apiFetch<{ items: Task[] }>("/v1/tasks?limit=200"),
     apiFetch<{ timezone: string; workStart: string; workEnd: string }>("/v1/preferences"),
-    apiFetch<{ items: { id: string; name: string }[] }>("/v1/clients").catch(() => ({ items: [] })),
+    apiFetch<{ items: { id: string; name: string; color: string | null }[] }>("/v1/clients").catch(() => ({ items: [] })),
     apiFetch<{ items: { scopes: string[] }[] }>("/v1/integrations").catch(() => ({ items: [] })),
   ]);
   const gmailConnected = integrations.items.some((i) => i.scopes.some((s) => s.includes("gmail.readonly")));

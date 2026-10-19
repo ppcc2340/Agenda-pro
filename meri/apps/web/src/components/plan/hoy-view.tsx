@@ -4,6 +4,7 @@ import { Check, NotebookPen } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { ClientChip } from "@/components/ui/client-chip";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Pill } from "@/components/ui/pill";
 import { Section } from "@/components/ui/section";
@@ -275,7 +276,9 @@ export function HoyView({
                       <li key={ev.id} className="flex flex-wrap items-center gap-3 py-2.5">
                         <span className="num text-[13px] text-ink2">{formatTime(ev.startsAt, locale, timezone)}</span>
                         <span className="min-w-0 flex-1 truncate font-semibold">{ev.title}</span>
-                        <span className="text-[12.5px] text-ink2">{clientName}</span>
+                        <span className="text-[12.5px] text-ink2">
+                          <ClientChip clientId={ev.clientId} clients={clients} name={clientName} />
+                        </span>
                         <Button
                           size="sm"
                           variant={ev.endMin <= nowMin ? "primary" : "default"}
@@ -297,25 +300,6 @@ export function HoyView({
   );
 }
 
-function ClientChip({
-  clientId,
-  clients,
-}: {
-  clientId: string | null;
-  clients: { id: string; name: string }[];
-}) {
-  const client = clients.find((c) => c.id === clientId);
-  if (!client) return null;
-  return (
-    <span className="inline-flex items-center gap-1.5">
-      <i
-        className="inline-block h-2 w-2 rounded-full"
-        style={{ background: clientColorVar(clientId, clients) }}
-      />
-      {client.name}
-    </span>
-  );
-}
 
 function NowCard({
   block,

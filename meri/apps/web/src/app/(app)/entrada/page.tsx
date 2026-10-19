@@ -8,7 +8,7 @@ export default async function EntradaPage() {
   const nav = await getTranslations("nav");
   const [prefs, clients] = await Promise.all([
     apiFetch<{ timezone: string }>("/v1/preferences"),
-    apiFetch<{ items: { id: string; name: string }[] }>("/v1/clients").catch(() => ({ items: [] })),
+    apiFetch<{ items: { id: string; name: string; color: string | null }[] }>("/v1/clients").catch(() => ({ items: [] })),
   ]);
   return (
     <>

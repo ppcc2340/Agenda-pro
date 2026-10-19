@@ -26,6 +26,7 @@ export {
   generateBriefing,
   applyBriefingPolicy,
   rulesBriefing,
+  safeRulesBriefing,
   fakeBriefing,
   BRIEFING_TIMEOUT_MS,
   MAX_BRIEFING_ITEMS,

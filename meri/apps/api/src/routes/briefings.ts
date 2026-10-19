@@ -111,6 +111,13 @@ export function briefingRoutes(app: FastifyInstance, options: BriefingRoutesOpti
       return request.withWorkspace(async (tx) => {
         const client = await getClient(tx, session.workspaceId, request.params.id);
         if (!client) throw new ApiError("NOT_FOUND", "Client not found.");
+        if (request.query.eventId) {
+          const event = await getCalendarEvent(tx, session.workspaceId, request.query.eventId);
+          if (!event || event.clientId !== client.id)
+            throw new ApiError("VALIDATION_FAILED", "Invalid references.", [
+              { path: "eventId", message: "The event does not belong to this client." },
+            ]);
+        }
         const view = await getBriefing(tx, session.workspaceId, client.id, request.query.eventId ?? null);
         return view ? serialize(view, client.name, true) : null;
       });

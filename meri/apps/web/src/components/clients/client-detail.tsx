@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Pill } from "@/components/ui/pill";
 import { formatDate, formatMinutes } from "@/lib/format";
+import { clientColorVar } from "@/lib/plan";
 import { useCalendarEvents, useCommitments, useTasks } from "@/lib/hooks/use-api";
 import type { Client } from "@/lib/types";
 
@@ -25,9 +26,20 @@ interface TimelineItem {
 const DAY = 86_400_000;
 
 /** P3-08 client view: header, risks, month hours, briefing and a timeline built from the existing client filters. */
-export function ClientDetail({ client, timezone, now: nowIso }: { client: Client; timezone: string; now?: string }) {
+export function ClientDetail({
+  client,
+  timezone,
+  now: nowIso,
+  openBriefing = false,
+}: {
+  client: Client;
+  timezone: string;
+  now?: string;
+  openBriefing?: boolean;
+}) {
   const t = useTranslations("clientDetail");
   const tTasks = useTranslations("tasks");
+  const tApp = useTranslations("app");
   const locale = useLocale();
   const now = useMemo(() => (nowIso ? new Date(nowIso) : new Date()), [nowIso]);
   const range = useMemo(
@@ -37,7 +49,7 @@ export function ClientDetail({ client, timezone, now: nowIso }: { client: Client
   const tasks = useTasks({ includeCompleted: true });
   const commitments = useCommitments({ clientId: client.id });
   const events = useCalendarEvents(range);
-  const [briefing, setBriefing] = useState(false);
+  const [briefing, setBriefing] = useState(openBriefing);
   const hours = (min: number) => formatMinutes(min, (k, v) => tTasks(k, v));
 
   const items = useMemo<TimelineItem[]>(() => {
@@ -69,10 +81,12 @@ export function ClientDetail({ client, timezone, now: nowIso }: { client: Client
     return out.sort((a, b) => (b.date ?? "").localeCompare(a.date ?? "") || a.title.localeCompare(b.title));
   }, [tasks.data, commitments.data, events.data, client.id, now]);
   const risks = items.filter((i) => i.risk);
+  const loading = tasks.isPending || commitments.isPending || events.isPending;
   const s = client.stats;
+  const color = client.color ?? clientColorVar(client.id, [client]);
   return (
     <div className="grid gap-5">
-      <header className="flex flex-wrap items-start gap-4 rounded-2xl border border-rule bg-raised p-5" style={{ borderLeft: `6px solid ${client.color ?? "var(--sea)"}` }}>
+      <header className="flex flex-wrap items-start gap-4 rounded-2xl border border-rule bg-raised p-5" style={{ borderLeft: `6px solid ${color}` }}>
         <div className="min-w-0 flex-1">
           <h2 className="font-head text-2xl font-semibold">{client.name}</h2>
           <p className="text-[13px] text-ink3">{client.domains.length ? client.domains.join(" · ") : t("noDomains")}</p>
@@ -93,7 +107,7 @@ export function ClientDetail({ client, timezone, now: nowIso }: { client: Client
             {t("briefing")}
           </Button>
           <Button asChild>
-            <Link href="/proyectos?tab=clientes">
+            <Link href={`/proyectos?tab=clientes&edit=${client.id}`}>
               <Pencil size={14} aria-hidden="true" />
               {t("edit")}
             </Link>
@@ -140,7 +154,8 @@ export function ClientDetail({ client, timezone, now: nowIso }: { client: Client
       ) : null}
       <section aria-label={t("timeline")}>
         <h3 className="mb-1.5 font-head text-[15.5px] font-semibold">{t("timeline")}</h3>
-        {items.length === 0 && !tasks.isPending ? <EmptyState title={t("emptyTitle")} body={t("emptyBody")} /> : null}
+        {loading ? <p className="py-4 text-ink3">{tApp("loading")}</p> : null}
+        {items.length === 0 && !loading ? <EmptyState title={t("emptyTitle")} body={t("emptyBody")} /> : null}
         <ol className="divide-y divide-rule border-t border-rule">
           {items.map((i) => (
             <li key={`${i.type}-${i.id}`} className="flex flex-wrap items-center gap-3 py-2.5">
@@ -149,12 +164,16 @@ export function ClientDetail({ client, timezone, now: nowIso }: { client: Client
               <Link href={i.href} className="min-w-0 flex-1 truncate font-semibold underline-offset-2 hover:underline">
                 {i.title}
               </Link>
-              <span className="text-[12.5px] text-ink3">{t(`status.${i.status}`, { default: i.status })}</span>
+              <span className="text-[12.5px] text-ink3">{t(`status.${i.status}`)}</span>
             </li>
           ))}
         </ol>
       </section>
-      <BriefingDialog target={briefing ? { clientId: client.id, clientName: client.name } : null} onClose={() => setBriefing(false)} />
+      <BriefingDialog
+        target={briefing ? { clientId: client.id, clientName: client.name } : null}
+        onClose={() => setBriefing(false)}
+        timezone={timezone}
+      />
     </div>
   );
 }

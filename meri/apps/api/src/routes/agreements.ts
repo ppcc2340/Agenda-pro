@@ -52,6 +52,10 @@ export function agreementRoutes(app: FastifyInstance, options: AgreementRoutesOp
       const result = await request.withWorkspace(async (tx) => {
         const event = await getCalendarEvent(tx, session.workspaceId, request.params.id);
         if (!event || event.origin !== "external") throw new ApiError("NOT_FOUND", "Event not found.");
+        if (!event.clientId)
+          throw new ApiError("VALIDATION_FAILED", "Invalid references.", [
+            { path: "id", message: "Assign the meeting to a client before recording agreements." },
+          ]);
         const [prefs, clients, contacts, accounts] = await Promise.all([
           getPreferences(tx, session.workspaceId),
           listClients(tx, session.workspaceId),
@@ -67,7 +71,6 @@ export function agreementRoutes(app: FastifyInstance, options: AgreementRoutesOp
           event.attendees
             .map((a) => a.toLowerCase())
             .find((a) => a !== mine && client?.domains.some((d) => a.endsWith(`@${d}`) || a.endsWith(`.${d}`))) ??
-          event.attendees.map((a) => a.toLowerCase()).find((a) => a !== mine) ??
           null;
         const counterpartyName = counterparty ? (contacts.find((c) => c.email === counterparty)?.name ?? null) : null;
         const sourceRef = { type: "event", id: event.id };

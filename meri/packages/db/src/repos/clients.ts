@@ -162,8 +162,8 @@ export async function updateClient(
 
 /** Soft delete: the client disappears and its elements are detached (tasks, commitments, contacts, projects keep existing). */
 /**
- * Soft delete only: linked tasks, commitments, time entries, threads and events keep their `client_id` so
- * approved time and history stay intact (views label them "(cliente eliminado)"); nothing is detached.
+ * Soft delete only (D-039): linked tasks, commitments, time entries, threads and events keep their `client_id`
+ * so approved time and history stay intact; nothing is detached.
  */
 export async function softDeleteClient(
   tx: WorkspaceTx,
@@ -232,6 +232,7 @@ export async function relinkClientByDomains(
         eq(calendarEvents.workspaceId, workspaceId),
         isNull(calendarEvents.clientId),
         eq(calendarEvents.origin, "external"),
+        eq(calendarEvents.allDay, false),
         participantMatches(sql`${calendarEvents.attendees}`, mine),
         foreign.length ? sql`not ${participantMatches(sql`${calendarEvents.attendees}`, foreign)}` : undefined,
       ),

@@ -34,7 +34,7 @@ async function login(page: Page): Promise<void> {
   await hydrated(page);
   await page.getByLabel(/zona horaria|time zone/i).selectOption("Europe/Madrid");
   // P3-07: the vertical template is one click in the onboarding.
-  await page.getByRole("radio", { name: /despacho de abogados/i }).check();
+  await page.getByText(/despacho de abogados/i).click();
   await page.getByRole("button", { name: /guardar|empezar|continuar|save|start/i }).click();
   await page.waitForURL(/\/hoy/);
   await hydrated(page);

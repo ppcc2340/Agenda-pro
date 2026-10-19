@@ -148,7 +148,7 @@ export const preferences = pgTable("preferences", {
   retentionDays: integer("retention_days").notNull().default(90),
   /** D-045: vertical template chosen in onboarding (legal | consulting | generic). */
   vertical: text("vertical").$type<"legal" | "consulting" | "generic">().notNull().default("generic"),
-  /** D-043: create a "prepare briefing" task the day before a client meeting. */
+  /** D-043: notify one day before a client meeting so the briefing can be opened (notification only, no task). */
   briefingBeforeMeetings: boolean("briefing_before_meetings").notNull().default(true),
   updatedAt: updatedAt(),
 });

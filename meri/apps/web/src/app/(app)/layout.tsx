@@ -13,7 +13,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   if (!me.onboarded) redirect("/onboarding");
   const t = await getTranslations("app");
   const [clients, prefs, proposals] = await Promise.all([
-    apiFetch<{ items: { id: string; name: string }[] }>("/v1/clients").catch(() => ({ items: [] })),
+    apiFetch<{ items: { id: string; name: string; color: string | null }[] }>("/v1/clients").catch(() => ({ items: [] })),
     apiFetch<{ timezone: string }>("/v1/preferences"),
     apiFetch<{ items: unknown[] }>("/v1/proposals?status=pending&limit=100").catch(() => ({ items: [] })),
   ]);

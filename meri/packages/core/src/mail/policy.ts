@@ -3,13 +3,13 @@
  * instruction, a recipient change or a system marker. Applied to every extracted field, whatever the model said.
  */
 const INJECTION_PATTERNS = [
-  /ignor(a|e|ar|es)\s+(todas?\s+)?(las?\s+)?(instrucciones|indicaciones|reglas)/i,
+  /ignor(a|e|ar|es)\s+(todas?\s+)?(las?\s+|tus\s+|sus\s+|mis\s+|estas\s+|esas\s+)?(instrucciones|indicaciones|reglas)/i,
   /ignore\s+(all\s+|the\s+)?(previous|prior|above|earlier)?\s*(instructions|rules|prompts?)/i,
   /disregard\s+(all\s+|the\s+)?(previous|prior|above)?\s*instructions/i,
   /reenv[ií][ae]\s+(este|el)\s+(correo|mensaje|mail)/i,
   /forward\s+(this|the)\s+(e-?mail|message)/i,
   /\b(system|assistant|user)\s*:/i,
-  /\[\s*(system|instruction|assistant)\s*\]/i,
+  /\[\s*(system|instructions?|instrucci[oó]n(es)?|assistant|asistente|sistema)\s*\]/i,
   /<\/?\s*(system|instruction|assistant|tool|commitment|thread|message)\b/i,
   /you are (now )?(an?|the) (assistant|ai|model)/i,
   /(env[ií]a|send)\s+(to|a)\s+[^\s@]+@[^\s@]+\.[^\s@]+/i,

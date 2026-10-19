@@ -244,7 +244,8 @@
         "briefing_suggested": "Meeting \"{title}\" with {clientName}: open the briefing before you go."
       },
       "seeInHoy": "See in Today",
-      "seeClients": "See clients"
+      "seeClients": "See clients",
+      "openBriefing": "Open the briefing"
     },
     "ai": {
       "title": "AI and auto-confirmation",
@@ -541,7 +542,9 @@
       "task": "Task",
       "commitment": "Commitment",
       "client": "Client",
-      "scope": "Searching in {client}"
+      "scope": "Searching in",
+      "searching": "Searching…",
+      "empty": "Nothing with \"{q}\" in your tasks, commitments or clients. Add more words and Meri captures it."
     }
   },
   "connections": {
@@ -718,7 +721,15 @@
       "tagsPlaceholder": "tax, litigation…",
       "notes": "Notes",
       "save": "Save client",
-      "cancel": "Cancel"
+      "cancel": "Cancel",
+      "colors": {
+        "0": "Blue",
+        "1": "Coral",
+        "2": "Teal",
+        "3": "Amber",
+        "4": "Violet",
+        "5": "Green"
+      }
     },
     "stats": {
       "commitments": "Open commitments",
@@ -736,7 +747,7 @@
     "briefing": {
       "open": "Briefing",
       "title": "Briefing for {name}",
-      "desc": "Open items, commitments, latest communications, decisions and risks. Every point links to its source.",
+      "desc": "Isolated context: this client’s data only. Open items, commitments, latest communications, decisions and risks; every point links to its source.",
       "generated": "Generated {when} ({source}).",
       "sourceAi": "AI, verified by rules",
       "sourceRules": "rules",
@@ -755,10 +766,12 @@
         "task": "Task",
         "commitment": "Commitment",
         "thread": "Mail",
-        "event": "Meeting"
+        "event": "Meeting",
+        "label": "Source: {title}"
       },
       "openSource": "See source: {title}"
-    }
+    },
+    "isolationNote": "Each briefing uses only the chosen client’s data. Information from another client is never mixed in."
   },
   "time": {
     "week": "Week {week}",
@@ -803,7 +816,9 @@
       "rejected": "Entry rejected.",
       "updated": "Minutes saved.",
       "assigned": "Client assigned. Meri will suggest the entry in a few seconds."
-    }
+    },
+    "note": "Meri infers time from your calendar and your blocks. Nothing counts as billable until you approve it.",
+    "editAria": "Edit minutes ({h})"
   },
   "agreements": {
     "title": "Agreements of \"{title}\"",

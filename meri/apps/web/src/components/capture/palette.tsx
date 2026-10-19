@@ -29,6 +29,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { ClientChip } from "@/components/ui/client-chip";
 import { Pill } from "@/components/ui/pill";
 import { useToast } from "@/components/ui/toast";
 import { clientApi } from "@/lib/client-api";
@@ -287,7 +288,9 @@ function Palette({ data, onClose }: { data: PaletteContextData; onClose: () => v
         </div>
         {scope.client ? (
           <div className="px-4 pt-2">
-            <Pill variant="sea">{t("search.scope", { client: scope.client.name })}</Pill>
+            <Pill variant="sea">
+              {t("search.scope")} <ClientChip clientId={scope.client.id} clients={data.clients} />
+            </Pill>
           </div>
         ) : null}
         {suggestion ? (
@@ -318,6 +321,14 @@ function Palette({ data, onClose }: { data: PaletteContextData; onClose: () => v
         </ul>
         {!suggestion && lower.length === 0 ? (
           <p className="border-t border-rule px-5 py-2.5 text-[12.5px] text-ink3">{t("hint")}</p>
+        ) : null}
+        {debounced.length >= 2 && search.isFetching ? (
+          <p className="border-t border-rule px-5 py-2.5 text-[12.5px] text-ink3" aria-live="polite">
+            {t("search.searching")}
+          </p>
+        ) : null}
+        {debounced.length >= 2 && !search.isFetching && options.length === 0 ? (
+          <p className="border-t border-rule px-5 py-2.5 text-[12.5px] text-ink3">{t("search.empty", { q: scope.term })}</p>
         ) : null}
       </div>
     </div>
