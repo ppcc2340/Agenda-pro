@@ -27,7 +27,7 @@ export default async function HoyPage() {
   return (
     <>
       <PageHeader
-        title={title.charAt(0).toLocaleUpperCase(locale) + title.slice(1)}
+        title={(title.charAt(0).toLocaleUpperCase(locale) + title.slice(1)).replace(locale === "es" ? /,\s*/ : /^$/, " ")}
         action={<CaptureButton />}
       />
       <HoyView

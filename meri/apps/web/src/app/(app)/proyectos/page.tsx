@@ -30,7 +30,7 @@ export default async function ProyectosPage({
   return (
     <>
       <PageHeader title={nav("proyectos")} subtitle={t("subtitle")} action={<CaptureButton />} />
-      <nav className="mb-1.5 flex gap-1 border-b border-rule" aria-label={nav("proyectos")}>
+      <nav className="mb-1.5 flex gap-1 overflow-x-auto whitespace-nowrap border-b border-rule" aria-label={nav("proyectos")}>
         {TABS.map((key) => (
           <Link
             key={key}

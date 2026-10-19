@@ -90,77 +90,54 @@ export function ClientList({ editId = null }: { editId?: string | null }) {
         </p>
       ) : null}
       {list.data && items.length === 0 ? <EmptyState title={t("emptyTitle")} body={t("emptyBody")} /> : null}
-      <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3" aria-label={t("listLabel")}>
+      <ul className="divide-y divide-rule border-t border-rule" aria-label={t("listLabel")}>
         {items.map((c) => {
           const s = c.stats;
-          const color = c.color ?? clientColorVar(c.id, active);
+          const color = clientColorVar(c.id, active.length ? active : items);
+          const risk = s ? s.atRiskTasks + s.overdueCommitments : 0;
           return (
-            <li
-              key={c.id}
-              className="flex flex-col gap-2 rounded-2xl border border-rule bg-raised p-4"
-              style={{ borderLeft: `4px solid ${color}` }}
-            >
-              <div className="flex items-start justify-between gap-2">
+            <li key={c.id} className="flex flex-col gap-2 py-3 md:flex-row md:items-center md:gap-3.5">
+              <div className="flex min-w-0 flex-1 items-center gap-3.5">
+                <span className="h-[38px] w-2 shrink-0 rounded" style={{ background: color }} aria-hidden="true" />
                 <div className="min-w-0">
-                  <Link href={`/clientes/${c.id}`} className="block truncate font-head text-[17px] font-semibold underline-offset-2 hover:underline">
-                    {c.name}
-                  </Link>
-                  <div className="truncate text-[12.5px] text-ink3">
-                    {c.domains.length ? c.domains.join(" · ") : t("noDomains")}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Link href={`/clientes/${c.id}`} className="truncate font-head text-[16px] font-semibold underline-offset-2 hover:underline">
+                      {c.name}
+                    </Link>
+                    {c.archivedAt ? <Pill variant="plain">{t("archived")}</Pill> : null}
                   </div>
-                </div>
-                {c.archivedAt ? <Pill variant="plain">{t("archived")}</Pill> : null}
-              </div>
-              {s ? (
-                <dl className="grid grid-cols-3 gap-2 text-[12.5px] text-ink2">
-                  <div>
-                    <dt>{t("stats.commitments")}</dt>
-                    <dd className="num text-[15px] font-semibold text-ink">
-                      {s.openCommitments}
-                      {s.overdueCommitments > 0 ? (
-                        <span className="ml-1 text-[12px] text-risk">{t("stats.overdue", { n: s.overdueCommitments })}</span>
-                      ) : null}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>{t("stats.week")}</dt>
-                    <dd className="num text-[15px] font-semibold text-ink">
-                      {hours(s.minutesApproved)}
+                  {s ? (
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-ink2">
+                      <span className="num">{t("stats.open", { n: s.openCommitments })}</span>
+                      <span aria-hidden="true">·</span>
+                      <span className="num">{t("stats.weekHours", { h: hours(s.minutesApproved) })}</span>
                       {s.minutesSuggested > 0 ? (
-                        <Pill variant="sug" className="ml-1 font-normal">
+                        <Pill variant="sug" className="font-normal">
                           {t("stats.suggested", { h: hours(s.minutesSuggested) })}
                         </Pill>
                       ) : null}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>{t("stats.risks")}</dt>
-                    <dd className={`num text-[15px] font-semibold ${s.atRiskTasks > 0 ? "text-risk" : "text-ink"}`}>
-                      {s.atRiskTasks}
-                    </dd>
-                  </div>
-                </dl>
-              ) : null}
-              {c.verticalTags.length ? (
-                <div className="flex flex-wrap gap-1">
-                  {c.verticalTags.map((tag) => (
-                    <Pill key={tag} variant="plain">
-                      {tag}
-                    </Pill>
-                  ))}
+                      {risk > 0 ? (
+                        <Pill variant="risk">{t("stats.risk", { n: risk })}</Pill>
+                      ) : (
+                        <Pill variant="ok">{t("stats.noRisk")}</Pill>
+                      )}
+                    </div>
+                  ) : null}
                 </div>
-              ) : null}
-              <div className="mt-auto flex flex-wrap gap-1.5 pt-1">
+              </div>
+              <div className="flex flex-wrap gap-1.5 md:justify-end">
                 <Button
                   size="sm"
                   disabled={Boolean(c.archivedAt)}
                   onClick={() => setBriefing({ clientId: c.id, clientName: c.name })}
                 >
                   <FileText size={14} aria-hidden="true" />
-                  {t("briefing.open")}
+                  <span className="md:hidden">{t("briefing.openShort")}</span>
+                  <span className="hidden md:inline">{t("briefing.open")}</span>
                 </Button>
                 <Button
                   size="sm"
+                  variant="quiet"
                   onClick={() => {
                     setEditing(c);
                     setOpen(true);

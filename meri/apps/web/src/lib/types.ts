@@ -127,6 +127,8 @@ export interface Plan {
   conflicts: Conflict[];
   unscheduled: { taskId: string; reason: string }[];
   pendingProposal: PendingProposal | null;
+  /** Contingency reserve per local day (D-051), drawn hatched at the end of the day. */
+  margin: { day: string; minutes: number; startsAt: string; endsAt: string }[];
 }
 
 export interface CalendarEvent {

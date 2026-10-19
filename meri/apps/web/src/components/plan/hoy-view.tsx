@@ -101,6 +101,12 @@ export function HoyView({
         endsAt: g.endsAt,
       }));
   }, [plan.data, now, timezone, tasks]);
+  const margin = useMemo(() => {
+    const m = plan.data?.margin.find((x) => x.day === dayKey(now, timezone));
+    return m
+      ? { startMin: minuteOfDay(m.startsAt, timezone), endMin: minuteOfDay(m.endsAt, timezone), minutes: m.minutes }
+      : null;
+  }, [plan.data, now, timezone]);
   const current = currentBlock(items, nowMin);
   const priorityOf = (i: DayItem) => tasks.get(i.taskId ?? "")?.priority ?? 3;
   const key = items
@@ -151,6 +157,7 @@ export function HoyView({
           nowMin={nowMin}
           nowIso={now.toISOString()}
           ghosts={ghosts}
+          margin={margin}
           window={window}
           timezone={timezone}
           clients={clients}
@@ -351,7 +358,9 @@ function NowCard({
           <Check size={16} aria-hidden="true" />
           {tPlan("markDone")}
         </Button>
-        <Button onClick={onWhy}>{t("whyHere")}</Button>
+        <Button onClick={onWhy} className="hidden md:inline-flex">
+          {t("whyHere")}
+        </Button>
       </div>
       <p className="mt-2.5 text-[13px] text-ink3 md:hidden">
         <b className="text-ink2">{t("whyNow")}</b> <ReasonList reasons={reasons} />

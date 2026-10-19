@@ -98,7 +98,8 @@ export function AppShell({
         className="fixed inset-x-0 bottom-0 z-20 grid grid-cols-5 border-t border-rule bg-raised px-1 pb-[calc(8px+env(safe-area-inset-bottom,0px))] pt-1.5 md:hidden"
       >
         {MOBILE_TABS.map(({ key, href, icon: Icon }) => {
-          const active = isActive(href);
+          // «Más» covers its own pages and the control centre reached from them.
+          const active = key === "mas" ? isActive("/mas") || isActive("/control") : isActive(href);
           const badge =
             key === "entrada" ? badges.entrada : key === "compromisos" ? badges.proyectos : undefined;
           return (

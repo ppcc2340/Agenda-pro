@@ -5,6 +5,7 @@ import { signOutAction } from "@/app/actions";
 import { MobileCapture, PaletteProvider } from "@/components/capture/palette";
 import { AppShell } from "@/components/shell/app-shell";
 import { apiFetch, getMe } from "@/server/api";
+import { getServerConfig } from "@/server/config";
 
 /** Authenticated areas. Session validated against the API; incomplete onboarding is redirected. */
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -23,11 +24,14 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <AppShell
         badges={{ entrada: proposals.items.length }}
         footer={
-          <form action={signOutAction}>
-            <button type="submit" className="bg-transparent p-0 text-left text-rail-ink">
-              {t("signOut")}
-            </button>
-          </form>
+          <>
+            <form action={signOutAction}>
+              <button type="submit" className="bg-transparent p-0 text-left text-rail-ink">
+                {t("signOut")}
+              </button>
+            </form>
+            {getServerConfig().env.DEMO_MODE ? <span>{t("demoNote")}</span> : null}
+          </>
         }
       >
         {children}

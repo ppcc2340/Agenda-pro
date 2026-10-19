@@ -1,6 +1,7 @@
 "use client";
 
 import { parseCapture, type CaptureSuggestion } from "@meri/core";
+import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { useQuery } from "@tanstack/react-query";
 import {
   Briefcase,
@@ -18,7 +19,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   createContext,
   useCallback,
@@ -299,11 +300,12 @@ function Palette({ data, onClose }: { data: PaletteContextData; onClose: () => v
             <CapturePreview suggestion={suggestion} timezone={data.timezone} />
           </div>
         ) : null}
-        <ul className="max-h-[46vh] overflow-auto p-2" role="listbox">
+        <ul className="max-h-[46vh] overflow-auto p-2" aria-label={t("placeholder")}>
           {options.map((o, i) => (
-            <li key={o.id} role="option" aria-selected={i === active}>
+            <li key={o.id}>
               <button
                 type="button"
+                aria-current={i === active ? "true" : undefined}
                 onMouseEnter={() => setIdx(i)}
                 onClick={o.run}
                 className={
@@ -335,38 +337,39 @@ function Palette({ data, onClose }: { data: PaletteContextData; onClose: () => v
   );
 }
 
-/** Mobile `+` capture sheet (demo/mobile.html). */
+/**
+ * Mobile `+` capture sheet (demo/mobile.html) on the Radix dialog (ADR 0002): Escape closes, focus is trapped
+ * and returns to the `+` button. Hidden on the «Más» sub-pages, as in the demo.
+ */
 export function MobileCapture({ data }: { data: PaletteContextData }) {
   const t = useTranslations("capture");
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
   const capture = useCaptureMutation();
   const suggestion = q.trim()
     ? parseCapture(q, { now: new Date().toISOString(), timezone: data.timezone, clients: data.clients })
     : null;
+  if (pathname.startsWith("/mas/")) return null;
   return (
-    <>
-      <button
-        type="button"
-        aria-label={t("mobileTitle")}
-        onClick={() => setOpen(true)}
-        className="fixed bottom-[84px] right-4 z-20 grid h-14 w-14 place-items-center rounded-2xl bg-sea text-on-sea shadow-[0_8px_22px_rgba(14,107,116,0.4)] md:hidden"
-      >
-        <Plus size={28} aria-hidden="true" />
-      </button>
-      {open ? (
-        <div
-          className="fixed inset-0 z-40 flex items-end bg-[rgba(6,14,21,0.5)] md:hidden"
-          onMouseDown={(e) => e.target === e.currentTarget && setOpen(false)}
+    <DialogPrimitive.Root open={open} onOpenChange={setOpen}>
+      <DialogPrimitive.Trigger asChild>
+        <button
+          type="button"
+          aria-label={t("mobileTitle")}
+          className="fixed bottom-[84px] right-4 z-20 grid h-14 w-14 place-items-center rounded-2xl bg-sea text-on-sea shadow-[0_8px_22px_rgba(14,107,116,0.4)] md:hidden"
         >
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-label={t("mobileTitle")}
-            className="max-h-[86%] w-full overflow-auto rounded-t-3xl bg-raised px-5 pb-[calc(22px+env(safe-area-inset-bottom,0px))] pt-2.5"
-          >
+          <Plus size={28} aria-hidden="true" />
+        </button>
+      </DialogPrimitive.Trigger>
+      <DialogPrimitive.Portal>
+        <DialogPrimitive.Overlay className="fixed inset-0 z-40 bg-[rgba(6,14,21,0.5)] md:hidden" />
+        <DialogPrimitive.Content
+          aria-describedby={undefined}
+          className="fixed inset-x-0 bottom-0 z-50 max-h-[86%] w-full overflow-auto rounded-t-3xl bg-raised px-5 pb-[calc(22px+env(safe-area-inset-bottom,0px))] pt-2.5 focus:outline-none md:hidden"
+        >
             <div className="mx-auto mb-3.5 h-1 w-10 rounded-full bg-rule" />
-            <h2 className="text-xl">{t("mobileTitle")}</h2>
+            <DialogPrimitive.Title className="font-head text-xl font-semibold">{t("mobileTitle")}</DialogPrimitive.Title>
             <p className="mb-3 mt-1 text-ink2">{t("mobileSub")}</p>
             <input
               autoFocus
@@ -398,9 +401,8 @@ export function MobileCapture({ data }: { data: PaletteContextData }) {
             >
               {t("mobileAdd")}
             </button>
-          </div>
-        </div>
-      ) : null}
-    </>
+        </DialogPrimitive.Content>
+      </DialogPrimitive.Portal>
+    </DialogPrimitive.Root>
   );
 }

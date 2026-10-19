@@ -10,7 +10,7 @@
     "theme": "Cambiar tema",
     "language": "Idioma",
     "signOut": "Cerrar sesión",
-    "demoNote": "Modo de desarrollo con datos de ejemplo. Nada se envía ni se cobra.",
+    "demoNote": "Demo con datos de ejemplo. Nada se envía ni se cobra.",
     "themeDark": "Tema oscuro",
     "undo": "Deshacer",
     "dialogClose": "Cerrar"
@@ -69,7 +69,9 @@
     "meetings": {
       "title": "Reuniones de hoy con cliente",
       "record": "Registrar acuerdos"
-    }
+    },
+    "margin": "margen",
+    "marginTitle": "Margen para imprevistos: {minutes} min que Meri no asigna"
   },
   "entrada": {
     "subtitle": "Meri propone, tú decides. Nada de esto es definitivo hasta que lo confirmes.",
@@ -111,8 +113,10 @@
       "suggest": "Solo sugerir",
       "low": "Actuar en lo de bajo riesgo",
       "suggestBody": "Meri propone y tú confirmas todo. Es la opción por defecto.",
-      "lowBody": "Meri puede confirmar compromisos explícitos de alta confianza y mover sus propios bloques. Nunca toca reuniones ni envía correos.",
-      "current": "Modo actual"
+      "lowBody": "Meri aplica por su cuenta los cambios seguros del plan (solo sus propios bloques) y los escribe en su calendario, siempre con registro y deshacer. Nunca toca reuniones ni envía correos; los compromisos siguen pasando por Entrada salvo que actives la auto-confirmación.",
+      "current": "Modo actual",
+      "lowShort": "Bajo riesgo",
+      "changed": "Cambiaste la autonomía a «{label}»."
     },
     "connections": {
       "title": "Conexiones",
@@ -124,7 +128,9 @@
       "notConnected": "Sin conectar",
       "soon": "Próximamente",
       "others": "Outlook y Notion",
-      "othersBody": "Llegan después del lanzamiento"
+      "othersBody": "Llegan después del lanzamiento",
+      "demoConnected": "Demo: cuenta simulada",
+      "demoNotConnected": "Demo, sin conectar"
     },
     "credits": {
       "title": "Créditos de IA",
@@ -189,7 +195,10 @@
         "project_updated": "Editaste un asunto.",
         "proposal_confirmed": "Confirmaste una propuesta.",
         "proposal_edited": "Confirmaste una propuesta con cambios.",
-        "agreements_recorded": "Registraste los acuerdos de una reunión."
+        "agreements_recorded": "Registraste los acuerdos de una reunión.",
+        "preferences_autonomy_changed": "Cambiaste la autonomía de Meri.",
+        "account_exported": "Exportaste tus datos.",
+        "account_deleted": "Eliminaste tu cuenta."
       },
       "undoneOf": "Deshecho: {text}",
       "undoDone": "Acción deshecha."
@@ -207,7 +216,13 @@
       "desc": "Tus datos son tuyos.",
       "export": "Exportar mis datos",
       "delete": "Eliminar mi cuenta",
-      "soon": "Todavía no disponible. Llegará en una próxima versión."
+      "body": "La exportación es un JSON con tus clientes, tareas, compromisos, tiempo y actividad. Eliminar la cuenta la desactiva al momento y borra los datos en el plazo legal.",
+      "exportedToast": "Exportando tus datos.",
+      "demoDelete": "En la demo no se elimina nada.",
+      "confirmTitle": "¿Eliminar tu cuenta?",
+      "confirmBody": "Se cierra la sesión, Meri deja de leer tus cuentas y tus datos se borran. No se puede deshacer.",
+      "cancel": "Cancelar",
+      "deleted": "Cuenta eliminada."
     },
     "plan": {
       "title": "Plan",
@@ -298,13 +313,6 @@
       "removeAria": "Quitar exclusión {value}",
       "noExclusions": "Sin exclusiones. Los boletines y correos automáticos ya se descartan por reglas.",
       "pauseHint": "La pausa detiene la lectura de Gmail y de Google Calendar; nada se borra."
-    },
-    "shortcuts": {
-      "title": "Accesos directos",
-      "desc": "Clientes, tiempo y tareas.",
-      "clients": "Clientes",
-      "time": "Tiempo",
-      "tasks": "Tareas"
     },
     "vertical": {
       "title": "Vertical y vocabulario",
@@ -725,11 +733,11 @@
       "cancel": "Cancelar",
       "colors": {
         "0": "Azul",
-        "1": "Coral",
-        "2": "Turquesa",
-        "3": "Ámbar",
-        "4": "Violeta",
-        "5": "Verde"
+        "1": "Verde",
+        "2": "Ámbar",
+        "3": "Magenta",
+        "4": "Petróleo",
+        "5": "Violeta"
       }
     },
     "stats": {
@@ -737,7 +745,11 @@
       "overdue": "{n} vencidos",
       "week": "Esta semana",
       "suggested": "+{h} sugeridas",
-      "risks": "Tareas en riesgo"
+      "risks": "Tareas en riesgo",
+      "open": "{n, plural, =0 {Sin compromisos abiertos} one {# compromiso abierto} other {# compromisos abiertos}}",
+      "weekHours": "{h} esta semana",
+      "risk": "{n, plural, one {# en riesgo} other {# en riesgo}}",
+      "noRisk": "Sin riesgos"
     },
     "toasts": {
       "created": "Cliente creado.",
@@ -746,7 +758,7 @@
       "restored": "Cliente restaurado."
     },
     "briefing": {
-      "open": "Briefing",
+      "open": "Generar briefing",
       "title": "Briefing de {name}",
       "desc": "Contexto aislado: solo datos de este cliente. Pendientes, compromisos, últimas comunicaciones, decisiones y riesgos; cada punto enlaza a su fuente.",
       "generated": "Generado el {when} ({source}).",
@@ -770,7 +782,8 @@
         "event": "Reunión",
         "label": "Fuente: {title}"
       },
-      "openSource": "Ver fuente: {title}"
+      "openSource": "Ver fuente: {title}",
+      "openShort": "Briefing"
     },
     "isolationNote": "Cada briefing usa solo los datos del cliente elegido. Nunca se mezcla información de otro cliente."
   },
@@ -778,8 +791,6 @@
     "week": "Semana {week}",
     "prevWeek": "Semana anterior",
     "nextWeek": "Semana siguiente",
-    "approveSelected": "Aprobar {n, plural, =0 {seleccionadas} one {una} other {# seleccionadas}}",
-    "selectAll": "Seleccionar todas las sugeridas",
     "exportCsv": "Exportar CSV",
     "summary": "Resumen semanal por cliente",
     "summaryEmpty": "Sin tiempo esta semana.",
@@ -789,11 +800,10 @@
     "emptyTitle": "Sin tiempo esta semana",
     "emptyBody": "Meri sugiere entradas a partir de reuniones con cliente terminadas y bloques completados. Tú las apruebas; nada se factura solo.",
     "entries": "Entradas de tiempo",
-    "select": "Seleccionar {desc}",
     "noDescription": "Sin descripción",
     "source": {
-      "event": "Reunión",
-      "block": "Bloque de Meri",
+      "event": "Evento de calendario",
+      "block": "Bloque completado",
       "other": "Manual"
     },
     "status": {
@@ -810,7 +820,7 @@
     "reject": "Rechazar",
     "unassignedTitle": "Tiempo no registrado",
     "unassignedBody": "Reuniones terminadas sin cliente. Asigna el cliente y Meri sugerirá la entrada.",
-    "unassignedPill": "Sin cliente",
+    "unassignedPill": "Evento sin tiempo registrado",
     "assignClient": "Asignar cliente",
     "toasts": {
       "approved": "{n, plural, one {Entrada aprobada} other {# entradas aprobadas}}. Puedes deshacerlo en Actividad.",
@@ -819,7 +829,13 @@
       "assigned": "Cliente asignado. Meri sugerirá la entrada en unos segundos."
     },
     "note": "Meri infiere el tiempo desde tu calendario y tus bloques. Nada cuenta como facturable hasta que lo apruebas.",
-    "editAria": "Editar minutos ({h})"
+    "editAria": "Editar minutos ({h})",
+    "approveAll": "{n, plural, =0 {Nada que aprobar} one {Aprobar la sugerida} other {Aprobar las # sugeridas}}",
+    "stats": "Resumen de la semana",
+    "statApproved": "Aprobadas esta semana",
+    "statApprovedShort": "Aprobadas",
+    "statSuggested": "Sugeridas, esperan tu revisión",
+    "statSuggestedShort": "Por revisar"
   },
   "agreements": {
     "title": "Acuerdos de «{title}»",
@@ -891,5 +907,19 @@
       "past": "celebrada",
       "upcoming": "próxima"
     }
+  },
+  "mas": {
+    "title": "Más",
+    "subtitle": "Tiempo, clientes y control de lo que hace Meri.",
+    "back": "Más",
+    "time": "Tiempo",
+    "timeDesc": "{n, plural, =0 {Nada por revisar} one {Una entrada sugerida por revisar} other {# entradas sugeridas por revisar}}",
+    "timeSubtitle": "Entradas sugeridas desde reuniones y bloques. Tú apruebas.",
+    "clients": "Clientes y briefings",
+    "clientsDesc": "Cada cliente con su contexto aislado",
+    "activity": "Actividad",
+    "activityDesc": "Qué hizo Meri y cómo deshacerlo",
+    "settings": "Autonomía y privacidad",
+    "settingsDesc": "Permisos, conexiones y créditos de IA"
   }
 }

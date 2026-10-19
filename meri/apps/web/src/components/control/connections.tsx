@@ -14,7 +14,7 @@ import type { IntegrationAccount } from "@/lib/types";
 const PILL: Record<IntegrationAccount["status"], "ok" | "risk" | "sug" | "plain"> = {
   healthy: "ok",
   needs_reauth: "risk",
-  degraded: "sug",
+  degraded: "risk",
   paused: "plain",
   revoked: "risk",
 };
@@ -84,6 +84,7 @@ export function ConnectionsPanel({ fakeMode, timezone }: { fakeMode: boolean; ti
           {google ? (
             <>
               <Pill variant={PILL[google.status]}>{t(`status.${google.status}`)}</Pill>
+              {fakeMode ? <Pill variant="sug">{tc("demoConnected")}</Pill> : null}
               {google.status === "needs_reauth" ? (
                 <Button size="sm" variant="primary" onClick={() => connect.mutate("all")}>
                   {t("reconnect")}
@@ -107,7 +108,7 @@ export function ConnectionsPanel({ fakeMode, timezone }: { fakeMode: boolean; ti
             </>
           ) : (
             <>
-              <Pill variant="plain">{tc("notConnected")}</Pill>
+              <Pill variant="plain">{fakeMode ? tc("demoNotConnected") : tc("notConnected")}</Pill>
               <Button
                 size="sm"
                 variant="primary"
@@ -131,6 +132,7 @@ export function ConnectionsPanel({ fakeMode, timezone }: { fakeMode: boolean; ti
               <Pill variant={PILL[google?.status ?? "healthy"]}>
                 {t(`status.${google?.status ?? "healthy"}`)}
               </Pill>
+              {fakeMode ? <Pill variant="sug">{tc("demoConnected")}</Pill> : null}
               <Button
                 size="sm"
                 onClick={() => google && syncMail.mutate(google.id)}
@@ -141,7 +143,7 @@ export function ConnectionsPanel({ fakeMode, timezone }: { fakeMode: boolean; ti
             </>
           ) : (
             <>
-              <Pill variant="plain">{tc("notConnected")}</Pill>
+              <Pill variant="plain">{fakeMode ? tc("demoNotConnected") : tc("notConnected")}</Pill>
               <Button
                 size="sm"
                 variant="primary"

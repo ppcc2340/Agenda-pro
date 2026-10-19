@@ -26,7 +26,7 @@ async function hydrated(page: Page): Promise<void> {
 }
 
 async function login(page: Page): Promise<void> {
-  await page.goto("/login");
+  await page.goto("/login?manual=1");
   await hydrated(page);
   await page.getByLabel(/correo|email/i).fill(email());
   await page.getByRole("button", { name: /entrar|continuar|sign in|iniciar/i }).click();
@@ -79,7 +79,7 @@ test("client → meeting → briefing → agreements → weekly time → CSV →
   // Briefing (AI-4, rules in fake mode): every item cites a source; the meeting and the task are there.
   await page.goto("/proyectos?tab=clientes");
   await hydrated(page);
-  await page.locator("li", { hasText: /^Acme/ }).first().getByRole("button", { name: /^briefing$/i }).click();
+  await page.locator("li", { hasText: /^Acme/ }).first().getByRole("button", { name: /briefing$/i }).click();
   const briefing = page.getByRole("dialog");
   await expect(briefing).toContainText(/briefing de acme/i);
   await expect(briefing).toContainText(/informe para acme/i, { timeout: 20_000 });

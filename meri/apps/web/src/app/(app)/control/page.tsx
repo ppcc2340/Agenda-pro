@@ -1,5 +1,8 @@
 import { getFormatter, getTranslations } from "next-intl/server";
 import Link from "next/link";
+import { AutonomySelector } from "@/components/control/autonomy";
+import { CreditsPanel } from "@/components/control/credits";
+import { PrivacyPanel } from "@/components/control/privacy";
 import { CaptureButton, PageHeader } from "@/components/shell/app-shell";
 import { Suspense } from "react";
 import { ActivityList } from "@/components/control/activity-list";
@@ -48,35 +51,19 @@ export default async function ControlPage() {
     apiFetch<AuditPage>("/v1/audit?limit=12"),
     apiFetch<{ items: Notification[] }>("/v1/notifications?limit=20").catch(() => ({ items: [] })),
   ]);
-  const fakeMode = getServerConfig().modes.google === "fake";
+  const { modes, env } = getServerConfig();
+  const fakeMode = modes.google === "fake";
   const KNOWN_STATUS = ["trialing", "active", "past_due", "canceled", "unpaid"] as const;
   type PlanStatus = (typeof KNOWN_STATUS)[number];
   const rawStatus = me?.plan.status ?? "trialing";
   const planStatus: PlanStatus = (KNOWN_STATUS as readonly string[]).includes(rawStatus)
     ? (rawStatus as PlanStatus)
     : "trialing";
-  const autonomy = prefs.autonomy === "auto_low_risk" ? "low" : "suggest";
   return (
     <>
       <PageHeader title={nav("control")} subtitle={t("subtitle")} action={<CaptureButton />} />
-      <Panel title={t("shortcuts.title")} desc={t("shortcuts.desc")} className="md:hidden">
-        <div className="flex flex-wrap gap-2">
-          <Button asChild size="sm">
-            <Link href="/proyectos?tab=clientes">{t("shortcuts.clients")}</Link>
-          </Button>
-          <Button asChild size="sm">
-            <Link href="/proyectos?tab=tiempo">{t("shortcuts.time")}</Link>
-          </Button>
-          <Button asChild size="sm">
-            <Link href="/proyectos?tab=tareas">{t("shortcuts.tasks")}</Link>
-          </Button>
-        </div>
-      </Panel>
       <Panel title={t("autonomy.title")} desc={t("autonomy.desc")}>
-        <Pill variant="sea">{autonomy === "suggest" ? t("autonomy.suggest") : t("autonomy.low")}</Pill>
-        <p className="mt-2.5 max-w-[60ch] text-ink2">
-          {autonomy === "suggest" ? t("autonomy.suggestBody") : t("autonomy.lowBody")}
-        </p>
+        <AutonomySelector autonomy={prefs.autonomy} />
       </Panel>
       <Panel title={t("preferences.title")} desc={t("preferences.desc")}>
         <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-1.5">
@@ -102,11 +89,10 @@ export default async function ControlPage() {
         </Suspense>
       </Panel>
       <Panel title={t("ai.title")} desc={t("ai.desc")}>
-        <AiSettings
-          gmailAutoconfirm={prefs.gmailAutoconfirm}
-          briefingBeforeMeetings={prefs.briefingBeforeMeetings}
-          capCredits={me?.entitlements.aiCreditsMonthly ?? 0}
-        />
+        <AiSettings gmailAutoconfirm={prefs.gmailAutoconfirm} briefingBeforeMeetings={prefs.briefingBeforeMeetings} />
+      </Panel>
+      <Panel title={t("credits.title")} desc={t("credits.desc")}>
+        <CreditsPanel capCredits={me?.entitlements.aiCreditsMonthly ?? 0} />
       </Panel>
       <Panel
         title={t("plan.title")}
@@ -130,15 +116,7 @@ export default async function ControlPage() {
         </Suspense>
       </Panel>
       <Panel title={t("privacy.title")} desc={t("privacy.desc")}>
-        <div className="flex flex-wrap gap-2">
-          <Button disabled title={t("privacy.soon")}>
-            {t("privacy.export")}
-          </Button>
-          <Button variant="risk" disabled title={t("privacy.soon")}>
-            {t("privacy.delete")}
-          </Button>
-        </div>
-        <p className="mt-2 text-[12.5px] text-ink3">{t("privacy.soon")}</p>
+        <PrivacyPanel demoMode={env.DEMO_MODE} />
       </Panel>
     </>
   );

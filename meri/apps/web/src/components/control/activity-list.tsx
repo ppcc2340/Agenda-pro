@@ -62,6 +62,9 @@ const ACTION_KEYS = [
   "proposal_confirmed",
   "proposal_edited",
   "agreements_recorded",
+  "preferences_autonomy_changed",
+  "account_exported",
+  "account_deleted",
 ] as const;
 type ActionKey = (typeof ACTION_KEYS)[number];
 const toKey = (action: string): ActionKey | null => {

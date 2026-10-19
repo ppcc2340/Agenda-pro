@@ -34,7 +34,6 @@ export function TimeReview({ clients, timezone }: { clients: { id: string; name:
   const locale = useLocale();
   const { toast } = useToast();
   const [week, setWeek] = useState<string | undefined>(undefined);
-  const [selected, setSelected] = useState<Set<string>>(new Set());
   const [editing, setEditing] = useState<string | null>(null);
   const query = useTimeWeek(week);
   const data = query.data;
@@ -44,7 +43,7 @@ export function TimeReview({ clients, timezone }: { clients: { id: string; name:
     (ids: string[]) =>
       clientApi<{ approved: string[] }>("/v1/time-entries/approve-batch", { method: "POST", json: { ids }, headers: { "idempotency-key": idempotencyKey() } }),
     invalidate,
-    { onSuccess: (r) => { setSelected(new Set()); toast(t("toasts.approved", { n: r.approved.length })); } },
+    { onSuccess: (r) => toast(t("toasts.approved", { n: r.approved.length })) },
   );
   const one = useApiMutation(
     ({ id, action }: { id: string; action: "approve" | "reject" }) =>
@@ -65,12 +64,13 @@ export function TimeReview({ clients, timezone }: { clients: { id: string; name:
     { onSuccess: () => toast(t("toasts.assigned")) },
   );
   const suggested = useMemo(() => (data?.items ?? []).filter((i) => i.status === "suggested"), [data]);
-  const toggle = (id: string) => {
-    const next = new Set(selected);
-    if (next.has(id)) next.delete(id);
-    else next.add(id);
-    setSelected(next);
-  };
+  const totals = useMemo(
+    () => ({
+      approved: (data?.summary ?? []).reduce((sum, s) => sum + s.minutesApproved, 0),
+      suggested: (data?.summary ?? []).reduce((sum, s) => sum + s.minutesSuggested, 0),
+    }),
+    [data],
+  );
   const current = data?.week ?? week ?? "";
   const range = data ? `${formatDate(`${data.days[0] ?? ""}T12:00:00`, locale)} – ${formatDate(`${data.days[6] ?? ""}T12:00:00`, locale)}` : "";
   return (
@@ -91,14 +91,11 @@ export function TimeReview({ clients, timezone }: { clients: { id: string; name:
         <Button
           variant="primary"
           size="sm"
-          disabled={selected.size === 0 || approveBatch.isPending}
-          onClick={() => approveBatch.mutate([...selected])}
+          disabled={suggested.length === 0 || approveBatch.isPending}
+          onClick={() => approveBatch.mutate(suggested.map((i) => i.id))}
         >
           <Check size={14} aria-hidden="true" />
-          {t("approveSelected", { n: selected.size })}
-        </Button>
-        <Button size="sm" variant="quiet" disabled={suggested.length === 0} onClick={() => setSelected(new Set(suggested.map((i) => i.id)))}>
-          {t("selectAll")}
+          {t("approveAll", { n: suggested.length })}
         </Button>
         <Button size="sm" asChild>
           <a href={`/api/v1/time-entries/export.csv?week=${encodeURIComponent(current)}`} download>
@@ -115,6 +112,22 @@ export function TimeReview({ clients, timezone }: { clients: { id: string; name:
       ) : null}
       {data ? (
         <>
+          <section aria-label={t("stats")} className="mb-4 grid grid-cols-2 gap-2 sm:max-w-[520px]">
+            <div className="rounded-2xl border border-rule bg-raised px-4 py-3">
+              <b className="num block font-head text-[28px] font-semibold leading-tight">{hours(totals.approved)}</b>
+              <span className="text-[12.5px] text-ink2">
+                <span className="md:hidden">{t("statApprovedShort")}</span>
+                <span className="hidden md:inline">{t("statApproved")}</span>
+              </span>
+            </div>
+            <div className="rounded-2xl border border-dashed border-sug bg-raised px-4 py-3">
+              <b className="num block font-head text-[28px] font-semibold leading-tight text-sug">{hours(totals.suggested)}</b>
+              <span className="text-[12.5px] text-ink2">
+                <span className="md:hidden">{t("statSuggestedShort")}</span>
+                <span className="hidden md:inline">{t("statSuggested")}</span>
+              </span>
+            </div>
+          </section>
           <section aria-label={t("summary")} className="mb-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
             {data.summary.length === 0 ? <p className="text-ink2">{t("summaryEmpty")}</p> : null}
             {data.summary.map((s) => (
@@ -145,13 +158,6 @@ export function TimeReview({ clients, timezone }: { clients: { id: string; name:
                   key={e.id}
                   className={`flex flex-col gap-2 py-3 md:flex-row md:items-center md:gap-4 ${pending ? "border-l-[3px] border-l-dashed border-l-sug pl-3" : "border-l-[3px] border-l-sea pl-3"}`}
                 >
-                  <input
-                    type="checkbox"
-                    aria-label={t("select", { desc: e.description ?? "" })}
-                    checked={selected.has(e.id)}
-                    disabled={!pending}
-                    onChange={() => toggle(e.id)}
-                  />
                   <span className="num w-[92px] text-[13px] text-ink2">{formatDate(`${e.day}T12:00:00`, locale)}</span>
                   <div className="min-w-0 flex-1">
                     <div className="truncate font-semibold">{e.description || t("noDescription")}</div>
@@ -212,7 +218,7 @@ export function TimeReview({ clients, timezone }: { clients: { id: string; name:
                     <span className="num w-[92px] text-[13px] text-ink2">{formatDate(ev.startsAt, locale, timezone)}</span>
                     <span className="min-w-0 flex-1 truncate font-semibold">{ev.title || t("noDescription")}</span>
                     <span className="num text-[13px] text-ink2">{hours(ev.minutes)}</span>
-                    <Pill variant="sug">{t("unassignedPill")}</Pill>
+                    <Pill variant="plain">{t("unassignedPill")}</Pill>
                     <select
                       aria-label={t("assignClient")}
                       className="rounded-lg border border-rule bg-panel px-2 py-1 text-[13px]"

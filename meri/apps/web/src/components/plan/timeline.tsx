@@ -25,6 +25,8 @@ export interface TimelineProps {
     startsAt: string;
     endsAt: string;
   }[];
+  /** Contingency reserve of the day (D-051): hatched at the end of the work day, never a block. */
+  margin?: { startMin: number; endMin: number; minutes: number } | null;
   /** Visible window in minutes of the day (work hours ± 1 h). */
   window: { start: number; end: number };
   timezone: string;
@@ -39,6 +41,7 @@ export function Timeline({
   nowMin,
   nowIso,
   ghosts = [],
+  margin = null,
   window,
   timezone,
   clients,
@@ -90,6 +93,18 @@ export function Timeline({
           ))}
         </Lane>
         <Lane label={t("lanePlan")} columns={hours.length - 1}>
+          {margin && margin.endMin > margin.startMin ? (
+            <div
+              data-testid="margin"
+              role="note"
+              aria-label={t("marginTitle", { minutes: margin.minutes })}
+              title={t("marginTitle", { minutes: margin.minutes })}
+              className="absolute bottom-1 top-1 grid place-items-center rounded-lg border border-dashed border-ink3 bg-[repeating-linear-gradient(135deg,transparent_0_5px,var(--rule)_5px_6px)] text-[11px] text-ink3"
+              style={{ left: x(margin.startMin), width: w(margin.startMin, margin.endMin) }}
+            >
+              {narrow(margin.startMin, margin.endMin) ? null : t("margin")}
+            </div>
+          ) : null}
           {ghosts.map((g) => {
             const ghostLabel = `${formatTime(g.startsAt, locale, timezone)}–${formatTime(g.endsAt, locale, timezone)}`;
             return (

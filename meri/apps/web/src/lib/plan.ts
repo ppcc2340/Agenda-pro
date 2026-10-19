@@ -153,10 +153,18 @@ export function currentBlock(items: DayItem[], nowMin: number): DayItem | null {
 
 /** Stable client color index (1..4) from the client id; null → neutral. */
 /** The client's own colour when it has one; otherwise a stable slot of the four-colour palette (docs/11). */
+/** docs/11 client palette → theme tokens (the dark theme lightens them); any other hex is used verbatim. */
+const TOKEN_OF_HEX: Record<string, string> = {
+  "#3a6edb": "var(--c-1)",
+  "#2f8a5c": "var(--c-2)",
+  "#b07414": "var(--c-3)",
+  "#b0407e": "var(--c-4)",
+};
+
 export function clientColorVar(clientId: string | null, clients: { id: string; color?: string | null }[]): string {
   if (!clientId) return "var(--ink3)";
   const own = clients.find((c) => c.id === clientId)?.color;
-  if (own) return own;
+  if (own) return TOKEN_OF_HEX[own.toLowerCase()] ?? own;
   const idx = clients.findIndex((c) => c.id === clientId);
   const n = (idx >= 0 ? idx : clientId.charCodeAt(clientId.length - 1)) % 4;
   return `var(--c-${String(n + 1)})`;

@@ -15,7 +15,9 @@ export interface ClientFormValues {
 }
 
 const field = "rounded-lg border border-rule bg-panel px-3 py-2 font-normal text-ink";
-const PALETTE = ["#1f6f8b", "#f0707f", "#5cc9cf", "#e8b84a", "#7c6fd6", "#4caf7d"];
+// docs/11 client colours first (they map to the --c-1..4 tokens, so they lighten in the dark theme), then two
+// extra tones of similar chroma.
+const PALETTE = ["#3A6EDB", "#2F8A5C", "#B07414", "#B0407E", "#1F6F8B", "#7C6FD6"];
 
 const splitList = (s: string) =>
   s

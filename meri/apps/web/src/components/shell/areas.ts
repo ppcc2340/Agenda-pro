@@ -33,5 +33,5 @@ export const MOBILE_TABS: { key: MobileTabKey; href: string; icon: LucideIcon }[
   { key: "entrada", href: "/entrada", icon: Inbox },
   { key: "agenda", href: "/calendario", icon: CalendarDays },
   { key: "compromisos", href: "/proyectos?tab=compromisos", icon: Layers },
-  { key: "mas", href: "/control", icon: MoreHorizontal },
+  { key: "mas", href: "/mas", icon: MoreHorizontal },
 ];
