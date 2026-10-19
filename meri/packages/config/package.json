@@ -3,12 +3,26 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "Entorno tipado con Zod, resolución de modos fake/live y feature flags.",
+  "description": "Typed environment (Zod), fake/live mode resolution, feature flags, logger and envelope encryption.",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./crypto": "./src/crypto/index.ts",
+    "./observability": "./src/observability/index.ts"
+  },
   "scripts": {
-    "typecheck": "echo \"implementar en la fase 0\"",
-    "lint": "echo \"implementar en la fase 0\"",
-    "test": "echo \"implementar en la fase 0\"",
-    "build": "echo \"implementar en la fase 0\"",
-    "dev": "echo \"implementar en la fase 0\""
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src",
+    "test": "vitest run",
+    "build": "echo \"no build: consumed from src\""
+  },
+  "dependencies": {
+    "pino": "^9.4.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
   }
 }
