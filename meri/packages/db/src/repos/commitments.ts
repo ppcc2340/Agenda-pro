@@ -190,3 +190,37 @@ export async function purgeProposedCommitments(
     .returning({ id: commitments.id });
   return rows.length;
 }
+
+/** Confirmed/fulfilled commitments survive a purge without their thread link (D-036 ordering). */
+export async function detachCommitmentsFromThreads(
+  tx: WorkspaceTx,
+  workspaceId: WorkspaceId,
+  threadIds: string[],
+  now: Date,
+): Promise<number> {
+  if (threadIds.length === 0) return 0;
+  const rows = await tx
+    .update(commitments)
+    .set({ threadId: null, externalMessageId: null, updatedAt: now })
+    .where(and(eq(commitments.workspaceId, workspaceId), inArray(commitments.threadId, threadIds)))
+    .returning({ id: commitments.id });
+  return rows.length;
+}
+
+export async function countCommitments(
+  tx: WorkspaceTx,
+  workspaceId: WorkspaceId,
+  filters: { direction?: CommitmentDirection; statuses: CommitmentStatus[] },
+): Promise<number> {
+  const [row] = await tx
+    .select({ n: sql<number>`count(*)::int` })
+    .from(commitments)
+    .where(
+      and(
+        eq(commitments.workspaceId, workspaceId),
+        filters.direction ? eq(commitments.direction, filters.direction) : undefined,
+        inArray(commitments.status, filters.statuses),
+      ),
+    );
+  return row?.n ?? 0;
+}

@@ -23,6 +23,7 @@ export const QUEUE_NAMES = [
   "daily.review",
   "billing.usage_rollup",
   "data.delete_account",
+  "data.retention",
   "integrations.renew_channels",
 ] as const;
 export type QueueName = (typeof QUEUE_NAMES)[number];

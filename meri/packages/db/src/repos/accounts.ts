@@ -2,7 +2,7 @@ import { eq, sql } from "drizzle-orm";
 import { entitlements, memberships, preferences, subscriptions, users, workspaces } from "../schema";
 import type { Db } from "../client";
 import { newId, newUserId, newWorkspaceId, type UserId, type WorkspaceId } from "../ids";
-import { withWorkspace } from "../workspace";
+import { withWorkspace, type WorkspaceTx } from "../workspace";
 
 export interface BootstrapInput {
   email: string;
@@ -133,4 +133,13 @@ export async function getMe(db: Db, userId: UserId, workspaceId: WorkspaceId): P
       onboarded: prefs?.onboardedAt !== null && prefs?.onboardedAt !== undefined,
     };
   });
+}
+
+/** Plan cap on mail retention (D-036): the effective window is min(preferences.retention_days, this). */
+export async function getEntitlementRetentionDays(
+  tx: WorkspaceTx,
+  workspaceId: WorkspaceId,
+): Promise<number> {
+  const ent = await tx.query.entitlements.findFirst({ where: eq(entitlements.workspaceId, workspaceId) });
+  return ent?.retentionDays ?? 90;
 }

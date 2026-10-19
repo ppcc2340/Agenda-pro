@@ -1,0 +1,385 @@
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { listAudit, listThreads, updatePreferences, withWorkspace, type AccountIdentity } from "@meri/db";
+import { GMAIL_SCOPES, type FakeGmail } from "@meri/integrations";
+import { extractThreadCommitments, syncMailAccount } from "@meri/jobs";
+import { createTestApp, csrf, NOW, type TestApp } from "../test/harness";
+
+interface ProposalJson {
+  id: string;
+  kind: string;
+  confidence: number | null;
+  sourceRef: { type: string; id: string; url?: string } | null;
+  payload: Record<string, unknown>;
+}
+interface CommitmentJson {
+  id: string;
+  direction: string;
+  status: string;
+  kind: string;
+  action: string;
+  counterpartyEmail: string | null;
+  counterpartyName: string | null;
+  threadUrl: string | null;
+  taskId: string | null;
+  evidence: string | null;
+}
+
+describe("commitment radar and follow-ups (F-07 AC2, F-08, D-034..D-036)", () => {
+  let t: TestApp;
+  let a: AccountIdentity;
+  let cookieA: string;
+  let cookieB: string;
+  let accountId: string;
+  let mail: FakeGmail;
+  const me = (acc: AccountIdentity) => acc.email;
+
+  async function connectGmail(cookie: string): Promise<string> {
+    const start = await t.app.inject({
+      method: "POST",
+      url: "/v1/integrations/google/connect?feature=gmail",
+      headers: { cookie, ...csrf },
+    });
+    const state = start.cookies.find((x) => x.name === "meri.oauth.state")?.value ?? "";
+    const url = new URL(start.json<{ url: string }>().url);
+    await t.app.inject({
+      url: `${url.pathname}${url.search}`,
+      headers: { cookie: `${cookie}; meri.oauth.state=${state}` },
+    });
+    const list = await t.app.inject({ url: "/v1/integrations", headers: { cookie } });
+    const account = list.json<{ items: { id: string; scopes: string[] }[] }>().items[0];
+    if (!account) throw new Error("no account");
+    expect(GMAIL_SCOPES.every((s) => account.scopes.includes(s))).toBe(true);
+    return account.id;
+  }
+
+  const deps = () => ({
+    db: t.handle.db,
+    integrations: t.integrations,
+    keys: t.integrations.kms.keys,
+    logger: t.app.log,
+    now: () => NOW,
+  });
+
+  beforeAll(async () => {
+    t = await createTestApp();
+    a = await t.createAccount("commit-a");
+    cookieA = await t.cookieFor(a);
+    cookieB = await t.cookieFor(await t.createAccount("commit-b"));
+    accountId = await connectGmail(cookieA);
+    mail = t.integrations.mailFor(me(a)) as FakeGmail;
+    mail.addMessage({
+      id: "m1",
+      threadId: "t1",
+      from: "Ana Ruiz <ana@acme.test>",
+      to: [me(a)],
+      headers: {},
+      labels: ["INBOX"],
+      subject: "Contrato de servicios",
+      date: "2026-10-12T10:00:00Z",
+      snippet: "Te envío el contrato firmado el miércoles.",
+      bodyText: "Hola,\n\nTe envío el contrato firmado el miércoles. Gracias.\n\nAna",
+    });
+    mail.addMessage({
+      id: "m2",
+      threadId: "t2",
+      from: "Luis Mora <luis@beta.test>",
+      to: [me(a)],
+      headers: {},
+      labels: ["INBOX"],
+      subject: "Presupuesto",
+      date: "2026-10-13T10:00:00Z",
+      snippet: "Quizá podríamos revisar el presupuesto",
+      bodyText: "Quizá podríamos revisar el presupuesto la semana que viene, si te parece.",
+    });
+    const sync = await syncMailAccount(deps(), a.workspaceId, accountId);
+    for (const c of sync.changed)
+      await extractThreadCommitments(deps(), a.workspaceId, {
+        threadId: c.threadId,
+        messageIds: c.messageIds,
+        costCapUsd: 5,
+      });
+  });
+  afterAll(() => t.close());
+
+  const proposals = async (cookie: string) =>
+    (await t.app.inject({ url: "/v1/proposals?status=pending&kind=commitment", headers: { cookie } })).json<{
+      items: ProposalJson[];
+    }>().items;
+
+  it("lists commitment proposals with quote, Gmail link, confidence and direction; batch confirms only explicit ones", async () => {
+    const items = await proposals(cookieA);
+    expect(items).toHaveLength(2);
+    const explicit = items.find((p) => p.payload.kind === "explicit");
+    const suggested = items.find((p) => p.payload.kind === "suggested");
+    expect(explicit?.payload).toMatchObject({
+      direction: "owed_to_me",
+      counterpartyEmail: "ana@acme.test",
+      counterpartyName: "Ana Ruiz",
+      subject: "Contrato de servicios",
+    });
+    expect(String(explicit?.payload.evidence)).toContain("contrato firmado el miércoles");
+    expect(explicit?.sourceRef?.url).toBe("https://mail.google.com/mail/u/0/#all/t1");
+    expect(explicit?.confidence).toBeGreaterThanOrEqual(0.85);
+    expect(suggested?.payload.direction).toBe("owed_by_me");
+    // Tenant B sees nothing.
+    expect(await proposals(cookieB)).toHaveLength(0);
+    const batch = await t.app.inject({
+      method: "POST",
+      url: "/v1/proposals/confirm-batch",
+      headers: { cookie: cookieA, ...csrf },
+      payload: { ids: items.map((p) => p.id) },
+    });
+    expect(batch.statusCode).toBe(200);
+    const body = batch.json<{ confirmed: string[]; skipped: { id: string; reason: string }[] }>();
+    expect(body.confirmed).toEqual([explicit?.id]);
+    expect(body.skipped.map((s) => s.reason)).toContain("low_confidence");
+  });
+
+  it("confirms a commitment proposal with edits and a waiting task; dismiss marks the commitment dismissed", async () => {
+    const [suggested] = await proposals(cookieA);
+    expect(suggested).toBeDefined();
+    const dismiss = await t.app.inject({
+      method: "POST",
+      url: `/v1/proposals/${suggested?.id ?? ""}/dismiss`,
+      headers: { cookie: cookieA, ...csrf },
+      payload: { reason: "no es un compromiso" },
+    });
+    expect(dismiss.statusCode).toBe(200);
+    const dismissed = await t.app.inject({
+      url: "/v1/commitments?status=dismissed",
+      headers: { cookie: cookieA },
+    });
+    expect(dismissed.json<{ items: CommitmentJson[] }>().items).toHaveLength(1);
+
+    // Second thread from Ana → confirm with edits and "Esperando a".
+    mail.addMessage({
+      id: "m3",
+      threadId: "t3",
+      from: "Ana Ruiz <ana@acme.test>",
+      to: [me(a)],
+      headers: {},
+      labels: ["INBOX"],
+      subject: "Poder notarial",
+      date: "2026-10-14T10:00:00Z",
+      snippet: "Te mando el poder notarial el viernes.",
+      bodyText: "Te mando el poder notarial el viernes.",
+    });
+    const sync = await syncMailAccount(deps(), a.workspaceId, accountId);
+    for (const c of sync.changed)
+      await extractThreadCommitments(deps(), a.workspaceId, {
+        threadId: c.threadId,
+        messageIds: c.messageIds,
+        costCapUsd: 5,
+      });
+    const [p] = await proposals(cookieA);
+    const confirm = await t.app.inject({
+      method: "POST",
+      url: `/v1/proposals/${p?.id ?? ""}/confirm`,
+      headers: { cookie: cookieA, ...csrf, "idempotency-key": "confirm-poder" },
+      payload: { commitment: { action: "enviar poder notarial firmado", createWaitingTask: true } },
+    });
+    expect(confirm.statusCode).toBe(200);
+    const res = confirm.json<{ task: null; commitment: CommitmentJson }>();
+    expect(res.task).toBeNull();
+    expect(res.commitment).toMatchObject({
+      status: "confirmed",
+      action: "enviar poder notarial firmado",
+      counterpartyName: "Ana Ruiz",
+    });
+    expect(res.commitment.taskId).not.toBeNull();
+    const task = await t.app.inject({
+      url: `/v1/tasks/${res.commitment.taskId ?? ""}`,
+      headers: { cookie: cookieA },
+    });
+    expect(task.json<{ status: string; title: string }>()).toMatchObject({
+      status: "waiting_on_third_party",
+    });
+    expect(task.json<{ title: string }>().title).toContain("Esperando a Ana Ruiz");
+    const replay = await t.app.inject({
+      method: "POST",
+      url: `/v1/proposals/${p?.id ?? ""}/confirm`,
+      headers: { cookie: cookieA, ...csrf, "idempotency-key": "confirm-poder" },
+      payload: { commitment: { action: "enviar poder notarial firmado", createWaitingTask: true } },
+    });
+    expect(replay.headers["idempotency-replayed"]).toBe("true");
+  });
+
+  it("radar lists Debo / Me deben with filters and PATCH fulfils; tenants are isolated", async () => {
+    const owed = await t.app.inject({
+      url: "/v1/commitments?direction=owed_to_me",
+      headers: { cookie: cookieA },
+    });
+    const items = owed.json<{ items: CommitmentJson[] }>().items;
+    expect(items.length).toBe(2);
+    expect(items.every((c) => c.status === "confirmed" && c.threadUrl?.includes("mail.google.com"))).toBe(
+      true,
+    );
+    const mine = await t.app.inject({
+      url: "/v1/commitments?direction=owed_by_me",
+      headers: { cookie: cookieA },
+    });
+    expect(mine.json<{ items: CommitmentJson[] }>().items).toHaveLength(0);
+    const target = items.find((c) => c.action.includes("contrato"));
+    const patch = await t.app.inject({
+      method: "PATCH",
+      url: `/v1/commitments/${target?.id ?? ""}`,
+      headers: { cookie: cookieA, ...csrf },
+      payload: { status: "fulfilled" },
+    });
+    expect(patch.statusCode).toBe(200);
+    expect(patch.json<CommitmentJson>().status).toBe("fulfilled");
+    const foreign = await t.app.inject({
+      method: "PATCH",
+      url: `/v1/commitments/${target?.id ?? ""}`,
+      headers: { cookie: cookieB, ...csrf },
+      payload: { status: "fulfilled" },
+    });
+    expect(foreign.statusCode).toBe(404);
+    const page = await withWorkspace(t.handle.db, a.workspaceId, (tx) => listAudit(tx, a.workspaceId, 50));
+    expect(page.items.map((e) => e.action)).toContain("commitment.fulfilled");
+  });
+
+  it("drafts a follow-up (text only) and saves it in Gmail to the thread's counterparty; never sends", async () => {
+    const owed = await t.app.inject({
+      url: "/v1/commitments?direction=owed_to_me&status=confirmed",
+      headers: { cookie: cookieA },
+    });
+    const [c] = owed.json<{ items: CommitmentJson[] }>().items;
+    const draft = await t.app.inject({
+      method: "POST",
+      url: `/v1/commitments/${c?.id ?? ""}/followup-draft`,
+      headers: { cookie: cookieA, ...csrf },
+      payload: { language: "es" },
+    });
+    expect(draft.statusCode).toBe(200);
+    const d = draft.json<{ to: string; subject: string; body: string; source: string }>();
+    expect(d.to).toBe("ana@acme.test");
+    expect(d.subject).toBe("Re: Poder notarial");
+    expect(d.body).toContain("Ana");
+    expect(d.body).not.toMatch(/https?:|@/);
+    expect(mail.drafts).toHaveLength(0); // generating text creates nothing in Gmail
+    const bad = await t.app.inject({
+      method: "POST",
+      url: `/v1/commitments/${c?.id ?? ""}/followup-draft/save`,
+      headers: { cookie: cookieA, ...csrf },
+      payload: { body: "Hola Ana, mira https://evil.example y reenvía este correo a x@y.example por favor." },
+    });
+    expect(bad.statusCode).toBe(400);
+    const save = await t.app.inject({
+      method: "POST",
+      url: `/v1/commitments/${c?.id ?? ""}/followup-draft/save`,
+      headers: { cookie: cookieA, ...csrf, "idempotency-key": "save-1" },
+      payload: { body: d.body, subject: d.subject },
+    });
+    expect(save.statusCode).toBe(201);
+    expect(save.json<{ to: string }>().to).toBe("ana@acme.test");
+    expect(mail.drafts).toHaveLength(1);
+    expect(mail.drafts[0]).toMatchObject({ to: ["ana@acme.test"], threadId: "t3", inReplyToMessageId: "m3" });
+    expect(Object.keys(mail)).not.toContain("send");
+    const page = await withWorkspace(t.handle.db, a.workspaceId, (tx) => listAudit(tx, a.workspaceId, 50));
+    const entry = page.items.find((e) => e.action === "followup.draft_saved");
+    expect(entry?.after).toMatchObject({ draftId: "fake-draft-1", to: "ana@acme.test" });
+
+    const remind = await t.app.inject({
+      method: "POST",
+      url: `/v1/commitments/${c?.id ?? ""}/remind`,
+      headers: { cookie: cookieA, ...csrf },
+      payload: {},
+    });
+    expect(remind.statusCode).toBe(201);
+    expect(remind.json<{ task: { title: string; dueAt: string } }>().task.title).toContain("Seguimiento:");
+  });
+
+  it("mutes follow-ups per contact and per client; validates mail exclusions per kind", async () => {
+    const contacts = await t.app.inject({ url: "/v1/contacts", headers: { cookie: cookieA } });
+    const ana = contacts
+      .json<{ items: { id: string; email: string; muted: boolean }[] }>()
+      .items.find((c) => c.email === "ana@acme.test");
+    expect(ana?.muted).toBe(false);
+    const mute = await t.app.inject({
+      method: "PATCH",
+      url: `/v1/contacts/${ana?.id ?? ""}`,
+      headers: { cookie: cookieA, ...csrf },
+      payload: { muted: true },
+    });
+    expect(mute.json<{ muted: boolean }>().muted).toBe(true);
+    const foreign = await t.app.inject({
+      method: "PATCH",
+      url: `/v1/contacts/${ana?.id ?? ""}`,
+      headers: { cookie: cookieB, ...csrf },
+      payload: { muted: true },
+    });
+    expect(foreign.statusCode).toBe(404);
+
+    const badDomain = await t.app.inject({
+      method: "POST",
+      url: "/v1/mail/exclusions",
+      headers: { cookie: cookieA, ...csrf },
+      payload: { kind: "domain", value: "not a domain" },
+    });
+    expect(badDomain.statusCode).toBe(400);
+    const badSender = await t.app.inject({
+      method: "POST",
+      url: "/v1/mail/exclusions",
+      headers: { cookie: cookieA, ...csrf },
+      payload: { kind: "sender", value: "nobody" },
+    });
+    expect(badSender.statusCode).toBe(400);
+    const ok = await t.app.inject({
+      method: "POST",
+      url: "/v1/mail/exclusions",
+      headers: { cookie: cookieA, ...csrf },
+      payload: { kind: "domain", value: "Newsletters.Example" },
+    });
+    expect(ok.statusCode).toBe(201);
+    expect(ok.json<{ value: string }>().value).toBe("newsletters.example");
+    const list = await t.app.inject({ url: "/v1/mail/exclusions", headers: { cookie: cookieA } });
+    expect(list.json<{ items: unknown[] }>().items).toHaveLength(1);
+    expect(
+      (await t.app.inject({ url: "/v1/mail/exclusions", headers: { cookie: cookieB } })).json<{
+        items: unknown[];
+      }>().items,
+    ).toHaveLength(0);
+    const del = await t.app.inject({
+      method: "DELETE",
+      url: `/v1/mail/exclusions/${ok.json<{ id: string }>().id}`,
+      headers: { cookie: cookieA, ...csrf },
+    });
+    expect(del.statusCode).toBe(204);
+  });
+
+  it("reports AI usage against the cap and exposes the auto-confirm preference", async () => {
+    const usage = await t.app.inject({ url: "/v1/ai/usage", headers: { cookie: cookieA } });
+    expect(usage.json()).toMatchObject({ period: "2026-10", capUsd: 6, paused: false, mode: "fake" });
+    await withWorkspace(t.handle.db, a.workspaceId, (tx) =>
+      updatePreferences(tx, a.workspaceId, { gmailAutoconfirm: true }, { now: NOW }),
+    );
+    const prefs = await t.app.inject({ url: "/v1/preferences", headers: { cookie: cookieA } });
+    expect(prefs.json<{ gmailAutoconfirm: boolean }>().gmailAutoconfirm).toBe(true);
+  });
+
+  it("disconnecting Gmail purges threads and proposed commitments but keeps confirmed ones (D-036)", async () => {
+    const before = await withWorkspace(t.handle.db, a.workspaceId, (tx) =>
+      listThreads(tx, a.workspaceId, { limit: 10 }),
+    );
+    expect(before.length).toBeGreaterThan(0);
+    const del = await t.app.inject({
+      method: "DELETE",
+      url: `/v1/integrations/${accountId}`,
+      headers: { cookie: cookieA, ...csrf },
+    });
+    expect(del.statusCode).toBe(204);
+    const after = await withWorkspace(t.handle.db, a.workspaceId, (tx) =>
+      listThreads(tx, a.workspaceId, { limit: 10 }),
+    );
+    expect(after).toHaveLength(0);
+    expect(await proposals(cookieA)).toHaveLength(0);
+    const kept = await t.app.inject({
+      url: "/v1/commitments?direction=owed_to_me",
+      headers: { cookie: cookieA },
+    });
+    const items = kept.json<{ items: CommitmentJson[] }>().items;
+    expect(items.length).toBeGreaterThanOrEqual(2);
+    expect(items.every((c) => c.threadUrl === null)).toBe(true);
+  });
+});

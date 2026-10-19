@@ -8,16 +8,19 @@ import {
   audit,
   createProposal,
   createTask,
+  getCommitment,
   getPreferences,
   getProposal,
   listClients,
   listProposals,
   resolveProposal,
+  updateCommitment,
   type ProposalView,
 } from "@meri/db";
 import type { AiClient } from "@meri/integrations";
 import { ApiError } from "../errors";
 import { requireSession, sessionOf } from "../plugins/session";
+import { CommitmentViewSchema, gmailThreadUrl, serializeCommitment } from "./commitments";
 import { serializeTask, TaskViewSchema } from "./tasks";
 
 const ProposalViewSchema = z.object({
@@ -53,8 +56,38 @@ export const CapturePayload = z.object({
 });
 export type CapturePayload = z.infer<typeof CapturePayload>;
 
+/** Payload of a `commitment` proposal (written by ai.extract_commitments). */
+export const CommitmentPayload = z.object({
+  commitmentId: z.string().uuid(),
+  direction: z.enum(["owed_by_me", "owed_to_me"]),
+  action: z.string(),
+  dueAt: z.string().datetime().nullable(),
+  dueText: z.string().nullable(),
+  kind: z.enum(["explicit", "inferred", "suggested"]),
+  confidence: z.number(),
+  evidence: z.string().max(200),
+  counterpartyEmail: z.string().nullable(),
+  counterpartyName: z.string().nullable(),
+  clientId: z.string().nullable(),
+  threadId: z.string(),
+  externalThreadId: z.string(),
+  subject: z.string().nullable(),
+  externalMessageId: z.string(),
+});
+export type CommitmentPayload = z.infer<typeof CommitmentPayload>;
+
 const IdParams = z.object({ id: z.string().uuid() });
-const ConfirmBody = z.object({ edits: TaskInputSchema.partial().optional() });
+const CommitmentEdits = z.object({
+  action: z.string().trim().min(3).max(300).optional(),
+  dueAt: z.string().datetime({ offset: true }).nullable().optional(),
+  clientId: z.string().uuid().nullable().optional(),
+  /** owed_to_me only: also create a "waiting for" task that the planner keeps out of the day (F-08). */
+  createWaitingTask: z.boolean().optional(),
+});
+const ConfirmBody = z.object({
+  edits: TaskInputSchema.partial().optional(),
+  commitment: CommitmentEdits.optional(),
+});
 
 export interface CaptureRoutesOptions {
   now: () => Date;
@@ -169,7 +202,7 @@ export function captureRoutes(app: FastifyInstance, options: CaptureRoutesOption
       if (proposal.status !== "pending")
         throw new ApiError("CONFLICT", "This proposal was already resolved.");
       if (proposal.kind !== "capture")
-        throw new ApiError("CONFLICT", "Only capture proposals can be confirmed in this phase.");
+        throw new ApiError("CONFLICT", "Only capture and commitment proposals can be confirmed here.");
       const payload = CapturePayload.parse(proposal.payload);
       const task = await createTask(
         tx,
@@ -224,6 +257,103 @@ export function captureRoutes(app: FastifyInstance, options: CaptureRoutesOption
     return result;
   }
 
+  /** Commitment proposals: the `proposed` row becomes confirmed (with the user's edits); feedback is recorded. */
+  async function confirmCommitment(
+    request: Parameters<typeof sessionOf>[0],
+    id: string,
+    edits: z.infer<typeof CommitmentEdits> | undefined,
+  ) {
+    const session = sessionOf(request);
+    const now = options.now();
+    const result = await request.withWorkspace(async (tx) => {
+      const proposal = await getProposal(tx, session.workspaceId, id);
+      if (!proposal) throw new ApiError("NOT_FOUND", "Proposal not found.");
+      if (proposal.status !== "pending")
+        throw new ApiError("CONFLICT", "This proposal was already resolved.");
+      const payload = CommitmentPayload.parse(proposal.payload);
+      const current = await getCommitment(tx, session.workspaceId, payload.commitmentId);
+      if (!current) throw new ApiError("CONFLICT", "The commitment behind this proposal no longer exists.");
+      const edited = edits !== undefined && Object.keys(edits).some((k) => k !== "createWaitingTask");
+      let taskId: string | null = null;
+      if (edits?.createWaitingTask && current.direction === "owed_to_me") {
+        const who = payload.counterpartyName ?? payload.counterpartyEmail ?? "";
+        const task = await createTask(
+          tx,
+          session.workspaceId,
+          {
+            title: `Esperando a ${who}: ${edits.action ?? current.action}`.slice(0, 200),
+            clientId: edits.clientId !== undefined ? edits.clientId : current.clientId,
+            dueAt:
+              edits.dueAt !== undefined ? edits.dueAt : current.dueAt ? current.dueAt.toISOString() : null,
+            status: "waiting_on_third_party",
+            kind: "shallow",
+            estimateMinutes: 15,
+            priority: 3,
+            deadlineType: "soft",
+            tags: ["esperando"],
+            origin: "ai_confirmed",
+            sourceCommitmentId: current.id,
+          },
+          now,
+        );
+        taskId = task.id;
+        await audit(
+          tx,
+          { workspaceId: session.workspaceId, actor: "user", actorUserId: session.userId },
+          {
+            action: "task.waiting_created",
+            entityType: "task",
+            entityId: task.id,
+            after: serializeTask(task),
+          },
+        );
+      }
+      const updated = await updateCommitment(
+        tx,
+        session.workspaceId,
+        current.id,
+        {
+          status: "confirmed",
+          ...(edits?.action !== undefined ? { action: edits.action } : {}),
+          ...(edits?.dueAt !== undefined ? { dueAt: edits.dueAt ? new Date(edits.dueAt) : null } : {}),
+          ...(edits?.clientId !== undefined ? { clientId: edits.clientId } : {}),
+          ...(taskId ? { taskId } : {}),
+        },
+        now,
+      );
+      if (!updated) throw new ApiError("CONFLICT", "The commitment behind this proposal no longer exists.");
+      const resolved = await resolveProposal(
+        tx,
+        session.workspaceId,
+        id,
+        {
+          status: edited ? "edited" : "confirmed",
+          action: edited ? "edited" : "confirmed",
+          ...(edited ? { editedPayload: edits } : {}),
+        },
+        now,
+      );
+      if (!resolved) throw new ApiError("CONFLICT", "Proposal was already resolved.");
+      await audit(
+        tx,
+        { workspaceId: session.workspaceId, actor: "user", actorUserId: session.userId },
+        {
+          action: "commitment.confirmed",
+          entityType: "commitment",
+          entityId: current.id,
+          before: { status: current.status, proposalId: id },
+          after: { status: "confirmed", action: updated.action, dueAt: updated.dueAt, edited, taskId },
+        },
+      );
+      return serializeCommitment(updated, {
+        counterpartyName: payload.counterpartyName,
+        threadUrl: gmailThreadUrl(payload.externalThreadId),
+      });
+    });
+    if (edits?.createWaitingTask) await changed(session.workspaceId, request.id);
+    return result;
+  }
+
   r.post(
     "/v1/proposals/:id/confirm",
     {
@@ -232,12 +362,26 @@ export function captureRoutes(app: FastifyInstance, options: CaptureRoutesOption
         tags: ["proposals"],
         params: IdParams,
         body: ConfirmBody.optional(),
-        response: { 200: z.object({ task: TaskViewSchema }) },
+        response: {
+          200: z.object({ task: TaskViewSchema.nullable(), commitment: CommitmentViewSchema.nullable() }),
+        },
       },
     },
-    async (request) => ({
-      task: serializeTask(await confirmCapture(request, request.params.id, request.body?.edits)),
-    }),
+    async (request) => {
+      const session = sessionOf(request);
+      const kind = await request.withWorkspace(
+        async (tx) => (await getProposal(tx, session.workspaceId, request.params.id))?.kind ?? null,
+      );
+      if (kind === "commitment")
+        return {
+          task: null,
+          commitment: await confirmCommitment(request, request.params.id, request.body?.commitment),
+        };
+      return {
+        task: serializeTask(await confirmCapture(request, request.params.id, request.body?.edits)),
+        commitment: null,
+      };
+    },
   );
 
   r.post(
@@ -267,6 +411,17 @@ export function captureRoutes(app: FastifyInstance, options: CaptureRoutesOption
           now,
         );
         if (!resolved) throw new ApiError("NOT_FOUND", "Proposal not found or already resolved.");
+        if (resolved.kind === "commitment") {
+          const payload = CommitmentPayload.safeParse(resolved.payload);
+          if (payload.success)
+            await updateCommitment(
+              tx,
+              session.workspaceId,
+              payload.data.commitmentId,
+              { status: "dismissed" },
+              now,
+            );
+        }
         // Dismissals are feedback (docs/05 §8): recorded, never used to act.
         await audit(
           tx,
@@ -312,6 +467,21 @@ export function captureRoutes(app: FastifyInstance, options: CaptureRoutesOption
         }
         if ((proposal.confidence ?? 0) < 0.85) {
           skipped.push({ id, reason: "low_confidence" });
+          continue;
+        }
+        if (proposal.kind === "commitment") {
+          // docs/13: batch confirmation of commitments only for `explicit` ones.
+          const payload = CommitmentPayload.safeParse(proposal.payload);
+          if (!payload.success || payload.data.kind !== "explicit") {
+            skipped.push({ id, reason: "not_explicit" });
+            continue;
+          }
+          await confirmCommitment(request, id, undefined);
+          confirmed.push(id);
+          continue;
+        }
+        if (proposal.kind !== "capture") {
+          skipped.push({ id, reason: "unsupported_kind" });
           continue;
         }
         await confirmCapture(request, id, undefined);

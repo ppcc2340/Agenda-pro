@@ -26,6 +26,7 @@ export {
 export {
   bootstrapAccount,
   getMe,
+  getEntitlementRetentionDays,
   type AccountIdentity,
   type BootstrapInput,
   type MeView,
@@ -58,6 +59,7 @@ export {
   reopenProposal,
   createProposalIfAbsent,
   expirePending,
+  expireProposalsForThreads,
   countPending,
   type ProposalKind,
   type ProposalStatus,

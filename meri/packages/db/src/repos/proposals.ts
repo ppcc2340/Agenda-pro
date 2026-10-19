@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, inArray, lt } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, lt, sql } from "drizzle-orm";
 import { proposals } from "../schema";
 import type { WorkspaceTx } from "../workspace";
 import { newId, type WorkspaceId } from "../ids";
@@ -177,4 +177,27 @@ export async function reopenProposal(
     .where(and(eq(proposals.workspaceId, workspaceId), eq(proposals.id, id)))
     .returning();
   return row ? toView(row) : null;
+}
+
+/** Expires pending proposals whose source is one of the given threads (purge/retention, D-036). */
+export async function expireProposalsForThreads(
+  tx: WorkspaceTx,
+  workspaceId: WorkspaceId,
+  threadIds: string[],
+  now: Date,
+): Promise<number> {
+  if (threadIds.length === 0) return 0;
+  const rows = await tx
+    .update(proposals)
+    .set({ status: "expired", resolution: { action: "purged" }, resolvedAt: now })
+    .where(
+      and(
+        eq(proposals.workspaceId, workspaceId),
+        eq(proposals.status, "pending"),
+        sql`${proposals.sourceRef} ->> 'type' = 'thread'`,
+        inArray(sql`${proposals.sourceRef} ->> 'id'`, threadIds),
+      ),
+    )
+    .returning({ id: proposals.id });
+  return rows.length;
 }

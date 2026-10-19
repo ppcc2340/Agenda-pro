@@ -1,6 +1,14 @@
 import { randomUUID } from "node:crypto";
 import type { Logger } from "@meri/config";
-import { CalendarSyncJob, DailyReviewJob, GmailSyncJob, dueForDigest, type JobDispatcher } from "@meri/jobs";
+import {
+  CalendarSyncJob,
+  DailyReviewJob,
+  DataRetentionJob,
+  FollowupsScanJob,
+  GmailSyncJob,
+  dueForDigest,
+  type JobDispatcher,
+} from "@meri/jobs";
 import type postgres from "postgres";
 
 export interface DispatcherDeps {
@@ -72,6 +80,48 @@ export async function dispatchDailyReview(deps: DispatcherDeps): Promise<number>
   }
   if (due.length > 0) deps.logger.info({ workspaces: due.length }, "daily review dispatched");
   return due.length;
+}
+
+/**
+ * followups.scan (F-08): hourly for every onboarded workspace with a Gmail account or open third-party commitments.
+ * jobId per workspace and hour bucket so retries within the hour collapse.
+ */
+export async function dispatchFollowupsScan(deps: DispatcherDeps): Promise<number> {
+  const rows = await deps.adminSql<{ workspaceId: string }[]>`
+    select p.workspace_id as "workspaceId" from preferences p
+    where p.onboarded_at is not null and (
+      exists (select 1 from integration_accounts a where a.workspace_id = p.workspace_id
+              and a.scopes ? 'https://www.googleapis.com/auth/gmail.readonly' and a.status in ('healthy', 'degraded'))
+      or exists (select 1 from commitments c where c.workspace_id = p.workspace_id
+              and c.direction = 'owed_to_me' and c.status in ('confirmed', 'at_risk')))
+    limit 5000`;
+  const date = deps.now().toISOString().slice(0, 10);
+  const bucket = String(Math.floor(deps.now().getTime() / 3_600_000));
+  for (const row of rows) {
+    await deps.dispatcher.enqueue(
+      FollowupsScanJob,
+      { workspaceId: row.workspaceId, traceId: randomUUID(), date },
+      { jobId: `followups.scan:${row.workspaceId}:${bucket}` },
+    );
+  }
+  if (rows.length > 0) deps.logger.info({ workspaces: rows.length }, "followups scan dispatched");
+  return rows.length;
+}
+
+/** data.retention (D-036): once a day per workspace that has indexed mail. */
+export async function dispatchRetention(deps: DispatcherDeps): Promise<number> {
+  const rows = await deps.adminSql<{ workspaceId: string }[]>`
+    select distinct workspace_id as "workspaceId" from threads_index limit 5000`;
+  const date = deps.now().toISOString().slice(0, 10);
+  for (const row of rows) {
+    await deps.dispatcher.enqueue(
+      DataRetentionJob,
+      { workspaceId: row.workspaceId, traceId: randomUUID(), date },
+      { jobId: `data.retention:${row.workspaceId}:${date}` },
+    );
+  }
+  if (rows.length > 0) deps.logger.info({ workspaces: rows.length }, "retention dispatched");
+  return rows.length;
 }
 
 /** Runs `fn` every `everyMs`, never overlapping, with errors logged (not thrown). Returns a stop function. */

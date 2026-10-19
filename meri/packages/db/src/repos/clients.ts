@@ -8,12 +8,19 @@ export interface ClientSummary {
   name: string;
   color: string | null;
   domains: string[];
+  followupsMuted: boolean;
 }
 
 /** Active clients of the workspace (names feed the capture context; full CRUD arrives in phase 3). */
 export async function listClients(tx: WorkspaceTx, workspaceId: WorkspaceId): Promise<ClientSummary[]> {
   const rows = await tx
-    .select({ id: clients.id, name: clients.name, color: clients.color, domains: clients.domains })
+    .select({
+      id: clients.id,
+      name: clients.name,
+      color: clients.color,
+      domains: clients.domains,
+      followupsMuted: clients.followupsMuted,
+    })
     .from(clients)
     .where(and(eq(clients.workspaceId, workspaceId), isNull(clients.deletedAt), isNull(clients.archivedAt)))
     .orderBy(asc(clients.name));

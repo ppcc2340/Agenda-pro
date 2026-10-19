@@ -14,7 +14,13 @@ import {
   type IntegrationAccountView,
 } from "@meri/db";
 import { hasCalendarScopes, hasGmailScopes, scopesFor, type GoogleOAuth } from "@meri/integrations";
-import { CalendarSyncJob, GmailSyncJob, encryptTokens, type JobDispatcher } from "@meri/jobs";
+import {
+  CalendarSyncJob,
+  GmailSyncJob,
+  encryptTokens,
+  purgeAccountMail,
+  type JobDispatcher,
+} from "@meri/jobs";
 import { ApiError } from "../errors";
 import { requireSession, sessionOf } from "../plugins/session";
 
@@ -256,6 +262,8 @@ export function integrationRoutes(
       await request.withWorkspace(async (tx) => {
         const current = await getIntegrationAccount(tx, session.workspaceId, request.params.id);
         if (!current) throw new ApiError("NOT_FOUND", "Integration not found.");
+        // D-036 "desconectar y purgar": indexed mail, proposed commitments and pending mail proposals go with it.
+        const purged = await purgeAccountMail(tx, session.workspaceId, current.id, options.now());
         await deleteIntegrationAccount(tx, session.workspaceId, current.id);
         await audit(
           tx,
@@ -265,6 +273,7 @@ export function integrationRoutes(
             entityType: "integration_account",
             entityId: current.id,
             before: { provider: current.provider, email: current.email },
+            after: { purged },
           },
         );
       });

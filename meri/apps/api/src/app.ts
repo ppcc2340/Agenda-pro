@@ -30,6 +30,8 @@ import { idempotencyPlugin } from "./plugins/idempotency";
 import { planRoutes } from "./routes/plan";
 import { notificationRoutes } from "./routes/notifications";
 import { mailRoutes } from "./routes/integrations-mail";
+import { commitmentRoutes } from "./routes/commitments";
+import { contactRoutes } from "./routes/contacts";
 
 export interface AppDeps {
   config: AppConfig;
@@ -154,6 +156,13 @@ export async function buildApp(deps: AppDeps) {
   });
 
   await app.register(notificationRoutes, { now: deps.now });
+  await app.register(commitmentRoutes, {
+    deps: { db: deps.db, integrations: deps.integrations, keys: deps.integrations.kms.keys, now: deps.now },
+    ai: deps.integrations.ai,
+    costCapUsd: config.env.AI_MONTHLY_COST_CAP_USD_PER_USER,
+    onTasksChanged: deps.onTasksChanged,
+  });
+  await app.register(contactRoutes, { now: deps.now });
   await app.register(mailRoutes, {
     now: deps.now,
     dispatcher: deps.dispatcher,

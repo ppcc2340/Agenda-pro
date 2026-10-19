@@ -45,3 +45,5 @@ export {
   AUTOCONFIRM_THRESHOLD,
   type ExtractResult,
 } from "./handlers/extract-commitments";
+export { scanFollowups, followupDedupeHash, type FollowupsScanResult } from "./handlers/followups-scan";
+export { purgeThreads, purgeAccountMail, applyMailRetention, type PurgeResult } from "./handlers/mail-purge";

@@ -5,12 +5,24 @@ import { ConfigError, createLogger, loadConfig, loadDotenv } from "@meri/config"
 import { assertAppRole, createDb } from "@meri/db";
 import { createIntegrations, FakeAiClient } from "@meri/integrations";
 import { createDispatcher } from "@meri/jobs";
-import { dispatchCalendarPolling, dispatchDailyReview, dispatchMailPolling, schedule } from "./dispatchers";
+import {
+  dispatchCalendarPolling,
+  dispatchDailyReview,
+  dispatchFollowupsScan,
+  dispatchMailPolling,
+  dispatchRetention,
+  schedule,
+} from "./dispatchers";
+
+/** Hard ceiling on indexed-mail retention whatever the plan says (docs/06 §5). */
+const MAX_RETENTION_DAYS = 365;
 import { buildHealthServer } from "./health";
 import { calendarSyncJob } from "./queues/calendar-sync";
 import { dailyReviewJob } from "./queues/daily-review";
 import { gmailSyncJob } from "./queues/gmail-sync";
 import { extractCommitmentsJob } from "./queues/extract-commitments";
+import { followupsScanJob } from "./queues/followups-scan";
+import { dataRetentionJob } from "./queues/data-retention";
 import { plannerReplanJob } from "./queues/planner-replan";
 import { examplePing } from "./queues/example";
 import { QueueRegistry } from "./registry";
@@ -39,6 +51,8 @@ async function main(): Promise<void> {
   registry.register(plannerReplanJob(handlerDeps));
   registry.register(dailyReviewJob(handlerDeps));
   registry.register(gmailSyncJob(handlerDeps, dispatcher));
+  registry.register(followupsScanJob(handlerDeps));
+  registry.register(dataRetentionJob({ ...handlerDeps, maxRetentionDays: MAX_RETENTION_DAYS }));
   registry.register(
     extractCommitmentsJob({ ...handlerDeps, costCapUsd: config.env.AI_MONTHLY_COST_CAP_USD_PER_USER }),
   );
@@ -67,6 +81,18 @@ async function main(): Promise<void> {
     () => dispatchMailPolling({ adminSql, dispatcher, logger, now }),
     logger,
   );
+  const stopFollowups = schedule(
+    "followups.scan",
+    60 * 60_000,
+    () => dispatchFollowupsScan({ adminSql, dispatcher, logger, now }),
+    logger,
+  );
+  const stopRetention = schedule(
+    "data.retention",
+    6 * 60 * 60_000,
+    () => dispatchRetention({ adminSql, dispatcher, logger, now }),
+    logger,
+  );
   const stopDigest = schedule(
     "daily.review",
     15 * 60_000,
@@ -87,6 +113,8 @@ async function main(): Promise<void> {
         "daily.review",
         "gmail.sync",
         "ai.extract_commitments",
+        "followups.scan",
+        "data.retention",
       ],
     },
     "worker started",
@@ -97,6 +125,8 @@ async function main(): Promise<void> {
     stopPolling();
     stopDigest();
     stopMailPolling();
+    stopFollowups();
+    stopRetention();
     await health.close();
     await registry.close();
     await dispatcher.close();

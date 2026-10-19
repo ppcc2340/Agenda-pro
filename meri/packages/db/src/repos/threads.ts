@@ -161,3 +161,44 @@ export async function purgeAccountThreads(
     .returning({ id: threadsIndex.id });
   return rows.length;
 }
+
+export async function listThreadIdsForAccount(
+  tx: WorkspaceTx,
+  workspaceId: WorkspaceId,
+  accountId: string,
+): Promise<string[]> {
+  const rows = await tx
+    .select({ id: threadsIndex.id })
+    .from(threadsIndex)
+    .where(and(eq(threadsIndex.workspaceId, workspaceId), eq(threadsIndex.integrationAccountId, accountId)));
+  return rows.map((r) => r.id);
+}
+
+/** Threads whose last message is older than `before` (retention, D-036). */
+export async function listThreadIdsOlderThan(
+  tx: WorkspaceTx,
+  workspaceId: WorkspaceId,
+  before: Date,
+  limit = 500,
+): Promise<string[]> {
+  const rows = await tx
+    .select({ id: threadsIndex.id })
+    .from(threadsIndex)
+    .where(and(eq(threadsIndex.workspaceId, workspaceId), lt(threadsIndex.lastMessageAt, before)))
+    .orderBy(asc(threadsIndex.lastMessageAt))
+    .limit(limit);
+  return rows.map((r) => r.id);
+}
+
+export async function deleteThreadsByIds(
+  tx: WorkspaceTx,
+  workspaceId: WorkspaceId,
+  ids: string[],
+): Promise<number> {
+  if (ids.length === 0) return 0;
+  const rows = await tx
+    .delete(threadsIndex)
+    .where(and(eq(threadsIndex.workspaceId, workspaceId), inArray(threadsIndex.id, ids)))
+    .returning({ id: threadsIndex.id });
+  return rows.length;
+}

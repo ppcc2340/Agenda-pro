@@ -48,3 +48,10 @@ export {
   type ClientRef,
   type ExtractionPromptInput,
 } from "./mail/context";
+export {
+  detectFollowups,
+  type FollowupCandidate,
+  type FollowupInput,
+  type OverdueCommitmentInput,
+  type UnansweredThreadInput,
+} from "./followups/rules";
