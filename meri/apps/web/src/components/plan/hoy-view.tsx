@@ -1,6 +1,6 @@
 "use client";
 
-import { Check } from "lucide-react";
+import { Check, NotebookPen } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,7 @@ import {
   type DayItem,
 } from "@/lib/plan";
 import type { Task } from "@/lib/types";
+import { AgreementsDialog, type AgreementsTarget } from "@/components/calendar/agreements-dialog";
 import { WaitingList } from "@/components/commitments/waiting-list";
 import { useCompleteBlock } from "./actions";
 import { ReasonList } from "./reasons";
@@ -68,6 +69,7 @@ export function HoyView({
   const plan = usePlan(range);
   const events = useCalendarEvents(range);
   const [selected, setSelected] = useState<string | null>(null);
+  const [agreements, setAgreements] = useState<AgreementsTarget | null>(null);
   const complete = useCompleteBlock();
 
   const tasks = useMemo(
@@ -262,6 +264,33 @@ export function HoyView({
           <Section title={t("q4")}>
             <WaitingList timezone={timezone} now={nowIso} gmailConnected={gmailConnected} clients={clients} />
           </Section>
+          {items.some((i) => i.kind === "event" && i.clientId) ? (
+            <Section title={t("meetings.title")}>
+              <ul className="divide-y divide-rule">
+                {items
+                  .filter((i) => i.kind === "event" && i.clientId)
+                  .map((ev) => {
+                    const clientName = clients.find((c) => c.id === ev.clientId)?.name ?? null;
+                    return (
+                      <li key={ev.id} className="flex flex-wrap items-center gap-3 py-2.5">
+                        <span className="num text-[13px] text-ink2">{formatTime(ev.startsAt, locale, timezone)}</span>
+                        <span className="min-w-0 flex-1 truncate font-semibold">{ev.title}</span>
+                        <span className="text-[12.5px] text-ink2">{clientName}</span>
+                        <Button
+                          size="sm"
+                          variant={ev.endMin <= nowMin ? "primary" : "default"}
+                          onClick={() => setAgreements({ eventId: ev.id, title: ev.title, clientName })}
+                        >
+                          <NotebookPen size={14} aria-hidden="true" />
+                          {t("meetings.record")}
+                        </Button>
+                      </li>
+                    );
+                  })}
+              </ul>
+            </Section>
+          ) : null}
+          <AgreementsDialog target={agreements} onClose={() => setAgreements(null)} />
         </div>
       </div>
     </>

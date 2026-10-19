@@ -65,7 +65,11 @@
     "markDoneAria": "Marcar {title} como hecho",
     "nextBlock": "Nada más por hoy. Tu siguiente bloque: {title}, {when}.",
     "subtitleConflict": "Hay más trabajo que horas. {n, plural, one {Una cosa pide} other {# cosas piden}} una decisión.",
-    "doneLabel": "hecho"
+    "doneLabel": "hecho",
+    "meetings": {
+      "title": "Reuniones de hoy con cliente",
+      "record": "Registrar acuerdos"
+    }
   },
   "entrada": {
     "subtitle": "Meri propone, tú decides. Nada de esto es definitivo hasta que lo confirmes.",
@@ -96,7 +100,8 @@
     "fixed": "Reunión fija",
     "emptyDay": "Nada programado este día.",
     "connect": "Conectar Google Calendar",
-    "weekOf": "Semana del {from} al {to}"
+    "weekOf": "Semana del {from} al {to}",
+    "recordAgreements": "Registrar acuerdos"
   },
   "control": {
     "subtitle": "Qué puede hacer Meri por su cuenta, qué datos usa y qué ha hecho.",
@@ -518,7 +523,13 @@
     "mobileTitle": "Capturar",
     "mobileSub": "Escribe como hablas. Meri entiende clientes, fechas y duración.",
     "mobileAdd": "Añadir a Entrada",
-    "undo": "Deshacer"
+    "undo": "Deshacer",
+    "search": {
+      "task": "Tarea",
+      "commitment": "Compromiso",
+      "client": "Cliente",
+      "scope": "Buscando en {client}"
+    }
   },
   "connections": {
     "connect": "Conectar Google Calendar",
@@ -779,6 +790,24 @@
       "rejected": "Entrada rechazada.",
       "updated": "Minutos guardados.",
       "assigned": "Cliente asignado. Meri sugerirá la entrada en unos segundos."
+    }
+  },
+  "agreements": {
+    "title": "Acuerdos de «{title}»",
+    "desc": "Una línea por acuerdo. Meri propone compromisos y tareas; tú confirmas en Entrada.",
+    "descClient": "Cliente: {client}. Una línea por acuerdo; Meri propone compromisos y tareas y tú confirmas en Entrada.",
+    "label": "Acuerdos",
+    "placeholder": "Enviaré la propuesta el viernes\nNos envían el contrato firmado mañana\nPreparar informe de riesgos 2 h",
+    "hint": "Escribe en primera persona lo que harás («enviaré…») y lo que te deben («nos envían…»). Nada se crea sin confirmar.",
+    "submit": "Proponer {n, plural, =0 {acuerdos} one {un acuerdo} other {# acuerdos}}",
+    "cancel": "Cancelar",
+    "close": "Cerrar",
+    "review": "Revisar en Entrada",
+    "done": "{n, plural, =0 {Ninguna propuesta nueva} one {Una propuesta} other {# propuestas}} en Entrada{skipped, plural, =0 {} one { (una ya existía)} other { (# ya existían)}}.",
+    "toast": "{n, plural, =0 {Nada nuevo que proponer} one {Un acuerdo propuesto en Entrada} other {# acuerdos propuestos en Entrada}}.",
+    "kind": {
+      "commitment": "Compromiso",
+      "capture": "Tarea"
     }
   }
 }

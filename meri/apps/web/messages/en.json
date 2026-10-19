@@ -65,7 +65,11 @@
     "markDoneAria": "Mark {title} as done",
     "nextBlock": "Nothing else today. Your next block: {title}, {when}.",
     "subtitleConflict": "There is more work than hours. {n, plural, one {One thing needs} other {# things need}} a decision.",
-    "doneLabel": "done"
+    "doneLabel": "done",
+    "meetings": {
+      "title": "Today's client meetings",
+      "record": "Record agreements"
+    }
   },
   "entrada": {
     "subtitle": "Meri proposes, you decide. Nothing here is final until you confirm it.",
@@ -96,7 +100,8 @@
     "fixed": "Fixed meeting",
     "emptyDay": "Nothing scheduled this day.",
     "connect": "Connect Google Calendar",
-    "weekOf": "Week of {from} to {to}"
+    "weekOf": "Week of {from} to {to}",
+    "recordAgreements": "Record agreements"
   },
   "control": {
     "subtitle": "What Meri may do on its own, what data it uses and what it has done.",
@@ -518,7 +523,13 @@
     "mobileTitle": "Capture",
     "mobileSub": "Write the way you speak. Meri understands clients, dates and durations.",
     "mobileAdd": "Add to Inbox",
-    "undo": "Undo"
+    "undo": "Undo",
+    "search": {
+      "task": "Task",
+      "commitment": "Commitment",
+      "client": "Client",
+      "scope": "Searching in {client}"
+    }
   },
   "connections": {
     "connect": "Connect Google Calendar",
@@ -779,6 +790,24 @@
       "rejected": "Entry rejected.",
       "updated": "Minutes saved.",
       "assigned": "Client assigned. Meri will suggest the entry in a few seconds."
+    }
+  },
+  "agreements": {
+    "title": "Agreements of \"{title}\"",
+    "desc": "One line per agreement. Meri proposes commitments and tasks; you confirm them in the Inbox.",
+    "descClient": "Client: {client}. One line per agreement; Meri proposes commitments and tasks and you confirm in the Inbox.",
+    "label": "Agreements",
+    "placeholder": "I will send the proposal on Friday\nThey send us the signed contract tomorrow\nPrepare risk report 2 h",
+    "hint": "Write in the first person what you will do and what they owe you. Nothing is created without confirmation.",
+    "submit": "Propose {n, plural, =0 {agreements} one {one agreement} other {# agreements}}",
+    "cancel": "Cancel",
+    "close": "Close",
+    "review": "Review in Inbox",
+    "done": "{n, plural, =0 {No new proposals} one {One proposal} other {# proposals}} in the Inbox{skipped, plural, =0 {} one { (one already existed)} other { (# already existed)}}.",
+    "toast": "{n, plural, =0 {Nothing new to propose} one {One agreement proposed in the Inbox} other {# agreements proposed in the Inbox}}.",
+    "kind": {
+      "commitment": "Commitment",
+      "capture": "Task"
     }
   }
 }

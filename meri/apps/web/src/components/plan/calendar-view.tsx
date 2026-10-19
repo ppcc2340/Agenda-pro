@@ -2,6 +2,8 @@
 
 import { useLocale, useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
+import { AgreementsDialog, type AgreementsTarget } from "@/components/calendar/agreements-dialog";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
 import { formatTime } from "@/lib/format";
 import { useCalendarEvents, usePlan } from "@/lib/hooks/use-api";
@@ -34,6 +36,7 @@ export function CalendarView({ timezone, workStart, workEnd, clients, now: nowIs
     return { from: addDays(first, -1).toISOString(), to: addDays(first, 8).toISOString() };
   }, [days, now]);
   const plan = usePlan(range);
+  const [agreements, setAgreements] = useState<AgreementsTarget | null>(null);
   const events = useCalendarEvents(range);
   const tasks = useMemo(
     () => new Map<string, Task>((plan.data?.tasks ?? []).map((x) => [x.id, x])),
@@ -199,8 +202,10 @@ export function CalendarView({ timezone, workStart, workEnd, clients, now: nowIs
           timeLabel={timeLabel}
           timezone={timezone}
           clients={clients}
+          onAgreements={setAgreements}
         />
       </div>
+      <AgreementsDialog target={agreements} onClose={() => setAgreements(null)} />
     </div>
   );
 }
@@ -213,10 +218,12 @@ function Agenda({
   timeLabel,
   timezone,
   clients,
+  onAgreements,
 }: {
   items: DayItem[];
   isToday: boolean;
   nowMin: number;
+  onAgreements: (target: AgreementsTarget) => void;
   nowLabel: string;
   timeLabel: (i: DayItem) => string;
   timezone: string;
@@ -262,6 +269,21 @@ function Agenda({
             {timeLabel(it)}
             {it.kind === "event" ? `. ${t("fixed")}` : ""}
           </span>
+          {it.kind === "event" && it.clientId ? (
+            <Button
+              size="sm"
+              className="mt-1.5"
+              onClick={() =>
+                onAgreements({
+                  eventId: it.id,
+                  title: it.title,
+                  clientName: clients.find((c) => c.id === it.clientId)?.name ?? null,
+                })
+              }
+            >
+              {t("recordAgreements")}
+            </Button>
+          ) : null}
         </div>
       </div>,
     );

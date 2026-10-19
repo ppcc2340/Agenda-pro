@@ -320,3 +320,12 @@ export interface TimeWeek {
   summary: { clientId: string | null; clientName: string | null; minutesApproved: number; minutesSuggested: number }[];
   unassignedEvents: { id: string; title: string | null; startsAt: string; endsAt: string; minutes: number }[];
 }
+
+export interface SearchHit {
+  type: "task" | "commitment" | "client";
+  id: string;
+  title: string;
+  clientId: string | null;
+  status: string | null;
+  date: string | null;
+}

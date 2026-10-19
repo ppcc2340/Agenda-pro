@@ -1,8 +1,11 @@
 "use client";
 
 import { parseCapture, type CaptureSuggestion } from "@meri/core";
+import { useQuery } from "@tanstack/react-query";
 import {
+  Briefcase,
   CalendarDays,
+  Handshake,
   Inbox,
   Layers,
   ListChecks,
@@ -31,7 +34,7 @@ import { useToast } from "@/components/ui/toast";
 import { clientApi } from "@/lib/client-api";
 import { formatDateTime, formatMinutes } from "@/lib/format";
 import { idempotencyKey, keys, useApiMutation } from "@/lib/hooks/use-api";
-import type { Proposal } from "@/lib/types";
+import type { Proposal, SearchHit } from "@/lib/types";
 
 interface PaletteApi {
   open: () => void;
@@ -140,6 +143,41 @@ export function useCaptureMutation() {
   );
 }
 
+/** "contrato en Acme" → scope the search to Acme (F-09 AC2); the chip shows the scope. */
+export function splitScope(
+  q: string,
+  clients: { id: string; name: string }[],
+): { term: string; client: { id: string; name: string } | null } {
+  const m = /^(.*?)\s+(?:en|in)\s+(.+)$/i.exec(q.trim());
+  if (m) {
+    const name = (m[2] ?? "").toLowerCase();
+    const client = clients.find((c) => c.name.toLowerCase() === name || c.name.toLowerCase().startsWith(name));
+    if (client) return { term: (m[1] ?? "").trim(), client };
+  }
+  return { term: q.trim(), client: null };
+}
+
+const HIT_ICON: Record<SearchHit["type"], LucideIcon> = { task: ListChecks, commitment: Handshake, client: Briefcase };
+const hitHref = (h: SearchHit) =>
+  h.type === "client"
+    ? `/clientes/${h.id}`
+    : h.type === "task"
+      ? `/proyectos?tab=tareas${h.clientId ? `&clientId=${h.clientId}` : ""}#task-${h.id}`
+      : `/proyectos?tab=compromisos${h.clientId ? `&clientId=${h.clientId}` : ""}#commitment-${h.id}`;
+
+function useDebounced(value: string, ms: number): string {
+  const [v, setV] = useState(value);
+  useEffect(() => {
+    const id = setTimeout(() => {
+      setV(value);
+    }, ms);
+    return () => {
+      clearTimeout(id);
+    };
+  }, [value, ms]);
+  return v;
+}
+
 function Palette({ data, onClose }: { data: PaletteContextData; onClose: () => void }) {
   const t = useTranslations("capture");
   const router = useRouter();
@@ -156,7 +194,31 @@ function Palette({ data, onClose }: { data: PaletteContextData; onClose: () => v
   const suggestion = isCapture
     ? parseCapture(q, { now: new Date().toISOString(), timezone: data.timezone, clients: data.clients })
     : null;
-  const options: { id: string; label: string; icon: LucideIcon; run: () => void }[] = [
+  const scope = splitScope(q, data.clients);
+  const debounced = useDebounced(scope.term, 200);
+  const search = useQuery({
+    queryKey: ["search", debounced, scope.client?.id ?? ""],
+    queryFn: () =>
+      clientApi<{ items: SearchHit[] }>(
+        `/v1/search?q=${encodeURIComponent(debounced)}${scope.client ? `&clientId=${scope.client.id}` : ""}`,
+      ),
+    enabled: debounced.length >= 2,
+    staleTime: 10_000,
+  });
+  const hits = debounced.length >= 2 ? (search.data?.items ?? []).slice(0, 8) : [];
+  const options: { id: string; label: string; icon: LucideIcon; run: () => void; meta?: string }[] = [
+    ...hits.map((h) => ({
+      id: `hit-${h.type}-${h.id}`,
+      label: h.title,
+      meta:
+        t(`search.${h.type}`) +
+        (h.clientId && h.type !== "client" ? ` · ${data.clients.find((c) => c.id === h.clientId)?.name ?? ""}` : ""),
+      icon: HIT_ICON[h.type],
+      run: () => {
+        router.push(hitHref(h));
+        onClose();
+      },
+    })),
     ...(isCapture
       ? [
           {
@@ -223,6 +285,11 @@ function Palette({ data, onClose }: { data: PaletteContextData; onClose: () => v
             className="w-full bg-transparent px-1 py-4 text-[17px] font-medium outline-none"
           />
         </div>
+        {scope.client ? (
+          <div className="px-4 pt-2">
+            <Pill variant="sea">{t("search.scope", { client: scope.client.name })}</Pill>
+          </div>
+        ) : null}
         {suggestion ? (
           <div className="px-4 pb-3 pt-2">
             <p className="mb-2 text-[13px] text-ink2">{t("understood")}</p>
@@ -243,7 +310,8 @@ function Palette({ data, onClose }: { data: PaletteContextData; onClose: () => v
                 }
               >
                 <o.icon size={16} aria-hidden="true" />
-                {o.label}
+                <span className="min-w-0 flex-1 truncate">{o.label}</span>
+                {o.meta ? <span className="shrink-0 text-[12px] text-ink3">{o.meta}</span> : null}
               </button>
             </li>
           ))}
