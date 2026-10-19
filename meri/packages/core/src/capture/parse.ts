@@ -34,14 +34,14 @@ const WEEKDAYS: { names: string[]; day: number }[] = [
   { names: ["sábado", "sabado", "saturday", "sat"], day: 6 },
 ];
 
-const normalize = (s: string) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+export const normalizeText = (s: string) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
 
 interface Match {
   text: string;
   index: number;
 }
 
-function findDate(lower: string, ctx: CaptureContext): { dueAt: string; match: Match } | null {
+export function findDate(lower: string, ctx: CaptureContext): { dueAt: string; match: Match } | null {
   const nowMs = Date.parse(ctx.now);
   const local = toLocalParts(nowMs, ctx.timezone);
   const hour = ctx.defaultDueHour ?? 18;
@@ -80,7 +80,7 @@ function findDate(lower: string, ctx: CaptureContext): { dueAt: string; match: M
   for (const wd of WEEKDAYS) {
     for (const name of wd.names) {
       const re = new RegExp(
-        `\\b(?:(?:el|para el|para|on|by|next|el proximo|proximo|este|this)\\s+)?${normalize(name)}\\b`,
+        `\\b(?:(?:el|para el|para|on|by|next|el proximo|proximo|este|this)\\s+)?${normalizeText(name)}\\b`,
       );
       const hit = re.exec(lower);
       if (hit) {
@@ -171,7 +171,7 @@ function findClient(
 ): { client: { id: string; name: string }; match: Match } | null {
   let best: { client: { id: string; name: string }; match: Match } | null = null;
   for (const client of clients) {
-    const full = normalize(client.name);
+    const full = normalizeText(client.name);
     const first = full.split(/\s+/)[0] ?? full;
     for (const candidate of [full, first]) {
       if (candidate.length < 3) continue;
@@ -186,7 +186,7 @@ function findClient(
 
 export function parseCapture(raw: string, ctx: CaptureContext): CaptureSuggestion {
   const text = raw.trim().replace(/\s+/g, " ");
-  const lower = normalize(text);
+  const lower = normalizeText(text);
   const date = findDate(lower, ctx);
   const duration = findDuration(lower);
   const priority = findPriority(lower);

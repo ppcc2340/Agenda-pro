@@ -48,6 +48,8 @@ export interface MailProvider {
   healthCheck(): Promise<HealthReport>;
   profile(): Promise<{ email: string; historyId: string }>;
   listHistory(input: { cursor: string | null; maxResults?: number }): Promise<MailHistoryPage>;
+  /** Initial load (docs/07): message ids newer than `after`, newest first, bounded by `maxResults`. */
+  listMessages(input: { after: string; maxResults?: number }): Promise<{ messageIds: string[] }>;
   getMessageMeta(id: string): Promise<MailMessageMeta>;
   getMessageFull(id: string): Promise<MailMessageFull>;
   createDraft(input: DraftInput): Promise<DraftRef>;

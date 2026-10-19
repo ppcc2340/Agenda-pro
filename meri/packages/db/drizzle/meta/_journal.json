@@ -64,6 +64,27 @@
       "when": 1792431227098,
       "tag": "0008_plan_version_explicit",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792432734155,
+      "tag": "0009_phase2_mail",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1792432735155,
+      "tag": "0010_rls_mail_exclusions",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1792433008443,
+      "tag": "0011_proposals_dedupe_thread_message",
+      "breakpoints": true
     }
   ]
 }

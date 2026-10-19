@@ -213,4 +213,54 @@ describe("Google Calendar connection (F-04, D-021)", () => {
     expect(ok.statusCode).toBe(204);
     expect(t.dispatcher.jobs.length).toBe(before + 1);
   });
+
+  it("adds Gmail scopes incrementally on the same Google account and enqueues the first mail sync (ADR 0004)", async () => {
+    const c = await t.createAccount("integrations-c");
+    const cookie = await t.cookieFor(c);
+    const start = await t.app.inject({
+      method: "POST",
+      url: "/v1/integrations/google/connect?feature=calendar",
+      headers: { cookie, ...csrf },
+    });
+    const state = start.cookies.find((x) => x.name === "meri.oauth.state")?.value ?? "";
+    const url = new URL(start.json<{ url: string }>().url);
+    await t.app.inject({
+      url: `${url.pathname}${url.search}`,
+      headers: { cookie: `${cookie}; meri.oauth.state=${state}` },
+    });
+    const start2 = await t.app.inject({
+      method: "POST",
+      url: "/v1/integrations/google/connect?feature=gmail",
+      headers: { cookie, ...csrf },
+    });
+    const state2 = start2.cookies.find((x) => x.name === "meri.oauth.state")?.value ?? "";
+    const url2 = new URL(start2.json<{ url: string }>().url);
+    expect(url2.searchParams.get("scope")).toContain("gmail.readonly");
+    expect(url2.searchParams.get("scope")).not.toContain("gmail.send");
+    await t.app.inject({
+      url: `${url2.pathname}${url2.search}`,
+      headers: { cookie: `${cookie}; meri.oauth.state=${state2}` },
+    });
+    const list = await t.app.inject({ url: "/v1/integrations", headers: { cookie } });
+    const accounts = list.json<{ items: AccountJson[] }>().items;
+    expect(accounts).toHaveLength(1);
+    expect(accounts[0]?.scopes.some((s) => s.includes("calendar"))).toBe(true);
+    expect(accounts[0]?.scopes.some((s) => s.includes("gmail.readonly"))).toBe(true);
+    expect(t.dispatcher.jobs.some((j) => j.name === "gmail.sync")).toBe(true);
+    const manual = await t.app.inject({
+      method: "POST",
+      url: `/v1/integrations/${accounts[0]?.id ?? ""}/mail/sync`,
+      headers: { cookie, ...csrf },
+    });
+    expect(manual.statusCode).toBe(202);
+    const webhook = await t.app.inject({
+      method: "POST",
+      url: "/webhooks/google/gmail",
+      headers: {
+        "x-goog-channel-token": "wrong",
+        "x-goog-channel-id": `${c.workspaceId}:${accounts[0]?.id ?? ""}`,
+      },
+    });
+    expect(webhook.statusCode).toBe(403);
+  });
 });

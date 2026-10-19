@@ -20,6 +20,9 @@ export const PreferencesSchema = z.object({
   maxAlertsPerDay: z.number().int().min(0).max(50),
   autonomy: z.enum(["suggest_only", "auto_low_risk"]),
   timeRoundingMinutes: z.number().int().min(1).max(60),
+  gmailAutoconfirm: z.boolean(),
+  followupDays: z.number().int().min(1).max(30),
+  retentionDays: z.number().int().min(7).max(365),
 });
 export type Preferences = z.infer<typeof PreferencesSchema>;
 export const PreferencesPatchSchema = PreferencesSchema.partial().refine(

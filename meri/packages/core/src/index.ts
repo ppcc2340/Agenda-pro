@@ -15,3 +15,36 @@ export { PlannerInputError } from "./planner/normalize";
 export { computeDailyCapacity, type DailyCapacity } from "./planner/capacity";
 export { MAX_RELEASED_BLOCKS } from "./planner/stability";
 export { buildAlerts, type AlertCandidate, type AlertRunInput, type AlertTemplate } from "./alerts/group";
+export {
+  sanitizeMailBody,
+  stripHtml,
+  stripQuotesAndSignature,
+  stripUrls,
+  normalizeForMatch,
+  evidenceAppearsIn,
+  MAX_BODY_CHARS,
+} from "./mail/sanitize";
+export {
+  prefilterMessage,
+  emailAddress,
+  emailDomain,
+  type PrefilterMessage,
+  type PrefilterResult,
+  type DiscardReason,
+  type Exclusion,
+} from "./mail/prefilter";
+export { looksLikeInjection, isAllowedRecipient } from "./mail/policy";
+export {
+  extractCommitmentsByRules,
+  deriveAction,
+  type MailMessageInput,
+  type ExtractionContext,
+  type RuleCommitment,
+} from "./mail/commitments";
+export {
+  buildExtractionContext,
+  parseExtractionContext,
+  resolveClient,
+  type ClientRef,
+  type ExtractionPromptInput,
+} from "./mail/context";

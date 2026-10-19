@@ -13,8 +13,8 @@ import {
   upsertIntegrationAccount,
   type IntegrationAccountView,
 } from "@meri/db";
-import { CALENDAR_SCOPES, type GoogleOAuth } from "@meri/integrations";
-import { CalendarSyncJob, encryptTokens, type JobDispatcher } from "@meri/jobs";
+import { hasCalendarScopes, hasGmailScopes, scopesFor, type GoogleOAuth } from "@meri/integrations";
+import { CalendarSyncJob, GmailSyncJob, encryptTokens, type JobDispatcher } from "@meri/jobs";
 import { ApiError } from "../errors";
 import { requireSession, sessionOf } from "../plugins/session";
 
@@ -103,6 +103,7 @@ export function integrationRoutes(
       schema: {
         tags: ["integrations"],
         params: z.object({ provider: z.literal("google") }),
+        querystring: z.object({ feature: z.enum(["calendar", "gmail", "all"]).default("calendar") }),
         response: { 200: z.object({ url: z.string() }) },
       },
     },
@@ -116,10 +117,10 @@ export function integrationRoutes(
         path: "/v1/integrations",
         maxAge: 600,
       });
-      // Phase 1 requests Calendar scopes only (docs/06 §1); Gmail scopes arrive incrementally in phase 2.
+      // Incremental authorization (ADR 0004 §1): only the scopes of the requested feature.
       const url = options.oauth.authorizationUrl({
         state,
-        scopes: [...CALENDAR_SCOPES],
+        scopes: scopesFor(request.query.feature),
         redirectUri,
         loginHint: session.email,
       });
@@ -185,16 +186,31 @@ export function integrationRoutes(
         );
         return stored ?? provisional;
       });
-      await options.dispatcher.enqueue(
-        CalendarSyncJob,
-        {
-          workspaceId: session.workspaceId,
-          traceId: request.id,
-          integrationAccountId: account.id,
-          reason: "connect",
-        },
-        { jobId: `calendar.sync:${account.id}:connect` },
-      );
+      const connectBucket = String(Math.floor(Date.now() / 5_000));
+      if (hasCalendarScopes(account.scopes)) {
+        await options.dispatcher.enqueue(
+          CalendarSyncJob,
+          {
+            workspaceId: session.workspaceId,
+            traceId: request.id,
+            integrationAccountId: account.id,
+            reason: "connect",
+          },
+          { jobId: `calendar.sync:${account.id}:connect:${connectBucket}` },
+        );
+      }
+      if (hasGmailScopes(account.scopes)) {
+        await options.dispatcher.enqueue(
+          GmailSyncJob,
+          {
+            workspaceId: session.workspaceId,
+            traceId: request.id,
+            integrationAccountId: account.id,
+            reason: "connect",
+          },
+          { jobId: `gmail.sync:${account.id}:connect:${connectBucket}` },
+        );
+      }
       return reply.redirect(`${options.appUrl}/control?integration=connected`);
     },
   );

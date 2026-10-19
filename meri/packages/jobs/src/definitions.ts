@@ -9,6 +9,21 @@ export const CalendarSyncJob = {
     reason: z.enum(["connect", "poll", "webhook", "manual"]).default("manual"),
   }),
 };
+export const GmailSyncJob = {
+  name: "gmail.sync" as const,
+  schema: withEnvelope({
+    integrationAccountId: z.string().uuid(),
+    reason: z.enum(["connect", "poll", "webhook", "manual"]).default("manual"),
+  }),
+};
+export const ExtractCommitmentsJob = {
+  name: "ai.extract_commitments" as const,
+  schema: withEnvelope({ threadId: z.string().uuid(), messageIds: z.array(z.string()).min(1).max(50) }),
+};
+export const FollowupsScanJob = {
+  name: "followups.scan" as const,
+  schema: withEnvelope({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }),
+};
 export const PlannerReplanJob = {
   name: "planner.replan" as const,
   schema: withEnvelope({
@@ -25,5 +40,8 @@ export const ExamplePingJob = {
 };
 
 export type CalendarSyncPayload = z.infer<typeof CalendarSyncJob.schema>;
+export type GmailSyncPayload = z.infer<typeof GmailSyncJob.schema>;
+export type ExtractCommitmentsPayload = z.infer<typeof ExtractCommitmentsJob.schema>;
+export type FollowupsScanPayload = z.infer<typeof FollowupsScanJob.schema>;
 export type PlannerReplanPayload = z.infer<typeof PlannerReplanJob.schema>;
 export type DailyReviewPayload = z.infer<typeof DailyReviewJob.schema>;

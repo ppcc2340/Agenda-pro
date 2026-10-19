@@ -17,6 +17,7 @@ export interface ProposalView {
   sourceRef: { type: string; id: string; url?: string } | null;
   resolution: { action: string; editedPayload?: Record<string, unknown> } | null;
   resolvedAt: Date | null;
+  dedupeHash: string | null;
   createdAt: Date;
 }
 
@@ -32,6 +33,8 @@ export interface NewProposal {
   confidence?: number | null;
   explanation?: string | null;
   sourceRef?: { type: string; id: string; url?: string } | null;
+  /** When set, a second pending proposal with the same hash is not created (returns null). */
+  dedupeHash?: string | null;
 }
 
 export async function createProposal(
@@ -40,6 +43,18 @@ export async function createProposal(
   input: NewProposal,
   now: Date,
 ): Promise<ProposalView> {
+  const created = await createProposalIfAbsent(tx, workspaceId, input, now);
+  if (!created) throw new Error("proposal with this dedupe hash is already pending");
+  return created;
+}
+
+/** Like `createProposal`, but returns null when a pending proposal with the same dedupe hash exists. */
+export async function createProposalIfAbsent(
+  tx: WorkspaceTx,
+  workspaceId: WorkspaceId,
+  input: NewProposal,
+  now: Date,
+): Promise<ProposalView | null> {
   const [row] = await tx
     .insert(proposals)
     .values({
@@ -50,11 +65,12 @@ export async function createProposal(
       confidence: input.confidence ?? null,
       explanation: input.explanation ?? null,
       sourceRef: input.sourceRef ?? null,
+      dedupeHash: input.dedupeHash ?? null,
       createdAt: now,
     })
+    .onConflictDoNothing()
     .returning();
-  if (!row) throw new Error("proposal insert returned no row");
-  return toView(row);
+  return row ? toView(row) : null;
 }
 
 export async function getProposal(

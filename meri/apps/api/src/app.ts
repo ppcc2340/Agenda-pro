@@ -29,6 +29,7 @@ import { integrationRoutes } from "./routes/integrations";
 import { idempotencyPlugin } from "./plugins/idempotency";
 import { planRoutes } from "./routes/plan";
 import { notificationRoutes } from "./routes/notifications";
+import { mailRoutes } from "./routes/integrations-mail";
 
 export interface AppDeps {
   config: AppConfig;
@@ -153,6 +154,11 @@ export async function buildApp(deps: AppDeps) {
   });
 
   await app.register(notificationRoutes, { now: deps.now });
+  await app.register(mailRoutes, {
+    now: deps.now,
+    dispatcher: deps.dispatcher,
+    channelToken: config.env.GOOGLE_CALENDAR_CHANNEL_TOKEN,
+  });
 
   app.get("/docs/json", { schema: { hide: true } }, () => app.swagger());
 

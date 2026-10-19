@@ -75,3 +75,7 @@ export * from "./repos/integrations";
 export * from "./repos/schedule";
 export * from "./repos/notifications";
 export * from "./repos/plan-runs";
+export * from "./repos/threads";
+export * from "./repos/commitments";
+export * from "./repos/contacts";
+export * from "./repos/ai-usage";

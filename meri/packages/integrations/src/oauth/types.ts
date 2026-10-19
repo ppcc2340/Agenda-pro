@@ -24,7 +24,4 @@ export interface GoogleOAuth {
   revoke(token: string): Promise<void>;
 }
 
-export const CALENDAR_SCOPES = [
-  "https://www.googleapis.com/auth/calendar.events",
-  "https://www.googleapis.com/auth/calendar.readonly",
-] as const;
+export { CALENDAR_SCOPES } from "./scopes";

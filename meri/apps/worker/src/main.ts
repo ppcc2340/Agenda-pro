@@ -5,10 +5,11 @@ import { ConfigError, createLogger, loadConfig, loadDotenv } from "@meri/config"
 import { assertAppRole, createDb } from "@meri/db";
 import { createIntegrations, FakeAiClient } from "@meri/integrations";
 import { createDispatcher } from "@meri/jobs";
-import { dispatchCalendarPolling, dispatchDailyReview, schedule } from "./dispatchers";
+import { dispatchCalendarPolling, dispatchDailyReview, dispatchMailPolling, schedule } from "./dispatchers";
 import { buildHealthServer } from "./health";
 import { calendarSyncJob } from "./queues/calendar-sync";
 import { dailyReviewJob } from "./queues/daily-review";
+import { gmailSyncJob } from "./queues/gmail-sync";
 import { plannerReplanJob } from "./queues/planner-replan";
 import { examplePing } from "./queues/example";
 import { QueueRegistry } from "./registry";
@@ -36,6 +37,7 @@ async function main(): Promise<void> {
   registry.register(calendarSyncJob(handlerDeps, dispatcher));
   registry.register(plannerReplanJob(handlerDeps));
   registry.register(dailyReviewJob(handlerDeps));
+  registry.register(gmailSyncJob(handlerDeps, dispatcher));
 
   // Cross-tenant dispatchers (D-025) use the owner connection only to enumerate accounts.
   // Cross-tenant dispatchers need the owner connection: under the app role + forced RLS they would silently
@@ -55,6 +57,12 @@ async function main(): Promise<void> {
     logger,
   );
 
+  const stopMailPolling = schedule(
+    "gmail.poll",
+    5 * 60_000,
+    () => dispatchMailPolling({ adminSql, dispatcher, logger, now }),
+    logger,
+  );
   const stopDigest = schedule(
     "daily.review",
     15 * 60_000,
@@ -66,7 +74,7 @@ async function main(): Promise<void> {
   const port = config.env.PORT ?? 4100;
   await health.listen({ port, host: "0.0.0.0" });
   logger.info(
-    { port, queues: ["example.ping", "calendar.sync", "planner.replan", "daily.review"] },
+    { port, queues: ["example.ping", "calendar.sync", "planner.replan", "daily.review", "gmail.sync"] },
     "worker started",
   );
 
@@ -74,6 +82,7 @@ async function main(): Promise<void> {
     logger.info({ signal }, "worker shutting down");
     stopPolling();
     stopDigest();
+    stopMailPolling();
     await health.close();
     await registry.close();
     await dispatcher.close();

@@ -54,6 +54,16 @@ export class FakeGmail implements MailProvider {
     });
   }
 
+  listMessages(input: { after: string; maxResults?: number }): Promise<{ messageIds: string[] }> {
+    const after = Date.parse(input.after);
+    const ids = [...this.messages.values()]
+      .filter((m) => Date.parse(m.date) >= after)
+      .sort((a, b) => Date.parse(b.date) - Date.parse(a.date))
+      .slice(0, input.maxResults ?? 500)
+      .map((m) => m.id);
+    return Promise.resolve({ messageIds: ids });
+  }
+
   getMessageMeta(id: string): Promise<MailMessageMeta> {
     const m = this.messages.get(id);
     if (!m) return Promise.reject(this.notFound(id));

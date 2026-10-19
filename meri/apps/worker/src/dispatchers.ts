@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { Logger } from "@meri/config";
-import { CalendarSyncJob, DailyReviewJob, dueForDigest, type JobDispatcher } from "@meri/jobs";
+import { CalendarSyncJob, DailyReviewJob, GmailSyncJob, dueForDigest, type JobDispatcher } from "@meri/jobs";
 import type postgres from "postgres";
 
 export interface DispatcherDeps {
@@ -28,6 +28,26 @@ export async function dispatchCalendarPolling(deps: DispatcherDeps, staleMinutes
     );
   }
   if (rows.length > 0) deps.logger.info({ accounts: rows.length }, "calendar polling dispatched");
+  return rows.length;
+}
+
+/** Mail polling fallback (ADR 0004 §1): healthy accounts with Gmail scopes not synced in the last 5 minutes. */
+export async function dispatchMailPolling(deps: DispatcherDeps, staleMinutes = 5): Promise<number> {
+  const olderThan = new Date(deps.now().getTime() - staleMinutes * 60_000);
+  const rows = await deps.adminSql<{ id: string; workspaceId: string }[]>`
+    select a.id, a.workspace_id as "workspaceId" from integration_accounts a
+    where a.provider = 'google' and a.status in ('healthy', 'degraded')
+      and a.scopes ? 'https://www.googleapis.com/auth/gmail.readonly'
+      and not exists (select 1 from sync_state s where s.integration_account_id = a.id and s.resource = 'gmail.history' and s.updated_at >= ${olderThan})
+    order by a.last_sync_at nulls first limit 500`;
+  for (const row of rows) {
+    await deps.dispatcher.enqueue(
+      GmailSyncJob,
+      { workspaceId: row.workspaceId, traceId: randomUUID(), integrationAccountId: row.id, reason: "poll" },
+      { jobId: `gmail.sync:${row.id}:poll:${String(Math.floor(Date.now() / (staleMinutes * 60_000)))}` },
+    );
+  }
+  if (rows.length > 0) deps.logger.info({ accounts: rows.length }, "mail polling dispatched");
   return rows.length;
 }
 

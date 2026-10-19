@@ -193,7 +193,10 @@ describe("createIntegrations factory", () => {
   it("live modes without an adapter yet fail loudly instead of silently using fakes", () => {
     const env = parseEnv({ ...base, AI_MODE: "live", ANTHROPIC_API_KEY: "sk-test" });
     expect(() =>
-      createIntegrations({ env, modes: resolveModes(env), isProduction: false, isTest: true, fakesOnProductionBuild: false }, { now }),
+      createIntegrations(
+        { env, modes: resolveModes(env), isProduction: false, isTest: true, fakesOnProductionBuild: false },
+        { now },
+      ),
     ).toThrow(/anthropic live adapter/);
   });
 });

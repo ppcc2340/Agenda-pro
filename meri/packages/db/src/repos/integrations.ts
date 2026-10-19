@@ -1,4 +1,4 @@
-import { and, asc, eq, gte, inArray, lte } from "drizzle-orm";
+import { and, asc, eq, gte, inArray, lte, sql } from "drizzle-orm";
 import { calendarEvents, integrationAccounts, scheduleBlocks, syncState } from "../schema";
 import type { WorkspaceTx } from "../workspace";
 import { newId, type WorkspaceId } from "../ids";
@@ -92,7 +92,8 @@ export async function upsertIntegrationAccount(
       ],
       set: {
         email: input.email,
-        scopes: input.scopes,
+        // Incremental authorization: scopes accumulate across consents (ADR 0004 §1).
+        scopes: sql`(select array_to_json(array(select distinct jsonb_array_elements_text(${integrationAccounts.scopes} || ${JSON.stringify(input.scopes)}::jsonb)))::jsonb)`,
         encryptedTokens: input.encryptedTokens,
         keyId: input.keyId,
         status: "healthy",

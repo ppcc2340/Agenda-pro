@@ -32,3 +32,10 @@ export {
 export { writeBlocksToCalendar, type CalendarWriteResult } from "./handlers/meri-calendar";
 export { enqueueReplan, REPLAN_DEBOUNCE_MS } from "./replan-trigger";
 export { runDailyReview, dueForDigest, renderDigest, type DailyReviewResult } from "./handlers/daily-review";
+export {
+  syncMailAccount,
+  MAIL_RESOURCE,
+  INITIAL_LOAD_DAYS,
+  MAX_MESSAGES_PER_RUN,
+  type MailSyncResult,
+} from "./handlers/gmail-sync";
