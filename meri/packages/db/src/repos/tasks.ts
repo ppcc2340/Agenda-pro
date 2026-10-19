@@ -61,6 +61,13 @@ export interface TaskView {
   createdAt: Date;
   updatedAt: Date;
   blockedBy: string[];
+  risk: TaskRisk | null;
+}
+
+export interface TaskRisk {
+  cause: "LOW_SLACK" | "BLOCKED_DEPENDENCY" | "NO_CAPACITY";
+  slackHours: number;
+  since: string;
 }
 
 export interface TaskFilters {
@@ -260,6 +267,38 @@ export async function replaceDependencies(
       .values(unique.map((blockedByTaskId) => ({ workspaceId, taskId: id, blockedByTaskId })));
   }
   return unique;
+}
+
+/**
+ * Persist rule-computed risk (D-022): `risk` jsonb is the source of truth; `status` only moves between
+ * pending/scheduled and at_risk. Other statuses (in_progress, blocked, waiting) are never overwritten.
+ */
+export async function applyTaskRisks(
+  tx: WorkspaceTx,
+  workspaceId: WorkspaceId,
+  risks: Map<string, TaskRisk>,
+  scheduledTaskIds: Set<string>,
+  now: Date,
+): Promise<{ newlyAtRisk: string[] }> {
+  const open = await listOpenTasks(tx, workspaceId);
+  const newlyAtRisk: string[] = [];
+  for (const task of open) {
+    const risk = risks.get(task.id) ?? null;
+    const movable = task.status === "pending" || task.status === "scheduled" || task.status === "at_risk";
+    let status: TaskStatus = task.status;
+    if (movable) {
+      if (risk) status = "at_risk";
+      else status = scheduledTaskIds.has(task.id) ? "scheduled" : "pending";
+    }
+    const riskChanged = JSON.stringify(task.risk?.cause ?? null) !== JSON.stringify(risk?.cause ?? null);
+    if (status === task.status && !riskChanged && (risk === null || task.risk !== null)) continue;
+    if (risk && !task.risk) newlyAtRisk.push(task.id);
+    await tx
+      .update(tasks)
+      .set({ status, risk: risk ? { ...risk, since: task.risk?.since ?? risk.since } : null, updatedAt: now })
+      .where(and(eq(tasks.workspaceId, workspaceId), eq(tasks.id, task.id)));
+  }
+  return { newlyAtRisk };
 }
 
 /** Bulk status update used by the planner to persist `at_risk`/`scheduled` (D-022). Never touches completed tasks. */

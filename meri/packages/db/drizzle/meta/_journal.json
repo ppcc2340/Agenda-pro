@@ -36,6 +36,20 @@
       "when": 1792424252470,
       "tag": "0004_rls_phase1_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792425894531,
+      "tag": "0005_plan_runs",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792425897688,
+      "tag": "0006_rls_plan_runs",
+      "breakpoints": true
     }
   ]
 }

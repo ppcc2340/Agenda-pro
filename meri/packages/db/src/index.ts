@@ -41,7 +41,9 @@ export {
   softDeleteTask,
   replaceDependencies,
   setTaskStatuses,
+  applyTaskRisks,
   type TaskStatus,
+  type TaskRisk,
   type TaskInput,
   type TaskPatch,
   type TaskView,
@@ -64,3 +66,4 @@ export { listClients, type ClientSummary } from "./repos/clients";
 export * from "./repos/integrations";
 export * from "./repos/schedule";
 export * from "./repos/notifications";
+export * from "./repos/plan-runs";

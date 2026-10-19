@@ -436,6 +436,39 @@ export const auditLog = pgTable(
   ],
 );
 
+// ---------- Plan runs (D-019): persisted output of the last replan, read by GET /v1/plan ----------
+export const planRuns = pgTable(
+  "plan_runs",
+  {
+    id: id(),
+    workspaceId: workspaceId(),
+    planVersion: integer("plan_version").notNull(),
+    horizonStart: timestamp("horizon_start", { withTimezone: true }).notNull(),
+    horizonEnd: timestamp("horizon_end", { withTimezone: true }).notNull(),
+    risks: jsonb("risks")
+      .$type<{ taskId: string; slackHours: number; cause: string }[]>()
+      .notNull()
+      .default([]),
+    conflicts: jsonb("conflicts")
+      .$type<
+        {
+          code: string;
+          taskIds: string[];
+          details: Record<string, string | number>;
+          alternatives: string[];
+        }[]
+      >()
+      .notNull()
+      .default([]),
+    unscheduled: jsonb("unscheduled").$type<{ taskId: string; reason: string }[]>().notNull().default([]),
+    /** What happened with the diff: applied safely, proposed, or nothing to do. */
+    outcome: text("outcome").notNull(),
+    proposalId: uuid("proposal_id"),
+    createdAt: createdAt(),
+  },
+  (t) => [index("plan_runs_ws_created_idx").on(t.workspaceId, t.createdAt)],
+);
+
 // ---------- Idempotency (docs/13, D-024) ----------
 export const idempotencyKeys = pgTable(
   "idempotency_keys",
