@@ -1,0 +1,90 @@
+import { randomUUID } from "node:crypto";
+import cookie from "@fastify/cookie";
+import helmet from "@fastify/helmet";
+import rateLimit from "@fastify/rate-limit";
+import swagger from "@fastify/swagger";
+import Fastify from "fastify";
+import { jsonSchemaTransform, serializerCompiler, validatorCompiler } from "fastify-type-provider-zod";
+import type { AppConfig, Logger } from "@meri/config";
+import type { Db } from "@meri/db";
+import type { Integrations } from "@meri/integrations";
+import { errorHandler, problemFrom, sendProblem } from "./errors";
+import { contextPlugin } from "./plugins/context";
+import { csrfPlugin } from "./plugins/csrf";
+import { sessionPlugin } from "./plugins/session";
+import { accountRoutes } from "./routes/account";
+import { healthRoutes } from "./routes/health";
+import { internalRoutes } from "./routes/internal";
+
+export interface AppDeps {
+  config: AppConfig;
+  db: Db;
+  integrations: Integrations;
+  logger: Logger;
+  /** Injected clock (docs/12 §1). */
+  now: () => Date;
+  /** Override for tests. */
+  rateLimitMax?: number;
+}
+
+export const BODY_LIMIT_BYTES = 256 * 1024;
+
+export type App = Awaited<ReturnType<typeof buildApp>>;
+
+export async function buildApp(deps: AppDeps) {
+  const { config } = deps;
+  const app = Fastify({
+    loggerInstance: deps.logger,
+    bodyLimit: BODY_LIMIT_BYTES,
+    requestTimeout: 30_000,
+    connectionTimeout: 10_000,
+    trustProxy: config.isProduction,
+    requestIdHeader: "x-request-id",
+    requestIdLogLabel: "traceId",
+    genReqId: () => randomUUID(),
+    disableRequestLogging: config.isTest,
+  });
+
+  app.setValidatorCompiler(validatorCompiler);
+  app.setSerializerCompiler(serializerCompiler);
+  app.setErrorHandler(errorHandler);
+  app.setNotFoundHandler((request, reply) => sendProblem(reply, problemFrom("NOT_FOUND", request.id)));
+  app.addHook("onSend", (request, reply, payload, done) => {
+    reply.header("x-request-id", request.id);
+    done(null, payload);
+  });
+
+  await app.register(helmet, { contentSecurityPolicy: false, crossOriginResourcePolicy: { policy: "same-site" } });
+  await app.register(cookie);
+  await app.register(rateLimit, {
+    global: true,
+    max: deps.rateLimitMax ?? 300,
+    timeWindow: "1 minute",
+    // Keyed by user when authenticated, by IP otherwise (docs/12 §3).
+    keyGenerator: (request) => (request.session ? `u:${request.session.userId}` : `ip:${request.ip}`),
+    allowList: (request) => request.url === "/health" || request.url === "/ready",
+  });
+  await app.register(swagger, {
+    openapi: {
+      openapi: "3.1.0",
+      info: { title: "Meri API", version: "0.1.0", description: "Contract: docs/13-api-contract.md" },
+      servers: [{ url: config.env.API_URL }],
+      components: { securitySchemes: { session: { type: "apiKey", in: "cookie", name: "authjs.session-token" } } },
+      security: [{ session: [] }],
+    },
+    transform: jsonSchemaTransform,
+  });
+
+  await app.register(sessionPlugin, { secret: config.env.AUTH_SECRET, secure: config.isProduction });
+  await app.register(csrfPlugin);
+  await app.register(contextPlugin, { db: deps.db });
+
+  await app.register(healthRoutes, { db: deps.db });
+  await app.register(internalRoutes, { db: deps.db, secret: config.env.INTERNAL_API_SECRET, now: deps.now });
+  await app.register(accountRoutes, { db: deps.db, now: deps.now });
+
+  app.get("/docs/json", { schema: { hide: true } }, () => app.swagger());
+
+  await app.ready();
+  return app;
+}

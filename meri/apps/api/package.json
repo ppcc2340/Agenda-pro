@@ -3,12 +3,39 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "Fastify: API REST y webhooks (contrato en docs/13-api-contract.md).",
+  "description": "Fastify: REST API and webhooks (contract in docs/13-api-contract.md).",
   "scripts": {
-    "typecheck": "echo \"implementar en la fase 0\"",
-    "lint": "echo \"implementar en la fase 0\"",
-    "test": "echo \"implementar en la fase 0\"",
-    "build": "echo \"implementar en la fase 0\"",
-    "dev": "echo \"implementar en la fase 0\""
+    "dev": "tsx watch src/main.ts",
+    "start": "node dist/main.js",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src",
+    "test": "vitest run",
+    "build": "tsup",
+    "openapi": "tsx src/openapi.ts"
+  },
+  "dependencies": {
+    "@auth/core": "0.41.3",
+    "@fastify/cookie": "^11.0.0",
+    "@fastify/helmet": "^13.0.0",
+    "@fastify/rate-limit": "^10.1.0",
+    "@fastify/swagger": "^9.1.0",
+    "@fastify/swagger-ui": "^5.1.0",
+    "@meri/config": "workspace:*",
+    "@meri/core": "workspace:*",
+    "@meri/db": "workspace:*",
+    "@meri/integrations": "workspace:*",
+    "fastify": "^5.0.0",
+    "fastify-plugin": "^5.0.0",
+    "fastify-type-provider-zod": "^4.0.2",
+    "pino": "^9.4.0",
+    "uuid": "^11.0.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "pino-pretty": "^11.3.0",
+    "tsup": "^8.3.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
   }
 }
