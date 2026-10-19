@@ -1,0 +1,94 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: meri
+
+jobs:
+  verify:
+    name: lint, typecheck, test, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: meri
+          POSTGRES_PASSWORD: meri
+          POSTGRES_DB: meri
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U meri" --health-interval 5s --health-timeout 5s --health-retries 10
+      redis:
+        image: redis:7
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgres://meri_app:meri_app@localhost:5432/meri
+      DATABASE_ADMIN_URL: postgres://meri:meri@localhost:5432/meri
+      DATABASE_URL_TEST: postgres://meri_app:meri_app@localhost:5432/meri_test
+      DATABASE_ADMIN_URL_TEST: postgres://meri:meri@localhost:5432/meri_test
+      REDIS_URL: redis://localhost:6379
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.12.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: meri/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - name: Dev configuration (fake modes, no secrets)
+        run: cp .env.example .env
+      - name: Create test database
+        run: psql "$DATABASE_ADMIN_URL" -c "CREATE DATABASE meri_test OWNER meri;"
+        env:
+          PGPASSWORD: meri
+      - name: Migrations on a clean database
+        run: pnpm db:migrate
+      - name: Verify (lint, typecheck, test, build, dependency rules)
+        run: pnpm verify
+      - name: Smoke tests against fake adapters
+        run: for id in google-oauth anthropic stripe observability domain-brand kms; do pnpm smoke "$id"; done
+      - name: OpenAPI artifact
+        run: pnpm --filter @meri/api openapi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: openapi
+          path: meri/apps/api/openapi.json
+
+  security:
+    name: secrets and dependency audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.12.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: meri/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - name: pnpm audit (high and critical)
+        run: pnpm audit --audit-level=high

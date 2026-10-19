@@ -1,7 +1,13 @@
 import { inspect } from "node:util";
 import { describe, expect, it } from "vitest";
 import { LocalKeyProvider } from "./local";
-import { decryptEnvelope, decryptEnvelopeToString, encryptEnvelope, parseEnvelope, rewrapEnvelope } from "./envelope";
+import {
+  decryptEnvelope,
+  decryptEnvelopeToString,
+  encryptEnvelope,
+  parseEnvelope,
+  rewrapEnvelope,
+} from "./envelope";
 import { CryptoError } from "./types";
 
 const KEY_A = LocalKeyProvider.generateMasterKeyBase64();

@@ -1,13 +1,22 @@
 import { encode } from "@auth/core/jwt";
 import { createLogger, parseEnv, resolveModes, type AppConfig } from "@meri/config";
-import { bootstrapAccount, createDb, ensureDevRoles, runMigrations, type AccountIdentity, type DbHandle } from "@meri/db";
+import {
+  bootstrapAccount,
+  createDb,
+  ensureDevRoles,
+  runMigrations,
+  type AccountIdentity,
+  type DbHandle,
+} from "@meri/db";
 import { createIntegrations } from "@meri/integrations";
 import { buildApp, type App } from "../app";
 import { sessionCookieName } from "../plugins/session";
 import { CSRF_HEADER, CSRF_VALUE } from "../plugins/csrf";
 
-export const TEST_ADMIN_URL = process.env.DATABASE_ADMIN_URL_TEST ?? "postgres://meri:meri@localhost:5432/meri_test";
-export const TEST_APP_URL = process.env.DATABASE_URL_TEST ?? "postgres://meri_app:meri_app@localhost:5432/meri_test";
+export const TEST_ADMIN_URL =
+  process.env.DATABASE_ADMIN_URL_TEST ?? "postgres://meri:meri@localhost:5432/meri_test";
+export const TEST_APP_URL =
+  process.env.DATABASE_URL_TEST ?? "postgres://meri_app:meri_app@localhost:5432/meri_test";
 export const AUTH_SECRET = "test-auth-secret-at-least-32-characters-long";
 export const INTERNAL_SECRET = "test-internal-secret-16+";
 export const NOW = new Date("2026-10-19T10:40:00Z");
@@ -28,7 +37,10 @@ export interface TestApp {
   handle: DbHandle;
   close(): Promise<void>;
   /** Signs an Auth.js-compatible session cookie for the given account. */
-  cookieFor(account: Pick<AccountIdentity, "userId" | "workspaceId" | "email">, overrides?: Record<string, unknown>): Promise<string>;
+  cookieFor(
+    account: Pick<AccountIdentity, "userId" | "workspaceId" | "email">,
+    overrides?: Record<string, unknown>,
+  ): Promise<string>;
   createAccount(label: string): Promise<AccountIdentity>;
 }
 
@@ -58,7 +70,13 @@ export async function createTestApp(options: { rateLimitMax?: number } = {}): Pr
     },
     cookieFor: async (account, overrides = {}) => {
       const token = await encode({
-        token: { sub: account.userId, workspaceId: account.workspaceId, email: account.email, locale: "es", ...overrides },
+        token: {
+          sub: account.userId,
+          workspaceId: account.workspaceId,
+          email: account.email,
+          locale: "es",
+          ...overrides,
+        },
         secret: AUTH_SECRET,
         salt: name,
         maxAge: 3600,
@@ -66,7 +84,11 @@ export async function createTestApp(options: { rateLimitMax?: number } = {}): Pr
       return `${name}=${token}`;
     },
     createAccount: (label) =>
-      bootstrapAccount(handle.db, { email: `${label}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}@test.local`, name: label, now: NOW }),
+      bootstrapAccount(handle.db, {
+        email: `${label}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}@test.local`,
+        name: label,
+        now: NOW,
+      }),
   };
 }
 

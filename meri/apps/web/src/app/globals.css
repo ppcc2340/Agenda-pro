@@ -1,0 +1,146 @@
+@import "tailwindcss";
+
+/* Design tokens from docs/11-design-system.md (extracted from demo/src/shared.css). */
+:root {
+  --bg: #e9eef1;
+  --panel: #f5f8f9;
+  --raised: #ffffff;
+  --ink: #0f1e2e;
+  --ink2: #44566a;
+  --ink3: #74869a;
+  --rule: #d2dbe1;
+  --rail: #0f1e2e;
+  --rail-ink: #c9dbe2;
+  --rail-dim: #7f97a6;
+  --sea: #0e6b74;
+  --on-sea: #ffffff;
+  --sea-soft: #d5ebed;
+  --risk: #bf3a4a;
+  --risk-soft: #f7dee1;
+  --sug: #9a6a0c;
+  --sug-soft: #faefd4;
+  --ok: #2a7b58;
+  --ok-soft: #d9efe5;
+  --c-1: #3a6edb;
+  --c-2: #2f8a5c;
+  --c-3: #b07414;
+  --c-4: #b0407e;
+  --f-head: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --f-body: "Instrument Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #08121a;
+    --panel: #0f1c27;
+    --raised: #142431;
+    --ink: #e7eff3;
+    --ink2: #a7b9c6;
+    --ink3: #7c91a1;
+    --rule: #233545;
+    --rail: #060e15;
+    --rail-dim: #6f8796;
+    --sea: #5cc9cf;
+    --on-sea: #06242a;
+    --sea-soft: #12363c;
+    --risk: #f0707f;
+    --risk-soft: #3a1b22;
+    --sug: #e3b04b;
+    --sug-soft: #35290f;
+    --ok: #5cc79b;
+    --ok-soft: #123428;
+    --c-1: #7aa2f5;
+    --c-2: #5cc79b;
+    --c-3: #e3a64b;
+    --c-4: #e27bb0;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #08121a;
+  --panel: #0f1c27;
+  --raised: #142431;
+  --ink: #e7eff3;
+  --ink2: #a7b9c6;
+  --ink3: #7c91a1;
+  --rule: #233545;
+  --rail: #060e15;
+  --rail-dim: #6f8796;
+  --sea: #5cc9cf;
+  --on-sea: #06242a;
+  --sea-soft: #12363c;
+  --risk: #f0707f;
+  --risk-soft: #3a1b22;
+  --sug: #e3b04b;
+  --sug-soft: #35290f;
+  --ok: #5cc79b;
+  --ok-soft: #123428;
+  --c-1: #7aa2f5;
+  --c-2: #5cc79b;
+  --c-3: #e3a64b;
+  --c-4: #e27bb0;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-panel: var(--panel);
+  --color-raised: var(--raised);
+  --color-ink: var(--ink);
+  --color-ink2: var(--ink2);
+  --color-ink3: var(--ink3);
+  --color-rule: var(--rule);
+  --color-rail: var(--rail);
+  --color-rail-ink: var(--rail-ink);
+  --color-rail-dim: var(--rail-dim);
+  --color-sea: var(--sea);
+  --color-on-sea: var(--on-sea);
+  --color-sea-soft: var(--sea-soft);
+  --color-risk: var(--risk);
+  --color-risk-soft: var(--risk-soft);
+  --color-sug: var(--sug);
+  --color-sug-soft: var(--sug-soft);
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+  --font-head: var(--f-head);
+  --font-body: var(--f-body);
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font: 400 14.5px/1.5 var(--f-body);
+  -webkit-font-smoothing: antialiased;
+}
+h1,
+h2,
+h3 {
+  font-family: var(--f-head);
+  margin: 0;
+  letter-spacing: -0.01em;
+  font-weight: 600;
+}
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+:focus-visible {
+  outline: 2px solid var(--sea);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+.num {
+  font-variant-numeric: tabular-nums;
+}
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}

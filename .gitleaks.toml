@@ -1,0 +1,16 @@
+# gitleaks configuration (docs/12 §8). Extends the default rules; dev-only placeholders are allow-listed.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Example configuration and documented dev placeholders"
+paths = [
+  '''meri/\.env\.example$''',
+  '''meri/docs/blockers/.*\.md$''',
+  '''meri/pnpm-lock\.yaml$''',
+]
+regexes = [
+  '''change-me-dev-only''',
+  '''meri_app:meri_app@localhost''',
+  '''meri:meri@localhost''',
+]

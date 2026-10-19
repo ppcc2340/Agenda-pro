@@ -1,0 +1,184 @@
+{
+  "app": {
+    "name": "meri",
+    "tagline": "Organiza tu trabajo, protege tu tiempo.",
+    "skipToContent": "Ir al contenido",
+    "loading": "Cargando…",
+    "errorTitle": "Algo no ha ido bien",
+    "errorBody": "No pudimos cargar esta parte. Vuelve a intentarlo en unos segundos.",
+    "retry": "Reintentar",
+    "theme": "Cambiar tema",
+    "language": "Idioma",
+    "signOut": "Cerrar sesión",
+    "demoNote": "Modo de desarrollo con datos de ejemplo. Nada se envía ni se cobra."
+  },
+  "nav": {
+    "hoy": "Hoy",
+    "entrada": "Entrada",
+    "proyectos": "Proyectos y compromisos",
+    "calendario": "Calendario",
+    "control": "Centro de control",
+    "areas": "Áreas",
+    "mobile": {
+      "hoy": "Hoy",
+      "entrada": "Entrada",
+      "agenda": "Agenda",
+      "compromisos": "Compromisos",
+      "mas": "Más"
+    },
+    "capture": "Capturar o buscar",
+    "captureShortcut": "Ctrl K"
+  },
+  "hoy": {
+    "subtitleCalm": "Tu plan cabe con margen y no hay nada en riesgo. Puedes concentrarte.",
+    "q1": "¿Qué hago ahora?",
+    "q2": "¿Qué es lo más importante hoy?",
+    "q3": "¿Qué podría salir mal?",
+    "q4": "¿Qué estoy esperando de otras personas?",
+    "emptyNowTitle": "Todavía no hay plan para hoy",
+    "emptyNowBody": "Cuando tengas tareas y un calendario conectado, Meri reservará bloques de trabajo y los verás aquí.",
+    "emptyImportant": "Nada importante pendiente para hoy.",
+    "emptyRisksTitle": "Sin riesgos a la vista",
+    "emptyRisksBody": "Si algo pone en peligro una fecha, lo verás aquí con una propuesta.",
+    "emptyWaiting": "No esperas nada de nadie por ahora.",
+    "dayLine": "Tu día",
+    "laneCalendar": "Calendario",
+    "lanePlan": "Plan de Meri",
+    "legendFixed": "Reunión fija: Meri no la toca",
+    "legendBlock": "Bloque de trabajo confirmado",
+    "legendSuggested": "Sugerido: espera tu decisión"
+  },
+  "entrada": {
+    "subtitle": "Meri propone, tú decides. Nada de esto es definitivo hasta que lo confirmes.",
+    "emptyTitle": "Todo al día",
+    "emptyBody": "Cuando llegue un correo con un compromiso, o captures algo con Ctrl K, aparecerá aquí para que lo revises."
+  },
+  "proyectos": {
+    "subtitle": "Lo que debes, lo que te deben y el tiempo de cada cliente.",
+    "tabs": { "compromisos": "Compromisos", "clientes": "Clientes", "tiempo": "Tiempo" },
+    "emptyTitle": "Sin compromisos todavía",
+    "emptyBody": "Los compromisos que confirmes desde Entrada aparecerán aquí, separados en lo que debes y lo que te deben."
+  },
+  "calendario": {
+    "subtitle": "Tus reuniones y los bloques de trabajo que Meri reserva para ti.",
+    "emptyTitle": "Calendario sin conectar",
+    "emptyBody": "Conecta Google Calendar desde el Centro de control. Meri solo crea y mueve sus propios bloques en un calendario aparte."
+  },
+  "control": {
+    "subtitle": "Qué puede hacer Meri por su cuenta, qué datos usa y qué ha hecho.",
+    "autonomy": {
+      "title": "Autonomía",
+      "desc": "Cuánto puede hacer Meri sin preguntarte.",
+      "suggest": "Solo sugerir",
+      "low": "Actuar en lo de bajo riesgo",
+      "suggestBody": "Meri propone y tú confirmas todo. Es la opción por defecto.",
+      "lowBody": "Meri puede confirmar compromisos explícitos de alta confianza y mover sus propios bloques. Nunca toca reuniones ni envía correos."
+    },
+    "connections": {
+      "title": "Conexiones",
+      "desc": "Qué cuentas lee Meri y con qué permiso.",
+      "calendar": "Google Calendar",
+      "calendarScope": "Lectura de eventos y escritura solo en el calendario «Meri»",
+      "gmail": "Gmail",
+      "gmailScope": "Lectura y borradores. Sin permiso de envío",
+      "notConnected": "Sin conectar",
+      "soon": "Próximamente",
+      "others": "Outlook y Notion",
+      "othersBody": "Llegan después del lanzamiento"
+    },
+    "credits": {
+      "title": "Créditos de IA",
+      "desc": "Se usan al leer correos y generar borradores y briefings. El planificador no gasta créditos.",
+      "used": "{used} de {cap} este mes",
+      "pause": "Al llegar al límite, la IA se pausa y el calendario y el plan siguen funcionando."
+    },
+    "activity": {
+      "title": "Actividad",
+      "desc": "Todo lo que Meri hizo o propuso, con opción de deshacer.",
+      "empty": "Todavía no hay actividad. Cada acción automática quedará registrada aquí.",
+      "undo": "Deshacer",
+      "undone": "Deshecho",
+      "actor": { "user": "Tú", "system": "Sistema", "ai": "IA" },
+      "actions": {
+        "onboarding_completed": "Completaste la configuración inicial.",
+        "preferences_updated": "Cambiaste tus preferencias.",
+        "other": "Acción registrada: {action}"
+      }
+    },
+    "preferences": {
+      "title": "Preferencias",
+      "desc": "Tu horario y tu margen para imprevistos.",
+      "timezone": "Zona horaria",
+      "hours": "Horario laboral",
+      "contingency": "Margen para imprevistos",
+      "edit": "Editar preferencias"
+    },
+    "privacy": {
+      "title": "Privacidad",
+      "desc": "Tus datos son tuyos.",
+      "pause": "Pausar lectura de correo",
+      "export": "Exportar mis datos",
+      "delete": "Eliminar mi cuenta",
+      "soon": "Disponible en una fase posterior."
+    },
+    "plan": { "title": "Plan", "trial": "Prueba hasta el {date}", "pro": "Plan Pro" }
+  },
+  "login": {
+    "title": "Entra en Meri",
+    "body": "Nunca pierdas un compromiso ni un plazo. Recupera horas facturables.",
+    "google": "Continuar con Google",
+    "devTitle": "Acceso de desarrollo",
+    "devBody": "Google no está conectado todavía (modo de pruebas). Entra con cualquier correo para probar el producto con adaptadores simulados.",
+    "email": "Correo",
+    "name": "Nombre",
+    "devSubmit": "Entrar",
+    "legal": "Al continuar aceptas los <terms>términos</terms> y la <privacy>política de privacidad</privacy>.",
+    "error": "No pudimos iniciar sesión. Vuelve a intentarlo."
+  },
+  "onboarding": {
+    "title": "Antes de empezar",
+    "body": "Tres datos para que el plan sea realista. Podrás cambiarlos en el Centro de control.",
+    "timezone": "Zona horaria",
+    "workStart": "Empiezas a trabajar",
+    "workEnd": "Terminas",
+    "workDays": "Días laborables",
+    "contingency": "Margen para imprevistos",
+    "contingencyHelp": "Porcentaje del día que Meri deja libre. Por defecto, 20 %.",
+    "submit": "Guardar y ver Hoy",
+    "saving": "Guardando…",
+    "saved": "Guardado. Vamos a Hoy.",
+    "errors": {
+      "order": "La hora de inicio debe ser anterior a la de fin.",
+      "days": "Elige al menos un día."
+    },
+    "days": { "0": "D", "1": "L", "2": "M", "3": "X", "4": "J", "5": "V", "6": "S" }
+  },
+  "legal": {
+    "privacyTitle": "Política de privacidad (borrador)",
+    "termsTitle": "Términos de servicio (borrador)",
+    "draftNote": "Este documento es un borrador y será revisado por una persona antes de la beta.",
+    "back": "Volver",
+    "privacy": {
+      "p1": "Meri lee tu correo y tu calendario solo para detectar compromisos, planificar tu trabajo e inferir tiempo facturable. No almacena el cuerpo de tus correos: solo identificadores, metadatos mínimos y un fragmento citado de hasta 200 caracteres.",
+      "p2": "Meri nunca envía correos en tu nombre: solo crea borradores. No modifica reuniones con terceros sin tu confirmación explícita.",
+      "p3": "Los datos obtenidos de Google se usan únicamente para las funciones que ves en la aplicación, conforme a la política de uso limitado de datos de usuario de Google. No se usan para publicidad ni para entrenar modelos generales.",
+      "p4": "Puedes exportar y eliminar todos tus datos desde el Centro de control. Las conexiones se pueden revocar en cualquier momento.",
+      "p5": "Contacto: privacidad@ en el dominio de Meri (pendiente de dominio)."
+    },
+    "terms": {
+      "p1": "Meri es una herramienta de asistencia. Las fechas legales y los plazos procesales deben verificarse siempre con tu propio criterio profesional.",
+      "p2": "Toda acción automática queda registrada y puede deshacerse. Las acciones de impacto requieren tu confirmación.",
+      "p3": "El servicio se ofrece en prueba durante 14 días; después se aplican los planes publicados.",
+      "p4": "Contacto: soporte@ en el dominio de Meri (pendiente de dominio)."
+    }
+  },
+  "common": {
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "close": "Cerrar",
+    "confirm": "Confirmar",
+    "edit": "Editar",
+    "dismiss": "Descartar",
+    "undo": "Deshacer"
+  }
+}

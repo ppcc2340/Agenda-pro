@@ -51,7 +51,11 @@ describe("account bootstrap and preferences (F-01)", () => {
         { now, completeOnboarding: true },
       );
       for (let i = 0; i < 3; i++) {
-        await audit(tx, { workspaceId: acc.workspaceId, actor: "user", actorUserId: acc.userId }, { action: `pref.update.${String(i)}` });
+        await audit(
+          tx,
+          { workspaceId: acc.workspaceId, actor: "user", actorUserId: acc.userId },
+          { action: `pref.update.${String(i)}` },
+        );
       }
       return updated;
     });
@@ -61,10 +65,17 @@ describe("account bootstrap and preferences (F-01)", () => {
     expect((await getMe(handle.db, acc.userId, acc.workspaceId))?.onboarded).toBe(true);
 
     const again = await withWorkspace(handle.db, acc.workspaceId, (tx) =>
-      updatePreferences(tx, acc.workspaceId, { bufferMinutes: 5 }, { now: new Date(now.getTime() + 1000), completeOnboarding: true }),
+      updatePreferences(
+        tx,
+        acc.workspaceId,
+        { bufferMinutes: 5 },
+        { now: new Date(now.getTime() + 1000), completeOnboarding: true },
+      ),
     );
     expect(again.onboardedAt?.toISOString()).toBe(now.toISOString());
-    expect(await withWorkspace(handle.db, acc.workspaceId, (tx) => getPreferences(tx, acc.workspaceId))).toMatchObject({
+    expect(
+      await withWorkspace(handle.db, acc.workspaceId, (tx) => getPreferences(tx, acc.workspaceId)),
+    ).toMatchObject({
       bufferMinutes: 5,
     });
 
@@ -72,7 +83,9 @@ describe("account bootstrap and preferences (F-01)", () => {
     expect(page1.items).toHaveLength(2);
     expect(page1.nextCursor).toBeTruthy();
     const cursor = page1.nextCursor ?? "";
-    const page2 = await withWorkspace(handle.db, acc.workspaceId, (tx) => listAudit(tx, acc.workspaceId, 2, cursor));
+    const page2 = await withWorkspace(handle.db, acc.workspaceId, (tx) =>
+      listAudit(tx, acc.workspaceId, 2, cursor),
+    );
     expect(page2.items.map((i) => i.action)).toEqual(expect.arrayContaining(["pref.update.0"]));
     expect(page2.nextCursor).toBeNull();
     const all = [...page1.items, ...page2.items].map((i) => i.id);

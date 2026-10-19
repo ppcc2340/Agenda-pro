@@ -1,5 +1,11 @@
 import { IntegrationError, type HealthReport } from "../errors";
-import type { BillingProvider, BillingWebhookEvent, CheckoutSession, PlanCode, SubscriptionSnapshot } from "../billing/types";
+import type {
+  BillingProvider,
+  BillingWebhookEvent,
+  CheckoutSession,
+  PlanCode,
+  SubscriptionSnapshot,
+} from "../billing/types";
 
 /** Local billing stand-in: never charges, keeps subscriptions in memory, "signs" webhooks with a shared string. */
 export class FakeBilling implements BillingProvider {
@@ -34,7 +40,10 @@ export class FakeBilling implements BillingProvider {
       currentPeriodEnd: new Date(this.now().getTime() + periodDays * 86_400_000).toISOString(),
       cancelAtPeriodEnd: false,
     });
-    return Promise.resolve({ id, url: `${input.successUrl}?fake_checkout=${id}&subscription=${subscriptionId}` });
+    return Promise.resolve({
+      id,
+      url: `${input.successUrl}?fake_checkout=${id}&subscription=${subscriptionId}`,
+    });
   }
 
   createPortalSession(input: { customerId: string; returnUrl: string }): Promise<{ url: string }> {
@@ -53,7 +62,9 @@ export class FakeBilling implements BillingProvider {
     try {
       parsed = JSON.parse(rawBody);
     } catch (cause) {
-      return Promise.reject(new IntegrationError("Permanent", "stripe", "malformed webhook event", { cause }));
+      return Promise.reject(
+        new IntegrationError("Permanent", "stripe", "malformed webhook event", { cause }),
+      );
     }
     if (typeof parsed !== "object" || parsed === null || !("id" in parsed) || !("type" in parsed)) {
       return Promise.reject(new IntegrationError("Permanent", "stripe", "malformed webhook event"));

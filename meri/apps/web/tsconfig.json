@@ -4,6 +4,7 @@
     "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "noEmit": true,
+    "declaration": false,
     "jsx": "preserve",
     "incremental": true,
     "plugins": [{ "name": "next" }],

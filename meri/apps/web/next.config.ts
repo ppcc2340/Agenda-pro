@@ -1,0 +1,38 @@
+import type { NextConfig } from "next";
+import createNextIntlPlugin from "next-intl/plugin";
+import { loadDotenv } from "@meri/config";
+
+// One shared .env at the repo root (docs/blockers/README.md). Existing process variables win.
+loadDotenv(".env");
+loadDotenv("../../.env");
+
+const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
+
+const apiUrl = process.env.API_URL ?? "http://localhost:4000";
+
+const nextConfig: NextConfig = {
+  reactStrictMode: true,
+  transpilePackages: ["@meri/config", "@meri/core"],
+  poweredByHeader: false,
+  // `pnpm lint` runs the repo-wide flat config (incl. react/jsx-no-literals); Next's own pass would be redundant.
+  eslint: { ignoreDuringBuilds: true },
+  async rewrites() {
+    // Same-origin access to the API: cookies travel, no CORS (ADR 0001).
+    return [{ source: "/api/v1/:path*", destination: `${apiUrl}/v1/:path*` }];
+  },
+  async headers() {
+    return [
+      {
+        source: "/(.*)",
+        headers: [
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+        ],
+      },
+    ];
+  },
+};
+
+export default withNextIntl(nextConfig);

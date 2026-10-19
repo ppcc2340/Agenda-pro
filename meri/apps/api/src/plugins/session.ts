@@ -66,7 +66,9 @@ export const sessionPlugin = fp<SessionPluginOptions>((app: FastifyInstance, opt
 
 /** preHandler: rejects (never throws synchronously, which Fastify would not route to the error handler). */
 export function requireSession(request: FastifyRequest, _reply: FastifyReply): Promise<void> {
-  return request.session ? Promise.resolve() : Promise.reject(new ApiError("UNAUTHENTICATED", "Sign in to continue."));
+  return request.session
+    ? Promise.resolve()
+    : Promise.reject(new ApiError("UNAUTHENTICATED", "Sign in to continue."));
 }
 
 export function sessionOf(request: FastifyRequest): Session {

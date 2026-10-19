@@ -64,7 +64,12 @@ export interface AuditPage {
  * Cursor pagination, newest first. Ids are UUID v7 (time-ordered), so ordering by id is chronological and stable
  * even for rows created in the same transaction (identical created_at). The cursor is the id of the last row seen.
  */
-export async function listAudit(tx: WorkspaceTx, workspaceId: WorkspaceId, limit: number, cursor?: string): Promise<AuditPage> {
+export async function listAudit(
+  tx: WorkspaceTx,
+  workspaceId: WorkspaceId,
+  limit: number,
+  cursor?: string,
+): Promise<AuditPage> {
   const rows = await tx
     .select()
     .from(auditLog)

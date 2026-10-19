@@ -4,7 +4,10 @@ import { existsSync, readFileSync } from "node:fs";
  * Minimal .env loader for local development and scripts (no dependency). Never logs values.
  * Existing process variables win. Production uses the platform's secret manager instead.
  */
-export function loadDotenv(file = ".env", target: Record<string, string | undefined> = process.env): string[] {
+export function loadDotenv(
+  file = ".env",
+  target: Record<string, string | undefined> = process.env,
+): string[] {
   if (!existsSync(file)) return [];
   const loaded: string[] = [];
   for (const line of readFileSync(file, "utf8").split(/\r?\n/)) {

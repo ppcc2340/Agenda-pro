@@ -40,7 +40,10 @@ export async function bootstrapAccount(db: Db, input: BootstrapInput): Promise<A
     const ws = membership[0];
     if (!ws) throw new Error(`user ${existing.id} has no workspace`);
     if (input.name && input.name !== existing.name) {
-      await db.update(users).set({ name: input.name, image: input.image ?? existing.image }).where(eq(users.id, existing.id));
+      await db
+        .update(users)
+        .set({ name: input.name, image: input.image ?? existing.image })
+        .where(eq(users.id, existing.id));
     }
     return {
       userId: existing.id as UserId,
@@ -57,8 +60,12 @@ export async function bootstrapAccount(db: Db, input: BootstrapInput): Promise<A
   const locale = input.locale ?? "es";
   // One transaction for the whole bootstrap (docs/12 §4): identity rows first, then the RLS context, then tenant rows.
   await db.transaction(async (tx) => {
-    await tx.insert(users).values({ id: userId, email, name: input.name ?? null, image: input.image ?? null, locale });
-    await tx.insert(workspaces).values({ id: workspaceId, name: input.name ?? email, ownerId: userId, vertical: "generic" });
+    await tx
+      .insert(users)
+      .values({ id: userId, email, name: input.name ?? null, image: input.image ?? null, locale });
+    await tx
+      .insert(workspaces)
+      .values({ id: workspaceId, name: input.name ?? email, ownerId: userId, vertical: "generic" });
     await tx.execute(sql`select set_config('app.workspace_id', ${workspaceId}, true)`);
     await tx.insert(memberships).values({ workspaceId, userId, role: "owner" });
     await tx.insert(preferences).values({ workspaceId });

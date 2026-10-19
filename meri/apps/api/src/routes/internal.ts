@@ -12,7 +12,11 @@ export const BootstrapBody = z.object({
 });
 
 /** ADR 0001: called by apps/web on every sign-in. Idempotent. Hidden from OpenAPI. */
-export function internalRoutes(app: FastifyInstance, options: { db: Db; secret: string; now: () => Date }, done: () => void): void {
+export function internalRoutes(
+  app: FastifyInstance,
+  options: { db: Db; secret: string; now: () => Date },
+  done: () => void,
+): void {
   const r = app.withTypeProvider<ZodTypeProvider>();
   r.post(
     "/internal/auth/bootstrap",
@@ -23,7 +27,14 @@ export function internalRoutes(app: FastifyInstance, options: { db: Db; secret: 
         hide: true,
         body: BootstrapBody,
         response: {
-          200: z.object({ userId: z.string(), workspaceId: z.string(), email: z.string(), name: z.string().nullable(), locale: z.string(), created: z.boolean() }),
+          200: z.object({
+            userId: z.string(),
+            workspaceId: z.string(),
+            email: z.string(),
+            name: z.string().nullable(),
+            locale: z.string(),
+            created: z.boolean(),
+          }),
         },
       },
     },

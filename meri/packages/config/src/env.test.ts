@@ -34,21 +34,31 @@ describe("parseEnv", () => {
   });
 
   it("parses DEMO_NOW as an ISO datetime with offset", () => {
-    expect(parseEnv({ ...BASE, DEMO_NOW: "2026-10-19T10:40:00-03:00" }).DEMO_NOW).toBe("2026-10-19T10:40:00-03:00");
+    expect(parseEnv({ ...BASE, DEMO_NOW: "2026-10-19T10:40:00-03:00" }).DEMO_NOW).toBe(
+      "2026-10-19T10:40:00-03:00",
+    );
     expect(() => parseEnv({ ...BASE, DEMO_NOW: "yesterday" })).toThrow(ConfigError);
   });
 });
 
 describe("resolveModes", () => {
   it("defaults every integration to fake", () => {
-    expect(resolveModes(parseEnv(BASE))).toEqual({ google: "fake", ai: "fake", stripe: "fake", analytics: "fake", kms: "fake" });
+    expect(resolveModes(parseEnv(BASE))).toEqual({
+      google: "fake",
+      ai: "fake",
+      stripe: "fake",
+      analytics: "fake",
+      kms: "fake",
+    });
   });
 
   it("live without credentials fails citing the variable and the guide", () => {
     expect(() => resolveModes(parseEnv({ ...BASE, GOOGLE_MODE: "live" }))).toThrow(
       /GOOGLE_MODE=live requires GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET\. See docs\/blockers\/google-oauth\.md/,
     );
-    expect(() => resolveModes(parseEnv({ ...BASE, KMS_PROVIDER: "aws" }))).toThrow(/KMS_KEY_ID.*docs\/blockers\/kms\.md/);
+    expect(() => resolveModes(parseEnv({ ...BASE, KMS_PROVIDER: "aws" }))).toThrow(
+      /KMS_KEY_ID.*docs\/blockers\/kms\.md/,
+    );
   });
 
   it("live with credentials resolves to live", () => {

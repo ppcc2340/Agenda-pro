@@ -40,7 +40,12 @@ export class DeadLetterError extends UnrecoverableError {
 }
 
 /** Exponential backoff with jitter, capped (docs/12 §5). Exposed for tests. */
-export function backoffDelayMs(attemptsMade: number, random: () => number = Math.random, baseMs = 1000, capMs = 5 * 60_000): number {
+export function backoffDelayMs(
+  attemptsMade: number,
+  random: () => number = Math.random,
+  baseMs = 1000,
+  capMs = 5 * 60_000,
+): number {
   const exp = Math.min(capMs, baseMs * 2 ** Math.max(0, attemptsMade - 1));
   const jitter = Math.floor(random() * exp * 0.25);
   return exp + jitter;
@@ -68,14 +73,22 @@ export class QueueRegistry {
   queue(name: QueueName | typeof DEAD_LETTER_QUEUE): Queue {
     let q = this.queues.get(name);
     if (!q) {
-      q = new Queue(name, { connection: this.deps.connection, prefix: this.deps.prefix, defaultJobOptions: DEFAULT_JOB_OPTIONS });
+      q = new Queue(name, {
+        connection: this.deps.connection,
+        prefix: this.deps.prefix,
+        defaultJobOptions: DEFAULT_JOB_OPTIONS,
+      });
       this.queues.set(name, q);
     }
     return q;
   }
 
   /** Enqueue a job. `jobId` makes retries/duplicates idempotent (docs/12 §5). */
-  async enqueue<S extends z.ZodTypeAny>(def: JobDefinition<S>, payload: z.infer<S>, options: JobsOptions = {}): Promise<Job> {
+  async enqueue<S extends z.ZodTypeAny>(
+    def: JobDefinition<S>,
+    payload: z.infer<S>,
+    options: JobsOptions = {},
+  ): Promise<Job> {
     const parsed = JobEnvelope.and(def.schema).parse(payload);
     return this.queue(def.name).add(def.name, parsed, {
       ...DEFAULT_JOB_OPTIONS,
@@ -91,11 +104,22 @@ export class QueueRegistry {
       async (job) => {
         const envelope = JobEnvelope.safeParse(job.data);
         if (!envelope.success) {
-          throw new DeadLetterError(`job ${job.id ?? "?"} rejected: missing workspaceId/traceId (${envelope.error.message})`);
+          throw new DeadLetterError(
+            `job ${job.id ?? "?"} rejected: missing workspaceId/traceId (${envelope.error.message})`,
+          );
         }
         const payload = def.schema.safeParse(job.data);
-        if (!payload.success) throw new DeadLetterError(`job ${job.id ?? "?"} rejected: invalid payload (${payload.error.message})`);
-        const log = this.deps.logger.child({ jobId: job.id, queue: def.name, workspaceId: envelope.data.workspaceId, traceId: envelope.data.traceId, attempt: job.attemptsMade + 1 });
+        if (!payload.success)
+          throw new DeadLetterError(
+            `job ${job.id ?? "?"} rejected: invalid payload (${payload.error.message})`,
+          );
+        const log = this.deps.logger.child({
+          jobId: job.id,
+          queue: def.name,
+          workspaceId: envelope.data.workspaceId,
+          traceId: envelope.data.traceId,
+          attempt: job.attemptsMade + 1,
+        });
         await def.handler({
           payload: payload.data as z.infer<S>,
           workspaceId: envelope.data.workspaceId,
@@ -116,10 +140,17 @@ export class QueueRegistry {
     worker.on("failed", (job, err) => {
       if (!job) return;
       const exhausted = err instanceof DeadLetterError || job.attemptsMade >= (job.opts.attempts ?? 1);
-      this.deps.logger.warn({ jobId: job.id, queue: def.name, attempt: job.attemptsMade, exhausted, err: err.message }, "job failed");
+      this.deps.logger.warn(
+        { jobId: job.id, queue: def.name, attempt: job.attemptsMade, exhausted, err: err.message },
+        "job failed",
+      );
       if (exhausted) {
         void this.deadLetter
-          .add(def.name, { ...job.data, failedJobId: job.id, error: err.message }, { attempts: 1, jobId: `dlq:${def.name}:${job.id ?? ""}` })
+          .add(
+            def.name,
+            { ...job.data, failedJobId: job.id, error: err.message },
+            { attempts: 1, jobId: `dlq:${def.name}:${job.id ?? ""}` },
+          )
           .catch((e: unknown) => {
             this.deps.logger.error({ err: e }, "could not move job to dead-letter queue");
           });
@@ -129,12 +160,20 @@ export class QueueRegistry {
     return worker;
   }
 
-  async health(): Promise<{ queues: Record<string, { waiting: number; active: number; failed: number; delayed: number }>; deadLetter: number }> {
+  async health(): Promise<{
+    queues: Record<string, { waiting: number; active: number; failed: number; delayed: number }>;
+    deadLetter: number;
+  }> {
     const queues: Record<string, { waiting: number; active: number; failed: number; delayed: number }> = {};
     for (const [name, q] of this.queues) {
       if (name === DEAD_LETTER_QUEUE) continue;
       const c = await q.getJobCounts("waiting", "active", "failed", "delayed");
-      queues[name] = { waiting: c.waiting ?? 0, active: c.active ?? 0, failed: c.failed ?? 0, delayed: c.delayed ?? 0 };
+      queues[name] = {
+        waiting: c.waiting ?? 0,
+        active: c.active ?? 0,
+        failed: c.failed ?? 0,
+        delayed: c.delayed ?? 0,
+      };
     }
     return { queues, deadLetter: await this.deadLetter.getWaitingCount() };
   }

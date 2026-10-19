@@ -27,12 +27,18 @@ export class LocalKeyProvider implements KeyProvider {
     const cipher = createCipheriv("aes-256-gcm", this.#master, iv);
     const ct = Buffer.concat([cipher.update(dek), cipher.final()]);
     const tag = cipher.getAuthTag();
-    return Promise.resolve({ keyId: this.keyId, ciphertext: Buffer.concat([iv, ct, tag]).toString("base64url") });
+    return Promise.resolve({
+      keyId: this.keyId,
+      ciphertext: Buffer.concat([iv, ct, tag]).toString("base64url"),
+    });
   }
 
   unwrap(wrapped: WrappedKey): Promise<Uint8Array> {
     if (wrapped.keyId !== this.keyId) {
-      throw new CryptoError(`Wrapped key belongs to "${wrapped.keyId}", provider is "${this.keyId}"`, "UNKNOWN_KEY");
+      throw new CryptoError(
+        `Wrapped key belongs to "${wrapped.keyId}", provider is "${this.keyId}"`,
+        "UNKNOWN_KEY",
+      );
     }
     const buf = Buffer.from(wrapped.ciphertext, "base64url");
     if (buf.length < IV_BYTES + TAG_BYTES + 1) throw new CryptoError("Wrapped DEK is malformed", "MALFORMED");

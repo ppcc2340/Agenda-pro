@@ -27,7 +27,11 @@ export interface Integrations {
 }
 
 const notYet = (name: string) =>
-  new IntegrationError("Permanent", name, `${name} live adapter is implemented in a later phase; use fake mode`);
+  new IntegrationError(
+    "Permanent",
+    name,
+    `${name} live adapter is implemented in a later phase; use fake mode`,
+  );
 
 /**
  * Builds every integration from the resolved modes. Switching fake -> live is configuration only
@@ -38,13 +42,30 @@ export function createIntegrations(config: AppConfig, deps: IntegrationsDeps): I
   const fakeCalendars = new Map<string, FakeCalendar>();
   const fakeMail = new Map<string, FakeGmail>();
 
-  const ai: AiClient = modes.ai === "fake" ? new FakeAiClient() : (() => { throw notYet("anthropic"); })();
-  const billing: BillingProvider = modes.stripe === "fake" ? new FakeBilling(deps.now) : (() => { throw notYet("stripe"); })();
-  const analytics: Analytics = modes.analytics === "fake" ? new NoopAnalytics() : (() => { throw notYet("analytics"); })();
+  const ai: AiClient =
+    modes.ai === "fake"
+      ? new FakeAiClient()
+      : (() => {
+          throw notYet("anthropic");
+        })();
+  const billing: BillingProvider =
+    modes.stripe === "fake"
+      ? new FakeBilling(deps.now)
+      : (() => {
+          throw notYet("stripe");
+        })();
+  const analytics: Analytics =
+    modes.analytics === "fake"
+      ? new NoopAnalytics()
+      : (() => {
+          throw notYet("analytics");
+        })();
   const kms: KmsAdapter =
     env.KMS_PROVIDER === "local"
       ? new LocalKms(env.LOCAL_MASTER_KEY ?? "")
-      : (() => { throw notYet(`kms-${env.KMS_PROVIDER}`); })();
+      : (() => {
+          throw notYet(`kms-${env.KMS_PROVIDER}`);
+        })();
 
   return {
     ai,

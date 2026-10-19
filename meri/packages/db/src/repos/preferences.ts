@@ -38,7 +38,10 @@ const toView = (row: PreferencesRow): PreferencesView => {
   return rest;
 };
 
-export async function getPreferences(tx: WorkspaceTx, workspaceId: WorkspaceId): Promise<PreferencesView | null> {
+export async function getPreferences(
+  tx: WorkspaceTx,
+  workspaceId: WorkspaceId,
+): Promise<PreferencesView | null> {
   const row = await tx.query.preferences.findFirst({ where: eq(preferences.workspaceId, workspaceId) });
   return row ? toView(row) : null;
 }

@@ -18,6 +18,11 @@ export class LocalKms implements KmsAdapter {
     this.keys = new LocalKeyProvider(masterKeyBase64, "local");
   }
   healthCheck(): Promise<HealthReport> {
-    return Promise.resolve({ provider: "kms", mode: "fake", status: "healthy", detail: "LocalKeyProvider (dev only)" });
+    return Promise.resolve({
+      provider: "kms",
+      mode: "fake",
+      status: "healthy",
+      detail: "LocalKeyProvider (dev only)",
+    });
   }
 }

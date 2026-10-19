@@ -41,8 +41,18 @@ export interface CalendarProvider {
   listCalendars(): Promise<{ id: string; name: string; primary: boolean }[]>;
   /** Returns (or creates) the dedicated "Meri" calendar id. */
   ensureMeriCalendar(): Promise<string>;
-  sync(input: { calendarId: string; cursor: string | null; from: string; to: string }): Promise<CalendarSyncPage>;
+  sync(input: {
+    calendarId: string;
+    cursor: string | null;
+    from: string;
+    to: string;
+  }): Promise<CalendarSyncPage>;
   createMeriEvent(calendarId: string, input: MeriBlockInput): Promise<CalendarEvent>;
-  updateMeriEvent(calendarId: string, externalId: string, input: Partial<MeriBlockInput>, etag: string | null): Promise<CalendarEvent>;
+  updateMeriEvent(
+    calendarId: string,
+    externalId: string,
+    input: Partial<MeriBlockInput>,
+    etag: string | null,
+  ): Promise<CalendarEvent>;
   deleteMeriEvent(calendarId: string, externalId: string): Promise<void>;
 }

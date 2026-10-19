@@ -23,8 +23,16 @@ const dec = (s: string) => Buffer.from(s, "base64url").toString("utf8");
 export function parseEnvelope(blob: string): EnvelopeParts {
   const parts = blob.split(".");
   if (parts.length !== 6) throw new CryptoError("Envelope blob is malformed", "MALFORMED");
-  const [version, keyId, wrappedDek, iv, ciphertext, tag] = parts as [string, string, string, string, string, string];
-  if (version !== VERSION) throw new CryptoError(`Unsupported envelope version "${version}"`, "UNSUPPORTED_VERSION");
+  const [version, keyId, wrappedDek, iv, ciphertext, tag] = parts as [
+    string,
+    string,
+    string,
+    string,
+    string,
+    string,
+  ];
+  if (version !== VERSION)
+    throw new CryptoError(`Unsupported envelope version "${version}"`, "UNSUPPORTED_VERSION");
   return { version, keyId: dec(keyId), wrappedDek, iv, ciphertext, tag };
 }
 
@@ -32,7 +40,11 @@ export function parseEnvelope(blob: string): EnvelopeParts {
  * Encrypt with a fresh random DEK (AES-256-GCM), wrap the DEK with the provider's KEK.
  * `aad` binds the blob to a context (e.g. the integration account id) so blobs cannot be swapped between rows.
  */
-export async function encryptEnvelope(provider: KeyProvider, plaintext: Uint8Array | string, aad?: string): Promise<string> {
+export async function encryptEnvelope(
+  provider: KeyProvider,
+  plaintext: Uint8Array | string,
+  aad?: string,
+): Promise<string> {
   const dek = randomBytes(32);
   const iv = randomBytes(IV_BYTES);
   const cipher = createCipheriv("aes-256-gcm", dek, iv);
@@ -51,7 +63,8 @@ export async function decryptEnvelope(provider: KeyProvider, blob: string, aad?:
   try {
     const iv = unb64(p.iv);
     const tag = unb64(p.tag);
-    if (iv.length !== IV_BYTES || tag.length !== TAG_BYTES) throw new CryptoError("Envelope blob is malformed", "MALFORMED");
+    if (iv.length !== IV_BYTES || tag.length !== TAG_BYTES)
+      throw new CryptoError("Envelope blob is malformed", "MALFORMED");
     const decipher = createDecipheriv("aes-256-gcm", dek, iv);
     if (aad) decipher.setAAD(Buffer.from(aad, "utf8"));
     decipher.setAuthTag(tag);
@@ -65,7 +78,11 @@ export async function decryptEnvelope(provider: KeyProvider, blob: string, aad?:
   }
 }
 
-export async function decryptEnvelopeToString(provider: KeyProvider, blob: string, aad?: string): Promise<string> {
+export async function decryptEnvelopeToString(
+  provider: KeyProvider,
+  blob: string,
+  aad?: string,
+): Promise<string> {
   return (await decryptEnvelope(provider, blob, aad)).toString("utf8");
 }
 

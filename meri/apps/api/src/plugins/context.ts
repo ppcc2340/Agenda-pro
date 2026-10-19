@@ -11,7 +11,9 @@ declare module "fastify" {
 }
 
 export const contextPlugin = fp<{ db: Db }>((app: FastifyInstance, options, done) => {
-  app.decorateRequest("withWorkspace", function withWorkspaceForRequest<T>(this: { session: unknown }, fn: (tx: WorkspaceTx) => Promise<T>) {
+  app.decorateRequest("withWorkspace", function withWorkspaceForRequest<
+    T,
+  >(this: { session: unknown }, fn: (tx: WorkspaceTx) => Promise<T>) {
     const request = this as unknown as Parameters<typeof sessionOf>[0];
     const session = sessionOf(request);
     return withWorkspace(options.db, session.workspaceId, fn);

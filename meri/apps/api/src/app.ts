@@ -5,10 +5,10 @@ import rateLimit from "@fastify/rate-limit";
 import swagger from "@fastify/swagger";
 import Fastify from "fastify";
 import { jsonSchemaTransform, serializerCompiler, validatorCompiler } from "fastify-type-provider-zod";
-import type { AppConfig, Logger } from "@meri/config";
+import { createObservability, type AppConfig, type Logger, type Observability } from "@meri/config";
 import type { Db } from "@meri/db";
 import type { Integrations } from "@meri/integrations";
-import { errorHandler, problemFrom, sendProblem } from "./errors";
+import { createErrorHandler, problemFrom, sendProblem } from "./errors";
 import { contextPlugin } from "./plugins/context";
 import { csrfPlugin } from "./plugins/csrf";
 import { sessionPlugin } from "./plugins/session";
@@ -25,6 +25,7 @@ export interface AppDeps {
   now: () => Date;
   /** Override for tests. */
   rateLimitMax?: number;
+  observability?: Observability;
 }
 
 export const BODY_LIMIT_BYTES = 256 * 1024;
@@ -47,14 +48,28 @@ export async function buildApp(deps: AppDeps) {
 
   app.setValidatorCompiler(validatorCompiler);
   app.setSerializerCompiler(serializerCompiler);
-  app.setErrorHandler(errorHandler);
+  const observability =
+    deps.observability ??
+    createObservability({
+      service: "api",
+      logger: deps.logger,
+      sentryDsn: config.env.SENTRY_DSN,
+      otelEndpoint: config.env.OTEL_EXPORTER_OTLP_ENDPOINT,
+    });
+  app.setErrorHandler(createErrorHandler(observability.errors));
+  app.addHook("onClose", async () => {
+    await observability.shutdown();
+  });
   app.setNotFoundHandler((request, reply) => sendProblem(reply, problemFrom("NOT_FOUND", request.id)));
   app.addHook("onSend", (request, reply, payload, done) => {
     reply.header("x-request-id", request.id);
     done(null, payload);
   });
 
-  await app.register(helmet, { contentSecurityPolicy: false, crossOriginResourcePolicy: { policy: "same-site" } });
+  await app.register(helmet, {
+    contentSecurityPolicy: false,
+    crossOriginResourcePolicy: { policy: "same-site" },
+  });
   await app.register(cookie);
   await app.register(rateLimit, {
     global: true,
@@ -69,7 +84,9 @@ export async function buildApp(deps: AppDeps) {
       openapi: "3.1.0",
       info: { title: "Meri API", version: "0.1.0", description: "Contract: docs/13-api-contract.md" },
       servers: [{ url: config.env.API_URL }],
-      components: { securitySchemes: { session: { type: "apiKey", in: "cookie", name: "authjs.session-token" } } },
+      components: {
+        securitySchemes: { session: { type: "apiKey", in: "cookie", name: "authjs.session-token" } },
+      },
       security: [{ session: [] }],
     },
     transform: jsonSchemaTransform,

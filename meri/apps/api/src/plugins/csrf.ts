@@ -13,7 +13,8 @@ export const CSRF_VALUE = "meri";
  */
 export const csrfPlugin = fp((app: FastifyInstance, _options, done) => {
   app.addHook("preHandler", (request, _reply, next) => {
-    const needsCheck = MUTATING.has(request.method) && request.url.startsWith("/v1/") && request.session !== null;
+    const needsCheck =
+      MUTATING.has(request.method) && request.url.startsWith("/v1/") && request.session !== null;
     if (needsCheck && request.headers[CSRF_HEADER] !== CSRF_VALUE) {
       next(new ApiError("FORBIDDEN", `Missing ${CSRF_HEADER} header.`));
       return;

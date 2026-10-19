@@ -1,0 +1,181 @@
+{
+  "app": {
+    "name": "meri",
+    "tagline": "Organise your work, protect your time.",
+    "skipToContent": "Skip to content",
+    "loading": "Loading…",
+    "errorTitle": "Something went wrong",
+    "errorBody": "We could not load this part. Try again in a few seconds.",
+    "retry": "Retry",
+    "theme": "Switch theme",
+    "language": "Language",
+    "signOut": "Sign out",
+    "demoNote": "Development mode with sample data. Nothing is sent or charged."
+  },
+  "nav": {
+    "hoy": "Today",
+    "entrada": "Inbox",
+    "proyectos": "Projects and commitments",
+    "calendario": "Calendar",
+    "control": "Control centre",
+    "areas": "Areas",
+    "mobile": {
+      "hoy": "Today",
+      "entrada": "Inbox",
+      "agenda": "Agenda",
+      "compromisos": "Commitments",
+      "mas": "More"
+    },
+    "capture": "Capture or search",
+    "captureShortcut": "Ctrl K"
+  },
+  "hoy": {
+    "subtitleCalm": "Your plan fits with margin and nothing is at risk. You can focus.",
+    "q1": "What do I do now?",
+    "q2": "What matters most today?",
+    "q3": "What could go wrong?",
+    "q4": "What am I waiting for from others?",
+    "emptyNowTitle": "No plan for today yet",
+    "emptyNowBody": "Once you have tasks and a connected calendar, Meri will reserve work blocks and you will see them here.",
+    "emptyImportant": "Nothing important pending for today.",
+    "emptyRisksTitle": "No risks in sight",
+    "emptyRisksBody": "If something threatens a deadline, you will see it here with a proposal.",
+    "emptyWaiting": "You are not waiting on anyone right now.",
+    "dayLine": "Your day",
+    "laneCalendar": "Calendar",
+    "lanePlan": "Meri's plan",
+    "legendFixed": "Fixed meeting: Meri never touches it",
+    "legendBlock": "Confirmed work block",
+    "legendSuggested": "Suggested: waiting for your decision"
+  },
+  "entrada": {
+    "subtitle": "Meri proposes, you decide. Nothing here is final until you confirm it.",
+    "emptyTitle": "All caught up",
+    "emptyBody": "When an email with a commitment arrives, or you capture something with Ctrl K, it will show up here for review."
+  },
+  "proyectos": {
+    "subtitle": "What you owe, what you are owed and the time per client.",
+    "tabs": { "compromisos": "Commitments", "clientes": "Clients", "tiempo": "Time" },
+    "emptyTitle": "No commitments yet",
+    "emptyBody": "Commitments you confirm from the Inbox will appear here, split into what you owe and what you are owed."
+  },
+  "calendario": {
+    "subtitle": "Your meetings and the work blocks Meri reserves for you.",
+    "emptyTitle": "Calendar not connected",
+    "emptyBody": "Connect Google Calendar from the Control centre. Meri only creates and moves its own blocks in a separate calendar."
+  },
+  "control": {
+    "subtitle": "What Meri may do on its own, what data it uses and what it has done.",
+    "autonomy": {
+      "title": "Autonomy",
+      "desc": "How much Meri may do without asking you.",
+      "suggest": "Suggest only",
+      "low": "Act on low-risk items",
+      "suggestBody": "Meri proposes and you confirm everything. This is the default.",
+      "lowBody": "Meri may confirm explicit high-confidence commitments and move its own blocks. It never touches meetings or sends email."
+    },
+    "connections": {
+      "title": "Connections",
+      "desc": "Which accounts Meri reads and with which permission.",
+      "calendar": "Google Calendar",
+      "calendarScope": "Reads events, writes only to the “Meri” calendar",
+      "gmail": "Gmail",
+      "gmailScope": "Read and drafts. No send permission",
+      "notConnected": "Not connected",
+      "soon": "Coming soon",
+      "others": "Outlook and Notion",
+      "othersBody": "Arriving after launch"
+    },
+    "credits": {
+      "title": "AI credits",
+      "desc": "Used when reading email and generating drafts and briefings. The planner uses no credits.",
+      "used": "{used} of {cap} this month",
+      "pause": "At the limit, AI pauses while calendar and plan keep working."
+    },
+    "activity": {
+      "title": "Activity",
+      "desc": "Everything Meri did or proposed, with undo.",
+      "empty": "No activity yet. Every automatic action will be recorded here.",
+      "undo": "Undo",
+      "undone": "Undone",
+      "actor": { "user": "You", "system": "System", "ai": "AI" },
+      "actions": {
+        "onboarding_completed": "You completed the initial setup.",
+        "preferences_updated": "You changed your preferences.",
+        "other": "Recorded action: {action}"
+      }
+    },
+    "preferences": {
+      "title": "Preferences",
+      "desc": "Your working hours and contingency margin.",
+      "timezone": "Time zone",
+      "hours": "Working hours",
+      "contingency": "Contingency margin",
+      "edit": "Edit preferences"
+    },
+    "privacy": {
+      "title": "Privacy",
+      "desc": "Your data is yours.",
+      "pause": "Pause email reading",
+      "export": "Export my data",
+      "delete": "Delete my account",
+      "soon": "Available in a later phase."
+    },
+    "plan": { "title": "Plan", "trial": "Trial until {date}", "pro": "Pro plan" }
+  },
+  "login": {
+    "title": "Sign in to Meri",
+    "body": "Never miss a commitment or a deadline. Recover billable hours.",
+    "google": "Continue with Google",
+    "devTitle": "Development sign-in",
+    "devBody": "Google is not connected yet (test mode). Sign in with any email to try the product against simulated services.",
+    "email": "Email",
+    "name": "Name",
+    "devSubmit": "Sign in",
+    "legal": "By continuing you accept the <terms>terms</terms> and the <privacy>privacy policy</privacy>.",
+    "error": "We could not sign you in. Please try again."
+  },
+  "onboarding": {
+    "title": "Before we start",
+    "body": "Three details so the plan is realistic. You can change them in the Control centre.",
+    "timezone": "Time zone",
+    "workStart": "You start work at",
+    "workEnd": "You finish at",
+    "workDays": "Working days",
+    "contingency": "Contingency margin",
+    "contingencyHelp": "Share of the day Meri keeps free. Default 20%.",
+    "submit": "Save and go to Today",
+    "saving": "Saving…",
+    "saved": "Saved. Going to Today.",
+    "errors": { "order": "Start time must be before end time.", "days": "Pick at least one day." },
+    "days": { "0": "S", "1": "M", "2": "T", "3": "W", "4": "T", "5": "F", "6": "S" }
+  },
+  "legal": {
+    "privacyTitle": "Privacy policy (draft)",
+    "termsTitle": "Terms of service (draft)",
+    "draftNote": "This document is a draft and will be reviewed by a person before the beta.",
+    "back": "Back",
+    "privacy": {
+      "p1": "Meri reads your email and calendar only to detect commitments, plan your work and infer billable time. It does not store email bodies: only ids, minimal metadata and a quoted snippet of up to 200 characters.",
+      "p2": "Meri never sends email on your behalf: it only creates drafts. It does not modify meetings with third parties without your explicit confirmation.",
+      "p3": "Data obtained from Google is used solely for the features you see in the app, in line with Google's Limited Use policy. It is never used for advertising or to train general models.",
+      "p4": "You can export and delete all your data from the Control centre. Connections can be revoked at any time.",
+      "p5": "Contact: privacy@ on Meri's domain (domain pending)."
+    },
+    "terms": {
+      "p1": "Meri is an assistance tool. Legal dates and procedural deadlines must always be verified with your own professional judgement.",
+      "p2": "Every automatic action is recorded and can be undone. High-impact actions require your confirmation.",
+      "p3": "The service is offered on a 14-day trial; published plans apply afterwards.",
+      "p4": "Contact: support@ on Meri's domain (domain pending)."
+    }
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "close": "Close",
+    "confirm": "Confirm",
+    "edit": "Edit",
+    "dismiss": "Dismiss",
+    "undo": "Undo"
+  }
+}

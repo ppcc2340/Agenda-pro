@@ -1,5 +1,12 @@
 import { IntegrationError, type HealthReport } from "../errors";
-import type { DraftInput, DraftRef, MailHistoryPage, MailMessageFull, MailMessageMeta, MailProvider } from "../mail/types";
+import type {
+  DraftInput,
+  DraftRef,
+  MailHistoryPage,
+  MailMessageFull,
+  MailMessageMeta,
+  MailProvider,
+} from "../mail/types";
 
 export interface FakeMailOptions {
   email: string;
@@ -40,7 +47,11 @@ export class FakeGmail implements MailProvider {
     }
     const max = input.maxResults ?? 100;
     const ids = this.history.slice(from, from + max);
-    return Promise.resolve({ messageIds: ids, nextCursor: String(from + ids.length), fullResyncRequired: false });
+    return Promise.resolve({
+      messageIds: ids,
+      nextCursor: String(from + ids.length),
+      fullResyncRequired: false,
+    });
   }
 
   getMessageMeta(id: string): Promise<MailMessageMeta> {
@@ -56,7 +67,8 @@ export class FakeGmail implements MailProvider {
   }
 
   createDraft(input: DraftInput): Promise<DraftRef> {
-    if (!this.messages.has(input.inReplyToMessageId)) return Promise.reject(this.notFound(input.inReplyToMessageId));
+    if (!this.messages.has(input.inReplyToMessageId))
+      return Promise.reject(this.notFound(input.inReplyToMessageId));
     const ref: DraftRef = { draftId: `fake-draft-${String(++this.draftCounter)}`, threadId: input.threadId };
     this.drafts.push({ ...ref, ...input });
     return Promise.resolve(ref);

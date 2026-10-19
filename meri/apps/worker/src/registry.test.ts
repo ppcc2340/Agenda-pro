@@ -58,26 +58,42 @@ describe("QueueRegistry with real Redis", () => {
   });
 
   it("rejects a job without the envelope before enqueueing", async () => {
-    const bad = { message: "x" } as unknown as Parameters<typeof registry.enqueue<typeof examplePing.schema>>[1];
+    const bad = { message: "x" } as unknown as Parameters<
+      typeof registry.enqueue<typeof examplePing.schema>
+    >[1];
     await expect(registry.enqueue(examplePing, bad)).rejects.toThrow(/workspaceId/);
   });
 
   it("runs a job, retries transient failures with backoff and reports health", async () => {
-    const job = await registry.enqueue(examplePing, { workspaceId: WS, traceId: "t-1", message: "hola", failTimes: 1 });
+    const job = await registry.enqueue(examplePing, {
+      workspaceId: WS,
+      traceId: "t-1",
+      message: "hola",
+      failTimes: 1,
+    });
     // After the first failed attempt the job is delayed, then retried; wait for the final state only.
     await waitFor(async () => (await job.getState()) === "completed");
     const refreshed = await registry.queue("example.ping").getJob(job.id ?? "");
     expect(refreshed?.attemptsMade).toBe(2);
     const health = await buildHealthServer(registry, logger);
     const res = await health.inject({ url: "/ready" });
-    const body = res.json<{ status: string; queues: Record<string, { active: number }>; deadLetter: number }>();
+    const body = res.json<{
+      status: string;
+      queues: Record<string, { active: number }>;
+      deadLetter: number;
+    }>();
     expect(body.status).toBe("ready");
     expect(typeof body.queues["example.ping"]?.active).toBe("number");
     await health.close();
   });
 
   it("moves a job to the dead-letter queue after the last failed attempt", async () => {
-    const job = await registry.enqueue(examplePing, { workspaceId: WS, traceId: "t-2", message: "boom", failTimes: 10 });
+    const job = await registry.enqueue(examplePing, {
+      workspaceId: WS,
+      traceId: "t-2",
+      message: "boom",
+      failTimes: 10,
+    });
     await waitFor(async () => (await registry.deadLetter.getWaitingCount()) > 0, 15_000);
     const dead = await registry.deadLetter.getWaiting();
     expect(dead.some((d) => (d.data as { failedJobId?: string }).failedJobId === job.id)).toBe(true);
@@ -87,8 +103,18 @@ describe("QueueRegistry with real Redis", () => {
 
   it("sends a malformed payload straight to the dead-letter queue (no retries)", async () => {
     const q = registry.queue("example.ping");
-    const job = await q.add("example.ping", { workspaceId: "not-a-uuid", traceId: "t-3", message: "x" }, { attempts: 5, jobId: `bad-${Date.now().toString(36)}` });
-    await waitFor(async () => (await registry.deadLetter.getWaiting()).some((d) => (d.data as { failedJobId?: string }).failedJobId === job.id), 15_000);
+    const job = await q.add(
+      "example.ping",
+      { workspaceId: "not-a-uuid", traceId: "t-3", message: "x" },
+      { attempts: 5, jobId: `bad-${Date.now().toString(36)}` },
+    );
+    await waitFor(
+      async () =>
+        (await registry.deadLetter.getWaiting()).some(
+          (d) => (d.data as { failedJobId?: string }).failedJobId === job.id,
+        ),
+      15_000,
+    );
     const refreshed = await q.getJob(job.id ?? "");
     expect(refreshed?.attemptsMade).toBe(1);
   });

@@ -12,7 +12,8 @@ export interface BlockerDefinition {
   guide: string;
 }
 
-export const BLOCKERS: readonly BlockerDefinition[] = (blockersManifest as { blockers: BlockerDefinition[] }).blockers;
+export const BLOCKERS: readonly BlockerDefinition[] = (blockersManifest as { blockers: BlockerDefinition[] })
+  .blockers;
 
 export type IntegrationId = "google" | "ai" | "stripe" | "analytics" | "kms";
 export type ResolvedModes = Record<IntegrationId, "fake" | "live">;

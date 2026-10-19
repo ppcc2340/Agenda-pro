@@ -19,20 +19,31 @@ export class FakeAiClient implements AiClient {
   }
 
   healthCheck(): Promise<HealthReport> {
-    return Promise.resolve({ provider: "anthropic", mode: "fake", status: "healthy", detail: "FakeAiClient" });
+    return Promise.resolve({
+      provider: "anthropic",
+      mode: "fake",
+      status: "healthy",
+      detail: "FakeAiClient",
+    });
   }
 
   complete<T extends z.ZodTypeAny>(request: StructuredRequest<T>): Promise<StructuredResponse<z.infer<T>>> {
     const handler = this.handlers.get(request.operation);
     if (!handler) {
-      return Promise.reject(new IntegrationError("Permanent", "anthropic", `no fake handler for operation ${request.operation}`));
+      return Promise.reject(
+        new IntegrationError("Permanent", "anthropic", `no fake handler for operation ${request.operation}`),
+      );
     }
     this.calls.push({ operation: request.operation, model: request.model, user: request.user });
     const raw = handler({ operation: request.operation, system: request.system, user: request.user });
     const parsed = request.schema.safeParse(raw);
     if (!parsed.success) {
       return Promise.reject(
-        new IntegrationError("Permanent", "anthropic", `fake output failed schema validation: ${parsed.error.message}`),
+        new IntegrationError(
+          "Permanent",
+          "anthropic",
+          `fake output failed schema validation: ${parsed.error.message}`,
+        ),
       );
     }
     const inputTokens = Math.ceil((request.system.length + request.user.length) / 4);

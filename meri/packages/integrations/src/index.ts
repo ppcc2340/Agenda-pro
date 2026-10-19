@@ -1,4 +1,9 @@
-export { IntegrationError, type IntegrationErrorKind, type ConnectionStatus, type HealthReport } from "./errors";
+export {
+  IntegrationError,
+  type IntegrationErrorKind,
+  type ConnectionStatus,
+  type HealthReport,
+} from "./errors";
 export * from "./calendar/types";
 export * from "./mail/types";
 export * from "./ai/types";

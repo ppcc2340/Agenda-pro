@@ -12,10 +12,18 @@ export const PlannerTask = z.object({
   kind: z.enum(["deep", "shallow"]),
   estimateMinutes: z.number().int().positive(),
   remainingMinutes: z.number().int().nonnegative().optional(), // defaults to estimateMinutes
-  dueAt: z.string().datetime().nullable(),          // ISO UTC
+  dueAt: z.string().datetime().nullable(), // ISO UTC
   deadlineType: z.enum(["soft", "hard"]).default("soft"),
   blockedBy: z.array(z.string()).default([]),
-  status: z.enum(["pending", "scheduled", "in_progress", "blocked", "waiting_on_third_party", "at_risk", "completed"]),
+  status: z.enum([
+    "pending",
+    "scheduled",
+    "in_progress",
+    "blocked",
+    "waiting_on_third_party",
+    "at_risk",
+    "completed",
+  ]),
 });
 export type PlannerTask = z.infer<typeof PlannerTask>;
 
@@ -37,7 +45,7 @@ export const ExistingBlock = z.object({
 export type ExistingBlock = z.infer<typeof ExistingBlock>;
 
 export const PlannerPreferences = z.object({
-  timezone: z.string(),                       // IANA, e.g. "America/Santiago"
+  timezone: z.string(), // IANA, e.g. "America/Santiago"
   workStart: z.string().regex(/^\d{2}:\d{2}$/),
   workEnd: z.string().regex(/^\d{2}:\d{2}$/),
   workDays: z.array(z.number().int().min(0).max(6)),
@@ -51,7 +59,7 @@ export const PlannerPreferences = z.object({
 export type PlannerPreferences = z.infer<typeof PlannerPreferences>;
 
 export const PlanInput = z.object({
-  now: z.string().datetime(),                 // injected clock
+  now: z.string().datetime(), // injected clock
   horizonStart: z.string().datetime(),
   horizonEnd: z.string().datetime(),
   tasks: z.array(PlannerTask),
@@ -64,8 +72,15 @@ export type PlanInput = z.infer<typeof PlanInput>;
 /** Structured, i18n-friendly explanation. The UI translates `code` + `params`. */
 export interface Reason {
   code:
-    | "DEADLINE_SLACK_LOW" | "DEADLINE_HARD" | "HIGH_PRIORITY" | "UNBLOCKS_OTHERS"
-    | "DEEP_WORK_WINDOW" | "FILLS_GAP" | "PINNED_BY_USER" | "KEPT_STABLE" | "DEPENDENCY_ORDER";
+    | "DEADLINE_SLACK_LOW"
+    | "DEADLINE_HARD"
+    | "HIGH_PRIORITY"
+    | "UNBLOCKS_OTHERS"
+    | "DEEP_WORK_WINDOW"
+    | "FILLS_GAP"
+    | "PINNED_BY_USER"
+    | "KEPT_STABLE"
+    | "DEPENDENCY_ORDER";
   params: Record<string, string | number | boolean>;
 }
 
@@ -78,7 +93,7 @@ export interface PlannedBlock {
 }
 
 export type ConflictCode =
-  | "CIRCULAR_DEPENDENCY" | "OVERLOAD" | "DEADLINE_INFEASIBLE" | "NO_CAPACITY" | "DEPENDENCY_AFTER_DEADLINE";
+  "CIRCULAR_DEPENDENCY" | "OVERLOAD" | "DEADLINE_INFEASIBLE" | "NO_CAPACITY" | "DEPENDENCY_AFTER_DEADLINE";
 
 export interface Conflict {
   code: ConflictCode;
@@ -96,7 +111,11 @@ export interface RiskItem {
 export interface PlanDiff {
   added: PlannedBlock[];
   removed: { taskId: string; startsAt: string; endsAt: string }[];
-  moved: { taskId: string; from: { startsAt: string; endsAt: string }; to: { startsAt: string; endsAt: string } }[];
+  moved: {
+    taskId: string;
+    from: { startsAt: string; endsAt: string };
+    to: { startsAt: string; endsAt: string };
+  }[];
 }
 
 export interface PlanResult {

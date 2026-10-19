@@ -26,7 +26,12 @@ export class FakeCalendar implements CalendarProvider {
   }
 
   healthCheck(): Promise<HealthReport> {
-    return Promise.resolve({ provider: "google-calendar", mode: "fake", status: "healthy", detail: "FakeCalendar" });
+    return Promise.resolve({
+      provider: "google-calendar",
+      mode: "fake",
+      status: "healthy",
+      detail: "FakeCalendar",
+    });
   }
 
   listCalendars(): Promise<{ id: string; name: string; primary: boolean }[]> {
@@ -41,11 +46,21 @@ export class FakeCalendar implements CalendarProvider {
   }
 
   /** Cursor = version number; events changed after the cursor are returned. */
-  sync(input: { calendarId: string; cursor: string | null; from: string; to: string }): Promise<CalendarSyncPage> {
+  sync(input: {
+    calendarId: string;
+    cursor: string | null;
+    from: string;
+    to: string;
+  }): Promise<CalendarSyncPage> {
     const since = input.cursor ? Number(input.cursor) : -1;
-    if (Number.isNaN(since)) return Promise.resolve({ events: [], nextCursor: null, fullResyncRequired: true });
+    if (Number.isNaN(since))
+      return Promise.resolve({ events: [], nextCursor: null, fullResyncRequired: true });
     const events = [...this.events.values()].filter(
-      (e) => e.calendarId === input.calendarId && Number(e.etag) > since && e.endsAt >= input.from && e.startsAt <= input.to,
+      (e) =>
+        e.calendarId === input.calendarId &&
+        Number(e.etag) > since &&
+        e.endsAt >= input.from &&
+        e.startsAt <= input.to,
     );
     return Promise.resolve({ events, nextCursor: String(this.version), fullResyncRequired: false });
   }
@@ -68,11 +83,18 @@ export class FakeCalendar implements CalendarProvider {
     return Promise.resolve(event);
   }
 
-  updateMeriEvent(calendarId: string, externalId: string, input: Partial<MeriBlockInput>, etag: string | null): Promise<CalendarEvent> {
+  updateMeriEvent(
+    calendarId: string,
+    externalId: string,
+    input: Partial<MeriBlockInput>,
+    etag: string | null,
+  ): Promise<CalendarEvent> {
     const current = this.requireMeri(calendarId, externalId);
     if (current instanceof IntegrationError) return Promise.reject(current);
     if (etag !== null && current.etag !== etag) {
-      return Promise.reject(new IntegrationError("Transient", "google-calendar", "412 Precondition Failed: etag mismatch"));
+      return Promise.reject(
+        new IntegrationError("Transient", "google-calendar", "412 Precondition Failed: etag mismatch"),
+      );
     }
     const updated: CalendarEvent = {
       ...current,
@@ -118,7 +140,11 @@ export class FakeCalendar implements CalendarProvider {
       return new IntegrationError("Permanent", "google-calendar", `event ${externalId} not found`);
     }
     if (!current.meri) {
-      return new IntegrationError("Permanent", "google-calendar", `refusing to modify non-Meri event ${externalId}`);
+      return new IntegrationError(
+        "Permanent",
+        "google-calendar",
+        `refusing to modify non-Meri event ${externalId}`,
+      );
     }
     return current;
   }
