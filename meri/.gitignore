@@ -25,3 +25,4 @@ evals/reports/*.json
 .DS_Store
 *.log
 **/e2e/.results/
+backups/

@@ -50,6 +50,8 @@ jobs:
           cache: pnpm
           cache-dependency-path: meri/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
+      - name: PostgreSQL 16 client (backup/restore tests, ADR 0007)
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client-16
       - name: Dev configuration (fake modes, no secrets)
         run: cp .env.example .env
       - name: Create test database

@@ -33,7 +33,7 @@ describe("pnpm keys:rotate (ADR 0007)", () => {
             {
               provider: "google",
               externalAccountId: `kr-${label}-${Date.now().toString(36)}`,
-              email: null,
+              email: `kr-${label}@test.local`,
               scopes: [],
               encryptedTokens: "pending",
               keyId: old.keyId,

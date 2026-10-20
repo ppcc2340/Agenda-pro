@@ -1,5 +1,15 @@
 {
   "extends": "../tsconfig.base.json",
-  "compilerOptions": { "noEmit": true, "declaration": false, "types": ["node"] },
-  "include": ["demo-seed.ts", "seed-perf.ts", "report-margins.ts", "e2e-fixtures.ts", "test/**/*.ts", "vitest.config.ts"]
+  "compilerOptions": {
+    "noEmit": true,
+    "declaration": false,
+    "types": [
+      "node"
+    ]
+  },
+  "include": [
+    "*.ts",
+    "lib/**/*.ts",
+    "test/**/*.ts"
+  ]
 }

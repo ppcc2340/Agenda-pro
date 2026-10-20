@@ -1,0 +1,63 @@
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { KeyRing, LocalKeyProvider, localKeyId } from "@meri/config/crypto";
+import { createDb } from "@meri/db";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { renderDrillReport, runDrill } from "../dr-drill";
+import { createBackup, restoreBackup } from "../lib/backup";
+
+// The admin OWNER role (not a superuser locally): backups must work under FORCE RLS (plan review CR-H2).
+const ADMIN = process.env.DATABASE_ADMIN_URL_TEST ?? "postgres://meri:meri@localhost:5432/meri_test";
+const k = Buffer.alloc(32, 81).toString("base64");
+const keys = new KeyRing(new LocalKeyProvider(k, localKeyId(k)));
+const NOW = new Date("2026-10-20T08:40:00Z");
+
+const dbUrl = (name: string) => {
+  const u = new URL(ADMIN);
+  u.pathname = `/${name}`;
+  return u.toString();
+};
+
+describe("encrypted backup and restore (ADR 0007, P5-03/P5-10)", () => {
+  let work: string;
+  const target = `meri_restore_${Date.now().toString(36)}`;
+  const admin = createDb(ADMIN, { max: 1 });
+  beforeAll(async () => {
+    work = await mkdtemp(join(tmpdir(), "meri-bk-test-"));
+    await admin.sql.unsafe(`create database "${target}"`);
+  });
+  afterAll(async () => {
+    await admin.sql.unsafe(`drop database if exists "${target}" with (force)`);
+    await admin.close();
+    await rm(work, { recursive: true, force: true });
+  });
+
+  it("backs up every tenant row under FORCE RLS and restores an identical database", async () => {
+    const backup = await createBackup({ adminUrl: ADMIN, keys, out: join(work, "t.mbk"), now: NOW });
+    expect(backup.manifest.migrations).toBeGreaterThanOrEqual(18);
+    expect(backup.manifest.tables.audit_log ?? 0).toBeGreaterThan(0);
+    expect(backup.keyId).toBe(keys.keyId);
+    const restored = await restoreBackup({ file: backup.path, targetUrl: dbUrl(target), keys });
+    expect(restored.mismatches).toEqual([]);
+    // RLS survives the restore: policies are part of the dump.
+    const check = createDb(dbUrl(target), { max: 1 });
+    try {
+      const [row] = await check.sql<{ n: string }[]>`select count(*)::text as n from pg_policies where policyname = 'ws_isolation'`;
+      expect(Number(row?.n ?? 0)).toBeGreaterThan(20);
+    } finally {
+      await check.close();
+    }
+    // A second restore into the now non-empty database is refused before anything is touched.
+    await expect(restoreBackup({ file: backup.path, targetUrl: dbUrl(target), keys })).rejects.toThrow(/not empty/);
+  });
+
+  it("the drill measures backup and restore into a scratch database and cleans it up", async () => {
+    const result = await runDrill({ adminUrl: ADMIN, keys, now: NOW });
+    expect(result.verified).toBe(true);
+    expect(result.rows).toBeGreaterThan(0);
+    expect(renderDrillReport(result)).toContain("| Recuentos verificados | sí |");
+    const [left] = await admin.sql<{ n: string }[]>`select count(*)::text as n from pg_database where datname like 'meri_drill_%'`;
+    expect(Number(left?.n ?? 1)).toBe(0);
+  });
+});
