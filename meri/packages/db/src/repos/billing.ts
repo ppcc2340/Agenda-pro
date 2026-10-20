@@ -394,3 +394,8 @@ export async function listCancellationFeedback(
     .where(eq(cancellationFeedback.workspaceId, workspaceId))
     .orderBy(desc(cancellationFeedback.createdAt));
 }
+
+/** Moves the local trial end (demo seed and operator tooling only; the bootstrap sets the 14-day default). */
+export async function setTrialEndsAt(tx: WorkspaceTx, workspaceId: WorkspaceId, trialEndsAt: Date): Promise<void> {
+  await tx.update(subscriptions).set({ trialEndsAt }).where(eq(subscriptions.workspaceId, workspaceId));
+}

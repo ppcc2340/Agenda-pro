@@ -27,12 +27,14 @@ import {
   upsertContact,
   upsertIntegrationAccount,
   setSyncCursor,
+  setTrialEndsAt,
+  updateCommitment,
   upsertThread,
   withWorkspace,
   type WorkspaceId,
 } from "@meri/db";
 import { CALENDAR_SCOPES, DEMO_MAIL_MESSAGE_COUNT, DEMO_MAIL_THREADS, GMAIL_SCOPES, createIntegrations, demoMailDate, demoMessageId, demoThreadId } from "@meri/integrations";
-import { encryptTokens, inferTime, runReplan, scanFollowups, type HandlerDeps } from "@meri/jobs";
+import { encryptTokens, inferTime, recordCommitmentSaved, recordTimeRecovered, runReplan, scanFollowups, type HandlerDeps } from "@meri/jobs";
 
 export const DEMO_EMAIL = DEMO_USER.email;
 export const DEMO_TIMEZONE = "Europe/Madrid";
@@ -204,7 +206,17 @@ export async function seedDemo(options: { now: Date; reset?: boolean; databaseUr
         );
         if (created) proposalsSeeded++;
       }
-      return { clients: CLIENTS.length, tasks: tasksSeeded, events: events.length, commitments: 6, proposals: proposalsSeeded };
+      // A commitment the user already fulfilled on time (Phase 4 value report): the same path as the API.
+      const fulfilledAt = new Date(now.getTime() - 86_400_000);
+      const sent = await commit({ client: "norte", dir: "owed_by_me", action: "Enviar el acta de la reunión", who: PEOPLE[2], due: at(0, 18), status: "confirmed", kind: "explicit", confidence: 0.95, evidence: null, thread: null });
+      if (sent) {
+        await updateCommitment(tx, ws, sent.id, { status: "fulfilled" }, fulfilledAt);
+        await audit(tx, actorUser, { action: "commitment.fulfilled", entityType: "commitment", entityId: sent.id, before: { status: "confirmed" }, after: { status: "fulfilled" } });
+        await recordCommitmentSaved(tx, ws, { id: sent.id, dueAt: sent.dueAt }, fulfilledAt);
+      }
+      // Trial with 9 days left (PROTOTYPE/phase 4 demo: the Plan panel shows a live trial).
+      await setTrialEndsAt(tx, ws, new Date(now.getTime() + 9 * 86_400_000));
+      return { clients: CLIENTS.length, tasks: tasksSeeded, events: events.length, commitments: 7, proposals: proposalsSeeded };
     });
 
     // Derived data through the real handlers: today's plan, inferred time, follow-ups.
@@ -218,7 +230,11 @@ export async function seedDemo(options: { now: Date; reset?: boolean; databaseUr
         `${String(d.year)}-${String(d.month).padStart(2, "0")}-${String(d.day).padStart(2, "0")}`;
       const entries = await listTimeEntries(tx, ws, { from: dayKey(addLocalDays(local, -6)), to: dayKey(addLocalDays(local, -1)) });
       const approved = await setTimeEntriesStatus(tx, ws, entries.map((e) => e.id), "approved", new Date(now.getTime() - 86_400_000));
-      for (const e of approved) await audit(tx, actorUser, { action: "time.approved", entityType: "time_entry", entityId: e.id, before: { status: "suggested" }, after: { status: "approved", minutes: e.minutes } });
+      const approvedAt = new Date(now.getTime() - 86_400_000);
+      for (const e of approved) {
+        await audit(tx, actorUser, { action: "time.approved", entityType: "time_entry", entityId: e.id, before: { status: "suggested" }, after: { status: "approved", minutes: e.minutes } });
+        await recordTimeRecovered(tx, ws, e, approvedAt);
+      }
     });
     return { status: "seeded", workspaceId: ws, counts };
   } finally {

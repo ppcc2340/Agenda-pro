@@ -13,6 +13,10 @@ export const DEMO_EMAIL = "demo@meri.local";
 export const SHOTS = path.resolve(here, "../../../docs/prototype");
 
 export async function expectAccessible(page: Page, name: string): Promise<void> {
+  // Never analyse a document mid-navigation (a router refresh can swap it): wait for the app's own <html>.
+  await page.waitForFunction(() => document.title !== "" && document.documentElement.lang !== "", undefined, {
+    timeout: 15_000,
+  });
   const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
   const serious = results.violations.filter((v) => v.impact === "serious" || v.impact === "critical");
   expect(serious, `${name}: ${serious.map((v) => `${v.id} (${v.nodes.length})`).join(", ")}`).toEqual([]);

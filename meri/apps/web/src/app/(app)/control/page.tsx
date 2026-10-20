@@ -1,7 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { AutonomySelector } from "@/components/control/autonomy";
-import { CreditsPanel } from "@/components/control/credits";
 import { PlanPanel } from "@/components/billing/plan-panel";
 import { ValueReportPanel } from "@/components/billing/value-report";
 import { WeeklyReviewPanel } from "@/components/billing/weekly-review";
@@ -90,9 +89,6 @@ export default async function ControlPage() {
       </Panel>
       <Panel title={t("plan.title")} desc={t("plan.desc")}>
         <PlanPanel />
-      </Panel>
-      <Panel title={t("credits.title")} desc={t("credits.desc")}>
-        <CreditsPanel />
       </Panel>
       <Panel title={t("value.title")} desc={t("value.desc")}>
         <ValueReportPanel />

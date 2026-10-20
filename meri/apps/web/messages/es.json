@@ -1099,14 +1099,14 @@
       "dayOff": "{day}: día no laborable",
       "dayLoad": "{day}: {planned} h planificadas de {capacity} h disponibles",
       "totals": "{planned} h planificadas de {capacity} h · {done} h hechas",
-      "trend": "{pct, number}% de carga frente a la semana pasada",
+      "trend": "{delta} de carga planificada frente a la semana pasada",
       "estimates": "Estimado frente a real",
       "noEstimates": "Aún no hay tareas terminadas con estimación esta semana.",
       "task": "Tarea",
       "estimated": "Estimado",
       "actual": "Real",
       "minutes": "{n} min",
-      "median": "Desviación típica de tus estimaciones: {pct} %."
+      "median": "Desviación mediana de tus estimaciones: {pct} %."
     },
     "daily": {
       "title": "Cierre del día",

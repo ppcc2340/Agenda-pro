@@ -1099,14 +1099,14 @@
       "dayOff": "{day}: day off",
       "dayLoad": "{day}: {planned} h planned of {capacity} h available",
       "totals": "{planned} h planned of {capacity} h · {done} h done",
-      "trend": "{pct, number}% load versus last week",
+      "trend": "{delta} planned load versus last week",
       "estimates": "Estimate versus actual",
       "noEstimates": "No finished tasks with an estimate this week yet.",
       "task": "Task",
       "estimated": "Estimate",
       "actual": "Actual",
       "minutes": "{n} min",
-      "median": "Typical deviation of your estimates: {pct} %."
+      "median": "Median deviation of your estimates: {pct} %."
     },
     "daily": {
       "title": "Day close",

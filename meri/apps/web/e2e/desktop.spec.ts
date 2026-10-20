@@ -214,7 +214,8 @@ test("9. Control centre: autonomy, connections, credits, activity with undo, pri
   await expect(page.getByText(/demo: cuenta simulada/i).first()).toBeVisible();
   await expect(page.getByText(/outlook y notion/i)).toBeVisible();
   await expect(page.getByText(/próximamente/i)).toBeVisible();
-  await expect(page.getByRole("heading", { name: /créditos de ia/i })).toBeVisible();
+  // Phase 4: the month's AI credits live in the Plan panel (D-067).
+  await expect(page.locator("#plan").getByText(/créditos este mes/i)).toBeVisible();
   await expect(page.locator("li", { hasText: /cambiaste la autonomía/i }).first()).toBeVisible();
   await expect(page.locator("li").filter({ has: page.getByRole("button", { name: /deshacer/i }) }).first()).toBeVisible();
   await shot(page, "desktop-control");

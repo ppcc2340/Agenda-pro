@@ -54,7 +54,14 @@ export function WeeklyReviewPanel() {
         })}
       </p>
       {w.trend && w.trend.plannedDeltaPct !== null ? (
-        <p className="text-[13px] text-ink3">{t("trend", { pct: w.trend.plannedDeltaPct })}</p>
+        <p className="text-[13px] text-ink3">
+          {t("trend", {
+            delta: format.number(w.trend.plannedDeltaPct / 100, {
+              style: "percent",
+              signDisplay: "exceptZero",
+            }),
+          })}
+        </p>
       ) : null}
       <h4 className="mt-4 text-[14px]">{t("estimates")}</h4>
       {w.estimates.length === 0 ? (

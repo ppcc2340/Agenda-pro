@@ -77,7 +77,7 @@ export function PlanComparator({
               ) : null}
               <ul className="mt-3 flex-1 space-y-1.5 text-[13.5px]">
                 {[
-                  t("features.credits", { n: plan.aiCreditsMonthly }),
+                  t("features.credits", { n: format.number(plan.aiCreditsMonthly) }),
                   t("features.clients", { n: plan.maxClients }),
                   t("features.retention", { n: plan.retentionDays }),
                   plan.briefingsMonthly === null
@@ -112,7 +112,7 @@ export function PlanComparator({
         })}
       </ul>
       <p className="mt-3 text-[12.5px] text-ink3">
-        {t("trialNote", { credits: PLANS.trial.aiCreditsMonthly })}
+        {t("trialNote", { credits: format.number(PLANS.trial.aiCreditsMonthly) })}
       </p>
     </div>
   );

@@ -1,6 +1,7 @@
 export { EnvSchema, parseEnv, ConfigError, type Env } from "./env";
 export {
   resolveModes,
+  isProductionEnv,
   BLOCKERS,
   type BlockerDefinition,
   type IntegrationId,

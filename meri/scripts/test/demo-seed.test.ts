@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createDb, latestPlanRun, listAudit, listBlocks, listCalendarEvents, listClients, listProposals, listTasks, listTimeEntries, withWorkspace, type WorkspaceId } from "@meri/db";
+import { createDb, getSubscription, latestPlanRun, listAudit, listValueEvents, listBlocks, listCalendarEvents, listClients, listProposals, listTasks, listTimeEntries, withWorkspace, type WorkspaceId } from "@meri/db";
 import { seedDemo } from "../demo-seed";
 
 const TEST_APP_URL = process.env.DATABASE_URL_TEST ?? "postgres://meri_app:meri_app@localhost:5432/meri_test";
@@ -11,7 +11,7 @@ describe("pnpm demo:seed (PROTOTYPE.md, D-048)", () => {
   it("seeds the demo workspace through the real repos and handlers, deterministically and idempotently", async () => {
     const first = await seedDemo({ now: NOW, reset: true, databaseUrl: TEST_APP_URL, adminUrl: TEST_ADMIN_URL, env });
     expect(first.status).toBe("seeded");
-    expect(first.counts).toEqual({ clients: 4, tasks: 9, events: 7, commitments: 6, proposals: 3 });
+    expect(first.counts).toEqual({ clients: 4, tasks: 9, events: 7, commitments: 7, proposals: 3 });
     const again = await seedDemo({ now: NOW, databaseUrl: TEST_APP_URL, env });
     expect(again).toEqual({ status: "skipped", workspaceId: first.workspaceId });
     const handle = createDb(TEST_APP_URL, { max: 1 });
@@ -42,6 +42,18 @@ describe("pnpm demo:seed (PROTOTYPE.md, D-048)", () => {
       expect(plan).not.toBeNull();
       expect(activity.items.some((a) => a.action === "plan.generated")).toBe(true);
       expect(activity.items.filter((a) => a.action === "time.approved")).toHaveLength(3);
+      // Phase 4: the value report and the trial come from the same paths as the product.
+      const [value, sub] = await withWorkspace(handle.db, ws, (tx) =>
+        Promise.all([
+          listValueEvents(tx, ws, { from: new Date("2026-10-01T00:00:00Z"), to: new Date("2026-11-01T00:00:00Z") }),
+          getSubscription(tx, ws),
+        ]),
+      );
+      const byType = (type: string) => value.filter((v) => v.type === type);
+      expect(byType("commitment_saved")).toMatchObject([{ method: "commitment_fulfilled_on_time", label: "Enviar el acta de la reunión" }]);
+      expect(byType("untracked_time_recovered")).toHaveLength(3);
+      expect(byType("deadline_risk_flagged").length).toBeGreaterThanOrEqual(1);
+      expect(sub?.trialEndsAt?.toISOString()).toBe(new Date(NOW.getTime() + 9 * 86_400_000).toISOString());
     } finally {
       await handle.close();
     }
