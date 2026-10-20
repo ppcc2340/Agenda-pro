@@ -20,7 +20,7 @@ describe("analytics flow (D-065, [M9]): ids and enums only, after the fact", () 
       method: "POST",
       url: "/internal/auth/bootstrap",
       headers: { "x-internal-secret": INTERNAL_SECRET },
-      payload: { email, name: "Laura Flores" },
+      payload: { email, subject: `dev:${email}`, name: "Laura Flores" },
     });
     expect(boot.statusCode).toBe(200);
     const account = boot.json<{ userId: string; workspaceId: string; email: string }>();
@@ -32,7 +32,7 @@ describe("analytics flow (D-065, [M9]): ids and enums only, after the fact", () 
       method: "POST",
       url: "/internal/auth/bootstrap",
       headers: { "x-internal-secret": INTERNAL_SECRET },
-      payload: { email },
+      payload: { email, subject: `dev:${email}` },
     });
     expect(of(ws, "signup")).toHaveLength(1);
 

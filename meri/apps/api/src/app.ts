@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import cookie from "@fastify/cookie";
 import helmet from "@fastify/helmet";
 import rateLimit from "@fastify/rate-limit";
+import type { Redis } from "ioredis";
 import swagger from "@fastify/swagger";
 import Fastify from "fastify";
 import { jsonSchemaTransform, serializerCompiler, validatorCompiler } from "fastify-type-provider-zod";
@@ -22,12 +23,15 @@ import { csrfPlugin } from "./plugins/csrf";
 import { sessionPlugin } from "./plugins/session";
 import { accountGuardPlugin } from "./plugins/account-guard";
 import { accountRoutes } from "./routes/account";
+import { accountSessionRoutes } from "./routes/account-sessions";
 import { healthRoutes } from "./routes/health";
 import { internalRoutes } from "./routes/internal";
 import { taskRoutes } from "./routes/tasks";
 import { captureRoutes } from "./routes/capture";
 import { proposalRoutes } from "./routes/proposals";
 import { integrationRoutes } from "./routes/integrations";
+import { integrationOAuthRoutes } from "./routes/integrations-oauth";
+import { deriveStateKey } from "./plugins/oauth-state";
 import { idempotencyPlugin } from "./plugins/idempotency";
 import { planRoutes } from "./routes/plan";
 import { notificationRoutes } from "./routes/notifications";
@@ -54,6 +58,11 @@ export interface AppDeps {
   now: () => Date;
   /** Override for tests. */
   rateLimitMax?: number;
+  /**
+   * Shared rate-limit store (ADR 0007): its own connection, never BullMQ's (that one retries forever). Without it
+   * (tests) the limiter keeps per-process counters.
+   */
+  rateLimitRedis?: Redis;
   observability?: Observability;
   flags?: FeatureFlagStore;
   dispatcher: JobDispatcher;
@@ -115,6 +124,14 @@ export async function buildApp(deps: AppDeps) {
     global: true,
     max: deps.rateLimitMax ?? 300,
     timeWindow: "1 minute",
+    ...(deps.rateLimitRedis
+      ? {
+          redis: deps.rateLimitRedis,
+          nameSpace: "meri-rl:",
+          // Availability over limiting when Redis is down (documented in docs/runbooks/provider-outage.md).
+          skipOnError: true,
+        }
+      : {}),
     // Keyed by user when authenticated, by IP otherwise (docs/12 §3).
     keyGenerator: (request) => (request.session ? `u:${request.session.userId}` : `ip:${request.ip}`),
     // Internal routes are secret-authenticated server-to-server calls: every login from the web server would
@@ -137,7 +154,7 @@ export async function buildApp(deps: AppDeps) {
 
   await app.register(sessionPlugin, { secret: config.env.AUTH_SECRET, secure: config.isProduction });
   await app.register(accountGuardPlugin, { db: deps.db });
-  await app.register(csrfPlugin);
+  await app.register(csrfPlugin, { allowedOrigins: [config.env.APP_URL, config.env.API_URL] });
   await app.register(contextPlugin, { db: deps.db });
   await app.register(idempotencyPlugin, { now: deps.now });
 
@@ -148,6 +165,7 @@ export async function buildApp(deps: AppDeps) {
     now: deps.now,
     analytics: deps.integrations.analytics,
   });
+  await app.register(accountSessionRoutes, { db: deps.db });
   await app.register(accountRoutes, {
     db: deps.db,
     now: deps.now,
@@ -158,7 +176,7 @@ export async function buildApp(deps: AppDeps) {
     analytics: deps.integrations.analytics,
   });
   await app.register(taskRoutes, { now: deps.now, onTasksChanged: deps.onTasksChanged });
-  await app.register(integrationRoutes, {
+  const integrationOptions = {
     now: deps.now,
     db: deps.db,
     oauth: deps.integrations.oauth,
@@ -169,6 +187,11 @@ export async function buildApp(deps: AppDeps) {
     secureCookies: config.isProduction,
     calendarChannelToken: config.env.GOOGLE_CALENDAR_CHANNEL_TOKEN,
     analytics: deps.integrations.analytics,
+  };
+  await app.register(integrationRoutes, integrationOptions);
+  await app.register(integrationOAuthRoutes, {
+    ...integrationOptions,
+    stateKey: deriveStateKey(config.env.AUTH_SECRET),
   });
   await app.register(captureRoutes, {
     now: deps.now,

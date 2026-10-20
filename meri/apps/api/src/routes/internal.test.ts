@@ -33,7 +33,7 @@ describe("POST /internal/auth/bootstrap (ADR 0001)", () => {
       method: "POST",
       url: "/internal/auth/bootstrap",
       headers,
-      payload: { email, name: "Boot" },
+      payload: { email, subject: `dev:${email}`, name: "Boot" },
     });
     expect(first.statusCode).toBe(200);
     expect(first.json()).toMatchObject({ email, name: "Boot", created: true, locale: "es" });
@@ -41,17 +41,79 @@ describe("POST /internal/auth/bootstrap (ADR 0001)", () => {
       method: "POST",
       url: "/internal/auth/bootstrap",
       headers,
-      payload: { email },
+      payload: { email, subject: `dev:${email}` },
     });
     expect(second.json()).toMatchObject({ created: false, userId: first.json<{ userId: string }>().userId });
     const invalid = await t.app.inject({
       method: "POST",
       url: "/internal/auth/bootstrap",
       headers,
-      payload: { email: "not-an-email" },
+      payload: { email: "not-an-email", subject: "dev:x" },
     });
     expect(invalid.statusCode).toBe(400);
     expect(invalid.json()).toMatchObject({ code: "VALIDATION_FAILED" });
+    const noSubject = await t.app.inject({ method: "POST", url: "/internal/auth/bootstrap", headers, payload: { email } });
+    expect(noSubject.statusCode).toBe(400);
+  });
+
+  it("binds the account to the provider identity: a recycled address with another subject is refused (ADR 0007)", async () => {
+    const email = `recycled-${Date.now().toString(36)}@test.local`;
+    const headers = { [INTERNAL_HEADER]: INTERNAL_SECRET };
+    const boot = (subject: string) =>
+      t.app.inject({ method: "POST", url: "/internal/auth/bootstrap", headers, payload: { email, subject } });
+    const run = Date.now().toString(36);
+    expect((await boot(`google:111-${run}`)).statusCode).toBe(200);
+    expect((await boot(`google:111-${run}`)).json()).toMatchObject({ created: false });
+    const other = await boot(`google:222-${run}`);
+    expect(other.statusCode).toBe(409);
+    expect(other.json()).toMatchObject({ code: "CONFLICT" });
+  });
+
+  it("follows a renamed Google account by its subject instead of creating a second account", async () => {
+    const run = Date.now().toString(36);
+    const headers = { [INTERNAL_HEADER]: INTERNAL_SECRET };
+    const boot = (email: string) =>
+      t.app.inject({
+        method: "POST",
+        url: "/internal/auth/bootstrap",
+        headers,
+        payload: { email, subject: `google:renamed-${run}` },
+      });
+    const first = await boot(`old-${run}@test.local`);
+    const renamed = await boot(`new-${run}@test.local`);
+    expect(renamed.statusCode).toBe(200);
+    expect(renamed.json()).toMatchObject({
+      created: false,
+      email: `new-${run}@test.local`,
+      userId: first.json<{ userId: string }>().userId,
+    });
+  });
+
+  it("limits bootstrap calls per email after the body is read, not per web-server IP", async () => {
+    const headers = { [INTERNAL_HEADER]: INTERNAL_SECRET };
+    const email = `burst-${Date.now().toString(36)}@test.local`;
+    const codes: number[] = [];
+    for (let i = 0; i < 31; i++)
+      codes.push(
+        (
+          await t.app.inject({
+            method: "POST",
+            url: "/internal/auth/bootstrap",
+            headers,
+            payload: { email, subject: `dev:${email}` },
+          })
+        ).statusCode,
+      );
+    expect(codes.slice(0, 30).every((c) => c === 200)).toBe(true);
+    expect(codes[30]).toBe(429);
+    const other = `calm-${Date.now().toString(36)}@test.local`;
+    const fine = await t.app.inject({
+      method: "POST",
+      url: "/internal/auth/bootstrap",
+      headers,
+      payload: { email: other, subject: `dev:${other}` },
+    });
+    expect(fine.statusCode).toBe(200);
   });
 });
 
@@ -65,7 +127,7 @@ describe("internal routes and the IP rate limit", () => {
           method: "POST",
           url: "/internal/auth/bootstrap",
           headers,
-          payload: { email: `rl-${String(i)}-${Date.now().toString(36)}@test.local` },
+          payload: { email: `rl-${String(i)}-${Date.now().toString(36)}@test.local`, subject: `dev:rl-${String(i)}-${Date.now().toString(36)}` },
         });
         expect(res.statusCode).toBe(200);
       }

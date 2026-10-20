@@ -1,3 +1,4 @@
+import { Redis } from "ioredis";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createTestApp, type TestApp } from "../test/harness";
 
@@ -97,5 +98,28 @@ describe("API response headers (D-081)", () => {
     const me = await t.app.inject({ url: "/v1/me", headers: { cookie: await t.cookieFor(account) } });
     expect(me.statusCode).toBe(200);
     expect(me.headers["cache-control"]).toBe("no-store");
+  });
+});
+
+describe("shared rate limit store (ADR 0007)", () => {
+  it("counts one user's requests across API instances through Redis", async () => {
+    const url = process.env.REDIS_URL ?? "redis://localhost:6379";
+    const one = new Redis(url, { maxRetriesPerRequest: 1 });
+    const two = new Redis(url, { maxRetriesPerRequest: 1 });
+    const a = await createTestApp({ rateLimitMax: 3, rateLimitRedis: one });
+    const b = await createTestApp({ rateLimitMax: 3, rateLimitRedis: two });
+    try {
+      const account = await a.createAccount("rl-shared");
+      const cookie = await a.cookieFor(account);
+      const hit = (t: TestApp) => t.app.inject({ url: "/v1/me", headers: { cookie } });
+      const codes = [(await hit(a)).statusCode, (await hit(b)).statusCode, (await hit(a)).statusCode];
+      expect(codes).toEqual([200, 200, 200]);
+      expect((await hit(b)).statusCode).toBe(429);
+    } finally {
+      await a.close();
+      await b.close();
+      one.disconnect();
+      two.disconnect();
+    }
   });
 });

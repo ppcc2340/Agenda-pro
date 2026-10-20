@@ -1,4 +1,3 @@
-import { randomBytes, timingSafeEqual } from "node:crypto";
 import type { FastifyInstance } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import { z } from "zod";
@@ -13,22 +12,19 @@ import {
   setCalendarEventClient,
   listIntegrationAccounts,
   setIntegrationStatus,
-  upsertIntegrationAccount,
   type Db,
   type IntegrationAccountView,
 } from "@meri/db";
-import { hasCalendarScopes, hasGmailScopes, scopesFor, type Analytics, type GoogleOAuth } from "@meri/integrations";
+import type { Analytics, GoogleOAuth } from "@meri/integrations";
 import {
   CalendarSyncJob,
-  GmailSyncJob,
-  encryptTokens,
   enqueueTimeInfer,
   purgeAccountMail,
   readTokens,
-  track,
   type JobDispatcher,
 } from "@meri/jobs";
 import { ApiError } from "../errors";
+import { safeEqual } from "../plugins/oauth-state";
 import { requireSession, sessionOf } from "../plugins/session";
 
 const AccountView = z.object({
@@ -66,15 +62,7 @@ const EventView = z.object({
   busy: z.boolean(),
 });
 
-/** OAuth `state` cookie: short-lived, HttpOnly; verified on callback (docs/06 §7 redirect validation). */
-const STATE_COOKIE = "meri.oauth.state";
 const IdParams = z.object({ id: z.string().uuid() });
-
-const safeEqual = (a: string, b: string): boolean => {
-  const ab = Buffer.from(a);
-  const bb = Buffer.from(b);
-  return ab.length === bb.length && timingSafeEqual(ab, bb);
-};
 
 export interface IntegrationRoutesOptions {
   now: () => Date;
@@ -97,7 +85,6 @@ export function integrationRoutes(
   done: () => void,
 ): void {
   const r = app.withTypeProvider<ZodTypeProvider>();
-  const redirectUri = `${options.apiUrl}/v1/integrations/google/callback`;
 
   r.get(
     "/v1/integrations",
@@ -109,133 +96,6 @@ export function integrationRoutes(
       const session = sessionOf(request);
       const items = await request.withWorkspace((tx) => listIntegrationAccounts(tx, session.workspaceId));
       return { items: items.map(serializeAccount) };
-    },
-  );
-
-  r.post(
-    "/v1/integrations/:provider/connect",
-    {
-      preHandler: requireSession,
-      schema: {
-        tags: ["integrations"],
-        params: z.object({ provider: z.literal("google") }),
-        querystring: z.object({ feature: z.enum(["calendar", "gmail", "all"]).default("calendar") }),
-        response: { 200: z.object({ url: z.string() }) },
-      },
-    },
-    async (request, reply) => {
-      const session = sessionOf(request);
-      const state = randomBytes(24).toString("base64url");
-      reply.setCookie(STATE_COOKIE, state, {
-        httpOnly: true,
-        sameSite: "lax",
-        secure: options.secureCookies,
-        path: "/v1/integrations",
-        maxAge: 600,
-      });
-      // Incremental authorization (ADR 0004 §1): only the scopes of the requested feature.
-      const url = options.oauth.authorizationUrl({
-        state,
-        scopes: scopesFor(request.query.feature),
-        redirectUri,
-        loginHint: session.email,
-      });
-      return { url };
-    },
-  );
-
-  r.get(
-    "/v1/integrations/:provider/callback",
-    {
-      preHandler: requireSession,
-      schema: {
-        tags: ["integrations"],
-        params: z.object({ provider: z.literal("google") }),
-        querystring: z.object({
-          code: z.string().min(1).max(512).optional(),
-          state: z.string().min(1).max(128),
-          error: z.string().max(200).optional(),
-        }),
-      },
-    },
-    async (request, reply) => {
-      const session = sessionOf(request);
-      const expected = request.cookies[STATE_COOKIE];
-      reply.clearCookie(STATE_COOKIE, { path: "/v1/integrations" });
-      if (!expected || expected !== request.query.state)
-        throw new ApiError("FORBIDDEN", "OAuth state mismatch.");
-      if (request.query.error || !request.query.code)
-        return reply.redirect(`${options.appUrl}/control?integration=denied`);
-      const tokens = await options.oauth.exchangeCode({ code: request.query.code, redirectUri });
-      const now = options.now();
-      const account = await request.withWorkspace(async (tx) => {
-        // Two steps: the row id is part of the encryption AAD, so insert first, then store the ciphertext.
-        const provisional = await upsertIntegrationAccount(
-          tx,
-          session.workspaceId,
-          {
-            provider: "google",
-            externalAccountId: tokens.externalAccountId,
-            email: tokens.email,
-            scopes: tokens.scopes,
-            encryptedTokens: "pending",
-            keyId: options.keys.keyId,
-          },
-          now,
-        );
-        const blob = await encryptTokens({ keys: options.keys }, session.workspaceId, provisional.id, tokens);
-        const stored = await setIntegrationStatus(tx, session.workspaceId, provisional.id, {
-          encryptedTokens: blob,
-          keyId: options.keys.keyId,
-          status: "healthy",
-          lastError: null,
-        });
-        await audit(
-          tx,
-          { workspaceId: session.workspaceId, actor: "user", actorUserId: session.userId },
-          {
-            action: "integration.connected",
-            entityType: "integration_account",
-            entityId: provisional.id,
-            after: { provider: "google", scopes: tokens.scopes },
-          },
-        );
-        return stored ?? provisional;
-      });
-      const connectBucket = String(Math.floor(Date.now() / 5_000));
-      if (hasCalendarScopes(account.scopes)) {
-        await options.dispatcher.enqueue(
-          CalendarSyncJob,
-          {
-            workspaceId: session.workspaceId,
-            traceId: request.id,
-            integrationAccountId: account.id,
-            reason: "connect",
-          },
-          { jobId: `calendar.sync_${account.id}_connect_${connectBucket}` },
-        );
-      }
-      if (hasGmailScopes(account.scopes)) {
-        await options.dispatcher.enqueue(
-          GmailSyncJob,
-          {
-            workspaceId: session.workspaceId,
-            traceId: request.id,
-            integrationAccountId: account.id,
-            reason: "connect",
-          },
-          { jobId: `gmail.sync_${account.id}_connect_${connectBucket}` },
-        );
-      }
-      if (hasCalendarScopes(account.scopes))
-        track(options.analytics, "calendar_connected", session.workspaceId, {});
-      if (hasGmailScopes(account.scopes)) track(options.analytics, "gmail_connected", session.workspaceId, {});
-      const feature = hasGmailScopes(account.scopes)
-        ? hasCalendarScopes(account.scopes)
-          ? "all"
-          : "gmail"
-        : "calendar";
-      return reply.redirect(`${options.appUrl}/control?integration=connected&feature=${feature}`);
     },
   );
 

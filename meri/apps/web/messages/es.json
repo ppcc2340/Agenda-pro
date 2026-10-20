@@ -216,7 +216,9 @@
       "confirmTitle": "¿Eliminar tu cuenta?",
       "confirmBody": "Se cierra la sesión, Meri deja de leer tus cuentas y revoca su acceso. El borrado definitivo de tus datos se completa en el plazo legal. No se puede deshacer.",
       "cancel": "Cancelar",
-      "deleted": "Cuenta eliminada."
+      "deleted": "Cuenta eliminada.",
+      "signOutEverywhere": "Cerrar sesión en todos los dispositivos",
+      "signedOutEverywhere": "Sesiones cerradas en todos los dispositivos."
     },
     "plan": {
       "title": "Plan",

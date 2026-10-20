@@ -1,3 +1,4 @@
+import type { Redis } from "ioredis";
 import { encode } from "@auth/core/jwt";
 import { createLogger, parseEnv, resolveModes, type AppConfig, type FeatureFlagStore } from "@meri/config";
 import {
@@ -56,7 +57,12 @@ export async function migrateTestDb(): Promise<void> {
 }
 
 export async function createTestApp(
-  options: { rateLimitMax?: number; flags?: FeatureFlagStore; env?: Record<string, string> } = {},
+  options: {
+    rateLimitMax?: number;
+    rateLimitRedis?: Redis;
+    flags?: FeatureFlagStore;
+    env?: Record<string, string>;
+  } = {},
 ): Promise<TestApp> {
   const config = testConfig(options.env);
   const handle = createDb(TEST_APP_URL, { max: 3 });
@@ -71,6 +77,7 @@ export async function createTestApp(
     logger: createLogger({ name: "api-test", level: "silent" }),
     now: () => NOW,
     rateLimitMax: options.rateLimitMax ?? 1000,
+    rateLimitRedis: options.rateLimitRedis,
     flags: options.flags,
   });
   const name = sessionCookieName(false);
@@ -90,6 +97,7 @@ export async function createTestApp(
           workspaceId: account.workspaceId,
           email: account.email,
           locale: "es",
+          authTime: Date.now(),
           ...overrides,
         },
         secret: AUTH_SECRET,

@@ -11,6 +11,8 @@ export const SessionClaims = z.object({
   workspaceId: z.string().uuid(),
   email: z.string().email(),
   locale: z.enum(["es", "en"]).default("es"),
+  /** Sign-in instant in ms, set once by the web `jwt` callback and never refreshed (ADR 0007). */
+  authTime: z.number().int().positive(),
 });
 
 export interface Session {
@@ -18,6 +20,8 @@ export interface Session {
   workspaceId: WorkspaceId;
   email: string;
   locale: "es" | "en";
+  /** When the user authenticated (ms): drives revocation and the absolute session lifetime. */
+  authTime: number;
 }
 
 declare module "fastify" {
@@ -55,6 +59,7 @@ export const sessionPlugin = fp<SessionPluginOptions>((app: FastifyInstance, opt
           workspaceId: claims.data.workspaceId as WorkspaceId,
           email: claims.data.email,
           locale: claims.data.locale,
+          authTime: claims.data.authTime,
         };
       }
     } catch (err) {

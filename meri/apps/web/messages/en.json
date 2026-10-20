@@ -216,7 +216,9 @@
       "confirmTitle": "Delete your account?",
       "confirmBody": "You will be signed out, Meri stops reading your accounts and revokes its access. The final erasure of your data completes within the legal period. This cannot be undone.",
       "cancel": "Cancel",
-      "deleted": "Account deleted."
+      "deleted": "Account deleted.",
+      "signOutEverywhere": "Sign out on all devices",
+      "signedOutEverywhere": "Signed out on all devices."
     },
     "plan": {
       "title": "Plan",

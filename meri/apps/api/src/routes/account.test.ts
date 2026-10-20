@@ -264,7 +264,7 @@ describe("account export and deletion (D-050, D-054, D-055)", () => {
       method: "POST",
       url: "/internal/auth/bootstrap",
       headers: { "x-internal-secret": INTERNAL_SECRET },
-      payload: { email: c.email },
+      payload: { email: c.email, subject: `dev:${c.email}` },
     });
     expect(again.statusCode).toBe(409);
     expect(again.json()).toMatchObject({ code: "CONFLICT" });

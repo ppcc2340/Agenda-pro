@@ -27,6 +27,12 @@ async function main(): Promise<void> {
   });
   if (integrations.ai instanceof FakeAiClient) registerFakeAiHandlers(integrations.ai);
   const redis = new Redis(config.env.REDIS_URL, { maxRetriesPerRequest: null });
+  // Rate limit counters fail fast: a Redis outage must not stall requests (skipOnError lets them through).
+  const rateLimitRedis = new Redis(config.env.REDIS_URL, {
+    maxRetriesPerRequest: 1,
+    enableOfflineQueue: false,
+    connectTimeout: 2_000,
+  });
   const dispatcher = createDispatcher(redis);
   const app = await buildApp({
     config,
@@ -36,6 +42,7 @@ async function main(): Promise<void> {
     now,
     dispatcher,
     rateLimitMax: config.env.RATE_LIMIT_PER_MINUTE,
+    rateLimitRedis,
     onTasksChanged: async (workspaceId, traceId) => {
       await enqueueReplan(dispatcher, now, { workspaceId, traceId, reason: "tasks_changed" });
       // Completed blocks are a time source (D-042); the job is idempotent and debounced.
@@ -48,6 +55,7 @@ async function main(): Promise<void> {
     await app.close();
     await dispatcher.close();
     redis.disconnect();
+    rateLimitRedis.disconnect();
     await handle.close();
     process.exit(0);
   };

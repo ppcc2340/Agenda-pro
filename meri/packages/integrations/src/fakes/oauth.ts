@@ -1,14 +1,15 @@
+import { createHash } from "node:crypto";
 import { IntegrationError } from "../errors";
 import type { GoogleOAuth, OAuthTokens } from "../oauth/types";
 
 /**
  * Fake Google OAuth: the "consent screen" is the callback itself. Codes are minted by `authorizationUrl` and are
- * single-use, bound to the scopes and the account email (login hint), so the callback path exercises the same
- * state/code verification as the live flow.
+ * single-use, bound to the scopes, the account email (login hint) and the PKCE challenge, so the callback path
+ * exercises the same state/code/verifier checks as the live flow.
  */
 export class FakeGoogleOAuth implements GoogleOAuth {
   readonly mode = "fake" as const;
-  private readonly codes = new Map<string, { scopes: string[]; email: string }>();
+  private readonly codes = new Map<string, { scopes: string[]; email: string; challenge: string }>();
   private counter = 0;
   readonly revoked: string[] = [];
   constructor(
@@ -21,9 +22,14 @@ export class FakeGoogleOAuth implements GoogleOAuth {
     scopes: string[];
     redirectUri: string;
     loginHint?: string;
+    codeChallenge: string;
   }): string {
     const code = `fake-code-${String(++this.counter)}`;
-    this.codes.set(code, { scopes: input.scopes, email: input.loginHint ?? this.defaultEmail });
+    this.codes.set(code, {
+      scopes: input.scopes,
+      email: input.loginHint ?? this.defaultEmail,
+      challenge: input.codeChallenge,
+    });
     const url = new URL(input.redirectUri);
     url.searchParams.set("code", code);
     url.searchParams.set("state", input.state);
@@ -31,13 +37,17 @@ export class FakeGoogleOAuth implements GoogleOAuth {
     return url.toString();
   }
 
-  exchangeCode(input: { code: string; redirectUri: string }): Promise<OAuthTokens> {
+  exchangeCode(input: { code: string; redirectUri: string; codeVerifier: string }): Promise<OAuthTokens> {
     const entry = this.codes.get(input.code);
     if (!entry)
       return Promise.reject(
         new IntegrationError("Permanent", "google-oauth", "invalid or already used authorization code"),
       );
+    // Like Google: the code is consumed even when the verifier is wrong.
     this.codes.delete(input.code);
+    const challenge = createHash("sha256").update(input.codeVerifier).digest("base64url");
+    if (challenge !== entry.challenge)
+      return Promise.reject(new IntegrationError("Permanent", "google-oauth", "PKCE verifier does not match"));
     return Promise.resolve(this.tokens(entry.email, entry.scopes));
   }
 

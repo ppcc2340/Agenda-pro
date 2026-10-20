@@ -79,6 +79,35 @@ describe("Google Calendar connection (F-04, D-021)", () => {
     expect(cb.json()).toMatchObject({ code: "FORBIDDEN" });
   });
 
+  it("binds the signed state to the workspace that started the flow and to its PKCE verifier (ADR 0007)", async () => {
+    const start = await t.app.inject({
+      method: "POST",
+      url: "/v1/integrations/google/connect",
+      headers: { cookie: cookieA, ...csrf },
+    });
+    const sealed = start.cookies.find((c) => c.name === "meri.oauth.state")?.value ?? "";
+    const url = new URL(start.json<{ url: string }>().url);
+    // The authorization URL never carries the verifier; the cookie is signed, not a bare state.
+    expect(url.searchParams.get("state")).not.toBe(sealed);
+    expect(sealed.split(".")).toHaveLength(2);
+    // Another workspace's session replaying A's cookie and code is refused before any exchange.
+    const other = await t.createAccount("oauth-replay");
+    const replay = await t.app.inject({
+      url: `${url.pathname}${url.search}`,
+      headers: { cookie: `${await t.cookieFor(other)}; meri.oauth.state=${sealed}` },
+    });
+    expect(replay.statusCode).toBe(403);
+    // A tampered cookie (another verifier or workspace) breaks the signature.
+    const [body = "", tag = ""] = sealed.split(".");
+    const payload = JSON.parse(Buffer.from(body, "base64url").toString("utf8")) as Record<string, unknown>;
+    const forged = Buffer.from(JSON.stringify({ ...payload, v: "x".repeat(43) })).toString("base64url");
+    const tampered = await t.app.inject({
+      url: `${url.pathname}${url.search}`,
+      headers: { cookie: `${cookieA}; meri.oauth.state=${forged}.${tag}` },
+    });
+    expect(tampered.statusCode).toBe(403);
+  });
+
   it("serves mirrored events after a sync, keeps Meri away from foreign events, and isolates tenants", async () => {
     const list = await t.app.inject({ url: "/v1/integrations", headers: { cookie: cookieA } });
     const account = list.json<{ items: AccountJson[] }>().items[0];

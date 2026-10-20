@@ -1,6 +1,6 @@
 "use client";
 
-import { Download, Trash2 } from "lucide-react";
+import { Download, LogOut, Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { signOutAction } from "@/app/actions";
@@ -12,7 +12,8 @@ import { useApiMutation } from "@/lib/hooks/use-api";
 
 /**
  * «Privacidad» (demo): export downloads the JSON through the API rewrite (D-050); delete asks for confirmation and
- * signs out after the logical deletion (D-054). In DEMO_MODE nothing is deleted (D-049).
+ * signs out after the logical deletion (D-054). In DEMO_MODE nothing is deleted (D-049). «Sign out on all
+ * devices» ends every session, this one included (ADR 0007).
  */
 export function PrivacyPanel({ demoMode }: { demoMode: boolean }) {
   const t = useTranslations("control.privacy");
@@ -26,6 +27,17 @@ export function PrivacyPanel({ demoMode }: { demoMode: boolean }) {
       await signOutAction();
     },
   });
+  const revoke = useApiMutation(
+    () => clientApi<null>("/v1/account/sessions/revoke", { method: "POST" }),
+    [],
+    {
+      onError: () => toast(tApp("errorBody")),
+      onSuccess: async () => {
+        toast(t("signedOutEverywhere"));
+        await signOutAction();
+      },
+    },
+  );
   return (
     <div>
       <div className="flex flex-wrap gap-2">
@@ -44,6 +56,10 @@ export function PrivacyPanel({ demoMode }: { demoMode: boolean }) {
         >
           <Trash2 size={14} aria-hidden="true" />
           {t("delete")}
+        </Button>
+        <Button variant="quiet" disabled={revoke.isPending} onClick={() => revoke.mutate(undefined)}>
+          <LogOut size={14} aria-hidden="true" />
+          {t("signOutEverywhere")}
         </Button>
       </div>
       <p className="mt-2 max-w-[60ch] text-[12.5px] text-ink3">{t("body")}</p>

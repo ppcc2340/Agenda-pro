@@ -94,10 +94,14 @@ export const users = pgTable(
     name: text("name"),
     image: text("image"),
     locale: text("locale").notNull().default("es"),
+    /** Identity at the provider (`google:<sub>`, `dev:<email>` in development); a recycled address never inherits. */
+    authSubject: text("auth_subject"),
+    /** Sessions authenticated before this instant are refused («sign out on all devices», ADR 0007). */
+    sessionsValidAfter: timestamp("sessions_valid_after", { withTimezone: true }),
     createdAt: createdAt(),
     deletedAt: deletedAt(),
   },
-  (t) => [uniqueIndex("users_email_uq").on(t.email)],
+  (t) => [uniqueIndex("users_email_uq").on(t.email), uniqueIndex("users_auth_subject_uq").on(t.authSubject)],
 );
 
 export const workspaces = pgTable("workspaces", {

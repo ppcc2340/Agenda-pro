@@ -88,6 +88,8 @@ export function captureRoutes(app: FastifyInstance, options: CaptureRoutesOption
     "/v1/capture",
     {
       preHandler: requireSession,
+      // May call the AI (AI-1): its own limit on top of the credits gate (ADR 0007).
+      config: { rateLimit: { max: 60, timeWindow: "1 minute" } },
       schema: {
         tags: ["capture"],
         body: z.object({ text: z.string().trim().min(1).max(500) }),

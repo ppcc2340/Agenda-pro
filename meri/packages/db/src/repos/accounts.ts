@@ -16,6 +16,8 @@ import { withWorkspace, type WorkspaceTx } from "../workspace";
 
 export interface BootstrapInput {
   email: string;
+  /** Provider identity (`google:<sub>`, `dev:<email>`); bound on first sign-in, required to match afterwards. */
+  subject?: string;
   name?: string | null;
   image?: string | null;
   locale?: "es" | "en";
@@ -42,12 +44,21 @@ export class AccountDeletedError extends Error {
   }
 }
 
+/** The email exists but belongs to another provider identity (a recycled address never inherits an account). */
+export class IdentityMismatchError extends Error {
+  override readonly name = "IdentityMismatchError";
+  constructor() {
+    super("This email is bound to another sign-in identity.");
+  }
+}
+
 /**
  * Idempotent first-login bootstrap (F-01): user + workspace + membership + preferences + trial subscription + entitlements.
  * Runs in one transaction; users/workspaces are not RLS tables, the rest are written under the new workspace context.
  */
 export async function bootstrapAccount(db: Db, input: BootstrapInput): Promise<AccountIdentity> {
   const email = input.email.trim().toLowerCase();
+  if (input.subject) await followEmailChange(db, input.subject, email);
   const existing = await findExisting(db, email, input);
   if (existing) return existing;
 
@@ -59,7 +70,14 @@ export async function bootstrapAccount(db: Db, input: BootstrapInput): Promise<A
   const created = await db.transaction(async (tx) => {
     const inserted = await tx
       .insert(users)
-      .values({ id: userId, email, name: input.name ?? null, image: input.image ?? null, locale })
+      .values({
+        id: userId,
+        email,
+        authSubject: input.subject ?? null,
+        name: input.name ?? null,
+        image: input.image ?? null,
+        locale,
+      })
       .onConflictDoNothing({ target: users.email })
       .returning({ id: users.id });
     if (inserted.length === 0) return false;
@@ -87,10 +105,28 @@ export async function bootstrapAccount(db: Db, input: BootstrapInput): Promise<A
   return { userId, workspaceId, email, name: input.name ?? null, locale, created: true };
 }
 
+/**
+ * The provider identity is stable while the address can change (a Google account renamed): the account follows
+ * its subject. If the new address already belongs to another account, nothing is merged (IdentityMismatchError).
+ */
+async function followEmailChange(db: Db, subject: string, email: string): Promise<void> {
+  const bySubject = await db.query.users.findFirst({ where: eq(users.authSubject, subject) });
+  if (!bySubject || bySubject.email === email) return;
+  const taken = await db.query.users.findFirst({ where: eq(users.email, email) });
+  if (taken) throw new IdentityMismatchError();
+  await db.update(users).set({ email }).where(eq(users.id, bySubject.id));
+}
+
 async function findExisting(db: Db, email: string, input: BootstrapInput): Promise<AccountIdentity | null> {
   const existing = await db.query.users.findFirst({ where: eq(users.email, email) });
   if (existing) {
     if (existing.deletedAt) throw new AccountDeletedError(email);
+    if (input.subject) {
+      if (existing.authSubject !== null && existing.authSubject !== input.subject) throw new IdentityMismatchError();
+      // Accounts created before the identity was recorded bind to the first subject that signs in (ADR 0007).
+      if (existing.authSubject === null)
+        await db.update(users).set({ authSubject: input.subject }).where(eq(users.id, existing.id));
+    }
     const membership = await db
       .select({ workspaceId: workspaces.id })
       .from(workspaces)
@@ -185,13 +221,45 @@ export async function hardDeleteAccountByEmail(db: Db, email: string): Promise<n
 
 /** Liveness check for the API session guard: false once the user or the workspace is logically deleted. */
 export async function isAccountActive(db: Db, userId: UserId, workspaceId: WorkspaceId): Promise<boolean> {
-  const [user] = await db.select({ deletedAt: users.deletedAt }).from(users).where(eq(users.id, userId)).limit(1);
+  return (await accountLiveness(db, userId, workspaceId)).active;
+}
+
+/** What the session guard needs: liveness and the «sign out on all devices» cut-off (ADR 0007). */
+export async function accountLiveness(
+  db: Db,
+  userId: UserId,
+  workspaceId: WorkspaceId,
+): Promise<{ active: boolean; sessionsValidAfter: Date | null }> {
+  const [user] = await db
+    .select({ deletedAt: users.deletedAt, sessionsValidAfter: users.sessionsValidAfter })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
   const [ws] = await db
     .select({ deletedAt: workspaces.deletedAt })
     .from(workspaces)
     .where(eq(workspaces.id, workspaceId))
     .limit(1);
-  return user !== undefined && ws !== undefined && user.deletedAt === null && ws.deletedAt === null;
+  return {
+    active: user !== undefined && ws !== undefined && user.deletedAt === null && ws.deletedAt === null,
+    sessionsValidAfter: user?.sessionsValidAfter ?? null,
+  };
+}
+
+/** «Sign out on all devices»: every session authenticated before `at` is refused from now on. Audited. */
+export async function revokeSessions(
+  db: Db,
+  input: { userId: UserId; workspaceId: WorkspaceId },
+  at: Date,
+): Promise<void> {
+  await withWorkspace(db, input.workspaceId, async (tx) => {
+    await tx.update(users).set({ sessionsValidAfter: at }).where(eq(users.id, input.userId));
+    await audit(
+      tx,
+      { workspaceId: input.workspaceId, actor: "user", actorUserId: input.userId },
+      { action: "account.sessions_revoked", entityType: "user", entityId: input.userId },
+    );
+  });
 }
 
 export interface SoftDeleteResult {

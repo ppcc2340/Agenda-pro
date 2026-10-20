@@ -16,6 +16,7 @@ const BootstrapResponse = z.object({
 /** ADR 0001: ask the API to create or fetch the account for this identity. */
 export async function bootstrapAccount(input: {
   email: string;
+  subject: string;
   name?: string | null;
   image?: string | null;
 }) {
@@ -37,10 +38,9 @@ function providers(): NextAuthConfig["providers"] {
       Google({
         clientId: env.GOOGLE_CLIENT_ID,
         clientSecret: env.GOOGLE_CLIENT_SECRET,
-        // Identity only in phase 0 (docs/06 §1). Calendar/Gmail scopes are requested incrementally later.
-        authorization: {
-          params: { scope: "openid email profile", access_type: "offline", prompt: "consent" },
-        },
+        // Identity only (docs/06 §1): no refresh token for sign-in. Calendar/Gmail are connected separately with
+        // offline access and incremental scopes (ADR 0007).
+        authorization: { params: { scope: "openid email profile" } },
       }),
     ];
   }
@@ -63,6 +63,9 @@ function providers(): NextAuthConfig["providers"] {
   ];
 }
 
+/** Absolute session lifetime from sign-in; the API guard enforces the same limit (ADR 0007). */
+export const SESSION_MAX_AGE_MS = 14 * 24 * 3600 * 1000;
+
 /** Auth.js configuration, built lazily so it is never evaluated at build time. Exported for tests. */
 export function buildAuthConfig(): NextAuthConfig {
   const { isProduction } = getServerConfig();
@@ -73,13 +76,22 @@ export function buildAuthConfig(): NextAuthConfig {
     providers: providers(),
     useSecureCookies: isProduction,
     callbacks: {
-      async jwt({ token, user }) {
-        // `user` is only present at sign-in; later session reads call this callback without it.
+      // Only addresses Google has verified may sign in (a recycled or unverified address never inherits an account).
+      signIn({ account, profile }) {
+        if (account?.provider === "google") return profile?.email_verified === true;
+        return true;
+      },
+      async jwt({ token, user, account: provider }) {
         // `user` is only present at sign-in; later session reads call this callback without it (typed as required).
         const signingIn = user as User | undefined;
         if (signingIn?.email) {
+          const subject =
+            provider?.provider === "google"
+              ? `google:${provider.providerAccountId}`
+              : `dev:${signingIn.email.trim().toLowerCase()}`;
           const account = await bootstrapAccount({
             email: signingIn.email,
+            subject,
             name: signingIn.name ?? null,
             image: signingIn.image ?? null,
           });
@@ -87,7 +99,12 @@ export function buildAuthConfig(): NextAuthConfig {
           token.workspaceId = account.workspaceId;
           token.email = account.email;
           token.locale = account.locale;
+          // The sign-in instant survives every re-issue of the JWT (iat does not): revocation and the absolute
+          // lifetime are measured from it (ADR 0007).
+          token.authTime = Date.now();
+          return token;
         }
+        if (typeof token.authTime !== "number" || Date.now() - token.authTime > SESSION_MAX_AGE_MS) return null;
         return token;
       },
       session({ session, token }) {
