@@ -81,20 +81,25 @@ Fuente para que backend y frontend se construyan en paralelo. El OpenAPI generad
 | `POST /v1/integrations/:id/pause` · `DELETE /v1/integrations/:id` | Pausar (también detiene la lectura de correo) / desconectar y purgar: hilos indexados, compromisos `proposed` y propuestas pendientes del correo se borran; los compromisos confirmados se conservan sin hilo (D-036) |
 | `POST /v1/integrations/:id/mail/sync` | Sincronización manual de Gmail (202) |
 | `GET /v1/audit` · `POST /v1/audit/:id/undo` | Actividad (con `undoneAt` derivado) y deshacer append-only: inserta `<acción>.undone` con `undo_of_audit_id` y aplica la compensación. Deshacibles: `plan.generated`, `plan.accepted`, `task.created`, `task.completed`, `block.pinned`, `block.completed`, `commitment.autoconfirmed` (D-034: vuelve a `proposed` y reabre la propuesta), `time.approved` (vuelve a `suggested`). `CONFLICT` si ya se deshizo o existe un plan posterior |
-| `GET /v1/value-report?period=` | Informe de valor con método por cifra |
-| `GET /v1/ai/usage` | `{ period, usedUsd, capUsd, paused, mode }`: gasto del mes frente al tope por workspace (docs/05 §5) |
+| `GET /v1/value-report?period=week|month&date=` | Informe de valor (F-12, D-063, ADR 0006): tres cifras (`commitments_saved`, `deadline_risks_flagged`, `hours_recovered`) con `value` (`null` sin eventos, nunca 0 inventado), `unit`, `methods[]` (códigos estables, traducidos en la UI), `estimated` y `sources[] { type, id, label, method, quantity, occurredAt }`; solo desde `value_events` |
+| `GET /v1/reviews/daily?date=` · `GET /v1/reviews/weekly?week=` | Cierre del día (hecho, pendiente, por reprogramar, bloqueado, riesgos nuevos, prioridades de mañana) y revisión semanal (carga frente a capacidad por día, estimado frente a real, tendencia), sin IA (D-064) |
+| `GET /v1/ai/usage` | `{ period, usedUsd, capUsd, paused, mode, credits: { allowance, used, remaining, ratio }, access }`: créditos del mes (D-061) y tope en USD por workspace (docs/05 §5) |
 
-### Facturación
-| `POST /v1/billing/checkout` | Sesión de Stripe Checkout |
+### Facturación (ADR 0006)
+| `POST /v1/billing/checkout { plan: pro|pro_plus, interval: month|year }` | Sesión de Checkout en modo suscripción con `metadata.workspaceId`; durante la prueba, `trial_end` = fin de la prueba local si faltan ≥ 48 h (si no, sin prueba). `Idempotency-Key` obligatorio |
 |---|---|
-| `POST /v1/billing/portal` | Sesión del portal de cliente |
-| `GET /v1/billing/subscription` | Plan y estado |
+| `POST /v1/billing/portal` | Sesión del portal de cliente (requiere cliente de Stripe) |
+| `GET /v1/billing/subscription` | `{ plan, status, interval, trialEndsAt, currentPeriodEnd, cancelAtPeriodEnd, hasPaymentMethod, access: { active, reason, trialDaysLeft }, entitlements, credits }` |
+| `POST /v1/billing/cancel { reason, comment? }` | Cancela al final del periodo; guarda la encuesta (`reason ∈ price|not_using|missing_feature|switched_tool|privacy|other`, comentario ≤ 500 que nunca va a la analítica); auditado. `Idempotency-Key` |
+| `POST /v1/billing/reactivate` | Deshace la cancelación si el periodo no terminó; si terminó, devuelve `{ url }` de un Checkout nuevo. `Idempotency-Key` |
+| `POST /v1/billing/credit-packs { pack: 500|2000 }` | Checkout en modo pago; el paquete vale hasta fin del mes natural de compra. `Idempotency-Key` |
+| `GET /v1/billing/fake/complete?session=` | Solo con `STRIPE_MODE=fake` y fuera de producción: completa el checkout simulado procesando el webhook firmado por el mismo handler |
 
 ### Webhooks (sin sesión, con verificación)
 | `POST /webhooks/google/gmail` | Push de Google: token de canal compartido con Calendar en el MVP (ADR 0004); el JWT de Pub/Sub llega con el bloqueo `gmail` en vivo |
 |---|---|
 | `POST /webhooks/google/calendar` | Canal `watch`, verificar `X-Goog-Channel-Token` |
-| `POST /webhooks/stripe` | Verificar firma e idempotencia por `event.id` |
+| `POST /webhooks/stripe` | Firma `t=…,v1=` HMAC-SHA256 (5 min de tolerancia) sobre el cuerpo crudo; idempotencia por `event.id` en `stripe_events` en la misma transacción que los efectos; para `customer.subscription.*` e `invoice.*` se relee la suscripción y el workspace sale de sus metadatos; eventos más antiguos que `subscriptions.last_event_at` sin efectos. 400 firma inválida; 200 sin efectos si el workspace falta, no existe, está borrado o el cliente de Stripe no coincide; 5xx error transitorio |
 | `GET /health` · `GET /ready` | Sondas |
 
 ## Colas (BullMQ) y cargas
@@ -112,7 +117,8 @@ Todas llevan `{ workspaceId, traceId }` además de su carga.
 | `followups.scan` | `{ date }` (cada hora; cada minuto fuera de producción) | Detecta compromisos de terceros vencidos (→ `at_risk`) e hilos enviados sin respuesta tras `followup_days`; una propuesta `followup` por elemento (hash de deduplicación) y aviso agrupado `followups.due` |
 | `data.retention` | `{ date }` (diario) | Purga hilos indexados más antiguos que `min(preferences.retention_days, tope del plan, 365)` con el mismo orden que la desconexión (D-036) |
 | `daily.review` | `{ date }` (cron cada 15 min: workspaces que pasaron su hora de inicio en su zona) | Resumen del día (plantilla, sin IA), uno por día |
-| `billing.usage_rollup` | `{ period }` (cron) | Consolida `ai_usage` y créditos |
+| `billing.usage_rollup` | `{ period }` por workspace (diario y al cerrar el mes) | Consolida créditos, coste de IA, ingreso estimado del catálogo y margen bruto en `billing_rollups` (alarma < 70 % solo con ingresos); aviso `trial.ending` 3 días antes del fin de una prueba sin tarjeta |
+| `daily.close` | `{ date }` (cron cada 15 min: workspaces que pasaron su fin de jornada) | Cierre del día como notificación (plantilla, sin IA), una por día |
 | `data.delete_account` | `{ userId }` | Borrado completo y verificación |
 | `integrations.renew_channels` | `{}` (cron) | Renueva `watch` de Gmail y Calendar |
 

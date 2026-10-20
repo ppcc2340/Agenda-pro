@@ -59,10 +59,17 @@ export const EnvSchema = z.object({
   STRIPE_WEBHOOK_SECRET: optionalString(),
   STRIPE_PRICE_PRO: optionalString(),
   STRIPE_PRICE_PRO_ANNUAL: optionalString(),
+  STRIPE_PRICE_PRO_PLUS: optionalString(),
+  STRIPE_PRICE_PRO_PLUS_ANNUAL: optionalString(),
+  STRIPE_PRICE_CREDITS_500: optionalString(),
+  STRIPE_PRICE_CREDITS_2000: optionalString(),
+  /** Estimated infrastructure cost per user and month for the margin rollup (D-062). */
+  INFRA_COST_USD_PER_USER: z.preprocess(emptyToUndefined, z.coerce.number().nonnegative().default(3)),
 
   ANALYTICS_MODE: z.enum(["noop", "live"]).default("noop"),
   SENTRY_DSN: optionalString(),
   POSTHOG_KEY: optionalString(),
+  POSTHOG_HOST: z.preprocess(emptyToUndefined, z.string().url().default("https://eu.i.posthog.com")),
   OTEL_EXPORTER_OTLP_ENDPOINT: optionalString(),
 
   KMS_PROVIDER: z.enum(["local", "aws", "gcp"]).default("local"),
