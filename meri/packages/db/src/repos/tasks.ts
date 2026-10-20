@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray, isNull, lt, lte, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, isNull, lt, lte, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import { taskDependencies, tasks } from "../schema";
 import type { WorkspaceTx } from "../workspace";
@@ -132,6 +132,28 @@ export async function listTasks(
   const items = slice.map((r) => toView(r, deps.get(r.id) ?? []));
   const last = items[items.length - 1];
   return { items, nextCursor: rows.length > page.limit && last ? last.id : null };
+}
+
+/** Reviews (D-064): every open task plus the tasks completed since `completedSince` (bounded). */
+export async function listTasksForReview(
+  tx: WorkspaceTx,
+  workspaceId: WorkspaceId,
+  completedSince: Date,
+  limit = 2000,
+): Promise<TaskView[]> {
+  const rows = await tx
+    .select()
+    .from(tasks)
+    .where(
+      and(
+        eq(tasks.workspaceId, workspaceId),
+        isNull(tasks.deletedAt),
+        or(sql`${tasks.status} <> 'completed'`, gte(tasks.completedAt, completedSince)),
+      ),
+    )
+    .orderBy(desc(tasks.id))
+    .limit(limit);
+  return rows.map((r) => toView(r, []));
 }
 
 /** All non-deleted, non-completed tasks with dependencies: planner input and dependency validation. */

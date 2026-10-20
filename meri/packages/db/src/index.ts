@@ -44,6 +44,7 @@ export {
   TaskPatchSchema,
   listTasks,
   listOpenTasks,
+  listTasksForReview,
   getTasksByIds,
   getTask,
   createTask,

@@ -79,6 +79,7 @@ describe("value report (F-12, D-063, [M7])", () => {
       const c1 = await mk("enviar el informe", new Date(NOW.getTime() + 86_400_000), "v1", "owed_by_me");
       const c2 = await mk("firmar el contrato", new Date(NOW.getTime() - 3 * 86_400_000), "v2", "owed_to_me");
       const c3 = await mk("pagar la factura", new Date(NOW.getTime() - 86_400_000), "v3", "owed_to_me");
+      if (!c1 || !c2 || !c3) throw new Error("seed commitments were not created");
       // A follow-up draft saved by Meri for c2 (the save route needs Gmail; its audit entry is the fact).
       await audit(
         tx,
@@ -99,15 +100,15 @@ describe("value report (F-12, D-063, [M7])", () => {
         payload: { status },
       });
     for (const c of [onTime, followed, late])
-      expect((await patch(c?.id ?? "", "fulfilled")).statusCode).toBe(200);
+      expect((await patch(c.id, "fulfilled")).statusCode).toBe(200);
     let saved = fig(await report(), "commitments_saved");
     expect(saved?.value).toBe(2);
     expect(saved?.methods).toEqual(["commitment_fulfilled_on_time", "commitment_fulfilled_after_followup"]);
     expect(saved?.sources.map((s) => s.label).sort()).toEqual(["enviar el informe", "firmar el contrato"]);
     // Re-opening and fulfilling again never double-counts; re-opening removes the figure contribution.
-    await patch(onTime?.id ?? "", "confirmed");
+    await patch(onTime.id, "confirmed");
     expect(fig(await report(), "commitments_saved")?.value).toBe(1);
-    await patch(onTime?.id ?? "", "fulfilled");
+    await patch(onTime.id, "fulfilled");
     saved = fig(await report(), "commitments_saved");
     expect(saved?.value).toBe(2);
     const analytics = t.integrations.analytics as NoopAnalytics;

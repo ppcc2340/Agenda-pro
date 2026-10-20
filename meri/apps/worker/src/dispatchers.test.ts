@@ -24,6 +24,7 @@ import {
   dispatchBriefingsPrepare,
   dispatchCalendarPolling,
   dispatchClientsScan,
+  dispatchDailyClose,
   dispatchDailyReview,
   dispatchFollowupsScan,
   dispatchMailPolling,
@@ -136,5 +137,22 @@ describe("dispatchers skip logically deleted workspaces (D-054)", () => {
     };
     expect(await at("2026-11-01T06:00:00Z")).toEqual(["2026-10", "2026-11"]);
     expect(await at("2026-11-15T06:00:00Z")).toEqual(["2026-11"]);
+  });
+
+  it("dispatchDailyClose fires after the local work end only, for live workspaces", async () => {
+    const at = async (iso: string) => {
+      const dispatcher = new InMemoryDispatcher();
+      await dispatchDailyClose({
+        adminSql,
+        dispatcher,
+        logger: createLogger({ name: "worker-test", level: "silent" }),
+        now: () => new Date(iso),
+      });
+      return dispatcher.jobs.map((j) => (j.payload as { workspaceId: string }).workspaceId);
+    };
+    expect(await at("2026-10-20T08:40:00Z")).not.toContain(alive.workspaceId); // 10:40 in Madrid
+    const evening = await at("2026-10-20T17:30:00Z"); // 19:30 in Madrid, past the default 18:00 end
+    expect(evening).toContain(alive.workspaceId);
+    expect(evening).not.toContain(deleted.workspaceId);
   });
 });

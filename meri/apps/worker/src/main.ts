@@ -9,6 +9,7 @@ import {
   dispatchBriefingsPrepare,
   dispatchCalendarPolling,
   dispatchClientsScan,
+  dispatchDailyClose,
   dispatchDailyReview,
   dispatchFollowupsScan,
   dispatchMailPolling,
@@ -33,6 +34,7 @@ import { dataRetentionJob } from "./queues/data-retention";
 import { plannerReplanJob } from "./queues/planner-replan";
 import { examplePing } from "./queues/example";
 import { billingUsageRollupJob } from "./queues/billing-usage-rollup";
+import { dailyCloseJob } from "./queues/daily-close";
 import { QueueRegistry } from "./registry";
 
 loadDotenv(".env");
@@ -58,6 +60,7 @@ async function main(): Promise<void> {
   registry.register(calendarSyncJob(handlerDeps, dispatcher));
   registry.register(plannerReplanJob(handlerDeps));
   registry.register(dailyReviewJob(handlerDeps));
+  registry.register(dailyCloseJob(handlerDeps));
   registry.register(gmailSyncJob(handlerDeps, dispatcher));
   registry.register(followupsScanJob(handlerDeps));
   registry.register(clientsScanJob(handlerDeps));
@@ -135,6 +138,12 @@ async function main(): Promise<void> {
     () => dispatchUsageRollup({ adminSql, dispatcher, logger, now }),
     logger,
   );
+  const stopClose = schedule(
+    "daily.close",
+    15 * 60_000,
+    () => dispatchDailyClose({ adminSql, dispatcher, logger, now }),
+    logger,
+  );
   const stopDigest = schedule(
     "daily.review",
     15 * 60_000,
@@ -161,6 +170,7 @@ async function main(): Promise<void> {
         "time.infer",
         "data.retention",
         "billing.usage_rollup",
+        "daily.close",
       ],
     },
     "worker started",
@@ -171,6 +181,7 @@ async function main(): Promise<void> {
     stopPolling();
     stopDigest();
     stopRollup();
+    stopClose();
     stopMailPolling();
     stopFollowups();
     stopClientsScan();

@@ -3,6 +3,7 @@ import type { Logger } from "@meri/config";
 import {
   BillingUsageRollupJob,
   BriefingsPrepareJob,
+  DailyCloseJob,
   CalendarSyncJob,
   ClientsScanJob,
   DailyReviewJob,
@@ -10,6 +11,7 @@ import {
   FollowupsScanJob,
   GmailSyncJob,
   TimeInferJob,
+  dueForClose,
   dueForDigest,
   type JobDispatcher,
 } from "@meri/jobs";
@@ -93,6 +95,25 @@ export async function dispatchDailyReview(deps: DispatcherDeps): Promise<number>
     );
   }
   if (due.length > 0) deps.logger.info({ workspaces: due.length }, "daily review dispatched");
+  return due.length;
+}
+
+/** End-of-day close (D-064): onboarded workspaces past their work end with no close for today. */
+export async function dispatchDailyClose(deps: DispatcherDeps): Promise<number> {
+  const rows = await deps.adminSql<
+    { workspaceId: string; timezone: string; workEnd: string; lastCloseDay: string | null }[]
+  >`
+    select p.workspace_id as "workspaceId", p.timezone, p.work_end as "workEnd",
+      (select max(n.day) from notifications n where n.workspace_id = p.workspace_id and n.template = 'daily.close') as "lastCloseDay"
+    from preferences p where p.onboarded_at is not null and ${activeWorkspace(deps.adminSql)} limit 5000`;
+  const due = dueForClose(rows, deps.now());
+  for (const d of due)
+    await deps.dispatcher.enqueue(
+      DailyCloseJob,
+      { workspaceId: d.workspaceId, traceId: randomUUID(), date: d.date },
+      { jobId: `daily.close_${d.workspaceId}_${d.date}` },
+    );
+  if (due.length > 0) deps.logger.info({ workspaces: due.length }, "daily close dispatched");
   return due.length;
 }
 
