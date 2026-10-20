@@ -47,7 +47,7 @@ async function main(): Promise<void> {
   };
   process.on("SIGINT", () => void shutdown("SIGINT"));
   process.on("SIGTERM", () => void shutdown("SIGTERM"));
-  await app.listen({ port, host: "0.0.0.0" });
+  await app.listen({ port, host: config.env.LISTEN_HOST });
 }
 
 main().catch((err: unknown) => {

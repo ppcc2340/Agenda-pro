@@ -2,7 +2,8 @@
 /**
  * `pnpm demo` (PROTOTYPE.md, D-047): checks Postgres and Redis, migrates, seeds the demo workspace and starts
  * api, worker and web in fake mode with DEMO_MODE=1, printing the two URLs. One parent process; Ctrl-C stops all.
- * Flags: --dev (next dev instead of a production build), --reset (reseed from scratch), --no-seed.
+ * Flags: --dev (next dev instead of a production build), --reset (reseed from scratch), --no-seed, --public (listen on
+ * every interface instead of 127.0.0.1: the demo signs anyone in as the demo user).
  */
 import { spawn, spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
@@ -13,6 +14,8 @@ import { fileURLToPath } from "node:url";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const args = process.argv.slice(2);
 const dev = args.includes("--dev");
+// The demo signs every visitor in as demo@meri.local: keep it on this machine unless asked otherwise.
+const host = args.includes("--public") ? "0.0.0.0" : "127.0.0.1";
 
 function loadEnv() {
   const env = { ...process.env };
@@ -59,6 +62,7 @@ const env = {
   ANALYTICS_MODE: "noop",
   KMS_PROVIDER: "local",
   DEMO_MODE: "1",
+  LISTEN_HOST: host,
   APP_ENV: "development",
   ALLOW_FAKES_ON_PRODUCTION_BUILD: "1",
 };
@@ -83,7 +87,7 @@ if (!dev && !existsSync(resolve(root, "apps/web/.next/BUILD_ID"))) run("pnpm", [
 const children = [
   spawn("pnpm", ["--filter", "@meri/api", "exec", "tsx", "src/main.ts"], { cwd: root, stdio: "inherit", env }),
   spawn("pnpm", ["--filter", "@meri/worker", "exec", "tsx", "src/main.ts"], { cwd: root, stdio: "inherit", env }),
-  spawn("pnpm", ["--filter", "@meri/web", dev ? "dev" : "start"], { cwd: root, stdio: "inherit", env }),
+  spawn("pnpm", ["--filter", "@meri/web", dev ? "dev" : "start", "-H", host], { cwd: root, stdio: "inherit", env }),
 ];
 const stop = () => {
   for (const c of children) if (!c.killed) c.kill("SIGTERM");

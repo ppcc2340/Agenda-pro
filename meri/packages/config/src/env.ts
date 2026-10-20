@@ -23,6 +23,8 @@ export const EnvSchema = z.object({
   API_URL: z.string().url().default("http://localhost:4000"),
   PUBLIC_DOMAIN: z.string().min(1).default("localhost"),
   PORT: z.preprocess(emptyToUndefined, z.coerce.number().int().positive().optional()),
+  /** Interface the api and the worker health server bind to (`pnpm demo` uses 127.0.0.1 unless --public). */
+  LISTEN_HOST: z.preprocess(emptyToUndefined, z.string().min(1).default("0.0.0.0")),
   /** Trusted reverse-proxy hops in front of the API (0 = none). */
   TRUST_PROXY_HOPS: z.preprocess(emptyToUndefined, z.coerce.number().int().min(0).max(10).default(0)),
 

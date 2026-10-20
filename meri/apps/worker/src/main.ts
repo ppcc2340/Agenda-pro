@@ -133,7 +133,7 @@ async function main(): Promise<void> {
 
   const health = await buildHealthServer(registry, logger);
   const port = config.env.PORT ?? 4100;
-  await health.listen({ port, host: "0.0.0.0" });
+  await health.listen({ port, host: config.env.LISTEN_HOST });
   logger.info(
     {
       port,
