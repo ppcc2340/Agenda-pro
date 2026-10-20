@@ -86,20 +86,20 @@ Fuente para que backend y frontend se construyan en paralelo. El OpenAPI generad
 | `GET /v1/ai/usage` | `{ period, usedUsd, capUsd, paused, mode, credits: { allowance, used, remaining, ratio }, access }`: créditos del mes (D-061) y tope en USD por workspace (docs/05 §5) |
 
 ### Facturación (ADR 0006)
-| `POST /v1/billing/checkout { plan: pro|pro_plus, interval: month|year }` | Sesión de Checkout en modo suscripción con `metadata.workspaceId`; durante la prueba, `trial_end` = fin de la prueba local si faltan ≥ 48 h (si no, sin prueba). `Idempotency-Key` obligatorio |
+| `POST /v1/billing/checkout { plan: pro|pro_plus, interval: month|year }` | Sesión de Checkout en modo suscripción con `metadata.workspaceId`; durante la prueba, `trial_end` = fin de la prueba local si faltan ≥ 48 h (si no, sin prueba). Con una suscripción viva → 409 (los cambios de plan van por el portal). El cliente de Stripe se crea antes (`ensureCustomer`, clave `customer-<workspace>`). `Idempotency-Key` obligatorio y propagado al proveedor por intención |
 |---|---|
 | `POST /v1/billing/portal` | Sesión del portal de cliente (requiere cliente de Stripe) |
 | `GET /v1/billing/subscription` | `{ plan, status, interval, trialEndsAt, currentPeriodEnd, cancelAtPeriodEnd, hasPaymentMethod, access: { active, reason, trialDaysLeft }, entitlements, credits }` |
-| `POST /v1/billing/cancel { reason, comment? }` | Cancela al final del periodo; guarda la encuesta (`reason ∈ price|not_using|missing_feature|switched_tool|privacy|other`, comentario ≤ 500 que nunca va a la analítica); auditado. `Idempotency-Key` |
+| `POST /v1/billing/cancel { reason?, comment? }` | Cancela al final del periodo; 409 si el proveedor no lo confirma. Encuesta opcional (`reason ∈ price|not_using|missing_feature|switched_tool|privacy|other`, por defecto `other`; comentario ≤ 500 que nunca va a la analítica); auditado. `Idempotency-Key` |
 | `POST /v1/billing/reactivate` | Deshace la cancelación si el periodo no terminó; si terminó, devuelve `{ url }` de un Checkout nuevo. `Idempotency-Key` |
-| `POST /v1/billing/credit-packs { pack: 500|2000 }` | Checkout en modo pago; el paquete vale hasta fin del mes natural de compra. `Idempotency-Key` |
+| `POST /v1/billing/credit-packs { pack: 500|2000 }` | Checkout en modo pago (402 `ENTITLEMENT_REQUIRED` sin acceso activo); los créditos se conceden solo cuando la sesión canónica (`getCheckoutSession`) está pagada —también en `checkout.session.async_payment_succeeded`— y valen hasta fin del mes natural de compra. `Idempotency-Key` |
 | `GET /v1/billing/fake/complete?session=` | Solo con `STRIPE_MODE=fake` y fuera de producción: completa el checkout simulado procesando el webhook firmado por el mismo handler |
 
 ### Webhooks (sin sesión, con verificación)
 | `POST /webhooks/google/gmail` | Push de Google: token de canal compartido con Calendar en el MVP (ADR 0004); el JWT de Pub/Sub llega con el bloqueo `gmail` en vivo |
 |---|---|
 | `POST /webhooks/google/calendar` | Canal `watch`, verificar `X-Goog-Channel-Token` |
-| `POST /webhooks/stripe` | Firma `t=…,v1=` HMAC-SHA256 (5 min de tolerancia) sobre el cuerpo crudo; idempotencia por `event.id` en `stripe_events` en la misma transacción que los efectos; para `customer.subscription.*` e `invoice.*` se relee la suscripción y el workspace sale de sus metadatos; eventos más antiguos que `subscriptions.last_event_at` sin efectos. 400 firma inválida; 200 sin efectos si el workspace falta, no existe, está borrado o el cliente de Stripe no coincide; 5xx error transitorio |
+| `POST /webhooks/stripe` | Firma `t=…,v1=` HMAC-SHA256 (5 min de tolerancia) sobre el cuerpo crudo; idempotencia por `event.id` en `stripe_events` en la misma transacción que los efectos; para `customer.subscription.*` e `invoice.*` se relee la suscripción y el workspace sale de sus metadatos; para `checkout.session.*` se relee la sesión. Un evento más antiguo que `subscriptions.last_event_at` no mueve el espejo, pero conserva sus propios efectos de factura (aviso de pago fallido). Una suscripción viva de un workspace borrado o desconocido se cancela en el proveedor (clave `orphan-<id>`); una segunda suscripción del mismo workspace se cancela (`duplicate-<id>`) y se audita `billing.duplicate_cancelled`. 400 firma inválida; 200 sin efectos si el workspace falta, no existe, está borrado o el cliente de Stripe no coincide, o si el proveedor responde con un error permanente; 5xx error transitorio |
 | `GET /health` · `GET /ready` | Sondas |
 
 ## Colas (BullMQ) y cargas

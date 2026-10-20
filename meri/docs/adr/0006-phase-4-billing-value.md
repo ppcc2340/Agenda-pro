@@ -25,3 +25,14 @@ La fase 4 (F-12, F-15, docs/08, docs/09) añade el ciclo comercial (prueba, cobr
 - Migración `0015` con `credit_grants`, `billing_rollups`, `cancellation_feedback`, columnas nuevas en `subscriptions` y `entitlements`, índice único de `value_events` y recálculo de `ai_usage.credits` y `entitlements` desde el catálogo.
 - `DELETE /v1/account` cancela la suscripción en el proveedor; `cancellation_feedback` entra en la exportación.
 - Nuevas variables (`blockers.json`): `STRIPE_PRICE_PRO_PLUS`, `STRIPE_PRICE_PRO_PLUS_ANNUAL`, `STRIPE_PRICE_CREDITS_500`, `STRIPE_PRICE_CREDITS_2000`; `POSTHOG_HOST` e `INFRA_COST_USD_PER_USER` opcionales.
+
+## Revisión al cierre (2026-10-20)
+Los revisores de seguridad, código, tests y UX de la fase pidieron estos cambios, ya incorporados al contrato:
+- **Claves de idempotencia por intención**: cancelar, reactivar y crear sesiones reenvían al proveedor la `Idempotency-Key` del cliente (cancelar → reactivar → cancelar ya no reutiliza la primera respuesta). El cliente de Stripe se crea con clave `customer-<workspace>` antes del primer checkout.
+- **Paquetes solo pagados**: `BillingProvider.getCheckoutSession(id)` relee la sesión; sin `payment_status = paid` no hay créditos (pagos asíncronos: `checkout.session.async_payment_succeeded`). Un evento de paquete inventado para una sesión que el proveedor no conoce no concede nada (el secreto del modo simulado es público).
+- **Suscripciones huérfanas y duplicadas**: un evento de una suscripción viva cuyo workspace está borrado o no existe la cancela en el proveedor (respaldo de `DELETE /v1/account`); una segunda suscripción viva del mismo workspace se cancela y se audita. Métodos nuevos del proveedor: `ensureCustomer`, `getCheckoutSession`, `cancelSubscription(id, { atPeriodEnd, idempotencyKey })`, `resumeSubscription(id, { idempotencyKey })`; tiempo máximo de 10 s por llamada.
+- **Acceso**: las funciones de pago (`advanced_exports`, briefings sin límite) y las altas de clientes exigen acceso activo además del derecho del plan; comprar paquetes también.
+- **Retención**: la preferencia del usuario sigue aplicándose con acceso inactivo (solo se suspende la purga por plan); la regla del punto 5 se mantiene para bajar de plan.
+- **Encuesta de cancelación opcional**: `reason` por defecto `other`; nunca bloquea cancelar.
+- **Precio de los paquetes**: `CREDIT_PACK_PRICE_CENTS` en `core` (hipótesis: 500 créditos US$9, 2 000 créditos US$29), mostrado en el diálogo de compra.
+- **E2E**: `pnpm e2e:fixture --exhaust-credits=<correo>` agota los créditos de una cuenta de prueba (`@meri.local`, nunca en producción) para el escenario «IA en pausa».
