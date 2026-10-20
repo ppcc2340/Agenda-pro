@@ -134,6 +134,13 @@
       "when": 1792539231989,
       "tag": "0018_phase5_erasure",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1792540392475,
+      "tag": "0019_audit_log_immutable",
+      "breakpoints": true
     }
   ]
 }
