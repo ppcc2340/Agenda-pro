@@ -62,8 +62,9 @@ test("client → meeting → briefing → agreements → weekly time → CSV →
   await form.getByLabel(/dominios de correo/i).fill("acme.com");
   await form.getByRole("button", { name: /guardar cliente/i }).click();
   await expect(page.getByRole("status")).toContainText(/cliente creado/i);
+  // Rows show commitments, hours and risk (demo); the domains live in the client view (checked below).
   const card = page.locator("li", { hasText: /^Acme/ }).first();
-  await expect(card).toContainText("acme.com");
+  await expect(card).toContainText(/sin riesgos|en riesgo/i);
   await expectAccessible(page, "clientes");
 
   // A task for the client through capture (the legal vocabulary makes a dated "vista" a hard deadline).
@@ -94,6 +95,7 @@ test("client → meeting → briefing → agreements → weekly time → CSV →
   await page.waitForURL(/\/clientes\//);
   await hydrated(page);
   await expect(page.getByRole("heading", { name: "Acme" }).first()).toBeVisible();
+  await expect(page.getByText("acme.com").first()).toBeVisible();
   await expect(page.getByText(/llamada semanal con acme/i).first()).toBeVisible({ timeout: 20_000 });
   await expect(page.getByText(/informe para acme/i).first()).toBeVisible();
   await expectAccessible(page, "cliente");

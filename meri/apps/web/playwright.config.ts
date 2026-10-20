@@ -3,12 +3,11 @@ import { defineConfig, devices } from "@playwright/test";
 /**
  * E2E against the running demo servers: `DEMO_NOW=2026-10-20T08:40:00Z pnpm demo` (api + worker + web in fake
  * mode with DEMO_MODE=1), so the day line, the sample meetings and the seeded workspace are deterministic. The
- * global setup reseeds the demo workspace (E2E_SKIP_SEED=1 keeps it). Chromium only; the preinstalled browser
- * is used (PLAYWRIGHT_BROWSERS_PATH).
+ * prototype specs reseed the demo workspace before they start (E2E_SKIP_SEED=1 keeps it). Chromium only; the
+ * preinstalled browser is used (PLAYWRIGHT_BROWSERS_PATH).
  */
 export default defineConfig({
   testDir: "./e2e",
-  globalSetup: "./e2e/global-setup.ts",
   timeout: 120_000,
   expect: { timeout: 15_000 },
   fullyParallel: false,

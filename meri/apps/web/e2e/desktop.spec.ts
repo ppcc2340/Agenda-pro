@@ -1,11 +1,14 @@
 import { expect, test } from "@playwright/test";
-import { demoLogin, expectAccessible, goto, pressWithKeyboard, shot } from "./helpers";
+import { demoLogin, expectAccessible, goto, pressWithKeyboard, reseedDemo, shot } from "./helpers";
 
 /**
  * Desktop prototype (PROTOTYPE.md criteria 1–10, 1280×800) over the seeded demo workspace. Each test signs in
  * on its own; the suite is serial because some steps build on the previous ones (the reorganisation).
  */
 test.describe.configure({ mode: "serial" });
+test.beforeAll(() => {
+  reseedDemo();
+});
 
 const BLOCKS = 'main button[aria-pressed][aria-label*="–"]';
 

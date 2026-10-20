@@ -1,8 +1,11 @@
 import { expect, test } from "@playwright/test";
-import { demoLogin, expectAccessible, goto, pressWithKeyboard, shot } from "./helpers";
+import { demoLogin, expectAccessible, goto, pressWithKeyboard, reseedDemo, shot } from "./helpers";
 
 /** Mobile prototype (PROTOTYPE.md, Pixel 7 = 412 px; plus a 360 px pass) over the seeded demo workspace. */
 test.describe.configure({ mode: "serial" });
+test.beforeAll(() => {
+  reseedDemo();
+});
 
 test("1. Hoy: «Ahora» card, why now, four questions", async ({ page }) => {
   await demoLogin(page);

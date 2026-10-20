@@ -1,5 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page } from "@playwright/test";
+import { execSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -58,4 +59,17 @@ export async function pressWithKeyboard(page: Page, locator: ReturnType<Page["lo
   await locator.focus();
   await expect(locator).toBeFocused();
   await page.keyboard.press("Enter");
+}
+
+/**
+ * Resets and reseeds the demo workspace (D-048) so each prototype spec starts from the same data, whatever
+ * the project order. `E2E_SKIP_SEED=1` keeps the current workspace.
+ */
+export function reseedDemo(): void {
+  if (process.env.E2E_SKIP_SEED === "1") return;
+  execSync("pnpm demo:seed -- --reset", {
+    cwd: path.resolve(here, "../../.."),
+    stdio: "inherit",
+    env: { ...process.env, DEMO_NOW: process.env.DEMO_NOW ?? DEMO_NOW },
+  });
 }

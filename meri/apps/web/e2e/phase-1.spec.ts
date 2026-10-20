@@ -113,8 +113,20 @@ test("onboarding → capture → plan → connect calendar → reorganize (accep
   await expect(reorganize).toBeVisible({ timeout: 60_000 });
   await reorganize.click();
   await expect(page.getByRole("dialog")).toContainText(/ninguna reunión se mueve/i);
-  await page.getByRole("button", { name: /aceptar cambios/i }).click();
-  await expect(page.getByRole("status")).toContainText(/cambios aplicados/i);
+  // A background replan (calendar poll, time inference) can supersede the proposal between opening the diff and
+  // accepting it (ADR 0003 basePlanVersion); then the latest proposal is opened and accepted once more.
+  const accept = async () => {
+    await page.getByRole("button", { name: /aceptar cambios/i }).click();
+    await expect(page.getByRole("status")).toContainText(/cambios aplicados/i, { timeout: 10_000 });
+  };
+  try {
+    await accept();
+  } catch {
+    await page.goto("/hoy");
+    await hydrated(page);
+    await page.getByRole("button", { name: /ver cómo reorganizar/i }).first().click();
+    await accept();
+  }
 
   await page.goto("/calendario");
   await hydrated(page);
