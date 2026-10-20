@@ -19,7 +19,7 @@ describe("buildCsp (D-080)", () => {
     const csp = buildCsp("n", { dev: false });
     expect(directive(csp, "object-src")).toBe("'none'");
     expect(directive(csp, "base-uri")).toBe("'none'");
-    expect(directive(csp, "form-action")).toBe("'self'");
+    expect(directive(csp, "form-action")).toBe("'self' https://accounts.google.com");
     expect(directive(csp, "frame-ancestors")).toBe("'self'");
     expect(directive(csp, "img-src")).toBe("'self' data: blob:");
     expect(directive(csp, "connect-src")).toBe("'self'");

@@ -32,18 +32,19 @@ Worker BullMQ ─────────────(3)(4)(5)(6)        Operado
 ### 3.1 Sesión y autenticación
 | STRIDE | Amenaza | Mitigación (mecanismo · evidencia) | Residual |
 |---|---|---|---|
-| S | Falsificar o cruzar la sesión de otro usuario | JWT cifrado con `AUTH_SECRET`, reclamaciones validadas con Zod (`plugins/session.ts`) · `account.test.ts` «forged/crossed claims → 401» | Robo de cookie en un dispositivo comprometido: revocación global (fase 5 · paso 3) |
+| S | Falsificar o cruzar la sesión de otro usuario | JWT cifrado con `AUTH_SECRET`, reclamaciones validadas con Zod (`plugins/session.ts`) · `account.test.ts` «forged/crossed claims → 401» | Robo de cookie en un dispositivo comprometido: revocación global (fase 5 · paso 4) |
 | S | Proveedor de acceso de desarrollo en producción | rechazado en producción (`apps/web/src/auth.ts`) · `auth.test.ts` | Staging público con `GOOGLE_MODE=fake`: limitar a `DEMO_MODE`/localhost (deuda) |
 | T | Redirección abierta tras el login (`next=`) | `safeNext` (`server/demo.ts`) · `demo.test.ts` | — |
 | R | Acciones sin rastro | `audit_log` en cada acción automatizada y de permisos · tests de cada ruta | — |
 | E | Cuenta borrada sigue usando su cookie | guardia de sesión (`plugins/account-guard.ts`, caché 60 s) · `account-guard.test.ts` | Ventana ≤ 60 s |
-| E | Sesión robada válida 14 días | `updateAge` 1 h y «cerrar sesión en todos los dispositivos» (`users.sessions_valid_after`) · fase 5 · paso 3 | — |
+| E | Sesión robada válida 14 días | caducidad absoluta desde `authTime` (fijado al iniciar sesión, no se renueva al reemitir el JWT) y «cerrar sesión en todos los dispositivos» (`users.sessions_valid_after`) · fase 5 · paso 4 | — |
+| S | Dirección de correo reciclada (empresa que reasigna un buzón) hereda la cuenta anterior | identidad por `sub` de Google + `email_verified` en el login; email existente con otro `sub` → 409 · fase 5 · paso 4 | — |
 
 ### 3.2 Peticiones del navegador (XSS, CSRF, abuso)
 | STRIDE | Amenaza | Mitigación | Residual |
 |---|---|---|---|
 | T/E | XSS que lee datos o actúa en nombre del usuario | React escapa por defecto; sin `dangerouslySetInnerHTML` con datos; CSP con nonce y `strict-dynamic` (fase 5 · paso 2) | `style-src 'unsafe-inline'` (estilos, sin ejecución) |
-| T | CSRF desde otro sitio | cookie `SameSite=Lax`, cabecera `x-requested-with: meri` en escrituras (`plugins/csrf.ts` · `account.test.ts`), API sin CORS, `Origin`/`Sec-Fetch-Site` (fase 5 · paso 3) | GET con efectos solo en demo/`fake` |
+| T | CSRF desde otro sitio | cookie `SameSite=Lax`, cabecera `x-requested-with: meri` en escrituras (`plugins/csrf.ts` · `account.test.ts`), API sin CORS, `Origin`/`Sec-Fetch-Site` (fase 5 · paso 4) | GET con efectos solo en demo/`fake` |
 | T | Clickjacking | `frame-ancestors` + `X-Frame-Options` (`next.config.ts` / middleware) | — |
 | D | Abuso de la API / coste de IA | rate limit por usuario/IP (`app.ts`, `RATE_LIMIT_PER_MINUTE`) · `health.test.ts`; límites por ruta; `bodyLimit` 256 KB; puerta `aiBudget` y tope en USD | Sin WAF hasta el despliegue |
 | I | Respuestas con datos cacheadas por intermediarios | `Cache-Control: no-store` en exportaciones (y en toda respuesta con sesión, fase 5 · paso 2) | — |
@@ -51,14 +52,14 @@ Worker BullMQ ─────────────(3)(4)(5)(6)        Operado
 ### 3.3 Aislamiento multi-tenant y entre clientes
 | STRIDE | Amenaza | Mitigación | Residual |
 |---|---|---|---|
-| I | Un workspace lee datos de otro (IDOR) | RLS FORCE por `workspace_id` (`drizzle/0001_rls_roles_grants.sql`), `withWorkspace`, filtros en repos · `rls-coverage.test.ts`, `workspace.test.ts`, pruebas cruzadas por ruta y matriz de autorización (fase 5 · paso 8) | Error humano en una ruta nueva: la matriz falla si una ruta no está cubierta |
+| I | Un workspace lee datos de otro (IDOR) | RLS FORCE por `workspace_id` (`drizzle/0001_rls_roles_grants.sql`), `withWorkspace`, filtros en repos · `rls-coverage.test.ts`, `workspace.test.ts`, pruebas cruzadas por ruta y matriz de autorización (fase 5 · paso 9) | Error humano en una ruta nueva: la matriz falla si una ruta no está cubierta |
 | I | Información de un cliente en el contexto de IA de otro | `ContextBuilder` único (`core/clients/context.ts`) · `context.properties.test.ts` (1 000 casos) y canario en `briefings.test.ts` / `evals/briefings` | — |
 | E | Un job opera sin fijar el workspace | dispatchers con contexto de lectura admin y luego `withWorkspace` (D-025) | — |
 
 ### 3.4 Conexión OAuth con Google
 | STRIDE | Amenaza | Mitigación | Residual |
 |---|---|---|---|
-| S | CSRF de login OAuth / inyección de código de autorización | `state` aleatorio en cookie HttpOnly (`routes/integrations.ts`) · `integrations.test.ts`; PKCE S256 y comparación en tiempo constante (fase 5 · paso 3) | — |
+| S | CSRF de login OAuth / inyección de código de autorización | `state` aleatorio en cookie HttpOnly (`routes/integrations.ts`) · `integrations.test.ts`; PKCE S256 y comparación en tiempo constante (fase 5 · paso 4) | — |
 | E | Scopes excesivos (envío de correo) | scopes incrementales por función, nunca `gmail.send` (`oauth/scopes.ts`); paso de CI que prohíbe código de envío | — |
 | I | Fuga de tokens | cifrado de sobre (`config/crypto/envelope.ts`), AAD por cuenta, nunca en logs (lista de censura del logger · `logger.test.ts`); revocación en el proveedor al desconectar y al borrar la cuenta | Clave local en desarrollo: prohibida en producción (`modes.ts`) |
 
@@ -66,8 +67,8 @@ Worker BullMQ ─────────────(3)(4)(5)(6)        Operado
 | STRIDE | Amenaza | Mitigación | Residual |
 |---|---|---|---|
 | T/E | Inyección de instrucciones en el correo que hace actuar a la IA | La IA solo escribe `proposals`; la política decide; el usuario confirma; contenido marcado como no confiable (docs/05 §6) · `evals/injection` (100 %), `extract.test.ts` | Ofuscaciones no cubiertas por la suite (deuda de la fase 2) |
-| I | Guardar cuerpos de correo | solo metadatos y cita ≤ 200 (`core/mail/sanitize.ts`) · `no-mail-bodies.test.ts`; propiedades de los analizadores (fase 5 · paso 8) | — |
-| D | Correo malicioso que rompe el analizador | validación Zod, propiedades `fast-check` «nunca lanza» (fase 5 · paso 8) | — |
+| I | Guardar cuerpos de correo | solo metadatos y cita ≤ 200 (`core/mail/sanitize.ts`) · `no-mail-bodies.test.ts`; propiedades de los analizadores (fase 5 · paso 9) | — |
+| D | Correo malicioso que rompe el analizador | validación Zod, propiedades `fast-check` «nunca lanza» (fase 5 · paso 9) | — |
 | I | Datos de clientes enviados al proveedor de IA más allá de lo necesario | contexto mínimo por cliente; uso limitado de Google (sin entrenamiento) en el contrato con el proveedor (`docs/compliance/subprocessors.md`) | Depende del contrato del proveedor (humano) |
 
 ### 3.6 Escritura en calendario y acciones automáticas
@@ -92,23 +93,23 @@ Worker BullMQ ─────────────(3)(4)(5)(6)        Operado
 ### 3.9 Datos en reposo, claves y copias
 | STRIDE | Amenaza | Mitigación | Residual |
 |---|---|---|---|
-| I | Volcado de la base expone tokens | tokens cifrados con KMS (fase 5 · paso 4); cifrado en reposo del proveedor gestionado | Metadatos en claro en la base (cifrado del proveedor) |
-| I | Copia robada | copia cifrada con una DEK envuelta por KMS (fase 5 · paso 5) | Quien tenga acceso a la clave KMS y a la copia |
+| I | Volcado de la base expone tokens | tokens cifrados con KMS (fase 5 · paso 5); cifrado en reposo del proveedor gestionado | Metadatos en claro en la base (cifrado del proveedor) |
+| I | Copia robada | copia cifrada con una DEK envuelta por KMS (fase 5 · paso 6) | Quien tenga acceso a la clave KMS y a la copia |
 | D | Pérdida de la clave | rotación con anillo (claves anteriores para descifrar), rotación automática del KMS | Borrado de la clave en el KMS = pérdida irreversible (procedimiento con doble control en `docs/runbooks/key-rotation.md`) |
-| T | Copia alterada restaurada | autenticación por trozo y del orden/final del archivo (fase 5 · paso 5) | — |
+| T | Copia alterada restaurada | autenticación por trozo y del orden/final del archivo (fase 5 · paso 6) | — |
 
 ### 3.10 Privacidad y retención
 | STRIDE | Amenaza | Mitigación | Residual |
 |---|---|---|---|
-| I | Datos que sobreviven a la eliminación | purga física `data.delete_account` y consulta de verificación generada del esquema (fase 5 · paso 6) | Copias de seguridad hasta su caducidad (documentado en privacidad) |
-| R | Alteración del registro de auditoría | sin UPDATE/DELETE para la app · `workspace.test.ts`; trigger de inmutabilidad (fase 5 · paso 7) | El propietario de la base puede desactivar el trigger (acceso de operador auditado) |
+| I | Datos que sobreviven a la eliminación | purga física `data.delete_account` y verificación sobre una lista de tablas clasificada (fase 5 · paso 7) | Copias de seguridad hasta su caducidad (documentado en privacidad) |
+| R | Alteración o borrado del registro de auditoría (también en cascada al borrar un workspace) | sin UPDATE/DELETE para la app · `workspace.test.ts`; sin DELETE sobre `workspaces`/`users` para la app; purga solo por función `SECURITY DEFINER`; trigger de inmutabilidad (fase 5 · pasos 7 y 8) | El propietario de la base puede desactivar el trigger (acceso de operador auditado) |
 
 ### 3.11 Cadena de suministro y operación
 | STRIDE | Amenaza | Mitigación | Residual |
 |---|---|---|---|
-| T | Dependencia comprometida | `pnpm-lock.yaml` congelado, `pnpm audit --prod` bloqueante, Dependabot, SBOM (fase 5 · paso 8) | Ataques de día cero |
+| T | Dependencia comprometida | `pnpm-lock.yaml` congelado, `pnpm audit --prod` bloqueante, Dependabot, SBOM (fase 5 · paso 9) | Ataques de día cero |
 | I | Secretos en el repositorio | gitleaks en CI (`.gitleaks.toml`), `.env` ignorado | — |
-| T | Vulnerabilidad en el código | CodeQL `security-extended` (fase 5 · paso 8), revisiones por fase | — |
+| T | Vulnerabilidad en el código | CodeQL `security-extended` (fase 5 · paso 9), revisiones por fase | — |
 | E | Acceso de operador indebido | conexión de administrador solo en scripts; producción prohíbe `fake` y `KMS_PROVIDER=local` | Controles de acceso del proveedor de hosting (humano) |
 
 ## 4. Fuera de alcance

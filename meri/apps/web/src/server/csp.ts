@@ -16,7 +16,8 @@ export function buildCsp(nonce: string, options: { dev: boolean }): string {
     ["frame-ancestors", "'self'"],
     ["object-src", "'none'"],
     ["base-uri", "'none'"],
-    ["form-action", "'self'"],
+    // Chrome applies form-action to redirects: the Google sign-in form posts here and is redirected to Google.
+    ["form-action", "'self' https://accounts.google.com"],
   ];
   return directives.map(([name, value]) => `${name} ${value}`).join("; ");
 }
