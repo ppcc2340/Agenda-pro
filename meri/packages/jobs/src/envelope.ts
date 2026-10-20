@@ -24,6 +24,7 @@ export const QUEUE_NAMES = [
   "time.infer",
   "briefings.prepare",
   "daily.review",
+  "daily.close",
   "billing.usage_rollup",
   "data.delete_account",
   "data.retention",

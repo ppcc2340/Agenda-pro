@@ -50,6 +50,16 @@ export const DailyReviewJob = {
   name: "daily.review" as const,
   schema: withEnvelope({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }),
 };
+/** D-062: per workspace and month (docs/13 [L17]); also emits the [M10] `trial.ending` notice. */
+export const BillingUsageRollupJob = {
+  name: "billing.usage_rollup" as const,
+  schema: withEnvelope({ period: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/) }),
+};
+/** D-064: end-of-day close notification, once per workspace and local day. */
+export const DailyCloseJob = {
+  name: "daily.close" as const,
+  schema: withEnvelope({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }),
+};
 export const ExamplePingJob = {
   name: "example.ping" as const,
   schema: withEnvelope({ message: z.string().max(200), failTimes: z.number().int().min(0).default(0) }),
@@ -65,3 +75,5 @@ export type TimeInferPayload = z.infer<typeof TimeInferJob.schema>;
 export type DataRetentionPayload = z.infer<typeof DataRetentionJob.schema>;
 export type PlannerReplanPayload = z.infer<typeof PlannerReplanJob.schema>;
 export type DailyReviewPayload = z.infer<typeof DailyReviewJob.schema>;
+export type BillingUsageRollupPayload = z.infer<typeof BillingUsageRollupJob.schema>;
+export type DailyClosePayload = z.infer<typeof DailyCloseJob.schema>;

@@ -10,6 +10,7 @@
     "dev": "turbo run dev --parallel",
     "demo": "node scripts/demo.mjs",
     "demo:seed": "tsx scripts/demo-seed.ts",
+    "report:margins": "tsx scripts/report-margins.ts",
     "build": "turbo run build",
     "lint": "turbo run lint && pnpm lint:deps",
     "lint:deps": "depcruise apps packages --config .dependency-cruiser.cjs",

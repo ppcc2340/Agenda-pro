@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { Logger } from "@meri/config";
 import {
+  BillingUsageRollupJob,
   BriefingsPrepareJob,
   CalendarSyncJob,
   ClientsScanJob,
@@ -194,6 +195,31 @@ export async function dispatchRetention(deps: DispatcherDeps): Promise<number> {
   }
   if (rows.length > 0) deps.logger.info({ workspaces: rows.length }, "retention dispatched");
   return rows.length;
+}
+
+/**
+ * billing.usage_rollup (D-062): once a day per live workspace for the current month, plus the previous month during
+ * the first two days so the closing figures include the last day (job ids keyed by period and date).
+ */
+export async function dispatchUsageRollup(deps: DispatcherDeps): Promise<number> {
+  const rows = await deps.adminSql<{ workspaceId: string }[]>`
+    select s.workspace_id as "workspaceId" from subscriptions s where ${activeWorkspace(deps.adminSql, "s")} limit 5000`;
+  const now = deps.now();
+  const date = now.toISOString().slice(0, 10);
+  const periods = [date.slice(0, 7)];
+  if (now.getUTCDate() <= 2)
+    periods.push(
+      new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1)).toISOString().slice(0, 7),
+    );
+  for (const row of rows)
+    for (const period of periods)
+      await deps.dispatcher.enqueue(
+        BillingUsageRollupJob,
+        { workspaceId: row.workspaceId, traceId: randomUUID(), period },
+        { jobId: `billing.usage_rollup_${row.workspaceId}_${period}_${date}` },
+      );
+  if (rows.length > 0) deps.logger.info({ workspaces: rows.length, periods }, "usage rollup dispatched");
+  return rows.length * periods.length;
 }
 
 /** Runs `fn` every `everyMs`, never overlapping, with errors logged (not thrown). Returns a stop function. */

@@ -160,7 +160,17 @@ async function notifyOncePerPeriod(
   now: Date,
   notice: { template: string; title: string; body: string; params: Record<string, string | number> },
 ): Promise<boolean> {
-  const ref = { type: "billing_period", id: periodOf(now) };
+  return notifyBillingOnce(tx, workspaceId, now, notice, { type: "billing_period", id: periodOf(now) });
+}
+
+/** A billing notice that exists at most once per (template, ref); never counts toward the daily cap ([M6]). */
+export async function notifyBillingOnce(
+  tx: WorkspaceTx,
+  workspaceId: WorkspaceId,
+  now: Date,
+  notice: { template: string; title: string; body: string; params: Record<string, string | number> },
+  ref: { type: string; id: string },
+): Promise<boolean> {
   if (await notificationExistsForRef(tx, workspaceId, notice.template, ref)) return false;
   const timezone = (await getPreferences(tx, workspaceId))?.timezone ?? "UTC";
   await insertNotification(

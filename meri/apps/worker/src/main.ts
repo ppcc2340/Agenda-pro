@@ -14,6 +14,7 @@ import {
   dispatchMailPolling,
   dispatchRetention,
   dispatchTimeInfer,
+  dispatchUsageRollup,
   schedule,
 } from "./dispatchers";
 
@@ -31,6 +32,7 @@ import { followupsScanJob } from "./queues/followups-scan";
 import { dataRetentionJob } from "./queues/data-retention";
 import { plannerReplanJob } from "./queues/planner-replan";
 import { examplePing } from "./queues/example";
+import { billingUsageRollupJob } from "./queues/billing-usage-rollup";
 import { QueueRegistry } from "./registry";
 
 loadDotenv(".env");
@@ -64,6 +66,9 @@ async function main(): Promise<void> {
   registry.register(dataRetentionJob({ ...handlerDeps, maxRetentionDays: MAX_RETENTION_DAYS }));
   registry.register(
     extractCommitmentsJob({ ...handlerDeps, costCapUsd: config.env.AI_MONTHLY_COST_CAP_USD_PER_USER }),
+  );
+  registry.register(
+    billingUsageRollupJob({ ...handlerDeps, infraCostUsdPerUser: config.env.INFRA_COST_USD_PER_USER }),
   );
 
   // Cross-tenant dispatchers (D-025) use the owner connection only to enumerate accounts.
@@ -124,6 +129,12 @@ async function main(): Promise<void> {
     () => dispatchRetention({ adminSql, dispatcher, logger, now }),
     logger,
   );
+  const stopRollup = schedule(
+    "billing.usage_rollup",
+    config.isProduction ? 60 * 60_000 : 5 * 60_000,
+    () => dispatchUsageRollup({ adminSql, dispatcher, logger, now }),
+    logger,
+  );
   const stopDigest = schedule(
     "daily.review",
     15 * 60_000,
@@ -149,6 +160,7 @@ async function main(): Promise<void> {
         "briefings.prepare",
         "time.infer",
         "data.retention",
+        "billing.usage_rollup",
       ],
     },
     "worker started",
@@ -158,6 +170,7 @@ async function main(): Promise<void> {
     logger.info({ signal }, "worker shutting down");
     stopPolling();
     stopDigest();
+    stopRollup();
     stopMailPolling();
     stopFollowups();
     stopClientsScan();

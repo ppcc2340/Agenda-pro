@@ -8,7 +8,9 @@ import {
   detachCommitmentsFromThreads,
   deleteThreadsByIds,
   expireProposalsForThreads,
-  getEntitlementRetentionDays,
+  effectiveRetentionDays,
+  getAccess,
+  getEntitlements,
   getPreferences,
   listThreadIdsForAccount,
   listThreadIdsOlderThan,
@@ -53,6 +55,21 @@ export async function purgeAccountMail(
 }
 
 /** data.retention: threads older than min(preferences.retention_days, entitlement cap) are purged in batches. */
+/**
+ * Retention window for indexed mail (D-036, [H2]): the user's choice, capped by the plan and the hard ceiling. The
+ * plan never deletes data on its own terms while access is paused (only the user's choice and the ceiling apply),
+ * and after a downgrade `planDays` already carries the longer previous value during the grace window.
+ */
+export function mailRetentionDays(input: {
+  preferenceDays: number | null;
+  accessActive: boolean;
+  planDays: number;
+  maxDays: number;
+}): number {
+  const planCap = input.accessActive ? input.planDays : input.maxDays;
+  return Math.max(1, Math.min(input.preferenceDays ?? planCap, planCap, input.maxDays));
+}
+
 export async function applyMailRetention(
   deps: HandlerDeps,
   workspaceId: WorkspaceId,
@@ -61,11 +78,12 @@ export async function applyMailRetention(
   const now = deps.now();
   return withWorkspace(deps.db, workspaceId, async (tx) => {
     const prefs = await getPreferences(tx, workspaceId);
-    const planCap = await getEntitlementRetentionDays(tx, workspaceId);
-    const retentionDays = Math.max(
-      1,
-      Math.min(prefs?.retentionDays ?? planCap, planCap, options.maxRetentionDays),
-    );
+    const retentionDays = mailRetentionDays({
+      preferenceDays: prefs?.retentionDays ?? null,
+      accessActive: (await getAccess(tx, workspaceId, now)).active,
+      planDays: effectiveRetentionDays(await getEntitlements(tx, workspaceId), now),
+      maxDays: options.maxRetentionDays,
+    });
     const before = new Date(now.getTime() - retentionDays * 86_400_000);
     const ids = await listThreadIdsOlderThan(tx, workspaceId, before);
     const result = await purgeThreads(tx, workspaceId, ids, now);

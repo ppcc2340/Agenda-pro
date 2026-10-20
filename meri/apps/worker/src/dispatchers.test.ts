@@ -28,6 +28,7 @@ import {
   dispatchFollowupsScan,
   dispatchMailPolling,
   dispatchTimeInfer,
+  dispatchUsageRollup,
   type DispatcherDeps,
 } from "./dispatchers";
 
@@ -44,6 +45,7 @@ const DISPATCHERS = {
   dispatchClientsScan,
   dispatchBriefingsPrepare,
   dispatchTimeInfer,
+  dispatchUsageRollup,
 } as const;
 
 describe("dispatchers skip logically deleted workspaces (D-054)", () => {
@@ -117,4 +119,22 @@ describe("dispatchers skip logically deleted workspaces (D-054)", () => {
       expect(workspaces).not.toContain(deleted.workspaceId);
     });
   }
+
+  it("dispatchUsageRollup also closes the previous month during the first two days", async () => {
+    const at = async (iso: string) => {
+      const dispatcher = new InMemoryDispatcher();
+      await dispatchUsageRollup({
+        adminSql,
+        dispatcher,
+        logger: createLogger({ name: "worker-test", level: "silent" }),
+        now: () => new Date(iso),
+      });
+      return dispatcher.jobs
+        .filter((j) => (j.payload as { workspaceId: string }).workspaceId === alive.workspaceId)
+        .map((j) => (j.payload as { period: string }).period)
+        .sort();
+    };
+    expect(await at("2026-11-01T06:00:00Z")).toEqual(["2026-10", "2026-11"]);
+    expect(await at("2026-11-15T06:00:00Z")).toEqual(["2026-11"]);
+  });
 });

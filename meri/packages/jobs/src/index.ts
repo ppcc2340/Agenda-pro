@@ -46,11 +46,12 @@ export {
   type ExtractResult,
 } from "./handlers/extract-commitments";
 export { scanFollowups, followupDedupeHash, type FollowupsScanResult } from "./handlers/followups-scan";
-export { purgeThreads, purgeAccountMail, applyMailRetention, type PurgeResult } from "./handlers/mail-purge";
+export { purgeThreads, purgeAccountMail, applyMailRetention, mailRetentionDays, type PurgeResult } from "./handlers/mail-purge";
 export { scanClients, clientLinkDedupeHash, type ClientsScanResult, type ClientLinkPayload } from "./handlers/clients-scan";
 export { prepareBriefings, BRIEFING_LOOKAHEAD_MS, type BriefingsPrepareResult } from "./handlers/briefings-prepare";
 export { inferTime, TIME_INFER_WINDOW_DAYS, type TimeInferResult } from "./handlers/time-infer";
 export { enqueueTimeInfer } from "./time-trigger";
-export { aiBudget, aiStatus, chargeAiUsage, notifyAiPaused, type AiStatus, type BudgetDecision, type BudgetDenyReason, type BudgetOptions, type UsageRecord } from "./budget";
+export { aiBudget, aiStatus, chargeAiUsage, notifyAiPaused, notifyBillingOnce, type AiStatus, type BudgetDecision, type BudgetDenyReason, type BudgetOptions, type UsageRecord } from "./budget";
 export { ANALYTICS_SCHEMAS, track, type AnalyticsPropsOf } from "./analytics";
 export { processBillingEvent, type BillingEventDeps, type BillingEventOutcome } from "./billing-events";
+export { runUsageRollup, TRIAL_ENDING_NOTICE_DAYS, type UsageRollupResult } from "./handlers/usage-rollup";
