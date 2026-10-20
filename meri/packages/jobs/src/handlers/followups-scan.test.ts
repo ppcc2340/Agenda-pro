@@ -19,6 +19,7 @@ import {
   withWorkspace,
   type DbHandle,
   type WorkspaceId,
+  listValueEvents,
 } from "@meri/db";
 import { createIntegrations, GMAIL_SCOPES, type Integrations } from "@meri/integrations";
 import type { HandlerDeps } from "./context";
@@ -193,6 +194,12 @@ describe("followups.scan and mail purge (F-08 AC1/AC2, D-035, D-036)", () => {
     expect(stillPending.items).toHaveLength(1);
     const page = await withWorkspace(handle.db, ws, (tx) => listAudit(tx, ws, 50));
     expect(page.items.find((e) => e.action === "commitment.at_risk")?.actor).toBe("system");
+    const value = await withWorkspace(handle.db, ws, (tx) =>
+      listValueEvents(tx, ws, { from: new Date(0), to: new Date(NOW.getTime() + 86_400_000) }),
+    );
+    expect(value.filter((e) => e.type === "deadline_risk_flagged")).toMatchObject([
+      { entityType: "commitment", method: "third_party_commitment_overdue" },
+    ]);
   });
 
   it("honours mutes per contact (F-08 AC2): a muted counterparty yields no proposal", async () => {

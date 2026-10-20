@@ -24,7 +24,7 @@ import {
   type WorkspaceId,
   type WorkspaceTx,
 } from "@meri/db";
-import { aiBudget, aiStatus, chargeAiUsage, notifyAiPaused, readTokens, type HandlerDeps } from "@meri/jobs";
+import { aiBudget, aiStatus, chargeAiUsage, forgetCommitmentSaved, notifyAiPaused, readTokens, recordCommitmentSaved, track, type HandlerDeps } from "@meri/jobs";
 import { hasGmailScopes, IntegrationError, type AiClient } from "@meri/integrations";
 import { ApiError } from "../errors";
 import { requireSession, sessionOf } from "../plugins/session";
@@ -185,7 +185,7 @@ export function commitmentRoutes(
       const session = sessionOf(request);
       const now = options.deps.now();
       const b = request.body;
-      return request.withWorkspace(async (tx) => {
+      const result = await request.withWorkspace(async (tx) => {
         const current = await getCommitment(tx, session.workspaceId, request.params.id);
         if (!current) throw new ApiError("NOT_FOUND", "Commitment not found.");
         if (current.status === "proposed")
@@ -220,10 +220,22 @@ export function commitmentRoutes(
             after: { status: updated.status, dueAt: updated.dueAt, action: updated.action },
           },
         );
+        // D-063: value is recorded where the fact happens; leaving `fulfilled` compensates it.
+        let fulfilled: { onTime: boolean } | null = null;
+        if (b.status === "fulfilled" && current.status !== "fulfilled")
+          fulfilled = await recordCommitmentSaved(tx, session.workspaceId, { id: current.id, dueAt: current.dueAt }, now);
+        else if (current.status === "fulfilled" && b.status !== undefined && b.status !== "fulfilled")
+          await forgetCommitmentSaved(tx, session.workspaceId, current.id);
         const [view] = await enrich(tx, session.workspaceId, [updated]);
         if (!view) throw new ApiError("INTERNAL");
-        return view;
+        return { view, fulfilled };
       });
+      if (result.fulfilled)
+        track(options.deps.integrations.analytics, "commitment_fulfilled", session.workspaceId, {
+          commitmentId: request.params.id,
+          onTime: result.fulfilled.onTime,
+        });
+      return result.view;
     },
   );
 
@@ -339,6 +351,10 @@ export function commitmentRoutes(
           body = templateFollowup(ctx.input);
         }
       }
+      track(options.deps.integrations.analytics, "followup_draft_created", session.workspaceId, {
+        commitmentId: ctx.commitment.id,
+        source,
+      });
       return { to: ctx.to, subject: ctx.subject, body, source, language };
     },
   );

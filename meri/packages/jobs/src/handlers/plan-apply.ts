@@ -36,6 +36,7 @@ import {
 } from "@meri/db";
 import { z } from "zod";
 import type { HandlerDeps } from "./context";
+import { forgetTimeRecovered } from "../value";
 import { writeBlocksToCalendar } from "./meri-calendar";
 import { ReschedulePayloadSchema } from "./replan";
 
@@ -352,6 +353,8 @@ export async function undoAuditEntry(
         if (current.status !== "approved")
           throw new PlanApplyError("CONFLICT", "The time entry was already changed; nothing to undo.");
         await updateTimeEntry(tx, workspaceId, entry.entityId, { status: "suggested", approvedAt: null });
+        // [M7] the recovered time stops counting; approving again records it again.
+        await forgetTimeRecovered(tx, workspaceId, entry.entityId);
         break;
       }
       case "block.completed": {

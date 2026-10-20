@@ -22,7 +22,7 @@ import {
   type TimeEntryView,
 } from "@meri/db";
 import type { Analytics } from "@meri/integrations";
-import { track } from "@meri/jobs";
+import { forgetTimeRecovered, recordTimeRecovered, track } from "@meri/jobs";
 import { ApiError } from "../errors";
 import { assertEntitlement } from "../plugins/entitlements";
 import { requireSession, sessionOf } from "../plugins/session";
@@ -177,6 +177,11 @@ export function timeRoutes(app: FastifyInstance, options: TimeRoutesOptions, don
           ...(b.description !== undefined ? { description: b.description } : {}),
         });
         if (!updated) throw new ApiError("NOT_FOUND", "Time entry not found.");
+        // A corrected approved entry counts with its corrected minutes.
+        if (updated.status === "approved" && updated.minutes !== before.minutes) {
+          await forgetTimeRecovered(tx, session.workspaceId, updated.id);
+          await recordTimeRecovered(tx, session.workspaceId, updated, options.now());
+        }
         await audit(tx, actor(request), {
           action: "time.updated",
           entityType: "time_entry",
@@ -196,7 +201,7 @@ export function timeRoutes(app: FastifyInstance, options: TimeRoutesOptions, don
   ) => {
     const session = sessionOf(request);
     const now = options.now();
-    return request.withWorkspace(async (tx) => {
+    const result = await request.withWorkspace(async (tx) => {
       const found = await getTimeEntriesByIds(tx, session.workspaceId, ids);
       const eligible = found.filter((e) => e.status === "suggested" || (status === "rejected" && e.status === "approved"));
       const updated = await setTimeEntriesStatus(
@@ -208,6 +213,9 @@ export function timeRoutes(app: FastifyInstance, options: TimeRoutesOptions, don
       );
       for (const e of updated) {
         const before = found.find((f) => f.id === e.id);
+        // D-063 / [M7]: approving inferred time records recovered time; rejecting an approval forgets it.
+        if (status === "approved") await recordTimeRecovered(tx, session.workspaceId, e, now);
+        else await forgetTimeRecovered(tx, session.workspaceId, e.id);
         await audit(tx, actor(request), {
           action: status === "approved" ? "time.approved" : "time.rejected",
           entityType: "time_entry",
@@ -218,6 +226,7 @@ export function timeRoutes(app: FastifyInstance, options: TimeRoutesOptions, don
       }
       const names = await clientNamesById(tx, session.workspaceId);
       return {
+        approvedEntries: status === "approved" ? updated.map((e) => ({ id: e.id, minutes: e.minutes })) : [],
         updated: updated.map((e) => serialize(e, names)),
         skipped: ids.filter((id) => !updated.some((e) => e.id === id)).map((id) => ({
           id,
@@ -225,6 +234,9 @@ export function timeRoutes(app: FastifyInstance, options: TimeRoutesOptions, don
         })),
       };
     });
+    for (const e of result.approvedEntries)
+      track(options.analytics, "time_entry_approved", session.workspaceId, { entryId: e.id, minutes: e.minutes });
+    return result;
   };
 
   r.post(

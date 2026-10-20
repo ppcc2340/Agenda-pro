@@ -40,6 +40,7 @@ import { timeRoutes } from "./routes/time-entries";
 import { searchRoutes } from "./routes/search";
 import { agreementRoutes } from "./routes/agreements";
 import { billingRoutes } from "./routes/billing";
+import { valueReportRoutes } from "./routes/value-report";
 import { stripeWebhookRoutes } from "./routes/webhooks-stripe";
 import { getEntitlementMaxClients } from "@meri/db";
 
@@ -217,6 +218,7 @@ export async function buildApp(deps: AppDeps) {
     appUrl: config.env.APP_URL,
     allowFakeCompletion: deps.integrations.billing.mode === "fake" && !config.isProduction,
   });
+  await app.register(valueReportRoutes, { now: deps.now, analytics: deps.integrations.analytics });
   await app.register(stripeWebhookRoutes, {
     db: deps.db,
     billing: deps.integrations.billing,

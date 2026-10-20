@@ -47,6 +47,8 @@ import {
   type WorkspaceTx,
 } from "@meri/db";
 import type { HandlerDeps } from "./context";
+import { track } from "../analytics";
+import { recordDeadlineRisk } from "../value";
 import { writeBlocksToCalendar } from "./meri-calendar";
 
 /** Planning horizon (docs/04: two working weeks). */
@@ -421,6 +423,8 @@ export async function runReplan(
       live ? snap.liveBlocks.map((b) => b.taskId) : result.blocks.map((b) => b.taskId),
     );
     const { newlyAtRisk } = await applyTaskRisks(tx, workspaceId, risksMap, scheduled, now);
+    // D-063: a risk flagged before the deadline is missed is value; once per task (unique per entity).
+    for (const taskId of newlyAtRisk) await recordDeadlineRisk(tx, workspaceId, { type: "task", id: taskId }, now);
     const run = await insertPlanRun(
       tx,
       workspaceId,
@@ -478,12 +482,20 @@ export async function runReplan(
       },
       alerts: alerts.length,
       autonomy: snap.prefs.autonomy,
+      newlyAtRisk,
+      firstPlan: !previousRun,
+      blocks: result.blocks.length,
     };
   });
 
   if (outcome.kind === "skipped") return skipped();
   if (outcome.kind === "invalid") return { ...skipped(), outcome: "invalid" };
 
+  // Analytics after commit ([M9]).
+  const analytics = deps.integrations.analytics;
+  if (outcome.firstPlan) track(analytics, "first_plan_generated", workspaceId, { blocks: outcome.blocks });
+  for (const taskId of outcome.newlyAtRisk)
+    track(analytics, "commitment_at_risk_flagged", workspaceId, { entityType: "task", entityId: taskId });
   // Outbound copies after commit (fake notifier in development; never the user's Gmail).
   for (const n of outcome.notifications) {
     await deps.integrations.notifier.deliver({

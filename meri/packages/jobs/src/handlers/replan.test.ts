@@ -24,6 +24,7 @@ import {
   type DbHandle,
   type UserId,
   type WorkspaceId,
+  listValueEvents,
 } from "@meri/db";
 import { createIntegrations, type FakeCalendar, type Integrations } from "@meri/integrations";
 import { encryptTokens } from "./calendar-sync";
@@ -289,6 +290,14 @@ describe("planner.replan, accept and undo (ADR 0003)", () => {
     const urgent = open.find((t) => t.title === "Entrega urgente");
     expect(urgent?.status).toBe("at_risk");
     expect(urgent?.risk?.cause).toBe("NO_CAPACITY");
+    // D-063: the planner's flag is value, once per task however many replans see it.
+    await runReplan(deps, ws, { reason: "tasks_changed" });
+    const flagged = await withWorkspace(handle.db, ws, (tx) =>
+      listValueEvents(tx, ws, { from: new Date(0), to: new Date(NOW.getTime() + 86_400_000) }),
+    );
+    expect(flagged.filter((e) => e.entityId === urgent?.id)).toMatchObject([
+      { type: "deadline_risk_flagged", method: "task_flagged_at_risk_by_planner", label: "Entrega urgente" },
+    ]);
     // Risk is rule-computed (F-03 AC2): once the deadline is realistic the task leaves at_risk.
     await withWorkspace(handle.db, ws, (tx) =>
       updateTask(

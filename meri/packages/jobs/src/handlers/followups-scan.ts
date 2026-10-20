@@ -23,6 +23,8 @@ import {
   type WorkspaceId,
 } from "@meri/db";
 import type { HandlerDeps } from "./context";
+import { track } from "../analytics";
+import { recordDeadlineRisk } from "../value";
 
 export interface FollowupsScanResult {
   status: "done" | "skipped";
@@ -39,7 +41,8 @@ export async function scanFollowups(
   workspaceId: WorkspaceId,
 ): Promise<FollowupsScanResult> {
   const now = deps.now();
-  return withWorkspace(deps.db, workspaceId, async (tx) => {
+  const flagged: string[] = [];
+  const result = await withWorkspace(deps.db, workspaceId, async (tx): Promise<FollowupsScanResult> => {
     const prefs = await getPreferences(tx, workspaceId);
     if (!prefs) return { status: "skipped", candidates: 0, proposals: 0, notified: false };
     const accounts = await listIntegrationAccounts(tx, workspaceId);
@@ -144,6 +147,8 @@ export async function scanFollowups(
             after: { status: "at_risk", proposalId: created.id },
           },
         );
+        await recordDeadlineRisk(tx, workspaceId, { type: "commitment", id: commitment.id }, now);
+        flagged.push(commitment.id);
       }
     }
     let notified = false;
@@ -167,4 +172,7 @@ export async function scanFollowups(
     }
     return { status: "done", candidates: candidates.length, proposals, notified };
   });
+  for (const id of flagged)
+    track(deps.integrations.analytics, "commitment_at_risk_flagged", workspaceId, { entityType: "commitment", entityId: id });
+  return result;
 }
