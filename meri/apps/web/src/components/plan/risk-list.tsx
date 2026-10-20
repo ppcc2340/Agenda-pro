@@ -1,12 +1,15 @@
 "use client";
 
+import { Mail } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
+import { FollowupDialog, type FollowupTarget } from "@/components/commitments/followup-dialog";
 import { Button } from "@/components/ui/button";
+import { ClientChip } from "@/components/ui/client-chip";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useToast } from "@/components/ui/toast";
 import { clientColorVar, riskRows } from "@/lib/plan";
-import type { Plan, Task } from "@/lib/types";
+import type { Commitment, Plan, Task } from "@/lib/types";
 import { useReplan, useUndo } from "./actions";
 import { ReorganizeDialog } from "./reorganize-dialog";
 
@@ -37,10 +40,15 @@ export function RiskList({
   plan,
   clients,
   timezone,
+  overdue = [],
+  now,
 }: {
   plan: Plan;
   clients: { id: string; name: string }[];
   timezone: string;
+  /** Overdue commitments owed to me: a risk like the demo's (Q3), with the follow-up as the way out. */
+  overdue?: Commitment[];
+  now: Date;
 }) {
   const t = useTranslations("plan.risks");
   const tHoy = useTranslations("hoy");
@@ -48,12 +56,16 @@ export function RiskList({
   const replan = useReplan();
   const undo = useUndo();
   const tApp = useTranslations("app");
+  const tInbox = useTranslations("inbox.followup");
   const [open, setOpen] = useState(false);
+  const [followup, setFollowup] = useState<FollowupTarget | null>(null);
   const rows = riskRows(plan);
   const tasks = new Map<string, Task>(plan.tasks.map((x) => [x.id, x]));
   const pending = plan.pendingProposal;
-  if (rows.length === 0 && !pending)
+  if (rows.length === 0 && !pending && overdue.length === 0)
     return <EmptyState title={tHoy("emptyRisksTitle")} body={tHoy("emptyRisksBody")} />;
+  const daysLate = (c: Commitment) =>
+    c.dueAt ? Math.max(1, Math.floor((now.getTime() - new Date(c.dueAt).getTime()) / 86_400_000)) : 1;
   return (
     <div>
       <ul className="divide-y divide-rule border-t border-rule">
@@ -70,6 +82,41 @@ export function RiskList({
             </div>
           </li>
         ) : null}
+        {overdue.map((c) => (
+          <li
+            key={`overdue-${c.id}`}
+            className="-ml-0.5 flex flex-col gap-2 border-l-[3px] border-risk py-3 pl-3.5 md:flex-row md:items-start"
+          >
+            <div className="min-w-0 flex-1">
+              <div className="font-semibold">{c.action}</div>
+              <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[13px] text-ink2">
+                <ClientChip clientId={c.clientId} clients={clients} />
+                <span>
+                  {tInbox("overdue", {
+                    who: c.counterpartyName ?? c.counterpartyEmail ?? "",
+                    action: c.action,
+                    days: daysLate(c),
+                  })}
+                </span>
+              </div>
+            </div>
+            <div className="flex-shrink-0">
+              <Button
+                size="sm"
+                onClick={() =>
+                  setFollowup({
+                    commitmentId: c.id,
+                    counterpartyName: c.counterpartyName,
+                    counterpartyEmail: c.counterpartyEmail,
+                  })
+                }
+              >
+                <Mail size={14} aria-hidden="true" />
+                {tInbox("prepare")}
+              </Button>
+            </div>
+          </li>
+        ))}
         {rows.map((r) => (
           <li
             key={r.taskId}
@@ -151,6 +198,7 @@ export function RiskList({
           onOpenChange={setOpen}
         />
       ) : null}
+      <FollowupDialog target={followup} onClose={() => setFollowup(null)} />
     </div>
   );
 }

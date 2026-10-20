@@ -13,16 +13,25 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   if (!me) redirect("/login");
   if (!me.onboarded) redirect("/onboarding");
   const t = await getTranslations("app");
-  const [clients, prefs, proposals] = await Promise.all([
+  const [clients, prefs, proposals, owed] = await Promise.all([
     apiFetch<{ items: { id: string; name: string; color: string | null }[] }>("/v1/clients").catch(() => ({ items: [] })),
     apiFetch<{ timezone: string }>("/v1/preferences"),
     apiFetch<{ items: unknown[] }>("/v1/proposals?status=pending&limit=100").catch(() => ({ items: [] })),
+    apiFetch<{ items: { status: string; dueAt: string | null }[] }>(
+      "/v1/commitments?direction=owed_to_me&limit=200",
+    ).catch(() => ({ items: [] })),
   ]);
+  // Red badge on Proyectos / Compromisos: overdue commitments others owe me (demo: risks + overdue).
+  const demoNow = getServerConfig().env.DEMO_NOW;
+  const nowMs = demoNow ? Date.parse(demoNow) : Date.now();
+  const overdue = owed.items.filter(
+    (c) => c.status === "at_risk" || (c.status === "confirmed" && c.dueAt !== null && Date.parse(c.dueAt) < nowMs),
+  ).length;
   const paletteData = { clients: clients.items, timezone: prefs.timezone };
   return (
     <PaletteProvider data={paletteData}>
       <AppShell
-        badges={{ entrada: proposals.items.length }}
+        badges={{ entrada: proposals.items.length, proyectos: overdue }}
         footer={
           <>
             <form action={signOutAction}>

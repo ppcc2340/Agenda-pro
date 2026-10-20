@@ -10,7 +10,7 @@ import { Pill } from "@/components/ui/pill";
 import { Section } from "@/components/ui/section";
 import { useToast } from "@/components/ui/toast";
 import { formatDate, formatDateTime, formatMinutes, formatTime } from "@/lib/format";
-import { useCalendarEvents, usePlan } from "@/lib/hooks/use-api";
+import { useCalendarEvents, useCommitments, usePlan } from "@/lib/hooks/use-api";
 import {
   addDays,
   clientColorVar,
@@ -23,6 +23,7 @@ import {
 } from "@/lib/plan";
 import type { Task } from "@/lib/types";
 import { AgreementsDialog, type AgreementsTarget } from "@/components/calendar/agreements-dialog";
+import { isOverdue } from "@/components/commitments/commitment-list";
 import { WaitingList } from "@/components/commitments/waiting-list";
 import { useCompleteBlock } from "./actions";
 import { ReasonList } from "./reasons";
@@ -68,6 +69,7 @@ export function HoyView({
     [dayStart],
   );
   const plan = usePlan(range);
+  const owed = useCommitments({ direction: "owed_to_me" });
   const events = useCalendarEvents(range);
   const [selected, setSelected] = useState<string | null>(null);
   const [agreements, setAgreements] = useState<AgreementsTarget | null>(null);
@@ -118,7 +120,9 @@ export function HoyView({
     end: Math.max(hhmm(workEnd), 18 * 60) + 60,
   };
   const selectedBlock = plan.data?.blocks.find((b) => b.id === selected) ?? null;
-  const riskCount = plan.data ? plan.data.risks.length + plan.data.conflicts.length : 0;
+  // Overdue commitments others owe me are risks too (demo: risks + overdue), with the follow-up as the way out.
+  const overdue = (owed.data?.items ?? []).filter((c) => isOverdue(c, now));
+  const riskCount = plan.data ? plan.data.risks.length + plan.data.conflicts.length + overdue.length : 0;
   const scheduledIds = new Set((plan.data?.blocks ?? []).map((b) => b.taskId));
   const nextBlock = (plan.data?.blocks ?? [])
     .filter((b) => b.completedAt === null && new Date(b.startsAt).getTime() > now.getTime())
@@ -264,7 +268,7 @@ export function HoyView({
         <div>
           <Section title={t("q3")} className="mt-2">
             {plan.data ? (
-              <RiskList plan={plan.data} clients={clients} timezone={timezone} />
+              <RiskList plan={plan.data} clients={clients} timezone={timezone} overdue={overdue} now={now} />
             ) : (
               <EmptyState title={t("emptyRisksTitle")} body={t("emptyRisksBody")} />
             )}
