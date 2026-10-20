@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, inArray, lt, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, isNull, lt, sql } from "drizzle-orm";
 import { proposals } from "../schema";
 import type { WorkspaceTx } from "../workspace";
 import { newId, type WorkspaceId } from "../ids";
@@ -221,4 +221,26 @@ export async function expireProposalsForThreads(
     )
     .returning({ id: proposals.id });
   return rows.length;
+}
+
+/** [M9] Marks pending proposals as shown the first time they are listed; returns the newly shown ones. */
+export async function markProposalsShown(
+  tx: WorkspaceTx,
+  workspaceId: WorkspaceId,
+  ids: string[],
+  now: Date,
+): Promise<{ id: string; kind: ProposalKind }[]> {
+  if (ids.length === 0) return [];
+  return tx
+    .update(proposals)
+    .set({ shownAt: now })
+    .where(
+      and(
+        eq(proposals.workspaceId, workspaceId),
+        inArray(proposals.id, ids),
+        eq(proposals.status, "pending"),
+        isNull(proposals.shownAt),
+      ),
+    )
+    .returning({ id: proposals.id, kind: proposals.kind });
 }

@@ -21,10 +21,19 @@ import {
   updateCommitment,
   type WorkspaceId,
   type WorkspaceTx,
+  markProposalsShown,
 } from "@meri/db";
+import type { Analytics } from "@meri/integrations";
+import { track } from "@meri/jobs";
 import { ApiError } from "../errors";
 import { requireSession, sessionOf } from "../plugins/session";
-import { CapturePayload, CommitmentEdits, CommitmentPayload, ProposalViewSchema, serializeProposal } from "./capture";
+import {
+  CapturePayload,
+  CommitmentEdits,
+  CommitmentPayload,
+  ProposalViewSchema,
+  serializeProposal,
+} from "./capture";
 import { ClientJson, serializeClient } from "./clients";
 import { CommitmentViewSchema, serializeCommitment } from "./commitments";
 import { serializeTask, TaskViewSchema } from "./tasks";
@@ -66,6 +75,7 @@ const ConfirmBody = z.object({
 
 export interface ProposalRoutesOptions {
   now: () => Date;
+  analytics: Analytics;
   maxClientsFor: (tx: WorkspaceTx, workspaceId: WorkspaceId) => Promise<number>;
   onTasksChanged?: (workspaceId: string, traceId: string) => Promise<void>;
 }
@@ -98,14 +108,18 @@ export function proposalRoutes(app: FastifyInstance, options: ProposalRoutesOpti
     async (request) => {
       const session = sessionOf(request);
       const q = request.query;
-      const page = await request.withWorkspace((tx) =>
-        listProposals(
+      const { page, shown } = await request.withWorkspace(async (tx) => {
+        const listed = await listProposals(
           tx,
           session.workspaceId,
           { status: q.status, kind: q.kind },
           { limit: q.limit, cursor: q.cursor },
-        ),
-      );
+        );
+        const ids = listed.items.filter((p) => p.status === "pending").map((p) => p.id);
+        return { page: listed, shown: await markProposalsShown(tx, session.workspaceId, ids, options.now()) };
+      });
+      for (const p of shown)
+        track(options.analytics, "proposal_shown", session.workspaceId, { proposalId: p.id, kind: p.kind });
       return { items: page.items.map(serializeProposal), nextCursor: page.nextCursor };
     },
   );
@@ -126,7 +140,10 @@ export function proposalRoutes(app: FastifyInstance, options: ProposalRoutesOpti
         throw new ApiError("CONFLICT", "This proposal kind cannot be confirmed as a task.");
       const payload = CapturePayload.parse(proposal.payload);
       // FK checks run as table owner and bypass RLS: the client must be this workspace's.
-      if (edits?.clientId && !(await listClients(tx, session.workspaceId)).some((c) => c.id === edits.clientId))
+      if (
+        edits?.clientId &&
+        !(await listClients(tx, session.workspaceId)).some((c) => c.id === edits.clientId)
+      )
         throw new ApiError("VALIDATION_FAILED", "Invalid references.", [
           { path: "clientId", message: "Unknown client." },
         ]);
@@ -287,7 +304,6 @@ export function proposalRoutes(app: FastifyInstance, options: ProposalRoutesOpti
     return result;
   }
 
-
   /** `followup` proposals confirmed as-is become a "waiting for" task the planner keeps out of the day (F-08). */
   async function confirmFollowup(request: Parameters<typeof sessionOf>[0], id: string) {
     const session = sessionOf(request);
@@ -414,16 +430,30 @@ export function proposalRoutes(app: FastifyInstance, options: ProposalRoutesOpti
         async (tx) => (await getProposal(tx, session.workspaceId, request.params.id))?.kind ?? null,
       );
       const none = { task: null, commitment: null, client: null };
+      const b = request.body;
+      let result: {
+        task: z.infer<typeof TaskViewSchema> | null;
+        commitment: z.infer<typeof CommitmentViewSchema> | null;
+        client: z.infer<typeof ClientJson> | null;
+      };
       if (kind === "commitment")
-        return {
-          ...none,
-          commitment: await confirmCommitment(request, request.params.id, request.body?.commitment),
-        };
-      if (kind === "client_link")
-        return { ...none, client: await confirmClientLink(request, request.params.id, request.body?.client) };
-      if (kind === "followup")
-        return { ...none, task: serializeTask(await confirmFollowup(request, request.params.id)) };
-      return { ...none, task: serializeTask(await confirmCapture(request, request.params.id, request.body?.edits)) };
+        result = { ...none, commitment: await confirmCommitment(request, request.params.id, b?.commitment) };
+      else if (kind === "client_link")
+        result = { ...none, client: await confirmClientLink(request, request.params.id, b?.client) };
+      else if (kind === "followup")
+        result = { ...none, task: serializeTask(await confirmFollowup(request, request.params.id)) };
+      else
+        result = { ...none, task: serializeTask(await confirmCapture(request, request.params.id, b?.edits)) };
+      if (kind) {
+        const edited = [b?.edits, b?.commitment, b?.client].some(
+          (e) => e !== undefined && Object.keys(e).length > 0,
+        );
+        track(options.analytics, edited ? "proposal_edited" : "proposal_confirmed", session.workspaceId, {
+          proposalId: request.params.id,
+          kind,
+        });
+      }
+      return result;
     },
   );
 
@@ -478,6 +508,12 @@ export function proposalRoutes(app: FastifyInstance, options: ProposalRoutesOpti
         );
         return resolved;
       });
+      track(options.analytics, "proposal_dismissed", session.workspaceId, {
+        proposalId: proposal.id,
+        kind: proposal.kind,
+      });
+      if (proposal.kind === "reschedule")
+        track(options.analytics, "plan_rejected", session.workspaceId, { proposalId: proposal.id });
       return serializeProposal(proposal);
     },
   );
@@ -521,6 +557,10 @@ export function proposalRoutes(app: FastifyInstance, options: ProposalRoutesOpti
           }
           await confirmCommitment(request, id, undefined);
           confirmed.push(id);
+          track(options.analytics, "proposal_confirmed", session.workspaceId, {
+            proposalId: id,
+            kind: "commitment",
+          });
           continue;
         }
         if (proposal.kind !== "capture") {
@@ -529,6 +569,10 @@ export function proposalRoutes(app: FastifyInstance, options: ProposalRoutesOpti
         }
         await confirmCapture(request, id, undefined);
         confirmed.push(id);
+        track(options.analytics, "proposal_confirmed", session.workspaceId, {
+          proposalId: id,
+          kind: "capture",
+        });
       }
       return { confirmed, skipped };
     },

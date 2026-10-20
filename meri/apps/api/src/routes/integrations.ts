@@ -17,7 +17,7 @@ import {
   type Db,
   type IntegrationAccountView,
 } from "@meri/db";
-import { hasCalendarScopes, hasGmailScopes, scopesFor, type GoogleOAuth } from "@meri/integrations";
+import { hasCalendarScopes, hasGmailScopes, scopesFor, type Analytics, type GoogleOAuth } from "@meri/integrations";
 import {
   CalendarSyncJob,
   GmailSyncJob,
@@ -25,6 +25,7 @@ import {
   enqueueTimeInfer,
   purgeAccountMail,
   readTokens,
+  track,
   type JobDispatcher,
 } from "@meri/jobs";
 import { ApiError } from "../errors";
@@ -87,6 +88,7 @@ export interface IntegrationRoutesOptions {
   secureCookies: boolean;
   /** Token Google must send with calendar push notifications (X-Goog-Channel-Token). */
   calendarChannelToken: string;
+  analytics: Analytics;
 }
 
 export function integrationRoutes(
@@ -225,6 +227,9 @@ export function integrationRoutes(
           { jobId: `gmail.sync_${account.id}_connect_${connectBucket}` },
         );
       }
+      if (hasCalendarScopes(account.scopes))
+        track(options.analytics, "calendar_connected", session.workspaceId, {});
+      if (hasGmailScopes(account.scopes)) track(options.analytics, "gmail_connected", session.workspaceId, {});
       const feature = hasGmailScopes(account.scopes)
         ? hasCalendarScopes(account.scopes)
           ? "all"

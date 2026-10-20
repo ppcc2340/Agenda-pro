@@ -32,7 +32,7 @@ export interface AccountIdentity {
   created: boolean;
 }
 
-const TRIAL_DAYS = 14;
+export const TRIAL_DAYS = 14;
 
 /** Sign-in of an email whose account was logically deleted (D-054): refused until the purge job removes it. */
 export class AccountDeletedError extends Error {

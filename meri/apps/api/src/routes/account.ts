@@ -1,7 +1,13 @@
 import type { FastifyInstance } from "fastify";
 import { DEMO_USER } from "@meri/config";
 import type { KeyProvider } from "@meri/config/crypto";
-import type { BillingProvider, GoogleOAuth } from "@meri/integrations";
+import {
+  hasCalendarScopes,
+  type Analytics,
+  type BillingProvider,
+  type GoogleOAuth,
+} from "@meri/integrations";
+import { track } from "@meri/jobs";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import { z } from "zod";
 import {
@@ -11,6 +17,7 @@ import {
   getMe,
   getPreferences,
   getSubscription,
+  listIntegrationAccounts,
   listAudit,
   softDeleteAccount,
   updatePreferences,
@@ -73,6 +80,7 @@ export interface AccountRoutesOptions {
   demoMode: boolean;
   /** [M11] the subscription is cancelled immediately when the account is deleted. */
   billing: BillingProvider;
+  analytics: Analytics;
 }
 
 export function accountRoutes(app: FastifyInstance, options: AccountRoutesOptions, done: () => void): void {
@@ -121,7 +129,7 @@ export function accountRoutes(app: FastifyInstance, options: AccountRoutesOption
       const session = sessionOf(request);
       const { completeOnboarding, ...patch } = request.body;
       const now = options.now();
-      const updated = await request.withWorkspace(async (tx) => {
+      const { updated, onboarded } = await request.withWorkspace(async (tx) => {
         const before = await getPreferences(tx, session.workspaceId);
         const after = await updatePreferences(tx, session.workspaceId, patch, {
           now,
@@ -149,8 +157,14 @@ export function accountRoutes(app: FastifyInstance, options: AccountRoutesOption
             after,
           },
         );
-        return after;
+        const firstOnboarding = completeOnboarding === true && !before?.onboardedAt;
+        const accounts = firstOnboarding ? await listIntegrationAccounts(tx, session.workspaceId) : [];
+        return {
+          updated: after,
+          onboarded: firstOnboarding ? { calendarConnected: accounts.some((a) => hasCalendarScopes(a.scopes)) } : null,
+        };
       });
+      if (onboarded) track(options.analytics, "onboarding_completed", session.workspaceId, onboarded);
       return { ...updated, onboardedAt: iso(updated.onboardedAt) };
     },
   );
@@ -178,11 +192,19 @@ export function accountRoutes(app: FastifyInstance, options: AccountRoutesOption
         await audit(
           tx,
           { workspaceId: session.workspaceId, actor: "user", actorUserId: session.userId },
-          { action: "account.exported", entityType: "workspace", entityId: session.workspaceId, after: { format: doc.format, truncated: doc.truncated } },
+          {
+            action: "account.exported",
+            entityType: "workspace",
+            entityId: session.workspaceId,
+            after: { format: doc.format, truncated: doc.truncated },
+          },
         );
         return doc;
       });
-      void reply.header("content-disposition", `attachment; filename="meri-export-${now.toISOString().slice(0, 10)}.json"`);
+      void reply.header(
+        "content-disposition",
+        `attachment; filename="meri-export-${now.toISOString().slice(0, 10)}.json"`,
+      );
       void reply.header("cache-control", "no-store");
       return document;
     },
@@ -210,7 +232,10 @@ export function accountRoutes(app: FastifyInstance, options: AccountRoutesOption
       app.accountGuard.markDeleted(session.userId, session.workspaceId);
       if (result.deleted) {
         const revoked = await revokeAtProvider(options.oauth, toRevoke, request.log);
-        request.log.info({ revoked, connections: toRevoke.length }, "account deleted; provider tokens revoked");
+        request.log.info(
+          { revoked, connections: toRevoke.length },
+          "account deleted; provider tokens revoked",
+        );
         // [M11] No charge after deletion: the subscription ends now (best effort; fiscal records stay at the provider).
         const subscriptionId = subscription?.stripeSubscriptionId;
         if (subscriptionId && subscription.status !== "canceled") {
@@ -218,7 +243,10 @@ export function accountRoutes(app: FastifyInstance, options: AccountRoutesOption
             .cancelSubscription(subscriptionId, { atPeriodEnd: false })
             .then(() => true)
             .catch((err: unknown) => {
-              request.log.warn({ err }, "subscription cancellation on account deletion failed; cancel it at the provider");
+              request.log.warn(
+                { err },
+                "subscription cancellation on account deletion failed; cancel it at the provider",
+              );
               return false;
             });
           await withWorkspace(options.db, session.workspaceId, (tx) =>

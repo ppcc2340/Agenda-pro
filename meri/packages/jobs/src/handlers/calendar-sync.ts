@@ -23,6 +23,7 @@ import {
 } from "@meri/integrations";
 import { resolveClient } from "@meri/core";
 import type { HandlerDeps } from "./context";
+import { track } from "../analytics";
 
 /** One cursor per calendar, like Google's per-calendar syncToken. */
 export const calendarResource = (calendarId: string) => `calendar.events:${calendarId}`;
@@ -194,6 +195,8 @@ export async function syncCalendarAccount(
     );
     return result;
   } catch (err) {
+    if (err instanceof IntegrationError)
+      track(deps.integrations.analytics, "integration_error", workspaceId, { provider: "google", kind: err.kind });
     if (err instanceof IntegrationError && err.kind === "AuthExpired") {
       await withWorkspace(deps.db, workspaceId, async (tx) => {
         await setIntegrationStatus(tx, workspaceId, accountId, {

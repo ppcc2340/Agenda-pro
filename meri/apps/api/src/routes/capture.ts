@@ -5,8 +5,8 @@ import { suggestCapture } from "@meri/ai";
 import { getVerticalTemplate } from "@meri/core";
 import type { FeatureFlagStore } from "@meri/config";
 import { audit, createProposal, getPreferences, listClients, type ProposalView } from "@meri/db";
-import { aiBudget, chargeAiUsage, notifyAiPaused } from "@meri/jobs";
-import type { AiClient } from "@meri/integrations";
+import { aiBudget, chargeAiUsage, notifyAiPaused, track } from "@meri/jobs";
+import type { AiClient, Analytics } from "@meri/integrations";
 import { requireSession, sessionOf } from "../plugins/session";
 
 export const ProposalViewSchema = z.object({
@@ -79,6 +79,7 @@ export interface CaptureRoutesOptions {
   ai: AiClient;
   flags: FeatureFlagStore;
   costCapUsd: number;
+  analytics: Analytics;
 }
 
 export function captureRoutes(app: FastifyInstance, options: CaptureRoutesOptions, done: () => void): void {
@@ -148,6 +149,7 @@ export function captureRoutes(app: FastifyInstance, options: CaptureRoutesOption
         );
         return created;
       });
+      track(options.analytics, "capture_created", session.workspaceId, { source });
       return reply.status(201).send(serializeProposal(proposal));
     },
   );

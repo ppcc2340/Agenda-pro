@@ -51,7 +51,12 @@ async function main(): Promise<void> {
   const connection = new Redis(config.env.REDIS_URL, { maxRetriesPerRequest: null });
   const handle = createDb(config.env.DATABASE_URL, { max: 5 });
   await assertAppRole(handle.db);
-  const integrations = createIntegrations(config, { now });
+  const integrations = createIntegrations(config, {
+    now,
+    onBackgroundError: (err) => {
+      logger.warn({ err }, "analytics delivery failed");
+    },
+  });
   if (integrations.ai instanceof FakeAiClient) registerFakeAiHandlers(integrations.ai);
   const registry = new QueueRegistry({ connection, db: handle.db, logger });
   registry.register(examplePing);
@@ -192,6 +197,7 @@ async function main(): Promise<void> {
     await registry.close();
     await dispatcher.close();
     await adminSql.end({ timeout: 5 });
+    await integrations.analytics.flush();
     await handle.close();
     connection.disconnect();
     process.exit(0);

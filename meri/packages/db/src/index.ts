@@ -26,6 +26,7 @@ export {
 } from "./repos/preferences";
 export {
   bootstrapAccount,
+  TRIAL_DAYS,
   getMe,
   getEntitlementRetentionDays,
   getEntitlementMaxClients,
@@ -69,6 +70,7 @@ export {
   expirePending,
   expireProposalsForThreads,
   proposalHashExists,
+  markProposalsShown,
   countPending,
   type ProposalKind,
   type ProposalStatus,

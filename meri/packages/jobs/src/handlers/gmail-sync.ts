@@ -30,6 +30,7 @@ import {
 } from "@meri/integrations";
 import { readTokens } from "./calendar-sync";
 import type { HandlerDeps } from "./context";
+import { track } from "../analytics";
 
 export const MAIL_RESOURCE = "gmail.history";
 export const INITIAL_LOAD_DAYS = 30;
@@ -183,6 +184,8 @@ export async function syncMailAccount(
       fullResync,
     };
   } catch (err) {
+    if (err instanceof IntegrationError)
+      track(deps.integrations.analytics, "integration_error", workspaceId, { provider: "google", kind: err.kind });
     if (err instanceof IntegrationError && err.kind === "AuthExpired") {
       await withWorkspace(deps.db, workspaceId, async (tx) => {
         await setIntegrationStatus(tx, workspaceId, accountId, {

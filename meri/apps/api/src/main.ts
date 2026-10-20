@@ -19,7 +19,12 @@ async function main(): Promise<void> {
   const now = config.env.DEMO_NOW ? () => new Date(config.env.DEMO_NOW ?? 0) : () => new Date();
   const handle = createDb(config.env.DATABASE_URL);
   await assertAppRole(handle.db);
-  const integrations = createIntegrations(config, { now });
+  const integrations = createIntegrations(config, {
+    now,
+    onBackgroundError: (err) => {
+      logger.warn({ err }, "analytics delivery failed");
+    },
+  });
   if (integrations.ai instanceof FakeAiClient) registerFakeAiHandlers(integrations.ai);
   const redis = new Redis(config.env.REDIS_URL, { maxRetriesPerRequest: null });
   const dispatcher = createDispatcher(redis);

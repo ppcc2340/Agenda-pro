@@ -93,6 +93,8 @@ export async function buildApp(deps: AppDeps) {
     });
   app.setErrorHandler(createErrorHandler(observability.errors));
   app.addHook("onClose", async () => {
+    // Buffered product events leave before the process does ([M9]).
+    await deps.integrations.analytics.flush();
     await observability.shutdown();
   });
   app.setNotFoundHandler((request, reply) => sendProblem(reply, problemFrom("NOT_FOUND", request.id)));
@@ -137,7 +139,12 @@ export async function buildApp(deps: AppDeps) {
   await app.register(idempotencyPlugin, { now: deps.now });
 
   await app.register(healthRoutes, { db: deps.db });
-  await app.register(internalRoutes, { db: deps.db, secret: config.env.INTERNAL_API_SECRET, now: deps.now });
+  await app.register(internalRoutes, {
+    db: deps.db,
+    secret: config.env.INTERNAL_API_SECRET,
+    now: deps.now,
+    analytics: deps.integrations.analytics,
+  });
   await app.register(accountRoutes, {
     db: deps.db,
     now: deps.now,
@@ -145,6 +152,7 @@ export async function buildApp(deps: AppDeps) {
     keys: deps.integrations.kms.keys,
     demoMode: config.env.DEMO_MODE,
     billing: deps.integrations.billing,
+    analytics: deps.integrations.analytics,
   });
   await app.register(taskRoutes, { now: deps.now, onTasksChanged: deps.onTasksChanged });
   await app.register(integrationRoutes, {
@@ -157,15 +165,18 @@ export async function buildApp(deps: AppDeps) {
     appUrl: config.env.APP_URL,
     secureCookies: config.isProduction,
     calendarChannelToken: config.env.GOOGLE_CALENDAR_CHANNEL_TOKEN,
+    analytics: deps.integrations.analytics,
   });
   await app.register(captureRoutes, {
     now: deps.now,
     ai: deps.integrations.ai,
     flags: deps.flags ?? new InMemoryFlagStore(),
     costCapUsd: config.env.AI_MONTHLY_COST_CAP_USD_PER_USER,
+    analytics: deps.integrations.analytics,
   });
   await app.register(proposalRoutes, {
     now: deps.now,
+    analytics: deps.integrations.analytics,
     maxClientsFor: (tx, workspaceId) => getEntitlementMaxClients(tx, workspaceId),
     onTasksChanged: deps.onTasksChanged,
   });

@@ -24,6 +24,7 @@ import {
   undoAuditEntry,
   type HandlerDeps,
   type ReschedulePayload,
+  track,
 } from "@meri/jobs";
 import { ApiError } from "../errors";
 import { MarginView, marginFor } from "./plan-margin";
@@ -247,6 +248,10 @@ export function planRoutes(app: FastifyInstance, options: PlanRoutesOptions, don
         request.body.proposalId,
         session.userId,
       ).catch(mapApplyError);
+      track(options.deps.integrations.analytics, "plan_accepted", session.workspaceId, {
+        proposalId: request.body.proposalId,
+        changes: result.added + result.removed,
+      });
       await changed(session.workspaceId, request.id);
       return result;
     },
