@@ -4,7 +4,6 @@ import { parseEnv, resolveModes } from "@meri/config";
 import { FakeCalendar } from "./calendar";
 import { FakeGmail } from "./mail";
 import { FakeAiClient } from "./ai";
-import { FakeBilling } from "./billing";
 import { NoopAnalytics } from "./analytics";
 import { createIntegrations } from "../factory";
 import { IntegrationError } from "../errors";
@@ -134,31 +133,8 @@ describe("FakeAiClient", () => {
   });
 });
 
-describe("FakeBilling and NoopAnalytics", () => {
-  it("never charges, verifies webhook signatures and records analytics in memory", async () => {
-    const billing = new FakeBilling(now);
-    const cs = await billing.createCheckoutSession({
-      workspaceId: "0192aaaa-0000-7000-8000-000000000000",
-      email: "me@firm.com",
-      plan: "pro",
-      interval: "month",
-      successUrl: "http://localhost:3000/ok",
-      cancelUrl: "http://localhost:3000/cancel",
-    });
-    expect(cs.url).toContain("fake_checkout");
-    const sub = await billing.getSubscription("fake-sub-1");
-    expect(sub?.currentPeriodEnd).toBe("2026-11-18T10:40:00.000Z");
-    expect((await billing.createPortalSession({ customerId: "c", returnUrl: "http://x" })).url).toContain(
-      "fake_portal",
-    );
-    await expect(billing.parseWebhook("{}", "bad")).rejects.toMatchObject({ kind: "Permanent" });
-    await expect(billing.parseWebhook("{}", "fake-webhook-secret")).rejects.toThrow(/malformed/);
-    expect(await billing.parseWebhook('{"id":"e1","type":"x"}', "fake-webhook-secret")).toEqual({
-      id: "e1",
-      type: "x",
-      data: null,
-    });
-
+describe("NoopAnalytics", () => {
+  it("records analytics in memory", async () => {
     const analytics = new NoopAnalytics();
     analytics.track("signup", "u1", { plan: "trial" });
     analytics.captureError(new Error("boom"));
@@ -190,21 +166,38 @@ describe("createIntegrations factory", () => {
     expect(integrations.mailFor("a@b.c")).not.toBe(integrations.mailFor("other@b.c"));
   });
 
-  it("live modes without an adapter yet fail loudly instead of silently using fakes", () => {
+  it("Stripe and analytics live modes build the live adapters from env (switching is configuration only)", () => {
     const env = parseEnv({
       ...base,
       STRIPE_MODE: "live",
-      STRIPE_SECRET_KEY: "k",
-      STRIPE_WEBHOOK_SECRET: "w",
-      STRIPE_PRICE_PRO: "p",
-      STRIPE_PRICE_PRO_ANNUAL: "p2",
+      STRIPE_SECRET_KEY: "sk_test_x",
+      STRIPE_WEBHOOK_SECRET: "whsec_x",
+      STRIPE_PRICE_PRO: "price_pro_m",
+      STRIPE_PRICE_PRO_ANNUAL: "price_pro_y",
+      STRIPE_PRICE_PRO_PLUS: "price_plus_m",
+      STRIPE_PRICE_PRO_PLUS_ANNUAL: "price_plus_y",
+      STRIPE_PRICE_CREDITS_500: "price_c500",
+      STRIPE_PRICE_CREDITS_2000: "price_c2000",
+      ANALYTICS_MODE: "live",
+      SENTRY_DSN: "https://k@sentry.example/1",
+      POSTHOG_KEY: "phc_x",
     });
+    const integrations = createIntegrations(
+      { env, modes: resolveModes(env), isProduction: false, isTest: true, fakesOnProductionBuild: false },
+      { now },
+    );
+    expect(integrations.billing.mode).toBe("live");
+    expect(integrations.analytics.mode).toBe("live");
+  });
+
+  it("live Google without its adapter still fails loudly instead of silently using fakes", () => {
+    const env = parseEnv({ ...base, GOOGLE_MODE: "live", GOOGLE_CLIENT_ID: "id", GOOGLE_CLIENT_SECRET: "s" });
     expect(() =>
       createIntegrations(
         { env, modes: resolveModes(env), isProduction: false, isTest: true, fakesOnProductionBuild: false },
         { now },
       ),
-    ).toThrow(/stripe live adapter/);
+    ).toThrow(/google-oauth live adapter/);
   });
 
   it("AI live mode builds the Anthropic client from env (models and prices are configuration)", () => {

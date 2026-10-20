@@ -1,41 +1,79 @@
 import type { HealthReport } from "../errors";
 
 export type PlanCode = "trial" | "pro" | "pro_plus";
+export type PaidPlanCode = Exclude<PlanCode, "trial">;
+export type BillingInterval = "month" | "year";
+export type CreditPackCode = "500" | "2000";
+export type ProviderSubscriptionStatus =
+  "trialing" | "active" | "past_due" | "canceled" | "unpaid" | "incomplete";
 
 export interface CheckoutSession {
   id: string;
   url: string;
 }
 
+/** Canonical subscription read from the provider (never trusted from a webhook body, ADR 0006 §3). */
 export interface SubscriptionSnapshot {
   customerId: string;
   subscriptionId: string;
-  plan: PlanCode;
-  status: "trialing" | "active" | "past_due" | "canceled" | "unpaid";
+  plan: PaidPlanCode;
+  interval: BillingInterval;
+  status: ProviderSubscriptionStatus;
+  trialEnd: string | null;
   currentPeriodEnd: string;
   cancelAtPeriodEnd: boolean;
+  hasPaymentMethod: boolean;
+  /** From the subscription's own metadata, set by Meri when the checkout session was created. */
+  workspaceId: string | null;
 }
 
+export type BillingEventType =
+  | "checkout.session.completed"
+  | "customer.subscription.created"
+  | "customer.subscription.updated"
+  | "customer.subscription.deleted"
+  | "invoice.paid"
+  | "invoice.payment_failed";
+
+/** Webhook normalised by the adapter: Meri never reads raw provider objects outside the adapter. */
 export interface BillingWebhookEvent {
   id: string;
-  type: string;
-  data: unknown;
+  type: BillingEventType | "other";
+  createdAt: string;
+  /** From metadata / client_reference_id (checkout); resolved from the canonical subscription otherwise. */
+  workspaceId: string | null;
+  customerId: string | null;
+  subscriptionId: string | null;
+  checkout: { mode: "subscription" | "payment"; sessionId: string; creditPack: CreditPackCode | null } | null;
+  invoice: { amountPaidCents: number } | null;
 }
 
-/** Billing connector (docs/08). Live implementation = Stripe; fake keeps everything local and never charges. */
+export interface CheckoutInput {
+  workspaceId: string;
+  email: string;
+  /** Existing provider customer, if any (reuse instead of creating a second one). */
+  customerId: string | null;
+  successUrl: string;
+  cancelUrl: string;
+  idempotencyKey: string;
+}
+
+/** Billing connector (docs/08, ADR 0006). Live = Stripe; fake keeps everything local and never charges. */
 export interface BillingProvider {
   readonly mode: "fake" | "live";
   healthCheck(): Promise<HealthReport>;
-  createCheckoutSession(input: {
-    workspaceId: string;
-    email: string;
-    plan: Exclude<PlanCode, "trial">;
-    interval: "month" | "year";
-    successUrl: string;
-    cancelUrl: string;
-  }): Promise<CheckoutSession>;
+  createCheckoutSession(
+    input: CheckoutInput & { plan: PaidPlanCode; interval: BillingInterval; trialEnd: string | null },
+  ): Promise<CheckoutSession>;
+  createCreditPackCheckout(input: CheckoutInput & { pack: CreditPackCode }): Promise<CheckoutSession>;
   createPortalSession(input: { customerId: string; returnUrl: string }): Promise<{ url: string }>;
   getSubscription(subscriptionId: string): Promise<SubscriptionSnapshot | null>;
-  /** Verifies the signature and parses the event; throws IntegrationError(Permanent) on a bad signature. */
-  parseWebhook(rawBody: string, signature: string): Promise<BillingWebhookEvent>;
+  /** `atPeriodEnd: false` cancels now (account deletion). */
+  cancelSubscription(
+    subscriptionId: string,
+    options: { atPeriodEnd: boolean },
+  ): Promise<SubscriptionSnapshot>;
+  resumeSubscription(subscriptionId: string): Promise<SubscriptionSnapshot>;
+  /** Verifies the `t=…,v1=` signature over the raw body; throws IntegrationError(Permanent) when it fails. */
+  parseWebhook(rawBody: string, signatureHeader: string): Promise<BillingWebhookEvent>;
 }

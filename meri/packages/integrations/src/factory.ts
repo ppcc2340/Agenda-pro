@@ -9,6 +9,8 @@ import type { MailProvider } from "./mail/types";
 import { FakeAiClient } from "./fakes/ai";
 import { NoopAnalytics } from "./fakes/analytics";
 import { FakeBilling } from "./fakes/billing";
+import { StripeBilling } from "./billing/stripe";
+import { PostHogAnalytics } from "./analytics/posthog";
 import { FakeCalendar } from "./fakes/calendar";
 import { FakeGmail } from "./fakes/mail";
 import { AnthropicAiClient } from "./anthropic/client";
@@ -20,6 +22,8 @@ import { LocalKms, type KmsAdapter } from "./kms";
 
 export interface IntegrationsDeps {
   now: () => Date;
+  /** Where adapters report non-fatal background failures (analytics delivery). */
+  onBackgroundError?: (error: unknown) => void;
 }
 
 export interface Integrations {
@@ -64,18 +68,36 @@ export function createIntegrations(config: AppConfig, deps: IntegrationsDeps): I
       : (() => {
           throw notYet("google-oauth");
         })();
+  // resolveModes guarantees every STRIPE_* variable is present in live mode (blockers.json).
   const billing: BillingProvider =
     modes.stripe === "fake"
-      ? new FakeBilling(deps.now)
-      : (() => {
-          throw notYet("stripe");
-        })();
+      ? new FakeBilling(deps.now, {
+          ...(env.STRIPE_WEBHOOK_SECRET ? { webhookSecret: env.STRIPE_WEBHOOK_SECRET } : {}),
+          completeUrl: `${env.APP_URL}/api/v1/billing/fake/complete`,
+        })
+      : new StripeBilling({
+          secretKey: env.STRIPE_SECRET_KEY ?? "",
+          webhookSecret: env.STRIPE_WEBHOOK_SECRET ?? "",
+          prices: {
+            pro: { month: env.STRIPE_PRICE_PRO ?? "", year: env.STRIPE_PRICE_PRO_ANNUAL ?? "" },
+            pro_plus: {
+              month: env.STRIPE_PRICE_PRO_PLUS ?? "",
+              year: env.STRIPE_PRICE_PRO_PLUS_ANNUAL ?? "",
+            },
+            credits: {
+              "500": env.STRIPE_PRICE_CREDITS_500 ?? "",
+              "2000": env.STRIPE_PRICE_CREDITS_2000 ?? "",
+            },
+          },
+        });
   const analytics: Analytics =
     modes.analytics === "fake"
       ? new NoopAnalytics()
-      : (() => {
-          throw notYet("analytics");
-        })();
+      : new PostHogAnalytics({
+          apiKey: env.POSTHOG_KEY ?? "",
+          host: env.POSTHOG_HOST,
+          ...(deps.onBackgroundError ? { onError: deps.onBackgroundError } : {}),
+        });
   const kms: KmsAdapter =
     env.KMS_PROVIDER === "local"
       ? new LocalKms(env.LOCAL_MASTER_KEY ?? "")

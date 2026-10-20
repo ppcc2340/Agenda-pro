@@ -1,0 +1,75 @@
+import type { Analytics, AnalyticsEvent, AnalyticsProps } from "./types";
+
+export interface PostHogOptions {
+  apiKey: string;
+  host: string;
+  fetch?: typeof fetch;
+  /** Events buffered before an automatic flush. */
+  batchSize?: number;
+  now?: () => Date;
+  /** Delivery failures are reported here, never thrown into product code (analytics must not break a request). */
+  onError?: (error: unknown) => void;
+}
+
+interface Captured {
+  event: string;
+  distinct_id: string;
+  properties: AnalyticsProps;
+  timestamp: string;
+}
+
+/**
+ * Live analytics (docs/09, ADR 0006 [M9]): batches events to PostHog's `/batch/` endpoint. Props are the typed
+ * ids-and-counters payloads of `@meri/jobs` analytics; errors are sent as `$exception` with the error class only
+ * (messages may carry user data; Sentry receives the full error through the observability module).
+ */
+export class PostHogAnalytics implements Analytics {
+  readonly mode = "live" as const;
+  private readonly fetchImpl: typeof fetch;
+  private readonly batchSize: number;
+  private readonly now: () => Date;
+  private queue: Captured[] = [];
+  private inFlight: Promise<void> = Promise.resolve();
+
+  constructor(private readonly options: PostHogOptions) {
+    this.fetchImpl = options.fetch ?? fetch;
+    this.batchSize = options.batchSize ?? 20;
+    this.now = options.now ?? (() => new Date());
+  }
+
+  track(event: AnalyticsEvent, distinctId: string, props: AnalyticsProps = {}): void {
+    this.enqueue(event, distinctId, props);
+  }
+
+  captureError(error: unknown, context: AnalyticsProps = {}): void {
+    const type = error instanceof Error ? error.name : typeof error;
+    this.enqueue("$exception", "server", { ...context, $exception_type: type });
+  }
+
+  private enqueue(event: string, distinctId: string, properties: AnalyticsProps): void {
+    this.queue.push({ event, distinct_id: distinctId, properties, timestamp: this.now().toISOString() });
+    if (this.queue.length >= this.batchSize) void this.flush();
+  }
+
+  /** Sends the buffered events; resolves even when delivery fails (reported through `onError`). */
+  flush(): Promise<void> {
+    const batch = this.queue;
+    this.queue = [];
+    if (batch.length === 0) return this.inFlight;
+    this.inFlight = this.inFlight.then(() => this.send(batch));
+    return this.inFlight;
+  }
+
+  private async send(batch: Captured[]): Promise<void> {
+    try {
+      const res = await this.fetchImpl(`${this.options.host.replace(/\/$/, "")}/batch/`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ api_key: this.options.apiKey, batch }),
+      });
+      if (!res.ok) throw new Error(`PostHog responded ${String(res.status)}`);
+    } catch (err) {
+      this.options.onError?.(err);
+    }
+  }
+}
