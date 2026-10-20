@@ -27,6 +27,8 @@ export const EnvSchema = z.object({
   LISTEN_HOST: z.preprocess(emptyToUndefined, z.string().min(1).default("0.0.0.0")),
   /** Trusted reverse-proxy hops in front of the API (0 = none). */
   TRUST_PROXY_HOPS: z.preprocess(emptyToUndefined, z.coerce.number().int().min(0).max(10).default(0)),
+  /** API requests per signed-in user (or per IP) and minute (docs/12 §3). `pnpm demo` raises it for the E2E runs. */
+  RATE_LIMIT_PER_MINUTE: z.preprocess(emptyToUndefined, z.coerce.number().int().min(10).max(100_000).default(300)),
 
   /** Application connection: role without SUPERUSER/BYPASSRLS (docs/12 §4). */
   DATABASE_URL: z.string().min(1),

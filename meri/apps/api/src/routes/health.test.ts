@@ -59,3 +59,23 @@ describe("system routes and error contract (docs/13)", () => {
     expect((await t.app.inject({ url: "/v1/me", remoteAddress: "203.0.113.10" })).statusCode).toBe(401);
   });
 });
+
+describe("rate limit buckets (docs/12 §3)", () => {
+  let t: TestApp;
+  beforeAll(async () => {
+    t = await createTestApp({ rateLimitMax: 3 });
+  });
+  afterAll(() => t.close());
+
+  it("keys signed-in requests by user, so users behind one web server never share a bucket", async () => {
+    const a = await t.createAccount("rl-a");
+    const b = await t.createAccount("rl-b");
+    const cookieA = await t.cookieFor(a);
+    const cookieB = await t.cookieFor(b);
+    const me = (cookie: string) => t.app.inject({ url: "/v1/me", headers: { cookie } });
+    const codes = [];
+    for (let i = 0; i < 4; i++) codes.push((await me(cookieA)).statusCode);
+    expect(codes).toEqual([200, 200, 200, 429]);
+    expect((await me(cookieB)).statusCode).toBe(200);
+  });
+});

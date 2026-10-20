@@ -12,13 +12,16 @@ const BASE = {
 
 describe("parseEnv", () => {
   it("applies defaults and treats empty strings as absent", () => {
-    const env = parseEnv({ ...BASE, GOOGLE_CLIENT_ID: "", DEMO_MODE: "", PORT: "" });
+    const env = parseEnv({ ...BASE, GOOGLE_CLIENT_ID: "", DEMO_MODE: "", PORT: "", RATE_LIMIT_PER_MINUTE: "" });
     expect(env.NODE_ENV).toBe("development");
     expect(env.GOOGLE_MODE).toBe("fake");
     expect(env.GOOGLE_CLIENT_ID).toBeUndefined();
     expect(env.DEMO_MODE).toBe(false);
     expect(env.PORT).toBeUndefined();
     expect(env.AI_MONTHLY_COST_CAP_USD_PER_USER).toBe(6);
+    expect(env.RATE_LIMIT_PER_MINUTE).toBe(300);
+    expect(parseEnv({ ...BASE, RATE_LIMIT_PER_MINUTE: "3000" }).RATE_LIMIT_PER_MINUTE).toBe(3000);
+    expect(() => parseEnv({ ...BASE, RATE_LIMIT_PER_MINUTE: "0" })).toThrow(ConfigError);
   });
 
   it("fails with a readable message when required variables are missing", () => {

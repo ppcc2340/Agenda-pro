@@ -35,6 +35,7 @@ async function main(): Promise<void> {
     logger,
     now,
     dispatcher,
+    rateLimitMax: config.env.RATE_LIMIT_PER_MINUTE,
     onTasksChanged: async (workspaceId, traceId) => {
       await enqueueReplan(dispatcher, now, { workspaceId, traceId, reason: "tasks_changed" });
       // Completed blocks are a time source (D-042); the job is idempotent and debounced.

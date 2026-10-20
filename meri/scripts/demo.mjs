@@ -64,6 +64,8 @@ const env = {
   KMS_PROVIDER: "local",
   DEMO_MODE: "1",
   LISTEN_HOST: host,
+  // One shared demo user drives the desktop and mobile E2E projects in parallel (local only, 127.0.0.1 by default).
+  RATE_LIMIT_PER_MINUTE: "3000",
   APP_ENV: "development",
   ALLOW_FAKES_ON_PRODUCTION_BUILD: "1",
 };
