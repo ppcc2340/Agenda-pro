@@ -11,7 +11,14 @@ export async function AiPausedBanner() {
   return (
     <div role="status" className="mb-4 rounded-xl border border-risk bg-risk-soft px-4 py-3 text-[13.5px]">
       <b>{t("title")}</b> {t(`reasons.${usage.reason}`)} {t("keepsWorking")}{" "}
-      <Link href="/control#plan" className="font-semibold text-risk underline underline-offset-2">
+      {/* Desktop has Control in the rail; on mobile the plan lives under Más. */}
+      <Link
+        href="/control#plan"
+        className="hidden font-semibold text-risk underline underline-offset-2 md:inline"
+      >
+        {t("action")}
+      </Link>
+      <Link href="/mas/plan" className="font-semibold text-risk underline underline-offset-2 md:hidden">
         {t("action")}
       </Link>
     </div>

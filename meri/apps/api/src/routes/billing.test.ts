@@ -421,6 +421,16 @@ describe("billing lifecycle (D-058..D-061, D-066, [H1], [M4], [M5])", () => {
     ).toBe(1);
   });
 
+  it("the survey is optional: a cancel without a reason is recorded as «other»", async () => {
+    const { account, cookie } = await subscribed("bill-survey");
+    const res = await post("/v1/billing/cancel", cookie, {});
+    expect(res.statusCode).toBe(200);
+    const feedback = await withWorkspace(t.handle.db, account.workspaceId, (tx) =>
+      tx.select().from(cancellationFeedback),
+    );
+    expect(feedback).toMatchObject([{ reason: "other", comment: null }]);
+  });
+
   it("a live subscription of a deleted workspace is cancelled when its next event arrives (deletion backstop, M2)", async () => {
     const { cookie, subscriptionId } = await subscribed("bill-orphan");
     // Simulate a cancellation that failed at deletion time: the provider subscription is still live.

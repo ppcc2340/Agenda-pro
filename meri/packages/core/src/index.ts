@@ -135,6 +135,7 @@ export {
   AI_OPERATIONS,
   CREDIT_COSTS,
   CREDIT_PACKS,
+  CREDIT_PACK_PRICE_CENTS,
   CREDIT_THRESHOLDS,
   chargeDecision,
   creditBalance,
@@ -153,6 +154,7 @@ export { MARGIN_ALARM_PCT, STRIPE_FEE, grossMargin, periodRevenueMicroUsd, type 
 export {
   VALUE_EVENT_TYPES,
   VALUE_METHODS,
+  FIGURE_METHODS,
   buildValueReport,
   isValueMethod,
   type ValueEventInput,

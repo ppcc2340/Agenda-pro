@@ -87,20 +87,20 @@ export default async function ControlPage() {
           briefingBeforeMeetings={prefs.briefingBeforeMeetings}
         />
       </Panel>
-      <Panel title={t("plan.title")} desc={t("plan.desc")}>
+      <Panel id="plan" title={t("plan.title")} desc={t("plan.desc")}>
         <PlanPanel />
-      </Panel>
-      <Panel title={t("value.title")} desc={t("value.desc")}>
-        <ValueReportPanel />
-      </Panel>
-      <Panel title={t("weekly.title")} desc={t("weekly.desc")}>
-        <WeeklyReviewPanel />
       </Panel>
       <Panel title={t("notifications.title")} desc={t("notifications.desc")}>
         <NotificationsPanel initial={notifications.items} />
       </Panel>
       <Panel title={t("activity.title")} desc={t("activity.desc")}>
         <ActivityList items={audit.items} />
+      </Panel>
+      <Panel title={t("value.title")} desc={t("value.desc")}>
+        <ValueReportPanel />
+      </Panel>
+      <Panel title={t("weekly.title")} desc={t("weekly.desc")}>
+        <WeeklyReviewPanel />
       </Panel>
       <Panel title={t("mailPrivacy.title")} desc={t("mailPrivacy.desc")}>
         <Suspense fallback={null}>

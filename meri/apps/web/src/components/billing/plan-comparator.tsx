@@ -7,7 +7,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Pill } from "@/components/ui/pill";
-import { cn } from "@/lib/cn";
+import { Segmented } from "@/components/ui/segmented";
 import type { BillingInterval } from "@/lib/types";
 
 const PAID: PaidPlan[] = ["pro", "pro_plus"];
@@ -34,27 +34,13 @@ export function PlanComparator({
     format.number(cents / 100, { style: "currency", currency: "USD", maximumFractionDigits: 0 });
   return (
     <div>
-      <div
-        role="radiogroup"
-        aria-label={t("interval")}
-        className="mb-4 inline-flex rounded-xl border border-rule p-1"
-      >
-        {(["month", "year"] as const).map((i) => (
-          <button
-            key={i}
-            type="button"
-            role="radio"
-            aria-checked={interval === i}
-            onClick={() => setInterval(i)}
-            className={cn(
-              "rounded-lg px-3 py-1.5 text-[13px] font-semibold",
-              interval === i ? "bg-sea text-on-sea" : "text-ink2",
-            )}
-          >
-            {t(`intervals.${i}`)}
-          </button>
-        ))}
-      </div>
+      <Segmented
+        label={t("interval")}
+        value={interval}
+        onChange={setInterval}
+        options={(["month", "year"] as const).map((i) => ({ value: i, label: t(`intervals.${i}`) }))}
+        className="mb-4"
+      />
       <ul className="grid gap-3 md:grid-cols-2">
         {PAID.map((code) => {
           const plan = PLANS[code];

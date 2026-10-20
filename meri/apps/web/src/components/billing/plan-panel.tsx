@@ -1,15 +1,22 @@
 "use client";
 
-import type { PaidPlan } from "@meri/core";
+import { CREDIT_PACK_PRICE_CENTS, type PaidPlan } from "@meri/core";
 import { CreditCard, ExternalLink, RotateCcw, Sparkles, XCircle } from "lucide-react";
 import { useFormatter, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { LoadError } from "@/components/ui/load-error";
 import { Pill } from "@/components/ui/pill";
 import { useToast } from "@/components/ui/toast";
 import { clientApi } from "@/lib/client-api";
-import { idempotencyKey, keys, useApiMutation, useBillingSubscription } from "@/lib/hooks/use-api";
+import {
+  idempotencyKey,
+  keys,
+  useAiUsage,
+  useApiMutation,
+  useBillingSubscription,
+} from "@/lib/hooks/use-api";
 import type { BillingInterval, BillingSubscription } from "@/lib/types";
 import { CancelDialog } from "./cancel-dialog";
 import { PlanComparator } from "./plan-comparator";
@@ -33,21 +40,25 @@ function useReturnToast() {
   }, [t, toast]);
 }
 
+/** The state pill; none for a plain trial (the plan name and the trial line already say it). Never dashed: it is a fact. */
 function statusPill(sub: BillingSubscription, t: ReturnType<typeof useTranslations>) {
   if (!sub.access.active) return <Pill variant="risk">{t(`access.${sub.access.reason}`)}</Pill>;
-  if (sub.cancelAtPeriodEnd) return <Pill variant="sug">{t("access.ending")}</Pill>;
+  if (sub.cancelAtPeriodEnd) return <Pill variant="plain">{t("access.ending")}</Pill>;
+  if (sub.access.reason === "trial") return null;
   return <Pill variant={sub.status === "past_due" ? "risk" : "ok"}>{t(`access.${sub.access.reason}`)}</Pill>;
 }
 
 /**
- * Control → «Plan» (D-067): state, trial end, credits of the month (warning at 80 %), add a card, change plan, buy
+ * Control → «Plan» (D-067): state, trial end, credits of the month (warning at 80 %), choose a plan, buy
  * credits, manage billing (portal) and cancel with a survey (D-066). Every write carries an Idempotency-Key ([M5]).
  */
 export function PlanPanel() {
   const t = useTranslations("billing");
   const format = useFormatter();
+  const { toast } = useToast();
   useReturnToast();
   const sub = useBillingSubscription();
+  const usage = useAiUsage();
   const [choosing, setChoosing] = useState(false);
   const [buying, setBuying] = useState(false);
   const [cancelling, setCancelling] = useState(false);
@@ -87,23 +98,25 @@ export function PlanPanel() {
     {
       onSuccess: (r) => {
         if (r.url) go(r.url);
+        else toast(t("reactivated"));
       },
     },
   );
 
   if (sub.isPending) return <p className="text-ink2">{t("loading")}</p>;
-  if (!sub.data) return <p className="text-ink2">{t("unavailable")}</p>;
+  if (!sub.data) return <LoadError message={t("unavailable")} onRetry={() => void sub.refetch()} />;
   const s = sub.data;
   const date = (iso: string | null) => (iso ? format.dateTime(new Date(iso), { dateStyle: "long" }) : "");
   const paid = s.plan !== "trial" && s.status !== "canceled";
   const ratio = s.credits.allowance > 0 ? s.credits.used / s.credits.allowance : 0;
   const pct = Math.min(100, Math.round(ratio * 100));
+  const usd = (n: number) => format.number(n, { style: "currency", currency: "USD" });
   const busy = checkout.isPending || pack.isPending || portal.isPending || reactivate.isPending;
 
   return (
-    <div id="plan" className="scroll-mt-6">
+    <div>
       <div className="flex flex-wrap items-center gap-2">
-        <b className="font-head text-lg">{t(`plans.${s.plan}`)}</b>
+        <p className="font-head text-lg font-semibold">{t(`plans.${s.plan}`)}</p>
         {statusPill(s, t)}
         {s.mode === "fake" ? <Pill variant="plain">{t("fakeMode")}</Pill> : null}
       </div>
@@ -138,6 +151,10 @@ export function PlanPanel() {
           aria-valuemin={0}
           aria-valuemax={100}
           aria-valuenow={pct}
+          aria-valuetext={t("credits.valuetext", {
+            used: format.number(s.credits.used),
+            allowance: format.number(s.credits.allowance),
+          })}
         >
           <b
             className={pct >= 80 ? "block h-full bg-risk" : "block h-full bg-sea"}
@@ -145,16 +162,24 @@ export function PlanPanel() {
           />
         </div>
         {pct >= 80 ? (
-          <p className="text-[13.5px] text-risk">{t(pct >= 100 ? "credits.exhausted" : "credits.warning")}</p>
+          <p className="text-[13.5px] text-risk">
+            {pct >= 100 ? t("credits.exhausted") : t("credits.warning", { pct })}
+          </p>
         ) : null}
         <p className="text-[12.5px] text-ink3">{t("credits.monthly")}</p>
+        {usage.data ? (
+          <p className="text-[12.5px] text-ink3">
+            {t("credits.spent", { used: usd(usage.data.usedUsd), cap: usd(usage.data.capUsd) })}
+            {usage.data.mode === "fake" ? ` · ${t("credits.fakeNote")}` : ""}
+          </p>
+        ) : null}
       </div>
 
       <div className="mt-4 flex flex-wrap gap-2">
         {!paid ? (
           <Button variant="primary" disabled={busy} onClick={() => setChoosing(true)}>
             <CreditCard size={14} aria-hidden="true" />
-            {s.status === "canceled" ? t("actions.subscribe") : t("actions.addCard")}
+            {t("actions.choosePlan")}
           </Button>
         ) : null}
         {paid && s.hasBillingAccount ? (
@@ -191,7 +216,10 @@ export function PlanPanel() {
 
       <Dialog open={choosing} onOpenChange={setChoosing}>
         {choosing ? (
-          <DialogContent title={t("choose.title")} description={t("choose.desc")}>
+          <DialogContent
+            title={t("choose.title")}
+            description={s.status === "trialing" ? t("choose.descTrial") : t("choose.descNow")}
+          >
             <PlanComparator
               busy={checkout.isPending}
               current={paid && s.plan !== "trial" ? s.plan : null}
@@ -206,7 +234,14 @@ export function PlanPanel() {
             <div className="flex flex-wrap gap-2">
               {(["500", "2000"] as const).map((code) => (
                 <Button key={code} disabled={pack.isPending} onClick={() => pack.mutate(code)}>
-                  {t("packs.buy", { credits: format.number(Number(code)) })}
+                  {t("packs.buy", {
+                    credits: format.number(Number(code)),
+                    price: format.number(CREDIT_PACK_PRICE_CENTS[code] / 100, {
+                      style: "currency",
+                      currency: "USD",
+                      maximumFractionDigits: 0,
+                    }),
+                  })}
                 </Button>
               ))}
             </div>

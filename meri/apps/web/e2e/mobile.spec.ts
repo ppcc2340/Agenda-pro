@@ -163,11 +163,13 @@ test("7. Más: time (approve), clients and briefings, activity, autonomy and pri
   await expect(page.getByRole("status")).toContainText(/cambiaste la autonomía/i);
   await page.getByRole("group", { name: /autonomía/i }).getByRole("button", { name: /solo sugerir/i }).click();
   await expect(page.getByText(/demo: cuenta simulada/i).first()).toBeVisible();
-  await expect(page.getByRole("heading", { name: /créditos de ia/i })).toBeVisible();
   await page.getByRole("button", { name: /eliminar mi cuenta/i }).click();
   await expect(page.getByRole("status")).toContainText(/en la demo no se elimina nada/i);
   await shot(page, "mobile-ajustes");
   await expectAccessible(page, "ajustes");
+  // AI credits live under Más → «Plan y créditos» since phase 4 (D-067).
+  await goto(page, "/mas/plan");
+  await expect(page.locator("#plan").getByText(/créditos este mes/i)).toBeVisible();
 });
 
 test("10. Quality: 360 px without horizontal scroll, dark theme, English", async ({ page }) => {

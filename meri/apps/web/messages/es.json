@@ -132,13 +132,6 @@
       "demoConnected": "Demo: cuenta simulada",
       "demoNotConnected": "Demo, sin conectar"
     },
-    "credits": {
-      "title": "Créditos de IA",
-      "desc": "Se usan al leer correos y generar borradores y briefings. El planificador no gasta créditos.",
-      "used": "de {cap} este mes",
-      "pause": "Al llegar al límite, la IA se pausa y el calendario y el plan siguen funcionando.",
-      "spent": "Gasto equivalente: {used} de {cap}."
-    },
     "activity": {
       "title": "Actividad",
       "desc": "Todo lo que Meri hizo o propuso, con opción de deshacer.",
@@ -257,7 +250,7 @@
         "ai_paused_briefing_allowance": "Usaste los briefings con IA de este mes; los siguientes se preparan con reglas.",
         "credits_warning": "Has usado el 80 % de los créditos de IA de este mes ({allowance}).",
         "credits_exhausted": "Créditos de IA agotados. La IA queda en pausa; el plan y el calendario siguen funcionando.",
-        "trial_ending": "Tu prueba termina en {days, plural, one {un día} other {# días}}. Añade una tarjeta en Control → Plan para seguir con la IA.",
+        "trial_ending": "Tu prueba termina en {days, plural, one {un día} other {# días}}. Elige un plan en Control → Plan para seguir con la IA.",
         "billing_payment_failed": "No pudimos cobrar tu suscripción. Actualiza el método de pago; tu acceso sigue activo mientras lo reintentamos.",
         "daily_close": "Cierre del día: {done} hechas, {toReschedule} por reprogramar, {tomorrow} prioridades para mañana."
       },
@@ -925,7 +918,7 @@
     "activity": "Actividad",
     "activityDesc": "Qué hizo Meri y cómo deshacerlo",
     "settings": "Autonomía y privacidad",
-    "settingsDesc": "Permisos, conexiones y créditos de IA",
+    "settingsDesc": "Permisos, conexiones y privacidad",
     "account": "Cuenta",
     "accountDesc": "Tema, idioma y sesión.",
     "plan": "Plan y créditos",
@@ -986,7 +979,7 @@
       "past_due": "Pago pendiente",
       "trial_ended": "Tu prueba terminó",
       "canceled": "Cancelado",
-      "unpaid": "Impagado",
+      "unpaid": "Pago vencido",
       "ending": "Termina al final del periodo"
     },
     "trialWithCard": "Tu tarjeta está guardada. El primer cobro será el {date}.",
@@ -998,26 +991,29 @@
     "credits": {
       "of": "de {allowance} créditos este mes",
       "label": "Créditos de IA usados",
-      "warning": "Has usado el 80 % de los créditos del mes.",
-      "exhausted": "Créditos agotados: la IA queda en pausa hasta el mes que viene o hasta que compres más.",
-      "monthly": "Se renuevan el día 1 de cada mes. El planificador no gasta créditos."
+      "warning": "Has usado el {pct} % de los créditos del mes.",
+      "exhausted": "Créditos agotados: la IA queda en pausa hasta el mes que viene o hasta que compres más. El plan y el calendario siguen funcionando.",
+      "monthly": "Se renuevan el día 1 de cada mes. El planificador no gasta créditos.",
+      "valuetext": "{used} de {allowance} créditos usados",
+      "spent": "Gasto equivalente en IA: {used} de un tope de {cap}.",
+      "fakeNote": "modo de pruebas, sin coste real"
     },
     "actions": {
-      "subscribe": "Contratar un plan",
-      "addCard": "Añadir tarjeta",
       "manage": "Gestionar facturación",
       "buyCredits": "Comprar créditos",
       "reactivate": "Reactivar",
-      "cancel": "Cancelar suscripción"
+      "cancel": "Cancelar suscripción",
+      "choosePlan": "Elegir plan"
     },
     "choose": {
       "title": "Elige tu plan",
-      "desc": "No se cobra nada hasta que termine tu prueba."
+      "descTrial": "No se cobra nada hasta que termine tu prueba.",
+      "descNow": "El primer cobro se hace al confirmar el pago."
     },
     "packs": {
       "title": "Comprar créditos",
       "desc": "Un pago único que se suma a los créditos de este mes.",
-      "buy": "{credits} créditos",
+      "buy": "{credits} créditos · {price}",
       "expiry": "Los créditos comprados valen hasta el final del mes natural en que los compras."
     },
     "returned": {
@@ -1028,11 +1024,11 @@
     },
     "cancel": {
       "title": "Cancelar la suscripción",
-      "desc": "Tu plan seguirá activo hasta el {date}. Después, la IA se pausa y tus datos se conservan.",
+      "desc": "Tu plan seguirá activo hasta el {date}. Después, la IA se pausa; el plan, el calendario y tus datos siguen ahí.",
       "keep": "Mantener el plan",
       "confirm": "Cancelar al final del periodo",
       "done": "Cancelada. Sigue activa hasta el {date}.",
-      "question": "¿Por qué cancelas?",
+      "question": "¿Por qué cancelas? (opcional)",
       "reasons": {
         "price": "Es caro para mí",
         "not_using": "No lo estoy usando",
@@ -1053,7 +1049,8 @@
       },
       "keepsWorking": "El plan y el calendario siguen funcionando.",
       "action": "Ver el plan"
-    }
+    },
+    "reactivated": "Reactivada: tu plan continúa como antes."
   },
   "value": {
     "figures": {
@@ -1061,11 +1058,15 @@
       "deadline_risks_flagged": "Plazos en riesgo detectados a tiempo",
       "hours_recovered": "Horas recuperadas"
     },
-    "noData": "Sin datos todavía.",
+    "noData": {
+      "commitments_saved": "Aún no hay compromisos cumplidos en este periodo.",
+      "deadline_risks_flagged": "Ningún plazo en riesgo detectado en este periodo.",
+      "hours_recovered": "Aún no has aprobado tiempo sugerido en este periodo."
+    },
     "units": {
       "commitments": "{n, plural, one {compromiso} other {compromisos}}",
       "deadlines": "{n, plural, one {plazo} other {plazos}}",
-      "hours": "horas"
+      "hours": "{n, plural, one {hora} other {horas}}"
     },
     "estimated": "estimadas",
     "how": "¿Cómo se calcula?",

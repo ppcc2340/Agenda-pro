@@ -36,6 +36,11 @@ export function creditOperationOf(requestOperation: string): AiOperation | null 
 export const CREDIT_PACKS = { "500": 500, "2000": 2000 } as const;
 export type CreditPack = keyof typeof CREDIT_PACKS;
 export const isCreditPack = (value: string): value is CreditPack => value in CREDIT_PACKS;
+/**
+ * Display price of each pack in USD cents (pricing hypothesis, D-068; the charged amount is the provider price the
+ * pack maps to, kept equal to this by the live configuration).
+ */
+export const CREDIT_PACK_PRICE_CENTS: Readonly<Record<CreditPack, number>> = { "500": 900, "2000": 2900 };
 
 /** Credits are counted with two decimals (0.2 per capture) and never in floating noise. */
 export const roundCredits = (value: number): number => Math.round(value * 100) / 100;

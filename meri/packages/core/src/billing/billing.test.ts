@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import {
   AI_OPERATIONS,
   CREDIT_COSTS,
+  CREDIT_PACKS,
+  CREDIT_PACK_PRICE_CENTS,
   chargeDecision,
   creditBalance,
   creditOperationOf,
@@ -49,6 +51,12 @@ describe("plan catalogue (D-058)", () => {
 });
 
 describe("credits (D-061)", () => {
+  it("every pack has a display price and bigger packs cost less per credit (D-068)", () => {
+    const packs = Object.keys(CREDIT_PACKS) as (keyof typeof CREDIT_PACKS)[];
+    expect(Object.keys(CREDIT_PACK_PRICE_CENTS).sort()).toEqual([...packs].sort());
+    const perCredit = packs.map((p) => CREDIT_PACK_PRICE_CENTS[p] / CREDIT_PACKS[p]);
+    expect(perCredit[1]).toBeLessThan(perCredit[0] ?? 0);
+  });
   it("costs follow docs/08 and the balance adds packs to the monthly allowance", () => {
     expect(CREDIT_COSTS).toEqual({ extract_commitments: 1, capture_parse: 0.2, followup_draft: 3, brief_client: 5, summary: 1 });
     const b = creditBalance({ monthly: 1500, granted: 500, used: 1999.8 });

@@ -1,6 +1,6 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
-import { VALUE_EVENT_TYPES, VALUE_METHODS, buildValueReport, type ValueEventInput } from "./report";
+import { FIGURE_METHODS, VALUE_EVENT_TYPES, VALUE_METHODS, buildValueReport, type ValueEventInput } from "./report";
 
 const range = { from: new Date("2026-10-19T00:00:00Z"), to: new Date("2026-10-26T00:00:00Z") };
 const ev = (over: Partial<ValueEventInput>): ValueEventInput => ({
@@ -15,6 +15,10 @@ const ev = (over: Partial<ValueEventInput>): ValueEventInput => ({
 });
 
 describe("buildValueReport (F-12 AC1, D-063)", () => {
+  it("each method belongs to exactly one figure", () => {
+    const all = Object.values(FIGURE_METHODS).flat();
+    expect([...all].sort()).toEqual([...VALUE_METHODS].sort());
+  });
   it("without events every figure is null with no method and no source: nothing is invented", () => {
     const report = buildValueReport([], range);
     expect(report.figures.map((f) => [f.key, f.value, f.sources.length, f.methods.length])).toEqual([

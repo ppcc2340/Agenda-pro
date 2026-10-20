@@ -5,7 +5,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { demoLogin, expectAccessible, goto, hydrated, reseedDemo } from "./helpers";
 
 /**
- * Phase 4 E2E (phases/04 PLAN step 13): /precios → Control → «Añadir tarjeta» (simulated hosted checkout through
+ * Phase 4 E2E (phases/04 PLAN step 13): /precios → Control → «Elegir plan» (simulated hosted checkout through
  * the real webhook handler) → buy credits → cancel with survey → reactivate; the value report with its method and
  * sources and the weekly review on the demo workspace; credits used up → «IA en pausa» banner while Hoy and the
  * calendar keep working. Same servers and frozen clock as the other phases (DEMO_NOW=2026-10-20T08:40:00Z).
@@ -40,24 +40,26 @@ test.describe("phase 4: plans, credits, value and reviews", () => {
     await expect(page.getByRole("heading", { name: "Pro", exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Pro+" })).toBeVisible();
     await expect(page.getByText("1500 créditos de IA al mes").or(page.getByText("1.500 créditos de IA al mes"))).toBeVisible();
-    await page.getByRole("radio", { name: /anual/i }).click();
+    await page.getByRole("group", { name: /facturación/i }).getByRole("button", { name: /anual/i }).click();
+    await expect(page.getByRole("button", { name: /anual/i })).toHaveAttribute("aria-pressed", "true");
     await expect(page.getByText(/al año/).first()).toBeVisible();
     await expectAccessible(page, "precios");
     await expect(page.getByRole("link", { name: /empezar la prueba/i }).first()).toHaveAttribute("href", "/login");
   });
 
-  test("trial → add a card → buy credits → cancel with survey → reactivate", async ({ page }, info) => {
+  test("trial → choose a plan → buy credits → cancel with survey → reactivate", async ({ page }, info) => {
     test.skip(info.project.name === "mobile", "the billing lifecycle runs once, on desktop");
     await signUp(page);
     await goto(page, "/control#plan");
     const plan = page.locator("#plan");
-    await expect(plan.getByText("En prueba")).toBeVisible();
+    await expect(plan.getByText("Prueba", { exact: true })).toBeVisible();
     await expect(plan.getByText(/la prueba termina el/i)).toBeVisible();
     await expectAccessible(page, "control-plan");
 
-    await plan.getByRole("button", { name: /añadir tarjeta/i }).click();
+    await plan.getByRole("button", { name: /elegir plan/i }).click();
     const dialog = page.getByRole("dialog");
     await expect(dialog.getByRole("heading", { name: /elige tu plan/i })).toBeVisible();
+    await expect(dialog.getByText(/no se cobra nada hasta que termine tu prueba/i)).toBeVisible();
     await dialog.getByRole("button", { name: "Elegir Pro", exact: true }).click();
     await page.waitForURL(/\/control\?billing=success|\/control#plan|\/control$/);
     await hydrated(page);
@@ -66,14 +68,16 @@ test.describe("phase 4: plans, credits, value and reviews", () => {
     await expect(plan.getByText(/el primer cobro será/i)).toBeVisible();
 
     await plan.getByRole("button", { name: /comprar créditos/i }).click();
-    await page.getByRole("dialog").getByRole("button", { name: /^500 créditos$/ }).click();
+    await page.getByRole("dialog").getByRole("button", { name: /^500 créditos · / }).click();
     await page.waitForURL(/\/control/);
     await hydrated(page);
     await expect(page.locator("#plan").getByText(/de 800 créditos este mes/)).toBeVisible();
 
     await page.locator("#plan").getByRole("button", { name: /cancelar suscripción/i }).click();
     const cancel = page.getByRole("dialog");
-    await expect(cancel.getByRole("button", { name: /cancelar al final del periodo/i })).toBeDisabled();
+    // The survey is optional: cancelling is never gated on answering it.
+    await expect(cancel.getByRole("button", { name: /cancelar al final del periodo/i })).toBeEnabled();
+    await expect(cancel.getByText(/¿por qué cancelas\? \(opcional\)/i)).toBeVisible();
     await cancel.getByLabel("Es caro para mí").check();
     await cancel.getByLabel(/algo más que quieras contarnos/i).fill("Probando la encuesta");
     await expectAccessible(page, "cancel-dialog");
@@ -82,6 +86,7 @@ test.describe("phase 4: plans, credits, value and reviews", () => {
     await expect(page.locator("#plan").getByText("Termina al final del periodo")).toBeVisible();
 
     await page.locator("#plan").getByRole("button", { name: /reactivar/i }).click();
+    await expect(page.getByRole("status").filter({ hasText: /reactivada/i })).toBeVisible();
     await expect(page.locator("#plan").getByText("Termina al final del periodo")).toHaveCount(0);
     await expect(page.locator("#plan").getByRole("button", { name: /cancelar suscripción/i })).toBeVisible();
   });
@@ -97,7 +102,7 @@ test.describe("phase 4: plans, credits, value and reviews", () => {
     await expect(saved.getByRole("link", { name: "Enviar el acta de la reunión" })).toBeVisible();
     const hours = page.getByRole("listitem").filter({ hasText: "Horas recuperadas" });
     await expect(hours).toContainText(/estimadas/);
-    await page.getByRole("radio", { name: /este mes/i }).click();
+    await page.getByRole("button", { name: /este mes/i }).click();
     await expect(saved).toContainText("1");
     await expect(page.getByRole("heading", { name: "Revisión semanal" })).toBeVisible();
     await expect(page.getByRole("list", { name: /carga por día/i })).toBeVisible();
@@ -110,7 +115,7 @@ test.describe("phase 4: plans, credits, value and reviews", () => {
     await page.getByRole("link", { name: /plan y créditos/i }).click();
     await page.waitForURL(/\/mas\/plan/);
     await hydrated(page);
-    await expect(page.locator("#plan").getByText("En prueba")).toBeVisible();
+    await expect(page.locator("#plan").getByText("Prueba", { exact: true })).toBeVisible();
     await expect(page.locator("#plan").getByText(/quedan 9 días/)).toBeVisible();
     await expectAccessible(page, "mas-plan");
     await goto(page, "/mas");

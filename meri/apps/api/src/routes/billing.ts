@@ -288,7 +288,8 @@ export function billingRoutes(app: FastifyInstance, options: BillingRoutesOption
       schema: {
         tags: ["billing"],
         body: z.object({
-          reason: z.enum(CANCELLATION_REASONS),
+          // The survey is optional (UX review): an unanswered reason is recorded as «other».
+          reason: z.enum(CANCELLATION_REASONS).default("other"),
           comment: z.string().max(500).nullable().optional(),
         }),
         response: {

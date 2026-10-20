@@ -1,6 +1,7 @@
 "use client";
 
 import { useFormatter, useTranslations } from "next-intl";
+import { LoadError } from "@/components/ui/load-error";
 import { useWeeklyReview } from "@/lib/hooks/use-api";
 import { cn } from "@/lib/cn";
 
@@ -12,7 +13,7 @@ export function WeeklyReviewPanel() {
   const format = useFormatter();
   const review = useWeeklyReview();
   if (review.isPending) return <p className="text-ink2">{t("loading")}</p>;
-  if (!review.data) return <p className="text-ink2">{t("unavailable")}</p>;
+  if (!review.data) return <LoadError message={t("unavailable")} onRetry={() => void review.refetch()} />;
   const w = review.data;
   const dayName = (day: string) =>
     format.dateTime(new Date(`${day}T12:00:00Z`), { weekday: "short", timeZone: "UTC" });

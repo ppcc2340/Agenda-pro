@@ -20,7 +20,7 @@ export default async function PricingPage() {
       </Link>
       <h1 className="text-[28px] leading-[1.1] md:text-[34px]">{t("title")}</h1>
       <p className="mt-2 max-w-[60ch] text-[15.5px] text-ink2">{t("subtitle")}</p>
-      <p className="mt-3 rounded-lg border border-dashed border-sug bg-sug-soft px-3 py-2 text-sug">
+      <p className="mt-3 rounded-lg border border-rule bg-raised px-3 py-2 text-ink2">
         {t("testNote")}
       </p>
       <div className="mt-6">

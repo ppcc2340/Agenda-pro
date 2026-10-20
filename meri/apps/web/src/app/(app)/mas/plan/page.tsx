@@ -1,18 +1,16 @@
 import { getTranslations } from "next-intl/server";
 import { PlanPanel } from "@/components/billing/plan-panel";
 import { MasHeader } from "@/components/shell/mas-header";
-import { Panel } from "@/components/ui/section";
 
-/** Más → «Plan y créditos» (D-067, mobile). */
+/** Más → «Plan y créditos» (D-067, mobile): the page title already names the section, so no panel title. */
 export default async function MasPlanPage() {
   const t = await getTranslations("mas");
-  const tc = await getTranslations("control");
   return (
     <>
       <MasHeader title={t("plan")} subtitle={t("planDesc")} />
-      <Panel title={tc("plan.title")} desc={tc("plan.desc")}>
+      <div id="plan" className="scroll-mt-6">
         <PlanPanel />
-      </Panel>
+      </div>
     </>
   );
 }

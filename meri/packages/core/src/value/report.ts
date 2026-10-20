@@ -55,6 +55,13 @@ export interface ValueReport {
   figures: ValueFigure[];
 }
 
+/** Every method a figure can be built from: the UI explains them even before the first event (UX review). */
+export const FIGURE_METHODS: Readonly<Record<ValueFigure["key"], readonly ValueMethod[]>> = {
+  commitments_saved: ["commitment_fulfilled_on_time", "commitment_fulfilled_after_followup"],
+  deadline_risks_flagged: ["task_flagged_at_risk_by_planner", "third_party_commitment_overdue"],
+  hours_recovered: ["inferred_time_approved"],
+};
+
 const FIGURES: { key: ValueFigure["key"]; type: ValueEventType; unit: ValueFigure["unit"]; estimated: boolean }[] = [
   { key: "commitments_saved", type: "commitment_saved", unit: "commitments", estimated: false },
   { key: "deadline_risks_flagged", type: "deadline_risk_flagged", unit: "deadlines", estimated: false },

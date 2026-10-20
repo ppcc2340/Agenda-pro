@@ -7,7 +7,6 @@ import { MailPrivacy } from "@/components/control/mail-privacy";
 import { LocaleSwitch } from "@/components/shell/locale-switch";
 import { ThemeToggle } from "@/components/shell/theme-toggle";
 import { ConnectionsPanel } from "@/components/control/connections";
-import { CreditsPanel } from "@/components/control/credits";
 import { PrivacyPanel } from "@/components/control/privacy";
 import { MasHeader } from "@/components/shell/mas-header";
 import { Panel } from "@/components/ui/section";
@@ -44,9 +43,6 @@ export default async function MasAjustesPage() {
           gmailAutoconfirm={prefs.gmailAutoconfirm}
           briefingBeforeMeetings={prefs.briefingBeforeMeetings}
         />
-      </Panel>
-      <Panel title={tc("credits.title")} desc={tc("credits.desc")}>
-        <CreditsPanel />
       </Panel>
       <Panel title={tc("mailPrivacy.title")} desc={tc("mailPrivacy.desc")}>
         <Suspense fallback={null}>

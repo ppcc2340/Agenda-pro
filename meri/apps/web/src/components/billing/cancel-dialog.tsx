@@ -12,7 +12,10 @@ const REASONS = ["price", "not_using", "missing_feature", "switched_tool", "priv
 type Reason = (typeof REASONS)[number];
 const MAX_COMMENT = 500;
 
-/** D-066: cancel at period end with a short survey; the comment stays in Meri (never in analytics). */
+/**
+ * D-066: cancel at period end with a short, optional survey (UX review: never a gate on cancelling); the comment
+ * stays in Meri (never in analytics). An unanswered reason is recorded as «other».
+ */
 export function CancelDialog({
   open,
   onOpenChange,
@@ -27,7 +30,7 @@ export function CancelDialog({
   const [reason, setReason] = useState<Reason | null>(null);
   const [comment, setComment] = useState("");
   const cancel = useApiMutation(
-    (v: { reason: Reason; comment: string | null }) =>
+    (v: { reason?: Reason; comment: string | null }) =>
       clientApi<{ status: string }>("/v1/billing/cancel", {
         method: "POST",
         json: v,
@@ -54,10 +57,13 @@ export function CancelDialog({
               </Button>
               <Button
                 variant="risk"
-                disabled={reason === null || cancel.isPending}
-                onClick={() => {
-                  if (reason) cancel.mutate({ reason, comment: comment.trim() ? comment.trim() : null });
-                }}
+                disabled={cancel.isPending}
+                onClick={() =>
+                  cancel.mutate({
+                    ...(reason ? { reason } : {}),
+                    comment: comment.trim() ? comment.trim() : null,
+                  })
+                }
               >
                 {t("confirm")}
               </Button>
