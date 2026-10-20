@@ -16,9 +16,11 @@ import { useApiMutation } from "@/lib/hooks/use-api";
  */
 export function PrivacyPanel({ demoMode }: { demoMode: boolean }) {
   const t = useTranslations("control.privacy");
+  const tApp = useTranslations("app");
   const { toast } = useToast();
   const [confirm, setConfirm] = useState(false);
   const remove = useApiMutation(() => clientApi<null>("/v1/account", { method: "DELETE" }), [], {
+    onError: () => toast(tApp("errorBody")),
     onSuccess: async () => {
       toast(t("deleted"));
       await signOutAction();
@@ -61,7 +63,7 @@ export function PrivacyPanel({ demoMode }: { demoMode: boolean }) {
               </>
             }
           >
-            <span className="sr-only">{t("confirmBody")}</span>
+            {null}
           </DialogContent>
         ) : null}
       </Dialog>

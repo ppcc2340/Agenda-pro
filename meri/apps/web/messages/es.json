@@ -136,7 +136,8 @@
       "title": "Créditos de IA",
       "desc": "Se usan al leer correos y generar borradores y briefings. El planificador no gasta créditos.",
       "used": "de {cap} este mes",
-      "pause": "Al llegar al límite, la IA se pausa y el calendario y el plan siguen funcionando."
+      "pause": "Al llegar al límite, la IA se pausa y el calendario y el plan siguen funcionando.",
+      "spent": "Gasto equivalente: {used} de {cap}."
     },
     "activity": {
       "title": "Actividad",
@@ -172,7 +173,7 @@
         "commitment_dismissed": "Descartaste un compromiso.",
         "commitment_fulfilled": "Marcaste un compromiso como cumplido.",
         "followup_reminder": "Programaste un recordatorio de seguimiento.",
-        "followup_draft_saved": "Meri guardó un borrador de seguimiento en Gmail (sin enviar).",
+        "followup_draft_saved": "Guardaste un borrador de seguimiento en Gmail (sin enviar).",
         "task_waiting_created": "Creaste una tarea «Esperando a».",
         "commitment_updated": "Editaste un compromiso.",
         "followups_muted": "Silenciaste los seguimientos de un contacto o cliente.",
@@ -216,11 +217,11 @@
       "desc": "Tus datos son tuyos.",
       "export": "Exportar mis datos",
       "delete": "Eliminar mi cuenta",
-      "body": "La exportación es un JSON con tus clientes, tareas, compromisos, tiempo y actividad. Eliminar la cuenta la desactiva al momento y borra los datos en el plazo legal.",
+      "body": "La exportación es un JSON con tus clientes, tareas, compromisos, tiempo y actividad. Eliminar la cuenta la desactiva al momento; el borrado definitivo se completa en el plazo legal.",
       "exportedToast": "Exportando tus datos.",
       "demoDelete": "En la demo no se elimina nada.",
       "confirmTitle": "¿Eliminar tu cuenta?",
-      "confirmBody": "Se cierra la sesión, Meri deja de leer tus cuentas y tus datos se borran. No se puede deshacer.",
+      "confirmBody": "Se cierra la sesión, Meri deja de leer tus cuentas y revoca su acceso. El borrado definitivo de tus datos se completa en el plazo legal. No se puede deshacer.",
       "cancel": "Cancelar",
       "deleted": "Cuenta eliminada."
     },
@@ -920,6 +921,8 @@
     "activity": "Actividad",
     "activityDesc": "Qué hizo Meri y cómo deshacerlo",
     "settings": "Autonomía y privacidad",
-    "settingsDesc": "Permisos, conexiones y créditos de IA"
+    "settingsDesc": "Permisos, conexiones y créditos de IA",
+    "account": "Cuenta",
+    "accountDesc": "Tema, idioma y sesión."
   }
 }

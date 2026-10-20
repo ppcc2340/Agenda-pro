@@ -24,10 +24,13 @@ export default async function HoyPage() {
     month: "long",
     timeZone: prefs.timezone,
   });
+  // «Martes 20 de octubre» (demo): no comma after the weekday in Spanish.
+  const capitalized = title.charAt(0).toLocaleUpperCase(locale) + title.slice(1);
+  const es = locale === "es";
   return (
     <>
       <PageHeader
-        title={(title.charAt(0).toLocaleUpperCase(locale) + title.slice(1)).replace(locale === "es" ? /,\s*/ : /^$/, " ")}
+        title={es ? capitalized.replace(/,\s*/, " ") : capitalized}
         action={<CaptureButton />}
       />
       <HoyView

@@ -80,7 +80,6 @@ export function PaletteProvider({ children, data }: { children: ReactNode; data:
         e.preventDefault();
         setOpen((v) => !v);
       }
-      if (e.key === "Escape") setOpen(false);
     };
     window.addEventListener("keydown", onKey);
     return () => {
@@ -91,7 +90,10 @@ export function PaletteProvider({ children, data }: { children: ReactNode; data:
   return (
     <PaletteContext.Provider value={api}>
       {children}
-      {isOpen ? <Palette data={data} onClose={close} /> : null}
+      {/* Radix dialog (ADR 0002): focus trap, Escape and focus return to whatever opened the palette. */}
+      <DialogPrimitive.Root open={isOpen} onOpenChange={setOpen}>
+        {isOpen ? <Palette data={data} onClose={close} /> : null}
+      </DialogPrimitive.Root>
     </PaletteContext.Provider>
   );
 }
@@ -246,19 +248,20 @@ function Palette({ data, onClose }: { data: PaletteContextData; onClose: () => v
   ];
   const active = Math.min(idx, Math.max(0, options.length - 1));
 
+  const activeOption = options[active];
+  const optionId = (id: string) => `palette-opt-${id}`;
   return (
-    <div
-      className="fixed inset-0 z-40 flex items-start justify-center bg-[rgba(6,14,21,0.55)] pt-[12vh]"
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label={t("placeholder")}
-        className="w-[min(640px,92vw)] overflow-hidden rounded-2xl border border-rule bg-raised shadow-2xl"
+    <DialogPrimitive.Portal>
+      <DialogPrimitive.Overlay className="fixed inset-0 z-40 bg-[rgba(6,14,21,0.55)]" />
+      <DialogPrimitive.Content
+        aria-describedby={undefined}
+        onOpenAutoFocus={(e) => {
+          e.preventDefault();
+          inputRef.current?.focus();
+        }}
+        className="fixed left-1/2 top-[12vh] z-50 w-[min(640px,92vw)] -translate-x-1/2 overflow-hidden rounded-2xl border border-rule bg-raised shadow-2xl focus:outline-none"
       >
+        <DialogPrimitive.Title className="sr-only">{t("placeholder")}</DialogPrimitive.Title>
         <div className="flex items-center gap-2 border-b border-rule px-4">
           <Search size={16} aria-hidden="true" className="text-ink3" />
           <input
@@ -284,6 +287,11 @@ function Palette({ data, onClose }: { data: PaletteContextData; onClose: () => v
             }}
             placeholder={t("placeholder")}
             aria-label={t("placeholder")}
+            role="combobox"
+            aria-expanded={options.length > 0}
+            aria-controls="palette-list"
+            aria-autocomplete="list"
+            aria-activedescendant={activeOption ? optionId(activeOption.id) : undefined}
             className="w-full bg-transparent px-1 py-4 text-[17px] font-medium outline-none"
           />
         </div>
@@ -300,24 +308,26 @@ function Palette({ data, onClose }: { data: PaletteContextData; onClose: () => v
             <CapturePreview suggestion={suggestion} timezone={data.timezone} />
           </div>
         ) : null}
-        <ul className="max-h-[46vh] overflow-auto p-2" aria-label={t("placeholder")}>
+        {/* Combobox pattern: focus stays in the input, the active option is announced via aria-activedescendant. */}
+        <ul id="palette-list" role="listbox" aria-label={t("placeholder")} className="max-h-[46vh] overflow-auto p-2">
           {options.map((o, i) => (
-            <li key={o.id}>
-              <button
-                type="button"
-                aria-current={i === active ? "true" : undefined}
-                onMouseEnter={() => setIdx(i)}
-                onClick={o.run}
-                className={
-                  i === active
-                    ? "flex w-full items-center gap-2.5 rounded-lg bg-sea-soft px-3 py-2.5 text-left"
-                    : "flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left hover:bg-sea-soft"
-                }
-              >
-                <o.icon size={16} aria-hidden="true" />
-                <span className="min-w-0 flex-1 truncate">{o.label}</span>
-                {o.meta ? <span className="shrink-0 text-[12px] text-ink3">{o.meta}</span> : null}
-              </button>
+            <li
+              key={o.id}
+              id={optionId(o.id)}
+              role="option"
+              aria-selected={i === active}
+              onMouseEnter={() => setIdx(i)}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={o.run}
+              className={
+                i === active
+                  ? "flex w-full cursor-pointer items-center gap-2.5 rounded-lg bg-sea-soft px-3 py-2.5 text-left"
+                  : "flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2.5 text-left hover:bg-sea-soft"
+              }
+            >
+              <o.icon size={16} aria-hidden="true" />
+              <span className="min-w-0 flex-1 truncate">{o.label}</span>
+              {o.meta ? <span className="shrink-0 text-[12px] text-ink3">{o.meta}</span> : null}
             </li>
           ))}
         </ul>
@@ -332,8 +342,8 @@ function Palette({ data, onClose }: { data: PaletteContextData; onClose: () => v
         {debounced.length >= 2 && !search.isFetching && options.length === 0 ? (
           <p className="border-t border-rule px-5 py-2.5 text-[12.5px] text-ink3">{t("search.empty", { q: scope.term })}</p>
         ) : null}
-      </div>
-    </div>
+      </DialogPrimitive.Content>
+    </DialogPrimitive.Portal>
   );
 }
 

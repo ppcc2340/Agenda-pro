@@ -27,9 +27,7 @@ export default async function MasActividadPage() {
   return (
     <>
       <MasHeader title={t("activity")} subtitle={t("activityDesc")} />
-      <Panel title={tc("activity.title")} desc={tc("activity.desc")}>
-        <ActivityList items={audit.items} />
-      </Panel>
+      <ActivityList items={audit.items} />
       <Panel title={tc("notifications.title")} desc={tc("notifications.desc")}>
         <NotificationsPanel initial={notifications.items} />
       </Panel>

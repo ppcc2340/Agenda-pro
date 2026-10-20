@@ -81,7 +81,8 @@ export function TimeReview({ clients, timezone }: { clients: { id: string; name:
             <ChevronLeft size={16} aria-hidden="true" />
           </button>
           <span className="num px-2 text-[13px] font-semibold">
-            {t("week", { week: current })} <span className="font-normal text-ink2">{range}</span>
+            {t("week", { week: current })}
+            <span className="ml-1.5 font-normal text-ink2">{range}</span>
           </span>
           <button type="button" aria-label={t("nextWeek")} className="px-2 py-1.5" onClick={() => setWeek(shiftWeek(current, 1))} disabled={!current}>
             <ChevronRight size={16} aria-hidden="true" />

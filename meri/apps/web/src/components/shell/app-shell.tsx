@@ -48,7 +48,7 @@ export function AppShell({
       >
         {tApp("skipToContent")}
       </a>
-      <aside className="hidden bg-rail px-3.5 py-5 text-rail-ink md:flex md:min-h-dvh md:flex-col">
+      <aside className="hidden bg-rail px-3.5 py-5 text-rail-ink md:sticky md:top-0 md:flex md:h-dvh md:flex-col md:overflow-y-auto">
         <div className="flex items-center gap-2.5 px-2 pb-5 font-head text-2xl font-bold tracking-tight text-white">
           <Logo size={30} />
           <span>{tApp("name")}</span>

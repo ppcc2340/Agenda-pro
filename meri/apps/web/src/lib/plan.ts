@@ -151,7 +151,6 @@ export function currentBlock(items: DayItem[], nowMin: number): DayItem | null {
   );
 }
 
-/** Stable client color index (1..4) from the client id; null → neutral. */
 /** The client's own colour when it has one; otherwise a stable slot of the four-colour palette (docs/11). */
 /** docs/11 client palette → theme tokens (the dark theme lightens them); any other hex is used verbatim. */
 const TOKEN_OF_HEX: Record<string, string> = {

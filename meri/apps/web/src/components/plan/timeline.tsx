@@ -102,7 +102,7 @@ export function Timeline({
               className="absolute bottom-1 top-1 grid place-items-center rounded-lg border border-dashed border-ink3 bg-[repeating-linear-gradient(135deg,transparent_0_5px,var(--rule)_5px_6px)] text-[11px] text-ink3"
               style={{ left: x(margin.startMin), width: w(margin.startMin, margin.endMin) }}
             >
-              {narrow(margin.startMin, margin.endMin) ? null : t("margin")}
+              {pct(margin.startMin, margin.endMin) < 4 ? null : t("margin")}
             </div>
           ) : null}
           {ghosts.map((g) => {

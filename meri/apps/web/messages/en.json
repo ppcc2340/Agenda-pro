@@ -136,7 +136,8 @@
       "title": "AI credits",
       "desc": "Used when reading email and generating drafts and briefings. The planner uses no credits.",
       "used": "of {cap} this month",
-      "pause": "At the limit, AI pauses while calendar and plan keep working."
+      "pause": "At the limit, AI pauses while calendar and plan keep working.",
+      "spent": "Equivalent spend: {used} of {cap}."
     },
     "activity": {
       "title": "Activity",
@@ -172,7 +173,7 @@
         "commitment_dismissed": "You dismissed a commitment.",
         "commitment_fulfilled": "You marked a commitment as fulfilled.",
         "followup_reminder": "You scheduled a follow-up reminder.",
-        "followup_draft_saved": "Meri saved a follow-up draft in Gmail (not sent).",
+        "followup_draft_saved": "You saved a follow-up draft in Gmail (not sent).",
         "task_waiting_created": "You created a “Waiting for” task.",
         "commitment_updated": "You edited a commitment.",
         "followups_muted": "You muted follow-ups for a contact or client.",
@@ -216,11 +217,11 @@
       "desc": "Your data is yours.",
       "export": "Export my data",
       "delete": "Delete my account",
-      "body": "The export is a JSON with your clients, tasks, commitments, time and activity. Deleting the account disables it at once and erases the data within the legal period.",
+      "body": "The export is a JSON with your clients, tasks, commitments, time and activity. Deleting the account disables it at once; the final erasure completes within the legal period.",
       "exportedToast": "Exporting your data.",
       "demoDelete": "Nothing is deleted in the demo.",
       "confirmTitle": "Delete your account?",
-      "confirmBody": "You will be signed out, Meri stops reading your accounts and your data is erased. This cannot be undone.",
+      "confirmBody": "You will be signed out, Meri stops reading your accounts and revokes its access. The final erasure of your data completes within the legal period. This cannot be undone.",
       "cancel": "Cancel",
       "deleted": "Account deleted."
     },
@@ -920,6 +921,8 @@
     "activity": "Activity",
     "activityDesc": "What Meri did and how to undo it",
     "settings": "Autonomy and privacy",
-    "settingsDesc": "Permissions, connections and AI credits"
+    "settingsDesc": "Permissions, connections and AI credits",
+    "account": "Account",
+    "accountDesc": "Theme, language and session."
   }
 }

@@ -161,9 +161,9 @@ test("client → meeting → briefing → agreements → weekly time → CSV →
   if (!isMobile) {
     await page.keyboard.press("Control+k");
     const palette = page.getByRole("dialog");
-    await palette.getByRole("textbox").fill("informe en Acme");
+    await palette.getByRole("combobox").fill("informe en Acme");
     await expect(palette).toContainText(/buscando en acme/i);
-    await expect(palette.getByRole("button", { name: /informe para acme/i })).toBeVisible({ timeout: 15_000 });
+    await expect(palette.getByRole("option", { name: /informe para acme/i })).toBeVisible({ timeout: 15_000 });
     await page.keyboard.press("Escape");
   }
 });

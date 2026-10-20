@@ -42,14 +42,14 @@ test("2. Capture with Ctrl K: dashed chips from the real parser, proposal in Ent
   await demoLogin(page);
   await page.keyboard.press("Control+k");
   const palette = page.getByRole("dialog");
-  await palette.getByRole("textbox").fill("Informe para Acme el jueves, 2 h");
+  await palette.getByRole("combobox").fill("Informe para Acme el jueves, 2 h");
   await expect(palette).toContainText(/acme corp/i);
   await expect(palette).toContainText(/2 h/);
   await expect(palette).toContainText(/jueves|jue/i);
   await shot(page, "desktop-captura");
   await expectAccessible(page, "captura (palette open)");
   const started = Date.now();
-  await palette.getByRole("textbox").press("Enter");
+  await palette.getByRole("combobox").press("Enter");
   await expect(page.getByRole("status")).toContainText(/capturado en entrada/i);
   const elapsed = Date.now() - started;
   test.info().annotations.push({ type: "capture-ms", description: String(elapsed) });

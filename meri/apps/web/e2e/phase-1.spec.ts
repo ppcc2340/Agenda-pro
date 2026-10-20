@@ -54,7 +54,7 @@ test("onboarding → capture → plan → connect calendar → reorganize (accep
   } else {
     await page.keyboard.press("Control+k");
   }
-  const captureInput = page.getByRole("dialog").getByRole("textbox").first();
+  const captureInput = page.getByRole("dialog").getByRole(isMobile ? "textbox" : "combobox").first();
   await captureInput.fill("Informe trimestral el jueves, 2 h");
   await captureInput.press("Enter");
   await page.goto("/entrada");

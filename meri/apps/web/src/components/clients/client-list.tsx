@@ -47,7 +47,6 @@ export function ClientList({ editId = null }: { editId?: string | null }) {
     invalidate,
   );
   const items = useMemo(() => list.data?.items ?? [], [list.data]);
-  const active = items.filter((c) => !c.archivedAt);
   // Deep link from the client view ("Editar"): open the form once for that client.
   useEffect(() => {
     if (!editId || autoEdited) return;
@@ -93,7 +92,7 @@ export function ClientList({ editId = null }: { editId?: string | null }) {
       <ul className="divide-y divide-rule border-t border-rule" aria-label={t("listLabel")}>
         {items.map((c) => {
           const s = c.stats;
-          const color = clientColorVar(c.id, active.length ? active : items);
+          const color = clientColorVar(c.id, items);
           const risk = s ? s.atRiskTasks + s.overdueCommitments : 0;
           return (
             <li key={c.id} className="flex flex-col gap-2 py-3 md:flex-row md:items-center md:gap-3.5">
