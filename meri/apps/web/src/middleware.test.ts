@@ -15,4 +15,17 @@ describe("middleware", () => {
     expect(middleware(req("/hoy", "authjs.session-token=x")).headers.get("location")).toBeNull();
     expect(middleware(req("/hoy", "__Secure-authjs.session-token=x")).headers.get("location")).toBeNull();
   });
+
+  it("sets a strict CSP with a fresh nonce on every page response and passes the nonce to the app", () => {
+    const a = middleware(req("/hoy", "authjs.session-token=x"));
+    const b = middleware(req("/privacy"));
+    const cspA = a.headers.get("content-security-policy") ?? "";
+    const cspB = b.headers.get("content-security-policy") ?? "";
+    expect(cspA).toMatch(/script-src 'self' 'nonce-[A-Za-z0-9+/=]{24}' 'strict-dynamic'/);
+    expect(cspA).not.toContain("'unsafe-inline' 'strict");
+    expect(cspA).not.toEqual(cspB);
+    // The request headers forwarded to the app carry the same nonce.
+    const nonce = /'nonce-([^']+)'/.exec(cspA)?.[1];
+    expect(a.headers.get("x-middleware-request-x-nonce")).toBe(nonce);
+  });
 });

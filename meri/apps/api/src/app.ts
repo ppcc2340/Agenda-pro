@@ -100,11 +100,14 @@ export async function buildApp(deps: AppDeps) {
   app.setNotFoundHandler((request, reply) => sendProblem(reply, problemFrom("NOT_FOUND", request.id)));
   app.addHook("onSend", (request, reply, payload, done) => {
     reply.header("x-request-id", request.id);
+    // Personal data never sits in a shared cache (D-081); routes may still set a stricter policy.
+    if (request.session && !reply.hasHeader("cache-control")) reply.header("cache-control", "no-store");
     done(null, payload);
   });
 
   await app.register(helmet, {
-    contentSecurityPolicy: false,
+    // The API only serves JSON (and CSV/ZIP downloads): nothing may execute or frame it (D-081).
+    contentSecurityPolicy: { useDefaults: false, directives: { defaultSrc: ["'none'"], frameAncestors: ["'none'"] } },
     crossOriginResourcePolicy: { policy: "same-site" },
   });
   await app.register(cookie);

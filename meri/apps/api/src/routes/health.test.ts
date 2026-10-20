@@ -79,3 +79,23 @@ describe("rate limit buckets (docs/12 §3)", () => {
     expect((await me(cookieB)).statusCode).toBe(200);
   });
 });
+
+describe("API response headers (D-081)", () => {
+  let t: TestApp;
+  beforeAll(async () => {
+    t = await createTestApp();
+  });
+  afterAll(() => t.close());
+
+  it("serves JSON with a no-execution CSP, and never lets a shared cache keep a signed-in response", async () => {
+    const health = await t.app.inject({ url: "/health" });
+    expect(health.headers["content-security-policy"]).toBe("default-src 'none';frame-ancestors 'none'");
+    expect(health.headers["x-content-type-options"]).toBe("nosniff");
+    expect(health.headers["strict-transport-security"]).toContain("max-age=");
+    expect(health.headers["cache-control"]).toBeUndefined();
+    const account = await t.createAccount("hdr-a");
+    const me = await t.app.inject({ url: "/v1/me", headers: { cookie: await t.cookieFor(account) } });
+    expect(me.statusCode).toBe(200);
+    expect(me.headers["cache-control"]).toBe("no-store");
+  });
+});
