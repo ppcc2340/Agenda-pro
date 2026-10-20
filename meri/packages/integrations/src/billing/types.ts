@@ -29,6 +29,7 @@ export interface SubscriptionSnapshot {
 
 export type BillingEventType =
   | "checkout.session.completed"
+  | "checkout.session.async_payment_succeeded"
   | "customer.subscription.created"
   | "customer.subscription.updated"
   | "customer.subscription.deleted"
@@ -46,6 +47,17 @@ export interface BillingWebhookEvent {
   subscriptionId: string | null;
   checkout: { mode: "subscription" | "payment"; sessionId: string; creditPack: CreditPackCode | null } | null;
   invoice: { amountPaidCents: number } | null;
+}
+
+/** Canonical checkout session read back from the provider (credit packs are granted only from this, [M1]). */
+export interface CheckoutSnapshot {
+  id: string;
+  mode: "subscription" | "payment";
+  /** Only `paid` grants a pack; asynchronous methods report `unpaid` until the money arrives. */
+  paymentStatus: "paid" | "unpaid" | "no_payment_required";
+  workspaceId: string | null;
+  customerId: string | null;
+  creditPack: CreditPackCode | null;
 }
 
 export interface CheckoutInput {
@@ -67,13 +79,22 @@ export interface BillingProvider {
   ): Promise<CheckoutSession>;
   createCreditPackCheckout(input: CheckoutInput & { pack: CreditPackCode }): Promise<CheckoutSession>;
   createPortalSession(input: { customerId: string; returnUrl: string }): Promise<{ url: string }>;
+  /** The workspace's provider customer, created once (idempotent per workspace) so every checkout shares it. */
+  ensureCustomer(input: { workspaceId: string; email: string; customerId: string | null }): Promise<string>;
+  getCheckoutSession(sessionId: string): Promise<CheckoutSnapshot | null>;
   getSubscription(subscriptionId: string): Promise<SubscriptionSnapshot | null>;
-  /** `atPeriodEnd: false` cancels now (account deletion). */
+  /**
+   * `atPeriodEnd: false` cancels now (account deletion, duplicates). `idempotencyKey` must be unique per user
+   * intent: a reused key replays an old provider response and changes nothing (security review H1).
+   */
   cancelSubscription(
     subscriptionId: string,
-    options: { atPeriodEnd: boolean },
+    options: { atPeriodEnd: boolean; idempotencyKey: string },
   ): Promise<SubscriptionSnapshot>;
-  resumeSubscription(subscriptionId: string): Promise<SubscriptionSnapshot>;
+  resumeSubscription(
+    subscriptionId: string,
+    options: { idempotencyKey: string },
+  ): Promise<SubscriptionSnapshot>;
   /** Verifies the `t=…,v1=` signature over the raw body; throws IntegrationError(Permanent) when it fails. */
   parseWebhook(rawBody: string, signatureHeader: string): Promise<BillingWebhookEvent>;
 }

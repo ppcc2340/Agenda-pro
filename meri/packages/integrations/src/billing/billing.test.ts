@@ -186,15 +186,22 @@ describe("FakeBilling lifecycle (never charges, Stripe-shaped signed events)", (
     );
     expect((await billing.getSubscription(subId))?.status).toBe("past_due");
 
-    expect((await billing.cancelSubscription(subId, { atPeriodEnd: true })).cancelAtPeriodEnd).toBe(true);
-    expect((await billing.resumeSubscription(subId)).cancelAtPeriodEnd).toBe(false);
+    expect(
+      (await billing.cancelSubscription(subId, { atPeriodEnd: true, idempotencyKey: "k1" }))
+        .cancelAtPeriodEnd,
+    ).toBe(true);
+    expect((await billing.resumeSubscription(subId, { idempotencyKey: "k2" })).cancelAtPeriodEnd).toBe(false);
     const deleted = await billing.parseWebhook(
       ...(Object.values(billing.simulate("deleted", subId)) as [string, string]),
     );
     expect(deleted).toMatchObject({ type: "customer.subscription.deleted", workspaceId: WS });
     expect((await billing.getSubscription(subId))?.status).toBe("canceled");
-    await expect(billing.resumeSubscription(subId)).rejects.toThrow(/already ended/);
-    expect((await billing.cancelSubscription(subId, { atPeriodEnd: false })).status).toBe("canceled");
+    await expect(billing.resumeSubscription(subId, { idempotencyKey: "k3" })).rejects.toThrow(
+      /already ended/,
+    );
+    expect(
+      (await billing.cancelSubscription(subId, { atPeriodEnd: false, idempotencyKey: "k4" })).status,
+    ).toBe("canceled");
   });
 
   it("checkout without trial starts active; credit packs pay once; forged or stale webhooks are rejected", async () => {

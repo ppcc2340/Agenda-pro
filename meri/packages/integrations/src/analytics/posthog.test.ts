@@ -16,6 +16,7 @@ describe("PostHogAnalytics (live adapter, fetch stubbed)", () => {
   it("buffers events and sends one batch on flush", async () => {
     const { bodies, fetchImpl } = recorder();
     const ph = new PostHogAnalytics({
+      flushIntervalMs: 0,
       apiKey: "phc_x",
       host: "https://eu.i.posthog.com/",
       fetch: fetchImpl,
@@ -43,7 +44,14 @@ describe("PostHogAnalytics (live adapter, fetch stubbed)", () => {
 
   it("flushes automatically once the batch is full", async () => {
     const { bodies, fetchImpl } = recorder();
-    const ph = new PostHogAnalytics({ apiKey: "k", host: "https://h", fetch: fetchImpl, batchSize: 2, now });
+    const ph = new PostHogAnalytics({
+      apiKey: "k",
+      host: "https://h",
+      fetch: fetchImpl,
+      batchSize: 2,
+      now,
+      flushIntervalMs: 0,
+    });
     ph.track("signup", "a");
     ph.track("signup", "b");
     await ph.flush();
@@ -53,7 +61,13 @@ describe("PostHogAnalytics (live adapter, fetch stubbed)", () => {
 
   it("sends errors as $exception with the class only, never the message", async () => {
     const { bodies, fetchImpl } = recorder();
-    const ph = new PostHogAnalytics({ apiKey: "k", host: "https://h", fetch: fetchImpl, now });
+    const ph = new PostHogAnalytics({
+      apiKey: "k",
+      host: "https://h",
+      fetch: fetchImpl,
+      now,
+      flushIntervalMs: 0,
+    });
     ph.captureError(new TypeError("secret client name inside"), { route: "/v1/tasks" });
     await ph.flush();
     const sent = bodies[0]?.body.batch[0];
@@ -67,14 +81,16 @@ describe("PostHogAnalytics (live adapter, fetch stubbed)", () => {
   it("never throws on delivery failures; reports them through onError", async () => {
     const errors: unknown[] = [];
     const failing = new PostHogAnalytics({
+      flushIntervalMs: 0,
       apiKey: "k",
       host: "https://h",
-      fetch: (() => Promise.reject(new Error("offline"))),
+      fetch: () => Promise.reject(new Error("offline")),
       onError: (e) => errors.push(e),
     });
     failing.track("signup", "a");
     await expect(failing.flush()).resolves.toBeUndefined();
     const rejected = new PostHogAnalytics({
+      flushIntervalMs: 0,
       apiKey: "k",
       host: "https://h",
       fetch: recorder(500).fetchImpl,
@@ -86,5 +102,21 @@ describe("PostHogAnalytics (live adapter, fetch stubbed)", () => {
       "offline",
       "PostHog responded 500",
     ]);
+  });
+});
+
+describe("PostHogAnalytics timer", () => {
+  it("flushes buffered events on its interval even with low traffic", async () => {
+    const { bodies, fetchImpl } = recorder();
+    const ph = new PostHogAnalytics({
+      apiKey: "k",
+      host: "https://h",
+      fetch: fetchImpl,
+      now,
+      flushIntervalMs: 20,
+    });
+    ph.track("signup", "a");
+    await new Promise((r) => setTimeout(r, 60));
+    expect(bodies).toHaveLength(1);
   });
 });

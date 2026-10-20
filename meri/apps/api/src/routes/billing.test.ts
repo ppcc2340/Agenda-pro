@@ -8,7 +8,7 @@ import {
   withWorkspace,
   type AccountIdentity,
 } from "@meri/db";
-import type { FakeBilling, NoopAnalytics} from "@meri/integrations";
+import type { FakeBilling, NoopAnalytics } from "@meri/integrations";
 import { signWebhook } from "@meri/integrations";
 import { createTestApp, csrf, NOW, type TestApp } from "../test/harness";
 
@@ -305,5 +305,161 @@ describe("billing lifecycle (D-058..D-061, D-066, [H1], [M4], [M5])", () => {
     expect(audits.items.find((i) => i.action === "billing.cancelled_on_deletion")?.after).toMatchObject({
       cancelled: true,
     });
+  });
+
+  /** A fresh workspace with a card on file (simulated hosted checkout through the real handler). */
+  const subscribed = async (label: string) => {
+    const account = await t.createAccount(label);
+    const cookie = await t.cookieFor(account);
+    const url = (await post("/v1/billing/checkout", cookie, { plan: "pro", interval: "month" })).json<{
+      url: string;
+    }>().url;
+    await completeVia(url, cookie);
+    return { account, cookie, subscriptionId: await subscriptionIdOf(account) };
+  };
+
+  it("cancel → reactivate → cancel sends a distinct idempotency key each time and really cancels (review H1)", async () => {
+    const { cookie, subscriptionId } = await subscribed("bill-h1");
+    const before = fake.cancelKeys.length;
+    expect((await post("/v1/billing/cancel", cookie, { reason: "price" })).json()).toMatchObject({
+      cancelAtPeriodEnd: true,
+    });
+    await post("/v1/billing/reactivate", cookie);
+    expect((await post("/v1/billing/cancel", cookie, { reason: "other" })).json()).toMatchObject({
+      cancelAtPeriodEnd: true,
+    });
+    const keys = fake.cancelKeys.slice(before);
+    expect(keys).toHaveLength(2);
+    expect(new Set(keys).size).toBe(2);
+    expect(fake.subscriptions.get(subscriptionId)?.cancelAtPeriodEnd).toBe(true);
+  });
+
+  it("the workspace comes from the provider's subscription, never from the event body ([H1])", async () => {
+    const { account: owner, subscriptionId } = await subscribed("bill-canon-a");
+    const other = await t.createAccount("bill-canon-b");
+    const forged = fake.sign("customer.subscription.updated", {
+      id: subscriptionId,
+      object: "subscription",
+      customer: "cus_x",
+      metadata: { workspaceId: other.workspaceId },
+    });
+    expect((await hook(forged)).json<{ status: string }>().status).toBe("applied");
+    expect((await sub(await t.cookieFor(other))).plan).toBe("trial");
+    expect((await sub(await t.cookieFor(owner))).plan).toBe("pro");
+  });
+
+  it("a checkout whose metadata names another workspace than its subscription is ignored", async () => {
+    const { subscriptionId } = await subscribed("bill-meta-a");
+    const other = await t.createAccount("bill-meta-b");
+    const forged = fake.sign("checkout.session.completed", {
+      id: "cs_forged",
+      object: "checkout.session",
+      mode: "subscription",
+      payment_status: "paid",
+      customer: "cus_x",
+      subscription: subscriptionId,
+      metadata: { workspaceId: other.workspaceId },
+    });
+    expect((await hook(forged)).json<{ status: string }>().status).toBe("ignored");
+    expect((await sub(await t.cookieFor(other))).plan).toBe("trial");
+  });
+
+  it("packs: an unpaid (asynchronous) checkout grants nothing until the payment settles, then once ([M1])", async () => {
+    const e = await t.createAccount("bill-async");
+    const cookie = await t.cookieFor(e);
+    const res = await post("/v1/billing/credit-packs", cookie, { pack: "2000" });
+    const sessionId = new URL(res.json<{ url: string }>().url).searchParams.get("session") ?? "";
+    const pending = await hook(fake.completeCheckout(sessionId, { paymentStatus: "unpaid" }));
+    expect(pending.json<{ status: string }>().status).toBe("ignored");
+    expect((await sub(cookie)).credits.allowance).toBe(300);
+    expect((await hook(fake.settleAsyncPayment(sessionId))).json<{ status: string }>().status).toBe(
+      "applied",
+    );
+    expect((await sub(cookie)).credits.allowance).toBe(2300);
+    // A replayed `completed` (now paid at the provider) never grants twice: grants are keyed by session.
+    const again = fake.resendCheckout(sessionId);
+    expect((await hook(again)).json<{ status: string }>().status).toBe("applied");
+    expect((await sub(cookie)).credits.allowance).toBe(2300);
+  });
+
+  it("a forged pack event for a session the provider does not know grants nothing (fake secret is public, L1)", async () => {
+    const f = await t.createAccount("bill-forged-pack");
+    const forged = fake.sign("checkout.session.completed", {
+      id: "cs_never_created",
+      object: "checkout.session",
+      mode: "payment",
+      payment_status: "paid",
+      metadata: { workspaceId: f.workspaceId, creditPack: "2000" },
+    });
+    expect((await hook(forged)).json<{ status: string }>().status).toBe("ignored");
+    expect((await sub(await t.cookieFor(f))).credits.allowance).toBe(300);
+  });
+
+  it("two completed checkouts: the first is the plan, the duplicate is cancelled at the provider (M3)", async () => {
+    const g = await t.createAccount("bill-dup");
+    const cookie = await t.cookieFor(g);
+    const first = (await post("/v1/billing/checkout", cookie, { plan: "pro", interval: "month" })).json<{
+      url: string;
+    }>().url;
+    const second = (await post("/v1/billing/checkout", cookie, { plan: "pro_plus", interval: "year" })).json<{
+      url: string;
+    }>().url;
+    await completeVia(first, cookie);
+    const kept = await subscriptionIdOf(g);
+    await completeVia(second, cookie);
+    expect(await subscriptionIdOf(g)).toBe(kept);
+    expect((await sub(cookie)).plan).toBe("pro");
+    const duplicates = [...fake.subscriptions.values()].filter(
+      (x) => x.workspaceId === g.workspaceId && x.subscriptionId !== kept,
+    );
+    expect(duplicates.map((d) => d.status)).toEqual(["canceled"]);
+    // Both checkouts used the same provider customer, created before the first one.
+    expect(
+      new Set(
+        [...fake.sessions.values()].filter((x) => x.workspaceId === g.workspaceId).map((x) => x.customerId),
+      ).size,
+    ).toBe(1);
+  });
+
+  it("a live subscription of a deleted workspace is cancelled when its next event arrives (deletion backstop, M2)", async () => {
+    const { cookie, subscriptionId } = await subscribed("bill-orphan");
+    // Simulate a cancellation that failed at deletion time: the provider subscription is still live.
+    const del = await t.app.inject({ method: "DELETE", url: "/v1/account", headers: { cookie, ...csrf } });
+    expect(del.statusCode).toBe(204);
+    const s = fake.subscriptions.get(subscriptionId);
+    if (s) fake.subscriptions.set(subscriptionId, { ...s, status: "active" });
+    const res = await hook(fake.simulate("invoice_paid", subscriptionId));
+    expect(res.json<{ status: string }>().status).toBe("ignored");
+    expect(fake.subscriptions.get(subscriptionId)?.status).toBe("canceled");
+  });
+
+  it("an older invoice event keeps its own effects (payment-failed notice) without moving the mirror (review M2)", async () => {
+    const { account, subscriptionId } = await subscribed("bill-stale");
+    await withWorkspace(t.handle.db, account.workspaceId, (tx) =>
+      tx.update(subscriptions).set({ lastEventAt: new Date(NOW.getTime() + 60_000) }),
+    );
+    const res = await hook(fake.simulate("payment_failed", subscriptionId));
+    expect(res.json<{ status: string }>().status).toBe("ignored");
+    const notes = await withWorkspace(t.handle.db, account.workspaceId, (tx) =>
+      listNotifications(tx, account.workspaceId, { limit: 20 }),
+    );
+    expect(notes.items.filter((n) => n.template === "billing.payment_failed")).toHaveLength(1);
+  });
+
+  it("every billing write requires an Idempotency-Key", async () => {
+    for (const [url, payload] of [
+      ["/v1/billing/cancel", { reason: "price" }],
+      ["/v1/billing/reactivate", undefined],
+      ["/v1/billing/credit-packs", { pack: "500" }],
+      ["/v1/billing/portal", undefined],
+    ] as const) {
+      const res = await t.app.inject({
+        method: "POST",
+        url,
+        headers: { cookie: cookieA, ...csrf },
+        ...(payload ? { payload } : {}),
+      });
+      expect(res.statusCode, url).toBe(400);
+    }
   });
 });

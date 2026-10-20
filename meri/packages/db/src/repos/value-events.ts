@@ -70,6 +70,28 @@ export async function deleteValueEvent(
   return rows.length;
 }
 
+/** Corrects the quantity of a counted entity without moving it in time (an approved entry's minutes edited). */
+export async function updateValueQuantity(
+  tx: WorkspaceTx,
+  workspaceId: WorkspaceId,
+  type: ValueEventType,
+  entityId: string,
+  quantity: number,
+): Promise<number> {
+  const rows = await tx
+    .update(valueEvents)
+    .set({ quantity })
+    .where(
+      and(
+        eq(valueEvents.workspaceId, workspaceId),
+        eq(valueEvents.type, type),
+        eq(valueEvents.entityId, entityId),
+      ),
+    )
+    .returning({ id: valueEvents.id });
+  return rows.length;
+}
+
 /** Events of [from, to) ready for `buildValueReport`, labelled from the workspace's own tasks/commitments/time. */
 export async function listValueEvents(
   tx: WorkspaceTx,

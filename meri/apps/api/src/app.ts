@@ -43,7 +43,7 @@ import { billingRoutes } from "./routes/billing";
 import { valueReportRoutes } from "./routes/value-report";
 import { reviewRoutes } from "./routes/reviews";
 import { stripeWebhookRoutes } from "./routes/webhooks-stripe";
-import { getEntitlementMaxClients } from "@meri/db";
+import { clientCapacity } from "./plugins/entitlements";
 
 export interface AppDeps {
   config: AppConfig;
@@ -177,7 +177,7 @@ export async function buildApp(deps: AppDeps) {
   await app.register(proposalRoutes, {
     now: deps.now,
     analytics: deps.integrations.analytics,
-    maxClientsFor: (tx, workspaceId) => getEntitlementMaxClients(tx, workspaceId),
+    maxClientsFor: (tx, workspaceId) => clientCapacity(tx, workspaceId, deps.now()),
     onTasksChanged: deps.onTasksChanged,
   });
 
@@ -202,9 +202,11 @@ export async function buildApp(deps: AppDeps) {
   await app.register(contactRoutes, { now: deps.now });
   await app.register(clientRoutes, {
     now: deps.now,
-    maxClientsFor: (tx, workspaceId) => getEntitlementMaxClients(tx, workspaceId),
+    maxClientsFor: (tx, workspaceId) => clientCapacity(tx, workspaceId, deps.now()),
     onEventsLinked: (workspaceId, traceId) =>
-      enqueueTimeInfer(deps.dispatcher, { workspaceId, traceId, reason: "event_assigned" }).then(() => undefined),
+      enqueueTimeInfer(deps.dispatcher, { workspaceId, traceId, reason: "event_assigned" }).then(
+        () => undefined,
+      ),
   });
   await app.register(timeRoutes, { now: deps.now, analytics: deps.integrations.analytics });
   await app.register(searchRoutes, {});

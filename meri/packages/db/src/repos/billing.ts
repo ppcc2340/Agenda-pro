@@ -130,7 +130,10 @@ export interface SnapshotInput {
 
 export type ApplyResult =
   | { applied: true; before: SubscriptionView | null; after: SubscriptionView; entitlementsChanged: boolean }
-  | { applied: false; reason: "stale" | "customer_mismatch" | "no_subscription_row" };
+  | {
+      applied: false;
+      reason: "stale" | "customer_mismatch" | "duplicate_subscription" | "no_subscription_row";
+    };
 
 /**
  * Mirrors the canonical provider subscription into the workspace (webhooks and API-initiated changes).
@@ -154,6 +157,14 @@ export async function applySubscriptionSnapshot(
   if (!row) return { applied: false, reason: "no_subscription_row" };
   if (row.stripeCustomerId !== null && row.stripeCustomerId !== snap.customerId)
     return { applied: false, reason: "customer_mismatch" };
+  // A second live subscription for the same workspace (two checkouts completed): the first one stays the plan and
+  // the caller cancels the newcomer at the provider (security review M3). A canceled one may be replaced.
+  if (
+    row.stripeSubscriptionId !== null &&
+    row.stripeSubscriptionId !== snap.subscriptionId &&
+    row.status !== "canceled"
+  )
+    return { applied: false, reason: "duplicate_subscription" };
   if (options.eventAt && row.lastEventAt && options.eventAt.getTime() < row.lastEventAt.getTime())
     return { applied: false, reason: "stale" };
 
@@ -276,7 +287,7 @@ export async function isWorkspaceLive(db: Db, workspaceId: WorkspaceId): Promise
 export async function grantCreditPack(
   tx: WorkspaceTx,
   workspaceId: WorkspaceId,
-  input: { pack: string; credits: number; sourceEventId: string },
+  input: { pack: string; credits: number; sourceEventId: string; purchasedAt: Date },
   now: Date,
 ): Promise<boolean> {
   const rows = await tx
@@ -286,7 +297,8 @@ export async function grantCreditPack(
       workspaceId,
       credits: input.credits,
       pack: input.pack,
-      period: periodOf(now),
+      // [L16] valid in the month of purchase, even when the webhook is processed after midnight.
+      period: periodOf(input.purchasedAt),
       sourceEventId: input.sourceEventId,
       createdAt: now,
     })
@@ -396,6 +408,10 @@ export async function listCancellationFeedback(
 }
 
 /** Moves the local trial end (demo seed and operator tooling only; the bootstrap sets the 14-day default). */
-export async function setTrialEndsAt(tx: WorkspaceTx, workspaceId: WorkspaceId, trialEndsAt: Date): Promise<void> {
+export async function setTrialEndsAt(
+  tx: WorkspaceTx,
+  workspaceId: WorkspaceId,
+  trialEndsAt: Date,
+): Promise<void> {
   await tx.update(subscriptions).set({ trialEndsAt }).where(eq(subscriptions.workspaceId, workspaceId));
 }

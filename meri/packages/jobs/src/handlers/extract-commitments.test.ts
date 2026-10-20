@@ -21,6 +21,7 @@ import {
   type DbHandle,
   type UserId,
   type WorkspaceId,
+  countAiOperations,
 } from "@meri/db";
 import { registerFakeAiHandlers } from "@meri/ai";
 import {
@@ -429,5 +430,56 @@ describe("ai.extract_commitments (F-07 AC1, AC2, AC3; D-034; ADR 0004 §3)", () 
     const paused = notes.items.filter((n) => n.template === "ai.paused.cost_cap");
     expect(paused).toHaveLength(1);
     expect(paused[0]?.params).toEqual({ capUsd: 5 });
+  });
+
+  it("with the credits used up (fake AI mode too, [H3]) the extraction runs on rules and charges nothing", async () => {
+    await withWorkspace(handle.db, ws, (tx) =>
+      recordAiUsage(
+        tx,
+        ws,
+        {
+          operation: "summary",
+          model: "m",
+          inputTokens: 0,
+          outputTokens: 0,
+          cachedTokens: 0,
+          costMicroUsd: 0,
+          credits: 10_000,
+        },
+        NOW,
+      ),
+    );
+    const fake = integrations.ai as FakeAiClient;
+    const callsBefore = fake.calls.length;
+    const usedBefore = await withWorkspace(handle.db, ws, (tx) =>
+      countAiOperations(tx, ws, "extract_commitments", "2026-10"),
+    );
+    const mail = integrations.mailFor(email) as FakeGmail;
+    mail.addMessage({
+      headers: {},
+      labels: ["INBOX"],
+      id: "m-credits",
+      threadId: "t-credits",
+      from: "Carla Vega <carla@gamma.example>",
+      to: [email],
+      subject: "Presupuesto",
+      date: "2026-10-18T13:00:00Z",
+      snippet: "Te envío el presupuesto el jueves.",
+      bodyText: "Te envío el presupuesto el jueves.",
+    });
+    await syncMailAccount(deps, ws, accountId);
+    const thread = await threadByExternalId("t-credits");
+    const res = await extractThreadCommitments(deps, ws, {
+      threadId: thread.id,
+      messageIds: ["m-credits"],
+      costCapUsd: 5,
+    });
+    expect(res).toMatchObject({ status: "budget_exhausted", usedRules: true });
+    expect(fake.calls.length).toBe(callsBefore);
+    expect(
+      await withWorkspace(handle.db, ws, (tx) => countAiOperations(tx, ws, "extract_commitments", "2026-10")),
+    ).toBe(usedBefore);
+    const notes = await withWorkspace(handle.db, ws, (tx) => listNotifications(tx, ws, { limit: 50 }));
+    expect(notes.items.filter((n) => n.template === "credits.exhausted")).toHaveLength(1);
   });
 });

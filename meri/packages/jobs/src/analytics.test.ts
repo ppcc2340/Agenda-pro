@@ -2,6 +2,7 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { z } from "zod";
 import { ANALYTICS_EVENTS, NoopAnalytics } from "@meri/integrations";
 import { ANALYTICS_SCHEMAS, track } from "./analytics";
 
@@ -22,6 +23,22 @@ function sources(dir: string): string[] {
 describe("typed analytics (D-065)", () => {
   it("has a closed schema for every event of docs/09", () => {
     expect(Object.keys(ANALYTICS_SCHEMAS).sort()).toEqual([...ANALYTICS_EVENTS].sort());
+  });
+
+  it("structurally, every property of every event is a uuid, a closed enum, a number or a boolean", () => {
+    const allowed = (schema: z.ZodTypeAny): boolean => {
+      if (schema instanceof z.ZodEnum || schema instanceof z.ZodNumber || schema instanceof z.ZodBoolean)
+        return true;
+      if (schema instanceof z.ZodString) return schema._def.checks.some((c) => c.kind === "uuid");
+      return false;
+    };
+    const offenders: string[] = [];
+    for (const [event, schema] of Object.entries(ANALYTICS_SCHEMAS)) {
+      expect(schema._def.unknownKeys, event).toBe("strict");
+      for (const [key, field] of Object.entries(schema.shape as Record<string, z.ZodTypeAny>))
+        if (!allowed(field)) offenders.push(`${event}.${key}`);
+    }
+    expect(offenders).toEqual([]);
   });
 
   it("rejects free strings, unknown keys and non-uuid ids; never sends a rejected event", () => {

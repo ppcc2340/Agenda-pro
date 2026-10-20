@@ -65,7 +65,7 @@ describe("aiBudget / chargeAiUsage (D-061, [H3], [M6], [L13])", () => {
       grantCreditPack(
         tx,
         ws,
-        { pack: "500", credits: 500, sourceEventId: `evt_${crypto.randomUUID()}` },
+        { pack: "500", credits: 500, sourceEventId: `evt_${crypto.randomUUID()}`, purchasedAt: NOW },
         NOW,
       ),
     );
@@ -94,9 +94,9 @@ describe("aiBudget / chargeAiUsage (D-061, [H3], [M6], [L13])", () => {
     expect(d).toMatchObject({ allow: false, reason: "access_inactive" });
     await inWs(ws, (tx) => notifyAiPaused(tx, ws, "access_inactive", NOW));
     await inWs(ws, (tx) => notifyAiPaused(tx, ws, "access_inactive", NOW));
-    await inWs(ws, (tx) => notifyAiPaused(tx, ws, "credits_exhausted", NOW)); // already covered by credits.exhausted
+    await inWs(ws, (tx) => notifyAiPaused(tx, ws, "credits_exhausted", NOW)); // one exhausted notice per period, never silent
     const notes = (await inWs(ws, (tx) => listNotifications(tx, ws, { limit: 20 }))).items;
-    expect(notes.map((n) => n.template)).toEqual(["ai.paused.access_inactive"]);
+    expect(notes.map((n) => n.template).sort()).toEqual(["ai.paused.access_inactive", "credits.exhausted"]);
     expect((await inWs(ws, (tx) => aiStatus(tx, ws, opts))).reason).toBe("access_inactive");
   });
 

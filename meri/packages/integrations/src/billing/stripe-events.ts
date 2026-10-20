@@ -11,6 +11,7 @@ export const STRIPE_API_VERSION = "2024-06-20";
 
 const KNOWN: readonly BillingEventType[] = [
   "checkout.session.completed",
+  "checkout.session.async_payment_succeeded",
   "customer.subscription.created",
   "customer.subscription.updated",
   "customer.subscription.deleted",
@@ -73,7 +74,10 @@ export function normalizeStripeEvent(raw: unknown): BillingWebhookEvent {
     invoice: null,
   };
   const bad = () => new IntegrationError("Permanent", "stripe", `malformed ${type} object`);
-  if (base.type === "checkout.session.completed") {
+  if (
+    base.type === "checkout.session.completed" ||
+    base.type === "checkout.session.async_payment_succeeded"
+  ) {
     const o = CheckoutObject.safeParse(data.object);
     if (!o.success) throw bad();
     return {

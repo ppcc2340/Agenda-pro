@@ -10,6 +10,7 @@ import { isoWeekKey, isoWeekRange, timeEntriesCsv, type TimeCsvRow } from "@meri
 import {
   audit,
   clientNamesById,
+  updateValueQuantity,
   getClient,
   getPreferences,
   getTimeEntriesByIds,
@@ -57,7 +58,13 @@ const WeekJson = z.object({
   ),
   /** External meetings of the week without a client: "tiempo no registrado" (D-042). */
   unassignedEvents: z.array(
-    z.object({ id: z.string(), title: z.string().nullable(), startsAt: z.string(), endsAt: z.string(), minutes: z.number().int() }),
+    z.object({
+      id: z.string(),
+      title: z.string().nullable(),
+      startsAt: z.string(),
+      endsAt: z.string(),
+      minutes: z.number().int(),
+    }),
   ),
 });
 
@@ -126,7 +133,9 @@ export function timeRoutes(app: FastifyInstance, options: TimeRoutesOptions, don
           summary.set(e.clientId, row);
         }
         const unassigned = events
-          .filter((e) => e.origin === "external" && e.busy && !e.allDay && e.clientId === null && e.endsAt <= now)
+          .filter(
+            (e) => e.origin === "external" && e.busy && !e.allDay && e.clientId === null && e.endsAt <= now,
+          )
           .map((e) => ({
             id: e.id,
             title: e.title,
@@ -139,7 +148,11 @@ export function timeRoutes(app: FastifyInstance, options: TimeRoutesOptions, don
           days: week.days,
           items: items.map((e) => serialize(e, names)),
           summary: [...summary.entries()]
-            .map(([clientId, m]) => ({ clientId, clientName: clientId ? (names.get(clientId) ?? null) : null, ...m }))
+            .map(([clientId, m]) => ({
+              clientId,
+              clientName: clientId ? (names.get(clientId) ?? null) : null,
+              ...m,
+            }))
             .sort((a, b) => (a.clientName ?? "").localeCompare(b.clientName ?? "")),
           unassignedEvents: request.query.clientId ? [] : unassigned,
         };
@@ -155,7 +168,12 @@ export function timeRoutes(app: FastifyInstance, options: TimeRoutesOptions, don
         tags: ["time"],
         params: IdParams,
         body: z.object({
-          minutes: z.number().int().min(1).max(24 * 60).optional(),
+          minutes: z
+            .number()
+            .int()
+            .min(1)
+            .max(24 * 60)
+            .optional(),
           clientId: z.string().uuid().optional(),
           description: z.string().trim().max(300).nullable().optional(),
         }),
@@ -169,7 +187,9 @@ export function timeRoutes(app: FastifyInstance, options: TimeRoutesOptions, don
         const before = await getTimeEntry(tx, session.workspaceId, request.params.id);
         if (!before) throw new ApiError("NOT_FOUND", "Time entry not found.");
         if (b.clientId && !(await getClient(tx, session.workspaceId, b.clientId)))
-          throw new ApiError("VALIDATION_FAILED", "Invalid references.", [{ path: "clientId", message: "Unknown client." }]);
+          throw new ApiError("VALIDATION_FAILED", "Invalid references.", [
+            { path: "clientId", message: "Unknown client." },
+          ]);
         // An approved entry stays approved: the user is correcting it, not re-opening review (M10d).
         const updated = await updateTimeEntry(tx, session.workspaceId, before.id, {
           ...(b.minutes !== undefined ? { minutes: b.minutes } : {}),
@@ -178,10 +198,14 @@ export function timeRoutes(app: FastifyInstance, options: TimeRoutesOptions, don
         });
         if (!updated) throw new ApiError("NOT_FOUND", "Time entry not found.");
         // A corrected approved entry counts with its corrected minutes.
-        if (updated.status === "approved" && updated.minutes !== before.minutes) {
-          await forgetTimeRecovered(tx, session.workspaceId, updated.id);
-          await recordTimeRecovered(tx, session.workspaceId, updated, options.now());
-        }
+        if (updated.status === "approved" && updated.minutes !== before.minutes)
+          await updateValueQuantity(
+            tx,
+            session.workspaceId,
+            "untracked_time_recovered",
+            updated.id,
+            updated.minutes,
+          );
         await audit(tx, actor(request), {
           action: "time.updated",
           entityType: "time_entry",
@@ -203,7 +227,9 @@ export function timeRoutes(app: FastifyInstance, options: TimeRoutesOptions, don
     const now = options.now();
     const result = await request.withWorkspace(async (tx) => {
       const found = await getTimeEntriesByIds(tx, session.workspaceId, ids);
-      const eligible = found.filter((e) => e.status === "suggested" || (status === "rejected" && e.status === "approved"));
+      const eligible = found.filter(
+        (e) => e.status === "suggested" || (status === "rejected" && e.status === "approved"),
+      );
       const updated = await setTimeEntriesStatus(
         tx,
         session.workspaceId,
@@ -228,35 +254,54 @@ export function timeRoutes(app: FastifyInstance, options: TimeRoutesOptions, don
       return {
         approvedEntries: status === "approved" ? updated.map((e) => ({ id: e.id, minutes: e.minutes })) : [],
         updated: updated.map((e) => serialize(e, names)),
-        skipped: ids.filter((id) => !updated.some((e) => e.id === id)).map((id) => ({
-          id,
-          reason: found.some((f) => f.id === id) ? "not_pending" : "not_found",
-        })),
+        skipped: ids
+          .filter((id) => !updated.some((e) => e.id === id))
+          .map((id) => ({
+            id,
+            reason: found.some((f) => f.id === id) ? "not_pending" : "not_found",
+          })),
       };
     });
     for (const e of result.approvedEntries)
-      track(options.analytics, "time_entry_approved", session.workspaceId, { entryId: e.id, minutes: e.minutes });
+      track(options.analytics, "time_entry_approved", session.workspaceId, {
+        entryId: e.id,
+        minutes: e.minutes,
+      });
     return result;
   };
 
   r.post(
     "/v1/time-entries/:id/approve",
-    { preHandler: requireSession, schema: { tags: ["time"], params: IdParams, response: { 200: TimeEntryJson } } },
+    {
+      preHandler: requireSession,
+      schema: { tags: ["time"], params: IdParams, response: { 200: TimeEntryJson } },
+    },
     async (request) => {
       const { updated, skipped } = await review(request, [request.params.id], "approved");
       const one = updated[0];
-      if (!one) throw new ApiError(skipped[0]?.reason === "not_found" ? "NOT_FOUND" : "CONFLICT", "Entry is not pending review.");
+      if (!one)
+        throw new ApiError(
+          skipped[0]?.reason === "not_found" ? "NOT_FOUND" : "CONFLICT",
+          "Entry is not pending review.",
+        );
       return one;
     },
   );
 
   r.post(
     "/v1/time-entries/:id/reject",
-    { preHandler: requireSession, schema: { tags: ["time"], params: IdParams, response: { 200: TimeEntryJson } } },
+    {
+      preHandler: requireSession,
+      schema: { tags: ["time"], params: IdParams, response: { 200: TimeEntryJson } },
+    },
     async (request) => {
       const { updated, skipped } = await review(request, [request.params.id], "rejected");
       const one = updated[0];
-      if (!one) throw new ApiError(skipped[0]?.reason === "not_found" ? "NOT_FOUND" : "CONFLICT", "Entry cannot be rejected.");
+      if (!one)
+        throw new ApiError(
+          skipped[0]?.reason === "not_found" ? "NOT_FOUND" : "CONFLICT",
+          "Entry cannot be rejected.",
+        );
       return one;
     },
   );
@@ -291,7 +336,10 @@ export function timeRoutes(app: FastifyInstance, options: TimeRoutesOptions, don
         querystring: z.object({
           week: WEEK.optional(),
           /** [L13] Monthly export: Pro+ (`advanced_exports`); the weekly one stays on every plan. */
-          month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/).optional(),
+          month: z
+            .string()
+            .regex(/^\d{4}-(0[1-9]|1[0-2])$/)
+            .optional(),
           clientId: z.string().uuid().optional(),
           status: z.enum(["all"]).optional(),
         }),
@@ -304,10 +352,14 @@ export function timeRoutes(app: FastifyInstance, options: TimeRoutesOptions, don
         const timezone = (await getPreferences(tx, session.workspaceId))?.timezone ?? "UTC";
         let range: { from: string; to: string; key: string };
         if (request.query.month) {
-          await assertEntitlement(tx, session.workspaceId, "advanced_exports");
+          await assertEntitlement(tx, session.workspaceId, "advanced_exports", now);
           const [y, m] = request.query.month.split("-").map(Number) as [number, number];
           const last = new Date(Date.UTC(y, m, 0)).getUTCDate();
-          range = { from: `${request.query.month}-01`, to: `${request.query.month}-${String(last)}`, key: request.query.month };
+          range = {
+            from: `${request.query.month}-01`,
+            to: `${request.query.month}-${String(last)}`,
+            key: request.query.month,
+          };
         } else {
           const week = isoWeekRange(request.query.week ?? isoWeekKey(now.getTime(), timezone), timezone);
           if (!week) throw new ApiError("VALIDATION_FAILED", "Invalid week.");

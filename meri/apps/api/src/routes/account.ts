@@ -161,7 +161,9 @@ export function accountRoutes(app: FastifyInstance, options: AccountRoutesOption
         const accounts = firstOnboarding ? await listIntegrationAccounts(tx, session.workspaceId) : [];
         return {
           updated: after,
-          onboarded: firstOnboarding ? { calendarConnected: accounts.some((a) => hasCalendarScopes(a.scopes)) } : null,
+          onboarded: firstOnboarding
+            ? { calendarConnected: accounts.some((a) => hasCalendarScopes(a.scopes)) }
+            : null,
         };
       });
       if (onboarded) track(options.analytics, "onboarding_completed", session.workspaceId, onboarded);
@@ -240,7 +242,10 @@ export function accountRoutes(app: FastifyInstance, options: AccountRoutesOption
         const subscriptionId = subscription?.stripeSubscriptionId;
         if (subscriptionId && subscription.status !== "canceled") {
           const cancelled = await options.billing
-            .cancelSubscription(subscriptionId, { atPeriodEnd: false })
+            .cancelSubscription(subscriptionId, {
+              atPeriodEnd: false,
+              idempotencyKey: `delete-${session.workspaceId}`,
+            })
             .then(() => true)
             .catch((err: unknown) => {
               request.log.warn(

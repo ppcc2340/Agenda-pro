@@ -23,7 +23,7 @@ import {
   type SnapshotInput,
 } from "./billing";
 import { getRollup, listRollupsForPeriod, periodAiTotals, upsertRollup } from "./rollups";
-import { deleteValueEvent, listValueEvents, recordValueEvent } from "./value-events";
+import { deleteValueEvent, listValueEvents, recordValueEvent, updateValueQuantity } from "./value-events";
 
 const now = new Date("2026-10-20T08:40:00Z");
 const snap = (overrides: Partial<SnapshotInput> = {}): SnapshotInput => ({
@@ -205,10 +205,24 @@ describe("billing repos (phase 4)", () => {
     expect(creditsFor("unknown.op")).toBe(0);
     const eventId = `evt_${newId()}`;
     expect(
-      await B((tx) => grantCreditPack(tx, wsB, { pack: "500", credits: 500, sourceEventId: eventId }, now)),
+      await B((tx) =>
+        grantCreditPack(
+          tx,
+          wsB,
+          { pack: "500", credits: 500, sourceEventId: eventId, purchasedAt: now },
+          now,
+        ),
+      ),
     ).toBe(true);
     expect(
-      await B((tx) => grantCreditPack(tx, wsB, { pack: "500", credits: 500, sourceEventId: eventId }, now)),
+      await B((tx) =>
+        grantCreditPack(
+          tx,
+          wsB,
+          { pack: "500", credits: 500, sourceEventId: eventId, purchasedAt: now },
+          now,
+        ),
+      ),
     ).toBe(false);
     const balance = await B((tx) => getCreditBalance(tx, wsB, now));
     expect(balance).toMatchObject({ allowance: 800, used: 5.2, remaining: 794.8 });
@@ -258,17 +272,15 @@ describe("billing repos (phase 4)", () => {
     expect(await A((tx) => recordValueEvent(tx, wsA, ev, now))).toBe(true);
     // An unknown method (older data) is skipped, never mis-reported.
     await A((tx) =>
-      tx
-        .insert(valueEvents)
-        .values({
-          id: newId(),
-          workspaceId: wsA,
-          type: "commitment_saved",
-          entityType: "commitment",
-          entityId: newId(),
-          method: "legacy",
-          createdAt: now,
-        }),
+      tx.insert(valueEvents).values({
+        id: newId(),
+        workspaceId: wsA,
+        type: "commitment_saved",
+        entityType: "commitment",
+        entityId: newId(),
+        method: "legacy",
+        createdAt: now,
+      }),
     );
     expect(await A((tx) => listValueEvents(tx, wsA, range))).toHaveLength(1);
   });
@@ -310,8 +322,97 @@ describe("billing repos (phase 4)", () => {
     ).rejects.toThrow();
     await expect(
       B((tx) =>
-        grantCreditPack(tx, wsA, { pack: "500", credits: 500, sourceEventId: `evt_${newId()}` }, now),
+        grantCreditPack(
+          tx,
+          wsA,
+          { pack: "500", credits: 500, sourceEventId: `evt_${newId()}`, purchasedAt: now },
+          now,
+        ),
       ),
     ).rejects.toThrow();
+  });
+
+  it("a second live subscription is refused as a duplicate; a canceled one may be replaced", async () => {
+    const c = (await bootstrapAccount(handle.db, { email: `bill-c-${newId()}@test.local`, now })).workspaceId;
+    const inC = <T>(fn: Parameters<typeof withWorkspace<T>>[2]) => withWorkspace(handle.db, c, fn);
+    expect(
+      (
+        await inC((tx) =>
+          applySubscriptionSnapshot(tx, c, snap({ customerId: "cus_C", subscriptionId: "sub_1" }), {
+            eventAt: null,
+            now,
+          }),
+        )
+      ).applied,
+    ).toBe(true);
+    expect(
+      await inC((tx) =>
+        applySubscriptionSnapshot(tx, c, snap({ customerId: "cus_C", subscriptionId: "sub_2" }), {
+          eventAt: null,
+          now,
+        }),
+      ),
+    ).toEqual({
+      applied: false,
+      reason: "duplicate_subscription",
+    });
+    await inC((tx) =>
+      applySubscriptionSnapshot(
+        tx,
+        c,
+        snap({ customerId: "cus_C", subscriptionId: "sub_1", status: "canceled" }),
+        { eventAt: null, now },
+      ),
+    );
+    expect(
+      (
+        await inC((tx) =>
+          applySubscriptionSnapshot(tx, c, snap({ customerId: "cus_C", subscriptionId: "sub_3" }), {
+            eventAt: null,
+            now,
+          }),
+        )
+      ).applied,
+    ).toBe(true);
+  });
+
+  it("a pack counts in the month it was bought, even when processed after midnight ([L16])", async () => {
+    const d = (await bootstrapAccount(handle.db, { email: `bill-d-${newId()}@test.local`, now })).workspaceId;
+    const late = new Date("2026-11-01T00:30:00Z");
+    await withWorkspace(handle.db, d, (tx) =>
+      grantCreditPack(
+        tx,
+        d,
+        {
+          pack: "500",
+          credits: 500,
+          sourceEventId: `evt_${newId()}`,
+          purchasedAt: new Date("2026-10-31T23:50:00Z"),
+        },
+        late,
+      ),
+    );
+    expect((await withWorkspace(handle.db, d, (tx) => getCreditBalance(tx, d, now))).allowance).toBe(800);
+    expect((await withWorkspace(handle.db, d, (tx) => getCreditBalance(tx, d, late))).allowance).toBe(300);
+  });
+
+  it("correcting a counted quantity keeps the event in its original week", async () => {
+    const entity = newId();
+    const ev = {
+      type: "untracked_time_recovered",
+      entityType: "time_entry",
+      entityId: entity,
+      quantity: 60,
+      method: "inferred_time_approved",
+    } as const;
+    await A((tx) => recordValueEvent(tx, wsA, ev, now));
+    expect(await A((tx) => updateValueQuantity(tx, wsA, "untracked_time_recovered", entity, 45))).toBe(1);
+    const listed = await A((tx) =>
+      listValueEvents(tx, wsA, {
+        from: new Date("2026-10-19T00:00:00Z"),
+        to: new Date("2026-10-26T00:00:00Z"),
+      }),
+    );
+    expect(listed.find((e) => e.entityId === entity)).toMatchObject({ quantity: 45, occurredAt: now });
   });
 });

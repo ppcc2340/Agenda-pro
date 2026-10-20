@@ -205,6 +205,7 @@ describe("value report (F-12, D-063, [M7])", () => {
     const views = () =>
       analytics.events.filter((e) => e.event === "value_report_viewed" && e.distinctId === a.workspaceId);
     const before = views().length;
+    expect(before).toBeGreaterThan(0);
     await report();
     await report();
     expect(views().length).toBe(before);

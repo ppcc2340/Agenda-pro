@@ -8,6 +8,7 @@ import type {
   BillingWebhookEvent,
   CheckoutInput,
   CheckoutSession,
+  CheckoutSnapshot,
   CreditPackCode,
   PaidPlanCode,
   SubscriptionSnapshot,
@@ -23,6 +24,9 @@ interface FakeSession {
   pack: CreditPackCode | null;
   trialEnd: string | null;
   completed: boolean;
+  /** Test driver: an asynchronous payment method leaves a completed session `unpaid`. */
+  paymentStatus?: "paid" | "unpaid";
+  subscriptionId?: string | null;
 }
 
 /** A webhook ready to post: the raw body and its `Stripe-Signature` header. */
@@ -49,6 +53,8 @@ export class FakeBilling implements BillingProvider {
   readonly mode = "fake" as const;
   readonly subscriptions = new Map<string, SubscriptionSnapshot>();
   readonly sessions = new Map<string, FakeSession>();
+  /** Idempotency keys received by cancellations (tests assert they are unique per intent). */
+  readonly cancelKeys: string[] = [];
   private counter = 0;
 
   constructor(
@@ -124,10 +130,28 @@ export class FakeBilling implements BillingProvider {
     return s;
   }
 
+  ensureCustomer(input: { workspaceId: string; email: string; customerId: string | null }): Promise<string> {
+    return Promise.resolve(input.customerId ?? `cus_fake_${input.workspaceId.slice(0, 8)}`);
+  }
+
+  getCheckoutSession(sessionId: string): Promise<CheckoutSnapshot | null> {
+    const s = this.sessions.get(sessionId);
+    if (!s) return Promise.resolve(null);
+    return Promise.resolve({
+      id: s.id,
+      mode: s.mode,
+      paymentStatus: s.completed ? (s.paymentStatus ?? "paid") : "unpaid",
+      workspaceId: s.workspaceId,
+      customerId: s.customerId,
+      creditPack: s.pack,
+    });
+  }
+
   cancelSubscription(
     subscriptionId: string,
-    options: { atPeriodEnd: boolean },
+    options: { atPeriodEnd: boolean; idempotencyKey: string },
   ): Promise<SubscriptionSnapshot> {
+    this.cancelKeys.push(options.idempotencyKey);
     const s = this.mustGet(subscriptionId);
     const updated: SubscriptionSnapshot = options.atPeriodEnd
       ? { ...s, cancelAtPeriodEnd: true }
@@ -136,7 +160,10 @@ export class FakeBilling implements BillingProvider {
     return Promise.resolve({ ...updated });
   }
 
-  resumeSubscription(subscriptionId: string): Promise<SubscriptionSnapshot> {
+  resumeSubscription(
+    subscriptionId: string,
+    _options: { idempotencyKey: string },
+  ): Promise<SubscriptionSnapshot> {
     const s = this.mustGet(subscriptionId);
     if (s.status === "canceled")
       return Promise.reject(new IntegrationError("Permanent", "stripe", "subscription already ended"));
@@ -179,7 +206,7 @@ export class FakeBilling implements BillingProvider {
   }
 
   /** The customer pays (or adds a card) in the hosted checkout: creates the subscription and returns the event. */
-  completeCheckout(sessionId: string): SignedWebhook {
+  completeCheckout(sessionId: string, options: { paymentStatus?: "paid" | "unpaid" } = {}): SignedWebhook {
     const s = this.sessions.get(sessionId);
     if (!s) throw new IntegrationError("Permanent", "stripe", `no such checkout session: ${sessionId}`);
     let subscriptionId: string | null = null;
@@ -204,13 +231,37 @@ export class FakeBilling implements BillingProvider {
       });
     }
     s.completed = true;
-    return this.sign("checkout.session.completed", {
+    s.paymentStatus = options.paymentStatus ?? "paid";
+    s.subscriptionId = subscriptionId;
+    return this.signCheckout(s, "checkout.session.completed");
+  }
+
+  /** An asynchronous payment (bank debit, voucher) of a completed session finally arrives. */
+  settleAsyncPayment(sessionId: string): SignedWebhook {
+    const s = this.sessions.get(sessionId);
+    if (!s?.completed)
+      throw new IntegrationError("Permanent", "stripe", `no completed checkout session: ${sessionId}`);
+    s.paymentStatus = "paid";
+    return this.signCheckout(s, "checkout.session.async_payment_succeeded");
+  }
+
+  /** Re-sends a session's `checkout.session.completed` with its current state (a provider retry or replay). */
+  resendCheckout(sessionId: string): SignedWebhook {
+    const s = this.sessions.get(sessionId);
+    if (!s?.completed)
+      throw new IntegrationError("Permanent", "stripe", `no completed checkout session: ${sessionId}`);
+    return this.signCheckout(s, "checkout.session.completed");
+  }
+
+  private signCheckout(s: FakeSession, type: string): SignedWebhook {
+    return this.sign(type, {
       id: s.id,
       object: "checkout.session",
       mode: s.mode,
+      payment_status: s.paymentStatus ?? "unpaid",
       client_reference_id: s.workspaceId,
       customer: s.customerId,
-      subscription: subscriptionId,
+      subscription: s.subscriptionId ?? null,
       metadata: { workspaceId: s.workspaceId, ...(s.pack ? { creditPack: s.pack } : {}) },
     });
   }

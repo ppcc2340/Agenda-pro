@@ -17,11 +17,13 @@ import {
   withWorkspace,
   type Db,
 } from "@meri/db";
-import type {
-  Analytics,
-  BillingProvider,
-  BillingWebhookEvent,
-  SubscriptionSnapshot,
+import {
+  IntegrationError,
+  type Analytics,
+  type BillingProvider,
+  type BillingWebhookEvent,
+  type CreditPackCode,
+  type SubscriptionSnapshot,
 } from "@meri/integrations";
 import type { Logger } from "@meri/config";
 import { track } from "./analytics";
@@ -39,7 +41,14 @@ export type BillingEventOutcome =
   | { status: "duplicate" }
   | {
       status: "ignored";
-      reason: "no_workspace" | "unknown_workspace" | "stale" | "customer_mismatch" | "unhandled";
+      reason:
+        | "no_workspace"
+        | "unknown_workspace"
+        | "stale"
+        | "customer_mismatch"
+        | "duplicate_subscription"
+        | "awaiting_payment"
+        | "unhandled";
     };
 
 const SUBSCRIPTION_EVENTS = new Set([
@@ -49,6 +58,29 @@ const SUBSCRIPTION_EVENTS = new Set([
   "invoice.paid",
   "invoice.payment_failed",
 ]);
+const CHECKOUT_EVENTS = new Set(["checkout.session.completed", "checkout.session.async_payment_succeeded"]);
+
+type Ignored = Extract<BillingEventOutcome, { status: "ignored" }>["reason"];
+
+/**
+ * Reads canonical provider state; a Permanent error (unknown object, a price that is not Meri's) is an event Meri
+ * cannot act on: recorded and acknowledged (never a 5xx that makes the provider retry for days). Transient errors
+ * propagate so the provider retries.
+ */
+async function canonical<T>(
+  read: () => Promise<T | null>,
+  log: BillingEventDeps["logger"],
+): Promise<T | null> {
+  try {
+    return await read();
+  } catch (err) {
+    if (err instanceof IntegrationError && err.kind === "Permanent") {
+      log.error({ err: err.message }, "billing object Meri cannot map; acknowledged without effects");
+      return null;
+    }
+    throw err;
+  }
+}
 
 export async function processBillingEvent(
   deps: BillingEventDeps,
@@ -56,63 +88,108 @@ export async function processBillingEvent(
 ): Promise<BillingEventOutcome> {
   const now = deps.now();
   const log = deps.logger.child({ eventId: event.id, eventType: event.type });
-  const ignore = async (reason: Extract<BillingEventOutcome, { status: "ignored" }>["reason"]) => {
+  const ignore = async (reason: Ignored) => {
     // Recorded so a replay is a cheap no-op; never a workspace effect.
     await recordStripeEvent(deps.db, event.id, event.type, now);
     log.warn({ reason }, "billing event ignored");
     return { status: "ignored", reason } as const;
   };
 
-  // 1. Canonical state: for subscription and invoice events the subscription is re-read from the provider.
+  // 1. Canonical state, never the event body (ADR 0006 §3): subscriptions and checkout sessions are re-read.
   let snapshot: SubscriptionSnapshot | null = null;
-  let workspaceRaw: string | null = event.workspaceId;
-  if (
-    event.subscriptionId &&
-    (SUBSCRIPTION_EVENTS.has(event.type) || event.checkout?.mode === "subscription")
-  ) {
-    snapshot = await deps.billing.getSubscription(event.subscriptionId);
+  let pack: { sessionId: string; pack: CreditPackCode; paid: boolean } | null = null;
+  let workspaceRaw: string | null = null;
+  const isCheckout = CHECKOUT_EVENTS.has(event.type) && event.checkout !== null;
+  if (isCheckout && event.checkout?.mode === "payment") {
+    const session = await canonical(
+      () => deps.billing.getCheckoutSession(event.checkout?.sessionId ?? ""),
+      log,
+    );
+    if (!session?.creditPack || session.mode !== "payment") return ignore("unhandled");
+    workspaceRaw = session.workspaceId;
+    pack = { sessionId: session.id, pack: session.creditPack, paid: session.paymentStatus === "paid" };
+  } else if (event.subscriptionId && (SUBSCRIPTION_EVENTS.has(event.type) || isCheckout)) {
+    const subscriptionId = event.subscriptionId;
+    snapshot = await canonical(() => deps.billing.getSubscription(subscriptionId), log);
     if (!snapshot) return ignore("unhandled");
-    if (event.type !== "checkout.session.completed") workspaceRaw = snapshot.workspaceId;
+    workspaceRaw = snapshot.workspaceId;
     // A checkout whose metadata disagrees with its own subscription's is never trusted.
-    else if (snapshot.workspaceId !== null && snapshot.workspaceId !== workspaceRaw)
+    if (isCheckout && event.workspaceId !== null && snapshot.workspaceId !== event.workspaceId)
       return ignore("customer_mismatch");
   }
-  const isPack = event.type === "checkout.session.completed" && event.checkout?.mode === "payment";
-  if (!snapshot && !isPack) return ignore("unhandled");
+  if (!snapshot && !pack) return ignore("unhandled");
   const parsedWs = WorkspaceId.safeParse(workspaceRaw);
   if (!parsedWs.success) return ignore("no_workspace");
   const workspaceId = parsedWs.data;
-  if (!(await isWorkspaceLive(deps.db, workspaceId))) return ignore("unknown_workspace");
+  if (!(await isWorkspaceLive(deps.db, workspaceId))) {
+    // Backstop for account deletion (security review M2): a live subscription of a deleted workspace never
+    // keeps charging, whatever happened to the cancellation at deletion time.
+    if (snapshot && snapshot.status !== "canceled") {
+      await deps.billing.cancelSubscription(snapshot.subscriptionId, {
+        atPeriodEnd: false,
+        idempotencyKey: `orphan-${snapshot.subscriptionId}`,
+      });
+      log.warn({ subscriptionId: snapshot.subscriptionId }, "subscription of a deleted workspace cancelled");
+    }
+    return ignore("unknown_workspace");
+  }
+  if (pack && !pack.paid) return ignore("awaiting_payment");
 
   // 2. Effects + idempotency marker in one transaction (a transient error rolls both back → the provider retries).
   const result = await withWorkspace(deps.db, workspaceId, async (tx) => {
     if (!(await recordStripeEvent(tx, event.id, event.type, now))) return { kind: "duplicate" as const };
     const ctx = { workspaceId, actor: "system" as const };
     const analytics: (() => void)[] = [];
+    let staleMirror = false;
     if (snapshot) {
       const applied = await applySubscriptionSnapshot(tx, workspaceId, snapshot, {
         eventAt: new Date(event.createdAt),
         now,
       });
-      if (!applied.applied) return { kind: "ignored" as const, reason: applied.reason };
-      await audit(tx, ctx, {
-        action: "billing.subscription_synced",
-        // Provider ids are not uuids: the entity is the workspace, the provider id travels in `after`.
-        entityType: "workspace",
-        entityId: workspaceId,
-        reason: event.type,
-        before: applied.before && {
-          plan: applied.before.plan,
-          status: applied.before.status,
-          cancelAtPeriodEnd: applied.before.cancelAtPeriodEnd,
-        },
-        after: {
-          plan: applied.after.plan,
-          status: applied.after.status,
-          cancelAtPeriodEnd: applied.after.cancelAtPeriodEnd,
-          subscriptionId: snapshot.subscriptionId,
-        },
-      });
+      if (!applied.applied && applied.reason === "duplicate_subscription") {
+        // Two completed checkouts: the first subscription is the plan, the newcomer never charges.
+        if (snapshot.status !== "canceled")
+          await deps.billing.cancelSubscription(snapshot.subscriptionId, {
+            atPeriodEnd: false,
+            idempotencyKey: `duplicate-${snapshot.subscriptionId}`,
+          });
+        await audit(tx, ctx, {
+          action: "billing.duplicate_cancelled",
+          entityType: "workspace",
+          entityId: workspaceId,
+          after: { subscriptionId: snapshot.subscriptionId },
+        });
+        return { kind: "ignored" as const, reason: applied.reason };
+      }
+      if (!applied.applied && applied.reason !== "stale") {
+        if (applied.reason === "customer_mismatch")
+          log.error(
+            { workspaceId, subscriptionId: snapshot.subscriptionId },
+            "subscription of another customer",
+          );
+        return { kind: "ignored" as const, reason: applied.reason };
+      }
+      // An older event leaves the mirror alone but its own effects (invoice notices, audit) still apply.
+      staleMirror = !applied.applied;
+      if (applied.applied)
+        await audit(tx, ctx, {
+          action: "billing.subscription_synced",
+          // Provider ids are not uuids: the entity is the workspace, the provider id travels in `after`.
+          entityType: "workspace",
+          entityId: workspaceId,
+          reason: event.type,
+          before: applied.before && {
+            plan: applied.before.plan,
+            status: applied.before.status,
+            cancelAtPeriodEnd: applied.before.cancelAtPeriodEnd,
+          },
+          after: {
+            plan: applied.after.plan,
+            status: applied.after.status,
+            cancelAtPeriodEnd: applied.after.cancelAtPeriodEnd,
+            subscriptionId: snapshot.subscriptionId,
+          },
+        });
     }
     if (event.type === "invoice.paid" && (event.invoice?.amountPaidCents ?? 0) > 0) {
       // D-059: subscription_started on the first real charge only.
@@ -155,12 +232,17 @@ export async function processBillingEvent(
         now,
       );
     }
-    if (isPack && event.checkout?.creditPack) {
-      const pack = event.checkout.creditPack;
+    if (pack) {
+      // Keyed by the session: `completed` (paid) and a later `async_payment_succeeded` never grant twice.
       const granted = await grantCreditPack(
         tx,
         workspaceId,
-        { pack, credits: CREDIT_PACKS[pack], sourceEventId: event.id },
+        {
+          pack: pack.pack,
+          credits: CREDIT_PACKS[pack.pack],
+          sourceEventId: `checkout:${pack.sessionId}`,
+          purchasedAt: new Date(event.createdAt),
+        },
         now,
       );
       if (granted)
@@ -168,10 +250,10 @@ export async function processBillingEvent(
           action: "billing.credits_granted",
           entityType: "workspace",
           entityId: workspaceId,
-          after: { pack, credits: CREDIT_PACKS[pack] },
+          after: { pack: pack.pack, credits: CREDIT_PACKS[pack.pack] },
         });
     }
-    return { kind: "applied" as const, analytics };
+    return { kind: "applied" as const, analytics, staleMirror };
   });
 
   if (result.kind === "duplicate") return { status: "duplicate" };
@@ -183,6 +265,10 @@ export async function processBillingEvent(
     };
   }
   for (const emit of result.analytics) emit();
+  if (result.staleMirror) {
+    log.info({ workspaceId }, "older billing event: mirror kept, its own effects applied");
+    return { status: "ignored", reason: "stale" };
+  }
   log.info({ workspaceId }, "billing event applied");
   return { status: "applied", workspaceId };
 }

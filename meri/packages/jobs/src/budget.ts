@@ -144,8 +144,17 @@ export async function notifyAiPaused(
   now: Date,
   params: Record<string, string | number> = {},
 ): Promise<void> {
-  // Exhausted credits already got their own notice from chargeAiUsage.
-  if (reason === "credits_exhausted") return;
+  // The same notice as the 100 % threshold (deduplicated per period): also when the balance is above zero but too
+  // small for this operation, so the user is never silently on templates (code review L5).
+  if (reason === "credits_exhausted") {
+    await notifyOncePerPeriod(tx, workspaceId, now, {
+      template: "credits.exhausted",
+      title: "Créditos de IA agotados",
+      body: "La IA queda en pausa hasta el mes que viene; el plan y el calendario siguen funcionando.",
+      params,
+    });
+    return;
+  }
   await notifyOncePerPeriod(tx, workspaceId, now, {
     template: `ai.paused.${reason}`,
     title: "IA en pausa",

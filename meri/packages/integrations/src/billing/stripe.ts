@@ -8,6 +8,7 @@ import type {
   BillingWebhookEvent,
   CheckoutInput,
   CheckoutSession,
+  CheckoutSnapshot,
   CreditPackCode,
   PaidPlanCode,
   ProviderSubscriptionStatus,
@@ -29,6 +30,8 @@ export interface StripeBillingOptions {
   baseUrl?: string;
   /** Wall clock for the signature tolerance (Stripe signs with real time, never with DEMO_NOW). */
   nowSeconds?: () => number;
+  /** Per-request timeout (default 10 s). */
+  timeoutMs?: number;
 }
 
 type Params = Record<string, string | number | boolean | null | undefined>;
@@ -54,6 +57,15 @@ const StripeSubscription = z.object({
       }),
     ),
   }),
+});
+
+const StripeCheckout = z.object({
+  id: z.string(),
+  mode: z.enum(["subscription", "payment", "setup"]),
+  payment_status: z.enum(["paid", "unpaid", "no_payment_required"]),
+  client_reference_id: z.string().nullish(),
+  customer: Ref,
+  metadata: z.record(z.string(), z.string()).nullish(),
 });
 
 const STATUS: Readonly<Record<string, ProviderSubscriptionStatus>> = {
@@ -86,11 +98,13 @@ export class StripeBilling implements BillingProvider {
   readonly mode = "live" as const;
   private readonly fetchImpl: typeof fetch;
   private readonly baseUrl: string;
+  private readonly timeoutMs: number;
   private readonly planOfPrice: Map<string, { plan: PaidPlanCode; interval: BillingInterval }>;
 
   constructor(private readonly options: StripeBillingOptions) {
     this.fetchImpl = options.fetch ?? fetch;
     this.baseUrl = options.baseUrl ?? "https://api.stripe.com";
+    this.timeoutMs = options.timeoutMs ?? 10_000;
     this.planOfPrice = new Map();
     for (const plan of ["pro", "pro_plus"] as const)
       for (const interval of ["month", "year"] as const)
@@ -119,7 +133,8 @@ export class StripeBilling implements BillingProvider {
     }
     let res: Response;
     try {
-      res = await this.fetchImpl(url, { method, headers, body });
+      // docs/12 §3: every external call is bounded; an abort is a transient failure (the caller may retry).
+      res = await this.fetchImpl(url, { method, headers, body, signal: AbortSignal.timeout(this.timeoutMs) });
     } catch (cause) {
       throw new IntegrationError("Transient", "stripe", "network error talking to Stripe", { cause });
     }
@@ -203,6 +218,8 @@ export class StripeBilling implements BillingProvider {
         client_reference_id: input.workspaceId,
         "metadata[workspaceId]": input.workspaceId,
         "metadata[creditPack]": input.pack,
+        // Cards only: asynchronous methods would complete the session before the money arrives (review M1).
+        "payment_method_types[0]": "card",
         "automatic_tax[enabled]": true,
         "invoice_creation[enabled]": true,
         success_url: input.successUrl,
@@ -263,21 +280,70 @@ export class StripeBilling implements BillingProvider {
 
   async cancelSubscription(
     subscriptionId: string,
-    options: { atPeriodEnd: boolean },
+    options: { atPeriodEnd: boolean; idempotencyKey: string },
   ): Promise<SubscriptionSnapshot> {
     const path = `/v1/subscriptions/${encodeURIComponent(subscriptionId)}`;
     const raw = options.atPeriodEnd
-      ? await this.call("POST", path, { cancel_at_period_end: true }, `cancel-${subscriptionId}-period-end`)
-      : await this.call("DELETE", path);
+      ? await this.call("POST", path, { cancel_at_period_end: true }, options.idempotencyKey)
+      : await this.call("DELETE", path, {}, options.idempotencyKey);
     return this.toSnapshot(raw);
   }
 
-  async resumeSubscription(subscriptionId: string): Promise<SubscriptionSnapshot> {
+  async resumeSubscription(
+    subscriptionId: string,
+    options: { idempotencyKey: string },
+  ): Promise<SubscriptionSnapshot> {
     return this.toSnapshot(
-      await this.call("POST", `/v1/subscriptions/${encodeURIComponent(subscriptionId)}`, {
-        cancel_at_period_end: false,
-      }),
+      await this.call(
+        "POST",
+        `/v1/subscriptions/${encodeURIComponent(subscriptionId)}`,
+        { cancel_at_period_end: false },
+        options.idempotencyKey,
+      ),
     );
+  }
+
+  async ensureCustomer(input: {
+    workspaceId: string;
+    email: string;
+    customerId: string | null;
+  }): Promise<string> {
+    if (input.customerId) return input.customerId;
+    // One customer per workspace: the key makes two concurrent first checkouts share it (security review M3).
+    const customer = await this.call<{ id: string }>(
+      "POST",
+      "/v1/customers",
+      { email: input.email, "metadata[workspaceId]": input.workspaceId },
+      `customer-${input.workspaceId}`,
+    );
+    return customer.id;
+  }
+
+  async getCheckoutSession(sessionId: string): Promise<CheckoutSnapshot | null> {
+    let raw: unknown;
+    try {
+      raw = await this.call("GET", `/v1/checkout/sessions/${encodeURIComponent(sessionId)}`);
+    } catch (err) {
+      if (
+        err instanceof IntegrationError &&
+        err.kind === "Permanent" &&
+        /No such checkout/i.test(err.message)
+      )
+        return null;
+      throw err;
+    }
+    const s = StripeCheckout.safeParse(raw);
+    if (!s.success) throw new IntegrationError("Permanent", "stripe", "malformed checkout session object");
+    const workspaceId = s.data.metadata?.workspaceId ?? s.data.client_reference_id ?? null;
+    const pack = s.data.metadata?.creditPack;
+    return {
+      id: s.data.id,
+      mode: s.data.mode === "payment" ? "payment" : "subscription",
+      paymentStatus: s.data.payment_status,
+      workspaceId: workspaceId && z.string().uuid().safeParse(workspaceId).success ? workspaceId : null,
+      customerId: s.data.customer,
+      creditPack: pack === "500" || pack === "2000" ? pack : null,
+    };
   }
 
   parseWebhook(rawBody: string, signatureHeader: string): Promise<BillingWebhookEvent> {

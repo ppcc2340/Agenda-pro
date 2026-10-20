@@ -14,10 +14,17 @@ import {
   getCreditBalance,
   getEntitlements,
   getSubscription,
+  linkStripeCustomer,
   recordCancellationFeedback,
   type Db,
 } from "@meri/db";
-import { FakeBilling, IntegrationError, type BillingProvider, type Analytics } from "@meri/integrations";
+import {
+  FakeBilling,
+  IntegrationError,
+  type Analytics,
+  type BillingProvider,
+  type SubscriptionSnapshot,
+} from "@meri/integrations";
 import { processBillingEvent, track } from "@meri/jobs";
 import type { Logger } from "@meri/config";
 import { ApiError } from "../errors";
@@ -101,6 +108,31 @@ async function provider<T>(log: FastifyRequest["log"], fn: () => Promise<T>): Pr
 
 export function billingRoutes(app: FastifyInstance, options: BillingRoutesOptions, done: () => void): void {
   const r = app.withTypeProvider<ZodTypeProvider>();
+  const keyOf = (request: FastifyRequest, intent: string) =>
+    `${intent}-${sessionOf(request).workspaceId}-${request.headers["idempotency-key"] as string}`;
+  /**
+   * One provider customer per workspace, created and linked before the first checkout, so two checkouts in two tabs
+   * share it and the second subscription is recognised as a duplicate (security review M3).
+   */
+  const customerFor = async (request: FastifyRequest, current: string | null): Promise<string> => {
+    const session = sessionOf(request);
+    const customerId = await provider(request.log, () =>
+      options.billing.ensureCustomer({
+        workspaceId: session.workspaceId,
+        email: session.email,
+        customerId: current,
+      }),
+    );
+    if (customerId !== current)
+      await request.withWorkspace((tx) => linkStripeCustomer(tx, session.workspaceId, customerId));
+    return customerId;
+  };
+  /** After a write, mirror what the provider now says, not the write's response (review H1). */
+  const reread = async (
+    request: FastifyRequest,
+    written: SubscriptionSnapshot,
+  ): Promise<SubscriptionSnapshot> =>
+    (await provider(request.log, () => options.billing.getSubscription(written.subscriptionId))) ?? written;
   const writes = { preHandler: [requireSession, requireIdempotencyKey] };
   const returnUrl = (status: string) => `${options.appUrl}/control?billing=${status}#plan`;
 
@@ -164,14 +196,15 @@ export function billingRoutes(app: FastifyInstance, options: BillingRoutesOption
         sub.status === "trialing" && sub.trialEndsAt ? sub.trialEndsAt.getTime() - now.getTime() : 0;
       const trialEnd =
         trialLeft >= MIN_TRIAL_CARRYOVER_MS && sub.trialEndsAt ? sub.trialEndsAt.toISOString() : null;
+      const customerId = await customerFor(request, sub.stripeCustomerId);
       const checkout = await provider(request.log, () =>
         options.billing.createCheckoutSession({
           workspaceId: session.workspaceId,
           email: session.email,
-          customerId: sub.stripeCustomerId,
+          customerId,
           successUrl: returnUrl("success"),
           cancelUrl: returnUrl("cancelled"),
-          idempotencyKey: `checkout-${session.workspaceId}-${request.headers["idempotency-key"] as string}`,
+          idempotencyKey: keyOf(request, "checkout"),
           plan: request.body.plan,
           interval: request.body.interval,
           trialEnd,
@@ -218,14 +251,15 @@ export function billingRoutes(app: FastifyInstance, options: BillingRoutesOption
       // Credits only help while the AI can run: an ended trial or a cancelled plan needs a plan first.
       if (!sub || !access.active)
         throw new ApiError("ENTITLEMENT_REQUIRED", "An active plan is required to buy credits.");
+      const customerId = await customerFor(request, sub.stripeCustomerId);
       const checkout = await provider(request.log, () =>
         options.billing.createCreditPackCheckout({
           workspaceId: session.workspaceId,
           email: session.email,
-          customerId: sub.stripeCustomerId,
+          customerId,
           successUrl: returnUrl("credits"),
           cancelUrl: returnUrl("cancelled"),
-          idempotencyKey: `pack-${session.workspaceId}-${request.headers["idempotency-key"] as string}`,
+          idempotencyKey: keyOf(request, "pack"),
           pack: request.body.pack,
         }),
       );
@@ -269,9 +303,17 @@ export function billingRoutes(app: FastifyInstance, options: BillingRoutesOption
       const subscriptionId = sub?.stripeSubscriptionId;
       if (!subscriptionId || sub.status === "canceled")
         throw new ApiError("CONFLICT", "There is no active subscription to cancel.");
-      const snapshot = await provider(request.log, () =>
-        options.billing.cancelSubscription(subscriptionId, { atPeriodEnd: true }),
+      const snapshot = await reread(
+        request,
+        await provider(request.log, () =>
+          options.billing.cancelSubscription(subscriptionId, {
+            atPeriodEnd: true,
+            idempotencyKey: keyOf(request, "cancel"),
+          }),
+        ),
       );
+      if (!snapshot.cancelAtPeriodEnd && snapshot.status !== "canceled")
+        throw new ApiError("CONFLICT", "The billing provider did not confirm the cancellation. Try again.");
       const after = await request.withWorkspace(async (tx) => {
         const applied = await applySubscriptionSnapshot(tx, session.workspaceId, snapshot, {
           eventAt: null,
@@ -330,8 +372,11 @@ export function billingRoutes(app: FastifyInstance, options: BillingRoutesOption
       if (sub.status !== "canceled" && periodLeft) {
         if (!sub.cancelAtPeriodEnd)
           throw new ApiError("CONFLICT", "The subscription is not scheduled to end.");
-        const snapshot = await provider(request.log, () =>
-          options.billing.resumeSubscription(subscriptionId),
+        const snapshot = await reread(
+          request,
+          await provider(request.log, () =>
+            options.billing.resumeSubscription(subscriptionId, { idempotencyKey: keyOf(request, "resume") }),
+          ),
         );
         await request.withWorkspace(async (tx) => {
           const applied = await applySubscriptionSnapshot(tx, session.workspaceId, snapshot, {
@@ -362,7 +407,7 @@ export function billingRoutes(app: FastifyInstance, options: BillingRoutesOption
           customerId: sub.stripeCustomerId,
           successUrl: returnUrl("success"),
           cancelUrl: returnUrl("cancelled"),
-          idempotencyKey: `reactivate-${session.workspaceId}-${request.headers["idempotency-key"] as string}`,
+          idempotencyKey: keyOf(request, "reactivate"),
           plan: sub.plan === "trial" ? "pro" : sub.plan,
           interval: sub.priceInterval ?? "month",
           trialEnd: null,

@@ -9,6 +9,10 @@ export interface PostHogOptions {
   now?: () => Date;
   /** Delivery failures are reported here, never thrown into product code (analytics must not break a request). */
   onError?: (error: unknown) => void;
+  /** Buffered events leave at least this often even with low traffic (0 disables the timer; default 10 s). */
+  flushIntervalMs?: number;
+  /** Per-request timeout (default 5 s). */
+  timeoutMs?: number;
 }
 
 interface Captured {
@@ -35,6 +39,13 @@ export class PostHogAnalytics implements Analytics {
     this.fetchImpl = options.fetch ?? fetch;
     this.batchSize = options.batchSize ?? 20;
     this.now = options.now ?? (() => new Date());
+    const every = options.flushIntervalMs ?? 10_000;
+    if (every > 0) {
+      // Unreferenced: the timer never keeps the process alive; shutdown still flushes explicitly.
+      setInterval(() => {
+        void this.flush();
+      }, every).unref();
+    }
   }
 
   track(event: AnalyticsEvent, distinctId: string, props: AnalyticsProps = {}): void {
@@ -66,6 +77,7 @@ export class PostHogAnalytics implements Analytics {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ api_key: this.options.apiKey, batch }),
+        signal: AbortSignal.timeout(this.options.timeoutMs ?? 5_000),
       });
       if (!res.ok) throw new Error(`PostHog responded ${String(res.status)}`);
     } catch (err) {

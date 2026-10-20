@@ -188,21 +188,83 @@ describe("StripeBilling (live adapter, fetch stubbed)", () => {
     await expect(make(fetchImpl).getSubscription("sub_x")).resolves.toBeNull();
   });
 
-  it("cancels at period end with an idempotency key, or immediately with DELETE; resumes", async () => {
+  it("cancels and resumes with the caller's idempotency key (never a fixed one), or deletes immediately", async () => {
     const { calls, fetchImpl } = stub([
       { status: 200, json: subscription({ cancel_at_period_end: true }) },
       { status: 200, json: subscription({ status: "canceled" }) },
       { status: 200, json: subscription() },
     ]);
     const adapter = make(fetchImpl);
-    expect((await adapter.cancelSubscription("sub_1", { atPeriodEnd: true })).cancelAtPeriodEnd).toBe(true);
+    expect(
+      (await adapter.cancelSubscription("sub_1", { atPeriodEnd: true, idempotencyKey: "cancel-a" }))
+        .cancelAtPeriodEnd,
+    ).toBe(true);
     expect(calls[0]?.method).toBe("POST");
     expect(calls[0]?.body?.get("cancel_at_period_end")).toBe("true");
-    expect(calls[0]?.headers["idempotency-key"]).toBe("cancel-sub_1-period-end");
-    expect((await adapter.cancelSubscription("sub_1", { atPeriodEnd: false })).status).toBe("canceled");
+    expect(calls[0]?.headers["idempotency-key"]).toBe("cancel-a");
+    expect(
+      (await adapter.cancelSubscription("sub_1", { atPeriodEnd: false, idempotencyKey: "delete-a" })).status,
+    ).toBe("canceled");
     expect(calls[1]?.method).toBe("DELETE");
-    expect((await adapter.resumeSubscription("sub_1")).cancelAtPeriodEnd).toBe(false);
+    expect(calls[1]?.headers["idempotency-key"]).toBe("delete-a");
+    expect(
+      (await adapter.resumeSubscription("sub_1", { idempotencyKey: "resume-a" })).cancelAtPeriodEnd,
+    ).toBe(false);
     expect(calls[2]?.body?.get("cancel_at_period_end")).toBe("false");
+    expect(calls[2]?.headers["idempotency-key"]).toBe("resume-a");
+  });
+
+  it("creates one customer per workspace (keyed), reuses an existing one, and reads checkout sessions back", async () => {
+    const { calls, fetchImpl } = stub([
+      { status: 200, json: { id: "cus_new" } },
+      {
+        status: 200,
+        json: {
+          id: "cs_9",
+          mode: "payment",
+          payment_status: "unpaid",
+          customer: "cus_new",
+          metadata: { workspaceId: WS, creditPack: "500" },
+        },
+      },
+      { status: 404, json: { error: { message: "No such checkout.session: 'cs_x'" } } },
+    ]);
+    const adapter = make(fetchImpl);
+    expect(await adapter.ensureCustomer({ workspaceId: WS, email: "a@b.c", customerId: "cus_old" })).toBe(
+      "cus_old",
+    );
+    expect(await adapter.ensureCustomer({ workspaceId: WS, email: "a@b.c", customerId: null })).toBe(
+      "cus_new",
+    );
+    expect(calls[0]?.headers["idempotency-key"]).toBe(`customer-${WS}`);
+    expect(calls[0]?.body?.get("metadata[workspaceId]")).toBe(WS);
+    expect(await adapter.getCheckoutSession("cs_9")).toEqual({
+      id: "cs_9",
+      mode: "payment",
+      paymentStatus: "unpaid",
+      workspaceId: WS,
+      customerId: "cus_new",
+      creditPack: "500",
+    });
+    await expect(adapter.getCheckoutSession("cs_x")).resolves.toBeNull();
+  });
+
+  it("bounds every request with a timeout (an abort is transient)", async () => {
+    const hanging = ((_url: string, init: RequestInit) =>
+      new Promise((_resolve, reject) => {
+        init.signal?.addEventListener("abort", () => {
+          reject(new DOMException("aborted", "TimeoutError"));
+        });
+      })) as typeof fetch;
+    const adapter = new StripeBilling({
+      secretKey: "k",
+      webhookSecret: "w",
+      prices,
+      fetch: hanging,
+      timeoutMs: 20,
+    });
+    const err = await adapter.getSubscription("sub_1").catch((e: unknown) => e);
+    expect((err as IntegrationError).kind).toBe("Transient");
   });
 
   it("creates portal sessions", async () => {
