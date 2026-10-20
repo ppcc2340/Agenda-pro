@@ -51,3 +51,4 @@ export { scanClients, clientLinkDedupeHash, type ClientsScanResult, type ClientL
 export { prepareBriefings, BRIEFING_LOOKAHEAD_MS, type BriefingsPrepareResult } from "./handlers/briefings-prepare";
 export { inferTime, TIME_INFER_WINDOW_DAYS, type TimeInferResult } from "./handlers/time-infer";
 export { enqueueTimeInfer } from "./time-trigger";
+export { aiBudget, aiStatus, chargeAiUsage, notifyAiPaused, type AiStatus, type BudgetDecision, type BudgetDenyReason, type BudgetOptions, type UsageRecord } from "./budget";

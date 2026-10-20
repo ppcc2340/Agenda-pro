@@ -426,7 +426,7 @@ describe("ai.extract_commitments (F-07 AC1, AC2, AC3; D-034; ADR 0004 §3)", () 
     });
     expect(res).toMatchObject({ status: "budget_exhausted", usedRules: true, proposals: 1 });
     const notes = await withWorkspace(handle.db, ws, (tx) => listNotifications(tx, ws, { limit: 20 }));
-    const paused = notes.items.filter((n) => n.template === "ai.paused");
+    const paused = notes.items.filter((n) => n.template === "ai.paused.cost_cap");
     expect(paused).toHaveLength(1);
     expect(paused[0]?.params).toEqual({ capUsd: 5 });
   });

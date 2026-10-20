@@ -5,6 +5,7 @@ import { suggestCapture } from "@meri/ai";
 import { getVerticalTemplate } from "@meri/core";
 import type { FeatureFlagStore } from "@meri/config";
 import { audit, createProposal, getPreferences, listClients, type ProposalView } from "@meri/db";
+import { aiBudget, chargeAiUsage, notifyAiPaused } from "@meri/jobs";
 import type { AiClient } from "@meri/integrations";
 import { requireSession, sessionOf } from "../plugins/session";
 
@@ -77,6 +78,7 @@ export interface CaptureRoutesOptions {
   now: () => Date;
   ai: AiClient;
   flags: FeatureFlagStore;
+  costCapUsd: number;
 }
 
 export function captureRoutes(app: FastifyInstance, options: CaptureRoutesOptions, done: () => void): void {
@@ -94,12 +96,21 @@ export function captureRoutes(app: FastifyInstance, options: CaptureRoutesOption
     async (request, reply) => {
       const session = sessionOf(request);
       const now = options.now();
-      const { clients, prefs } = await request.withWorkspace(async (tx) => ({
+      const flagged = await options.flags.isEnabled("ai_capture", session.workspaceId);
+      const { clients, prefs, budget } = await request.withWorkspace(async (tx) => ({
         clients: await listClients(tx, session.workspaceId),
         prefs: await getPreferences(tx, session.workspaceId),
+        budget: flagged
+          ? await aiBudget(tx, session.workspaceId, "capture_parse", {
+              now,
+              aiMode: options.ai.mode,
+              costCapUsd: options.costCapUsd,
+            })
+          : null,
       }));
-      const useAi = await options.flags.isEnabled("ai_capture", session.workspaceId);
-      const { suggestion, source } = await suggestCapture(
+      // Over budget the rules parser answers alone (D-061): the capture never fails for lack of credits.
+      const useAi = flagged && budget?.allow === true;
+      const { suggestion, source, usage } = await suggestCapture(
         request.body.text,
         {
           now: now.toISOString(),
@@ -111,6 +122,8 @@ export function captureRoutes(app: FastifyInstance, options: CaptureRoutesOption
       );
       const payload: CapturePayload = { text: request.body.text, ...suggestion, source };
       const proposal = await request.withWorkspace(async (tx) => {
+        if (usage) await chargeAiUsage(tx, session.workspaceId, "capture_parse", [usage], { now });
+        if (budget?.reason) await notifyAiPaused(tx, session.workspaceId, budget.reason, now);
         const created = await createProposal(
           tx,
           session.workspaceId,

@@ -581,6 +581,8 @@ export const notificationKind = pgEnum("notification_kind", [
   "proposals",
   "plan",
   "integration",
+  /** Plan, trial and credit notices (D-061, [M6]): never count toward the daily alert cap. */
+  "billing",
 ]);
 export const notifications = pgTable(
   "notifications",

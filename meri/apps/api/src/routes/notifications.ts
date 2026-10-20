@@ -8,7 +8,7 @@ import { boolParam } from "./tasks";
 
 const NotificationJson = z.object({
   id: z.string(),
-  kind: z.enum(["digest", "risk", "proposals", "plan", "integration"]),
+  kind: z.enum(["digest", "risk", "proposals", "plan", "integration", "billing"]),
   title: z.string(),
   body: z.string(),
   template: z.string(),

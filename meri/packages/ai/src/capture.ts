@@ -1,4 +1,4 @@
-import type { AiClient } from "@meri/integrations";
+import type { AiClient, AiUsage } from "@meri/integrations";
 import { parseCapture, type CaptureContext, type CaptureSuggestion } from "@meri/core";
 import { CaptureProposal } from "./schemas";
 
@@ -10,6 +10,8 @@ never invent a client that is not in the provided list; dates are ISO 8601 UTC; 
 export interface CaptureSuggestResult {
   suggestion: CaptureSuggestion;
   source: "rules" | "ai";
+  /** Present when the model was called (charged once as `capture_parse`). */
+  usage?: AiUsage;
 }
 
 /**
@@ -38,6 +40,7 @@ export async function suggestCapture(
     : undefined;
   return {
     source: "ai",
+    usage: res.usage,
     suggestion: {
       ...rules,
       title: ai.title || rules.title,

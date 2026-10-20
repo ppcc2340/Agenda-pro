@@ -147,7 +147,7 @@ export interface CalendarEvent {
 
 export interface Notification {
   id: string;
-  kind: "digest" | "risk" | "proposals" | "plan" | "integration";
+  kind: "digest" | "risk" | "proposals" | "plan" | "integration" | "billing";
   title: string;
   body: string;
   template: string;

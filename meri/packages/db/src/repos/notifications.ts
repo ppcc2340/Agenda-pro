@@ -1,9 +1,9 @@
-import { and, count, desc, eq, isNull, lt, sql } from "drizzle-orm";
+import { and, count, desc, eq, isNull, lt, ne, sql } from "drizzle-orm";
 import { notifications } from "../schema";
 import type { WorkspaceTx } from "../workspace";
 import { newId, type WorkspaceId } from "../ids";
 
-export type NotificationKind = "digest" | "risk" | "proposals" | "plan" | "integration";
+export type NotificationKind = "digest" | "risk" | "proposals" | "plan" | "integration" | "billing";
 
 export interface NotificationView {
   id: string;
@@ -46,6 +46,10 @@ export async function insertNotification(
   return toView(row);
 }
 
+/**
+ * Notifications of a day, for the daily alert cap. Without `kind`, billing notices are excluded: a credit or trial
+ * notice must never use up the user's alert budget ([M6]).
+ */
 export async function countNotificationsForDay(
   tx: WorkspaceTx,
   workspaceId: WorkspaceId,
@@ -59,7 +63,7 @@ export async function countNotificationsForDay(
       and(
         eq(notifications.workspaceId, workspaceId),
         eq(notifications.day, day),
-        kind ? eq(notifications.kind, kind) : undefined,
+        kind ? eq(notifications.kind, kind) : ne(notifications.kind, "billing"),
       ),
     );
   return row?.n ?? 0;

@@ -18,16 +18,13 @@ import {
   listClients,
   listCommitments,
   listContacts,
-  monthlyAiCostMicroUsd,
-  periodOf,
-  recordAiUsage,
   resolveProposal,
   updateCommitment,
   type CommitmentView,
   type WorkspaceId,
   type WorkspaceTx,
 } from "@meri/db";
-import { readTokens, type HandlerDeps } from "@meri/jobs";
+import { aiBudget, aiStatus, chargeAiUsage, notifyAiPaused, readTokens, type HandlerDeps } from "@meri/jobs";
 import { hasGmailScopes, IntegrationError, type AiClient } from "@meri/integrations";
 import { ApiError } from "../errors";
 import { requireSession, sessionOf } from "../plugins/session";
@@ -308,13 +305,18 @@ export function commitmentRoutes(
       const ctx = await request.withWorkspace((tx) =>
         followupContext(tx, session.workspaceId, request.params.id, language, now),
       );
-      const spent = await request.withWorkspace((tx) =>
-        monthlyAiCostMicroUsd(tx, session.workspaceId, periodOf(now)),
-      );
-      const overBudget = options.ai.mode === "live" && spent >= options.costCapUsd * 1_000_000;
+      const budget = await request.withWorkspace(async (tx) => {
+        const decision = await aiBudget(tx, session.workspaceId, "followup_draft", {
+          now,
+          aiMode: options.ai.mode,
+          costCapUsd: options.costCapUsd,
+        });
+        if (decision.reason) await notifyAiPaused(tx, session.workspaceId, decision.reason, now);
+        return decision;
+      });
       let body: string;
       let source: "ai" | "template" = "template";
-      if (overBudget) {
+      if (!budget.allow) {
         body = templateFollowup(ctx.input);
       } else {
         try {
@@ -322,19 +324,7 @@ export function commitmentRoutes(
           body = res.body;
           source = options.ai.mode === "live" ? "ai" : "template";
           await request.withWorkspace((tx) =>
-            recordAiUsage(
-              tx,
-              session.workspaceId,
-              {
-                operation: "followup_draft",
-                model: res.usage.model,
-                inputTokens: res.usage.inputTokens,
-                outputTokens: res.usage.outputTokens,
-                cachedTokens: res.usage.cachedTokens,
-                costMicroUsd: res.usage.costMicroUsd,
-              },
-              now,
-            ),
+            chargeAiUsage(tx, session.workspaceId, "followup_draft", [res.usage], { now }),
           );
         } catch (err) {
           // Provider outage or policy rejection → template (never links or instructions). Anything else is a bug.
@@ -506,7 +496,9 @@ export function commitmentRoutes(
             usedUsd: z.number(),
             capUsd: z.number(),
             paused: z.boolean(),
+            reason: z.enum(["access_inactive", "credits_exhausted", "cost_cap"]).nullable(),
             mode: z.enum(["fake", "live"]),
+            credits: z.object({ allowance: z.number(), used: z.number(), remaining: z.number() }),
           }),
         },
       },
@@ -514,17 +506,21 @@ export function commitmentRoutes(
     async (request) => {
       const session = sessionOf(request);
       const now = options.deps.now();
-      const period = periodOf(now);
-      const micro = await request.withWorkspace((tx) =>
-        monthlyAiCostMicroUsd(tx, session.workspaceId, period),
+      const status = await request.withWorkspace((tx) =>
+        aiStatus(tx, session.workspaceId, { now, aiMode: options.ai.mode, costCapUsd: options.costCapUsd }),
       );
-      const usedUsd = Math.round(micro / 10_000) / 100;
       return {
-        period,
-        usedUsd,
+        period: status.period,
+        usedUsd: Math.round(status.costMicroUsd / 10_000) / 100,
         capUsd: options.costCapUsd,
-        paused: options.ai.mode === "live" && micro >= options.costCapUsd * 1_000_000,
+        paused: status.paused,
+        reason: status.reason,
         mode: options.ai.mode,
+        credits: {
+          allowance: status.balance.allowance,
+          used: status.balance.used,
+          remaining: status.balance.remaining,
+        },
       };
     },
   );

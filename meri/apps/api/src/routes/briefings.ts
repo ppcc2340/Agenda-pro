@@ -16,12 +16,10 @@ import {
   getClient,
   getPreferences,
   loadClientSnapshot,
-  monthlyAiCostMicroUsd,
-  periodOf,
-  recordAiUsage,
   upsertBriefing,
   type BriefingItemRow,
 } from "@meri/db";
+import { aiBudget, chargeAiUsage, notifyAiPaused } from "@meri/jobs";
 import type { AiClient } from "@meri/integrations";
 import { ApiError } from "../errors";
 import { requireSession, sessionOf } from "../plugins/session";
@@ -156,14 +154,22 @@ export function briefingRoutes(app: FastifyInstance, options: BriefingRoutesOpti
         if (!ctx) throw new ApiError("NOT_FOUND", "Client not found.");
         const stored = await getBriefing(tx, session.workspaceId, client.id, eventId);
         const timezone = (await getPreferences(tx, session.workspaceId))?.timezone ?? "UTC";
-        const spent = await monthlyAiCostMicroUsd(tx, session.workspaceId, periodOf(now));
-        return { client, ctx, stored, timezone, spent };
+        return { client, ctx, stored, timezone };
       });
       if (prepared.stored && prepared.stored.sourceHash === prepared.ctx.hash)
         return serialize(prepared.stored, prepared.client.name, true);
-      // 2. Generate outside the transaction (the model call may take up to 8 s).
-      const overBudget = options.ai.mode === "live" && prepared.spent >= options.costCapUsd * 1_000_000;
-      const useAi = !overBudget && (await options.flags.isEnabled("ai_briefings", session.workspaceId));
+      // 2. Generate outside the transaction (the model call may take up to 8 s). Budget only for a real generation.
+      const flagged = await options.flags.isEnabled("ai_briefings", session.workspaceId);
+      const budget = flagged
+        ? await request.withWorkspace((tx) =>
+            aiBudget(tx, session.workspaceId, "brief_client", {
+              now,
+              aiMode: options.ai.mode,
+              costCapUsd: options.costCapUsd,
+            }),
+          )
+        : null;
+      const useAi = flagged && budget?.allow === true;
       const result = await generateBriefing(options.ai, prepared.ctx, { now: now.toISOString(), useAi });
       const items: BriefingItemRow[] = result.items.map((i) => ({
         ...i,
@@ -172,20 +178,8 @@ export function briefingRoutes(app: FastifyInstance, options: BriefingRoutesOpti
       }));
       // 3. Persist + audit (actor user: the briefing only exists because the user asked for it).
       const view = await request.withWorkspace(async (tx) => {
-        if (result.usage)
-          await recordAiUsage(
-            tx,
-            session.workspaceId,
-            {
-              operation: "brief_client",
-              model: result.usage.model,
-              inputTokens: result.usage.inputTokens,
-              outputTokens: result.usage.outputTokens,
-              cachedTokens: result.usage.cachedTokens,
-              costMicroUsd: result.usage.costMicroUsd,
-            },
-            now,
-          );
+        if (result.usage) await chargeAiUsage(tx, session.workspaceId, "brief_client", [result.usage], { now });
+        if (budget?.reason) await notifyAiPaused(tx, session.workspaceId, budget.reason, now);
         const saved = await upsertBriefing(
           tx,
           session.workspaceId,

@@ -24,14 +24,12 @@ import {
   listClients,
   listContacts,
   markThreadProcessed,
-  monthlyAiCostMicroUsd,
-  periodOf,
-  recordAiUsage,
   resolveProposal,
   updateCommitment,
   withWorkspace,
   type WorkspaceId,
 } from "@meri/db";
+import { aiBudget, chargeAiUsage, notifyAiPaused } from "../budget";
 import { readTokens } from "./calendar-sync";
 import type { HandlerDeps } from "./context";
 
@@ -74,8 +72,13 @@ export async function extractThreadCommitments(
     const clients = await listClients(tx, workspaceId);
     const contacts = await listContacts(tx, workspaceId);
     const client = thread.clientId ? (clients.find((c) => c.id === thread.clientId) ?? null) : null;
-    const spent = await monthlyAiCostMicroUsd(tx, workspaceId, periodOf(now));
-    return { thread, account, prefs, client, contacts, spent };
+    // One thread = one operation unit, whatever the number of model calls ([H3]).
+    const budget = await aiBudget(tx, workspaceId, "extract_commitments", {
+      now,
+      aiMode: deps.integrations.ai.mode,
+      costCapUsd: input.costCapUsd,
+    });
+    return { thread, account, prefs, client, contacts, budget };
   });
   if (!snap) return skipped;
   const tokens = await readTokens(deps, workspaceId, snap.account.id);
@@ -95,7 +98,7 @@ export async function extractThreadCommitments(
       text: sanitizeMailBody(full.bodyText),
     });
   }
-  const overBudget = deps.integrations.ai.mode === "live" && snap.spent >= input.costCapUsd * 1_000_000;
+  const overBudget = !snap.budget.allow;
   const ai = overBudget ? rulesClient() : deps.integrations.ai;
   const clientRef: ClientRef | null = snap.client
     ? {
@@ -188,21 +191,7 @@ export async function extractThreadCommitments(
         autoconfirmed++;
       }
     }
-    for (const u of outcome.usage) {
-      await recordAiUsage(
-        tx,
-        workspaceId,
-        {
-          operation: "extract_commitments",
-          model: u.model,
-          inputTokens: u.inputTokens,
-          outputTokens: u.outputTokens,
-          cachedTokens: u.cachedTokens,
-          costMicroUsd: u.costMicroUsd,
-        },
-        now,
-      );
-    }
+    if (!overBudget) await chargeAiUsage(tx, workspaceId, "extract_commitments", outcome.usage, { now });
     const pendingNew = proposals - autoconfirmed;
     if (
       pendingNew > 0 &&
@@ -223,22 +212,14 @@ export async function extractThreadCommitments(
         now,
       );
     }
-    if (overBudget && (await countNotificationsForDay(tx, workspaceId, day, "integration")) === 0) {
-      await insertNotification(
+    if (snap.budget.reason)
+      await notifyAiPaused(
         tx,
         workspaceId,
-        {
-          kind: "integration",
-          template: "ai.paused",
-          params: { capUsd: input.costCapUsd },
-          title: "IA en pausa",
-          body: "Se alcanzó el tope mensual de IA; las reglas y el planificador siguen funcionando.",
-          refs: [],
-          day,
-        },
+        snap.budget.reason,
         now,
+        snap.budget.reason === "cost_cap" ? { capUsd: input.costCapUsd } : {},
       );
-    }
     await markThreadProcessed(tx, workspaceId, snap.thread.id, now);
     return { proposals, autoconfirmed };
   });

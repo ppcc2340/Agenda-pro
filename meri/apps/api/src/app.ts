@@ -157,6 +157,7 @@ export async function buildApp(deps: AppDeps) {
     now: deps.now,
     ai: deps.integrations.ai,
     flags: deps.flags ?? new InMemoryFlagStore(),
+    costCapUsd: config.env.AI_MONTHLY_COST_CAP_USD_PER_USER,
   });
   await app.register(proposalRoutes, {
     now: deps.now,
