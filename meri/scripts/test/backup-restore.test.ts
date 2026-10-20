@@ -2,13 +2,14 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { KeyRing, LocalKeyProvider, localKeyId } from "@meri/config/crypto";
-import { createDb } from "@meri/db";
+import { bootstrapAccount, createDb, purgeWorkspace, softDeleteAccount } from "@meri/db";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { renderDrillReport, runDrill } from "../dr-drill";
 import { createBackup, restoreBackup } from "../lib/backup";
 
 // The admin OWNER role (not a superuser locally): backups must work under FORCE RLS (plan review CR-H2).
 const ADMIN = process.env.DATABASE_ADMIN_URL_TEST ?? "postgres://meri:meri@localhost:5432/meri_test";
+const APP = process.env.DATABASE_URL_TEST ?? "postgres://meri_app:meri_app@localhost:5432/meri_test";
 const k = Buffer.alloc(32, 81).toString("base64");
 const keys = new KeyRing(new LocalKeyProvider(k, localKeyId(k)));
 const NOW = new Date("2026-10-20T08:40:00Z");
@@ -59,5 +60,33 @@ describe("encrypted backup and restore (ADR 0007, P5-03/P5-10)", () => {
     expect(renderDrillReport(result)).toContain("| Recuentos verificados | sí |");
     const [left] = await admin.sql<{ n: string }[]>`select count(*)::text as n from pg_database where datname like 'meri_drill_%'`;
     expect(Number(left?.n ?? 1)).toBe(0);
+  });
+
+  it("a restore re-applies erasures that happened after the backup (receipts from the primary)", async () => {
+    const app = createDb(APP, { max: 1 });
+    const second = `meri_restore_rx_${Date.now().toString(36)}`;
+    try {
+      const gone = await bootstrapAccount(app.db, { email: `gone-${Date.now().toString(36)}@test.local`, now: NOW });
+      const backup = await createBackup({ adminUrl: ADMIN, keys, out: join(work, "rx.mbk"), now: NOW });
+      // After the backup: the account is deleted and purged on the primary.
+      await softDeleteAccount(app.db, { userId: gone.userId, workspaceId: gone.workspaceId, now: NOW });
+      await admin.sql`update workspaces set deleted_at = now() - interval '31 days' where id = ${gone.workspaceId}`;
+      await purgeWorkspace(app.db, gone.workspaceId);
+      await admin.sql.unsafe(`create database "${second}"`);
+      const restored = await restoreBackup({ file: backup.path, targetUrl: dbUrl(second), keys, receiptsFromUrl: ADMIN });
+      expect(restored.mismatches).toEqual([]);
+      expect(restored.reapplied).toBeGreaterThanOrEqual(1);
+      const check = createDb(dbUrl(second), { max: 1 });
+      try {
+        const ws = await check.sql`select 1 from workspaces where id = ${gone.workspaceId}`;
+        const user = await check.sql`select 1 from users where id = ${gone.userId}`;
+        expect([ws.length, user.length]).toEqual([0, 0]);
+      } finally {
+        await check.close();
+      }
+    } finally {
+      await app.close();
+      await admin.sql.unsafe(`drop database if exists "${second}" with (force)`);
+    }
   });
 });

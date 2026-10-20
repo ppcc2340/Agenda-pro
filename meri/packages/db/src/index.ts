@@ -104,3 +104,4 @@ export * from "./repos/search";
 export * from "./repos/billing";
 export * from "./repos/value-events";
 export * from "./repos/rollups";
+export { TABLE_CLASSIFICATION, PURGE_AFTER_DAYS, deletionSubjectHash, listPurgeCandidates, purgeWorkspace, workspaceDeletedAt, remainingPersonalRows, type TableName } from "./purge";

@@ -3,7 +3,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { KeyProvider } from "@meri/config/crypto";
-import { ADMIN_WORKSPACE_CONTEXT, createDb } from "@meri/db";
+import { ADMIN_WORKSPACE_CONTEXT, createDb, deletionSubjectHash } from "@meri/db";
 import { decryptBackupFile, encryptBackupFile, type BackupManifest } from "./backup-format";
 
 /**
@@ -109,7 +109,44 @@ export async function createBackup(options: {
   }
 }
 
+/**
+ * Re-applies erasures (F-16): any restored workspace whose hashed id appears in a receipt (from the restored data and,
+ * when given, from the surviving primary or a newer backup) is deleted again with its users. Runs as the owner on
+ * the freshly restored database; the audit trigger lets the cascade through.
+ */
+export async function reapplyDeletions(targetUrl: string, receiptsFromUrl?: string): Promise<number> {
+  const target = createDb(targetUrl, { max: 1, connection: { "app.workspace_id": ADMIN_WORKSPACE_CONTEXT } });
+  const sources = [target, ...(receiptsFromUrl ? [createDb(receiptsFromUrl, { max: 1 })] : [])];
+  try {
+    const receipts = new Set<string>();
+    for (const source of sources)
+      for (const r of await source.sql<{ h: string }[]>`select subject_hash as h from deletion_receipts`) receipts.add(r.h);
+    const restored = await target.sql<{ id: string }[]>`select id from workspaces`;
+    let reapplied = 0;
+    for (const { id } of restored) {
+      if (!receipts.has(deletionSubjectHash(id))) continue;
+      await target.sql.begin(async (tx) => {
+        await tx`select set_config('app.workspace_id', ${id}, true)`;
+        const members = await tx<{ userId: string }[]>`select user_id as "userId" from memberships where workspace_id = ${id}`;
+        await tx`delete from feature_flags where workspace_id = ${id}`;
+        await tx`delete from workspaces where id = ${id}`;
+        await tx`select set_config('app.workspace_id', '*', true)`;
+        for (const { userId } of members)
+          await tx`delete from users u where u.id = ${userId}
+            and not exists (select 1 from memberships m where m.user_id = u.id)
+            and not exists (select 1 from workspaces w where w.owner_id = u.id)`;
+      });
+      reapplied++;
+    }
+    return reapplied;
+  } finally {
+    for (const source of sources) await source.close();
+  }
+}
+
 export interface RestoreResult {
+  /** Workspaces erased again because a receipt says they were purged. */
+  reapplied: number;
   manifest: BackupManifest;
   decryptMs: number;
   restoreMs: number;
@@ -133,6 +170,8 @@ export async function restoreBackup(options: {
   file: string;
   targetUrl: string;
   keys: KeyProvider;
+  /** Database whose erasure receipts are authoritative (the surviving primary or a newer restore). */
+  receiptsFromUrl?: string;
 }): Promise<RestoreResult> {
   await assertEmptyTarget(options.targetUrl);
   const work = await mkdtemp(join(tmpdir(), "meri-restore-"));
@@ -145,11 +184,13 @@ export async function restoreBackup(options: {
     const t1 = Date.now();
     await run("pg_restore", ["--no-owner", "--exit-on-error", `--dbname=${options.targetUrl}`, dump]);
     const restoreMs = Date.now() - t1;
+    // Counts are verified against the manifest before any erasure is re-applied (which legitimately removes rows).
     const restored = await tableCounts(options.targetUrl);
     const mismatches = Object.entries(manifest.tables)
       .map(([table, expected]) => ({ table, expected, actual: restored.tables[table] ?? -1 }))
       .filter((m) => m.expected !== m.actual);
-    return { manifest, decryptMs, restoreMs, mismatches };
+    const reapplied = await reapplyDeletions(options.targetUrl, options.receiptsFromUrl);
+    return { manifest, decryptMs, restoreMs, mismatches, reapplied };
   } finally {
     await rm(work, { recursive: true, force: true });
   }

@@ -40,6 +40,11 @@ export const DataRetentionJob = {
   name: "data.retention" as const,
   schema: withEnvelope({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }),
 };
+/** F-16 / ADR 0007: physical purge of one workspace logically deleted more than 30 days ago (daily dispatcher). */
+export const DataDeleteAccountJob = {
+  name: "data.delete_account" as const,
+  schema: withEnvelope({}),
+};
 export const PlannerReplanJob = {
   name: "planner.replan" as const,
   schema: withEnvelope({
@@ -77,3 +82,4 @@ export type PlannerReplanPayload = z.infer<typeof PlannerReplanJob.schema>;
 export type DailyReviewPayload = z.infer<typeof DailyReviewJob.schema>;
 export type BillingUsageRollupPayload = z.infer<typeof BillingUsageRollupJob.schema>;
 export type DailyClosePayload = z.infer<typeof DailyCloseJob.schema>;
+export type DataDeleteAccountPayload = z.infer<typeof DataDeleteAccountJob.schema>;

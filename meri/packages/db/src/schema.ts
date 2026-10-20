@@ -745,6 +745,19 @@ export const stripeEvents = pgTable("stripe_events", {
   processedAt: timestamp("processed_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+/**
+ * Proof of an erasure without personal data (F-16, ADR 0007): the workspace id is only kept as a hash, so a restore
+ * can re-apply the deletion without the receipt identifying anyone. Written only by `purge_workspace()`; the
+ * application role has no privileges on it.
+ */
+export const deletionReceipts = pgTable("deletion_receipts", {
+  subjectHash: text("subject_hash").primaryKey(),
+  deletedAt: timestamp("deleted_at", { withTimezone: true }).notNull(),
+  purgedAt: timestamp("purged_at", { withTimezone: true }).notNull().defaultNow(),
+  rowsDeleted: integer("rows_deleted").notNull(),
+  usersDeleted: integer("users_deleted").notNull(),
+});
+
 export const featureFlags = pgTable(
   "feature_flags",
   {

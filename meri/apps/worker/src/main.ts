@@ -13,6 +13,7 @@ import {
   dispatchDailyReview,
   dispatchFollowupsScan,
   dispatchMailPolling,
+  dispatchAccountPurge,
   dispatchRetention,
   dispatchTimeInfer,
   dispatchUsageRollup,
@@ -31,6 +32,7 @@ import { gmailSyncJob } from "./queues/gmail-sync";
 import { extractCommitmentsJob } from "./queues/extract-commitments";
 import { followupsScanJob } from "./queues/followups-scan";
 import { dataRetentionJob } from "./queues/data-retention";
+import { dataDeleteAccountJob } from "./queues/data-delete-account";
 import { plannerReplanJob } from "./queues/planner-replan";
 import { examplePing } from "./queues/example";
 import { billingUsageRollupJob } from "./queues/billing-usage-rollup";
@@ -72,6 +74,7 @@ async function main(): Promise<void> {
   registry.register(briefingsPrepareJob(handlerDeps));
   registry.register(timeInferJob(handlerDeps));
   registry.register(dataRetentionJob({ ...handlerDeps, maxRetentionDays: MAX_RETENTION_DAYS }));
+  registry.register(dataDeleteAccountJob(handlerDeps));
   registry.register(
     extractCommitmentsJob({ ...handlerDeps, costCapUsd: config.env.AI_MONTHLY_COST_CAP_USD_PER_USER }),
   );
@@ -137,6 +140,12 @@ async function main(): Promise<void> {
     () => dispatchRetention({ adminSql, dispatcher, logger, now }),
     logger,
   );
+  const stopPurge = schedule(
+    "data.delete_account",
+    6 * 60 * 60_000,
+    () => dispatchAccountPurge({ adminSql, dispatcher, logger, now }),
+    logger,
+  );
   const stopRollup = schedule(
     "billing.usage_rollup",
     config.isProduction ? 60 * 60_000 : 5 * 60_000,
@@ -174,6 +183,7 @@ async function main(): Promise<void> {
         "briefings.prepare",
         "time.infer",
         "data.retention",
+        "data.delete_account",
         "billing.usage_rollup",
         "daily.close",
       ],
@@ -186,6 +196,7 @@ async function main(): Promise<void> {
     stopPolling();
     stopDigest();
     stopRollup();
+    stopPurge();
     stopClose();
     stopMailPolling();
     stopFollowups();

@@ -2,7 +2,7 @@
  * Restore of a MERI-BACKUP-1 file into an EMPTY database (ADR 0007, docs/runbooks/backup-restore.md): the whole file
  * is authenticated before pg_restore runs, then row counts are compared with the manifest; deletions recorded
  * after the backup are re-applied (docs/compliance/deletion-verification.md).
- * Usage: pnpm restore <file.mbk> --target=<postgres url of an empty database>
+ * Usage: pnpm restore <file.mbk> --target=<postgres url of an empty database> [--receipts-from=<url>]
  */
 import { loadConfig, loadDotenv } from "@meri/config";
 import { createIntegrations } from "@meri/integrations";
@@ -13,11 +13,17 @@ async function main(): Promise<void> {
   const config = loadConfig(process.env);
   const file = process.argv.slice(2).find((a) => !a.startsWith("--"));
   const target = process.argv.find((a) => a.startsWith("--target="))?.slice("--target=".length);
+  const receiptsFrom = process.argv.find((a) => a.startsWith("--receipts-from="))?.slice("--receipts-from=".length);
   if (!file || !target) throw new Error("usage: pnpm restore <file.mbk> --target=<url of an empty database>");
   const kms = createIntegrations(config, { now: () => new Date() }).kms;
-  const result = await restoreBackup({ file, targetUrl: target, keys: kms.backupKeys });
+  const result = await restoreBackup({
+    file,
+    targetUrl: target,
+    keys: kms.backupKeys,
+    ...(receiptsFrom ? { receiptsFromUrl: receiptsFrom } : {}),
+  });
   process.stdout.write(
-    `restored backup of ${result.manifest.createdAt}: decrypt ${String(result.decryptMs)} ms, restore ${String(result.restoreMs)} ms, ${result.mismatches.length === 0 ? "row counts verified" : `${String(result.mismatches.length)} tables differ`}\n`,
+    `restored backup of ${result.manifest.createdAt} (${String(result.reapplied)} erasures re-applied): decrypt ${String(result.decryptMs)} ms, restore ${String(result.restoreMs)} ms, ${result.mismatches.length === 0 ? "row counts verified" : `${String(result.mismatches.length)} tables differ`}\n`,
   );
   for (const m of result.mismatches)
     process.stdout.write(`  ${m.table}: expected ${String(m.expected)}, got ${String(m.actual)}\n`);

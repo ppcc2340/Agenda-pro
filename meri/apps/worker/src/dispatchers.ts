@@ -8,6 +8,7 @@ import {
   ClientsScanJob,
   DailyReviewJob,
   DataRetentionJob,
+  DataDeleteAccountJob,
   FollowupsScanJob,
   GmailSyncJob,
   TimeInferJob,
@@ -215,6 +216,25 @@ export async function dispatchRetention(deps: DispatcherDeps): Promise<number> {
     );
   }
   if (rows.length > 0) deps.logger.info({ workspaces: rows.length }, "retention dispatched");
+  return rows.length;
+}
+
+/** data.delete_account (F-16, ADR 0007): once a day per workspace logically deleted more than 30 days ago. */
+export async function dispatchAccountPurge(deps: DispatcherDeps): Promise<number> {
+  const cutoff = new Date(deps.now().getTime() - 30 * 86_400_000);
+  const rows = await deps.adminSql<{ workspaceId: string }[]>`
+    select id as "workspaceId" from workspaces
+    where deleted_at is not null and deleted_at < ${cutoff}
+    order by deleted_at limit 500`;
+  const date = deps.now().toISOString().slice(0, 10);
+  for (const row of rows) {
+    await deps.dispatcher.enqueue(
+      DataDeleteAccountJob,
+      { workspaceId: row.workspaceId, traceId: randomUUID() },
+      { jobId: `data.delete_account_${row.workspaceId}_${date}` },
+    );
+  }
+  if (rows.length > 0) deps.logger.info({ workspaces: rows.length }, "account purges dispatched");
   return rows.length;
 }
 

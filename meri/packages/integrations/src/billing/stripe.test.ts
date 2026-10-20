@@ -334,3 +334,16 @@ describe("StripeBilling (live adapter, fetch stubbed)", () => {
     );
   });
 });
+
+describe("StripeBilling.deleteCustomer (F-16, ADR 0007)", () => {
+  it("deletes the customer with an idempotency key and treats an already deleted customer as done", async () => {
+    const ok = stub([{ status: 200, json: { id: "cus_1", deleted: true } }]);
+    await make(ok.fetchImpl).deleteCustomer("cus_1");
+    expect(ok.calls[0]).toMatchObject({ method: "DELETE", url: "https://api.stripe.com/v1/customers/cus_1" });
+    expect(ok.calls[0]?.headers["idempotency-key"]).toBe("delete-customer-cus_1");
+    const gone = stub([{ status: 404, json: { error: { message: "No such customer: 'cus_2'" } } }]);
+    await expect(make(gone.fetchImpl).deleteCustomer("cus_2")).resolves.toBeUndefined();
+    const down = stub([{ status: 500, json: { error: { message: "boom" } } }]);
+    await expect(make(down.fetchImpl).deleteCustomer("cus_3")).rejects.toMatchObject({ kind: "Transient" });
+  });
+});

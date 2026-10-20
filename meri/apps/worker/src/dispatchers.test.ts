@@ -21,6 +21,7 @@ import { InMemoryDispatcher } from "@meri/jobs";
 import postgres from "postgres";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
+  dispatchAccountPurge,
   dispatchBriefingsPrepare,
   dispatchCalendarPolling,
   dispatchClientsScan,
@@ -120,6 +121,17 @@ describe("dispatchers skip logically deleted workspaces (D-054)", () => {
       expect(workspaces).not.toContain(deleted.workspaceId);
     });
   }
+
+  it("dispatchAccountPurge only picks workspaces deleted more than 30 days ago (F-16, ADR 0007)", async () => {
+    expect(await run(dispatchAccountPurge)).not.toContain(deleted.workspaceId);
+    const old = await prepared("old-deleted");
+    await softDeleteAccount(handle.db, { userId: old.userId, workspaceId: old.workspaceId, now: NOW });
+    await adminSql`update workspaces set deleted_at = ${new Date(NOW.getTime() - 31 * 86_400_000)} where id = ${old.workspaceId}`;
+    const picked = await run(dispatchAccountPurge);
+    expect(picked).toContain(old.workspaceId);
+    expect(picked).not.toContain(alive.workspaceId);
+    expect(picked).not.toContain(deleted.workspaceId);
+  });
 
   it("dispatchUsageRollup also closes the previous month during the first two days", async () => {
     const at = async (iso: string) => {

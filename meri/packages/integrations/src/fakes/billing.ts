@@ -134,6 +134,14 @@ export class FakeBilling implements BillingProvider {
     return Promise.resolve(input.customerId ?? `cus_fake_${input.workspaceId.slice(0, 8)}`);
   }
 
+  /** Customers erased through `deleteCustomer` (tests assert on it). */
+  readonly deletedCustomers: string[] = [];
+
+  deleteCustomer(customerId: string): Promise<void> {
+    if (!this.deletedCustomers.includes(customerId)) this.deletedCustomers.push(customerId);
+    return Promise.resolve();
+  }
+
   getCheckoutSession(sessionId: string): Promise<CheckoutSnapshot | null> {
     const s = this.sessions.get(sessionId);
     if (!s) return Promise.resolve(null);

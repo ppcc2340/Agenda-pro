@@ -95,6 +95,11 @@ export interface BillingProvider {
     subscriptionId: string,
     options: { idempotencyKey: string },
   ): Promise<SubscriptionSnapshot>;
+  /**
+   * Erasure (F-16, ADR 0007): deletes the provider customer of a purged workspace. Idempotent: a customer that no
+   * longer exists counts as deleted. Invoices stay at the provider as its legal record.
+   */
+  deleteCustomer(customerId: string): Promise<void>;
   /** Verifies the `t=…,v1=` signature over the raw body; throws IntegrationError(Permanent) when it fails. */
   parseWebhook(rawBody: string, signatureHeader: string): Promise<BillingWebhookEvent>;
 }

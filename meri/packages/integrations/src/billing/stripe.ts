@@ -319,6 +319,16 @@ export class StripeBilling implements BillingProvider {
     return customer.id;
   }
 
+  async deleteCustomer(customerId: string): Promise<void> {
+    try {
+      await this.call("DELETE", `/v1/customers/${encodeURIComponent(customerId)}`, {}, `delete-customer-${customerId}`);
+    } catch (err) {
+      // Already gone (a retry, or deleted from the dashboard): erasure is complete.
+      if (err instanceof IntegrationError && err.kind === "Permanent" && /No such customer/i.test(err.message)) return;
+      throw err;
+    }
+  }
+
   async getCheckoutSession(sessionId: string): Promise<CheckoutSnapshot | null> {
     let raw: unknown;
     try {

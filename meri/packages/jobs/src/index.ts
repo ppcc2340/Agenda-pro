@@ -58,3 +58,4 @@ export { runUsageRollup, TRIAL_ENDING_NOTICE_DAYS, type UsageRollupResult } from
 export { recordTimeRecovered, forgetTimeRecovered, recordCommitmentSaved, forgetCommitmentSaved, recordDeadlineRisk } from "./value";
 export { loadDailyClose, loadWeeklyReview, localDayRange, runDailyClose, dueForClose, type DailyCloseResult } from "./reviews";
 export { rotateIntegrationKeys, type RotationReport, type RotationTarget } from "./security/rotate-keys";
+export { purgeDeletedAccount, type AccountPurgeResult } from "./handlers/account-purge";
