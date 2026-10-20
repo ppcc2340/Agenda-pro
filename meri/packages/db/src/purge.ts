@@ -104,11 +104,11 @@ export async function remainingPersonalRows(
           ? sql`select count(*)::int as n from users where id = any(${userArray}::uuid[])`
           : sql`select count(*)::int as n from ${sql.identifier(table)} where workspace_id = ${input.workspaceId}::uuid`;
     const rows = await adminDb.execute(query);
-    out[table] = Number((rows[0] as { n: number } | undefined)?.n ?? 0);
+    out[table] = Number((rows[0] as { n: number | string } | undefined)?.n ?? 0);
   }
   const actor = await adminDb.execute(
     sql`select count(*)::int as n from audit_log where actor_user_id = any(${userArray}::uuid[])`,
   );
-  out["audit_log.actor_user_id"] = Number((actor[0] as { n: number } | undefined)?.n ?? 0);
+  out["audit_log.actor_user_id"] = Number((actor[0] as { n: number | string } | undefined)?.n ?? 0);
   return out;
 }

@@ -25,12 +25,16 @@ describe("account erasure end to end", () => {
   it("leaves no personal row in any table after the purge", async () => {
     const account = await t.createAccount("erase");
     const cookie = await t.cookieFor(account);
-    const post = (url: string, payload?: unknown) =>
+    const post = (url: string, payload?: Record<string, unknown>) =>
       t.app.inject({ method: "POST", url, headers: { cookie, ...csrf, "idempotency-key": `k-${url}` }, payload });
     expect((await post("/v1/tasks", { title: "Preparar el informe", estimateMinutes: 60 })).statusCode).toBe(201);
     expect((await post("/v1/clients", { name: "Acme", domains: ["acme.com"] })).statusCode).toBe(201);
     expect((await post("/v1/capture", { text: "Llamar a Ana el viernes" })).statusCode).toBe(201);
-    const connect = await post("/v1/integrations/google/connect");
+    const connect = await t.app.inject({
+      method: "POST",
+      url: "/v1/integrations/google/connect",
+      headers: { cookie, ...csrf },
+    });
     const state = connect.cookies.find((c) => c.name === "meri.oauth.state")?.value ?? "";
     const url = new URL(connect.json<{ url: string }>().url);
     await t.app.inject({ url: `${url.pathname}${url.search}`, headers: { cookie: `${cookie}; meri.oauth.state=${state}` } });
