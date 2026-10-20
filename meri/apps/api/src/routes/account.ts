@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { DEMO_USER } from "@meri/config";
 import type { KeyProvider } from "@meri/config/crypto";
-import type { GoogleOAuth } from "@meri/integrations";
+import type { BillingProvider, GoogleOAuth } from "@meri/integrations";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import { z } from "zod";
 import {
@@ -10,9 +10,11 @@ import {
   audit,
   getMe,
   getPreferences,
+  getSubscription,
   listAudit,
   softDeleteAccount,
   updatePreferences,
+  withWorkspace,
   PreferencesValidationError,
   type Db,
 } from "@meri/db";
@@ -69,6 +71,8 @@ export interface AccountRoutesOptions {
   keys: KeyProvider;
   /** DEMO_MODE (D-049): the shared demo account can never be deleted. */
   demoMode: boolean;
+  /** [M11] the subscription is cancelled immediately when the account is deleted. */
+  billing: BillingProvider;
 }
 
 export function accountRoutes(app: FastifyInstance, options: AccountRoutesOptions, done: () => void): void {
@@ -197,6 +201,7 @@ export function accountRoutes(app: FastifyInstance, options: AccountRoutesOption
       if (options.demoMode && session.email.toLowerCase() === DEMO_USER.email)
         throw new ApiError("FORBIDDEN", "The demo account cannot be deleted.");
       const toRevoke = await collectTokensToRevoke(options, session.workspaceId, request.log);
+      const subscription = await request.withWorkspace((tx) => getSubscription(tx, session.workspaceId));
       const result = await softDeleteAccount(options.db, {
         userId: session.userId,
         workspaceId: session.workspaceId,
@@ -206,6 +211,29 @@ export function accountRoutes(app: FastifyInstance, options: AccountRoutesOption
       if (result.deleted) {
         const revoked = await revokeAtProvider(options.oauth, toRevoke, request.log);
         request.log.info({ revoked, connections: toRevoke.length }, "account deleted; provider tokens revoked");
+        // [M11] No charge after deletion: the subscription ends now (best effort; fiscal records stay at the provider).
+        const subscriptionId = subscription?.stripeSubscriptionId;
+        if (subscriptionId && subscription.status !== "canceled") {
+          const cancelled = await options.billing
+            .cancelSubscription(subscriptionId, { atPeriodEnd: false })
+            .then(() => true)
+            .catch((err: unknown) => {
+              request.log.warn({ err }, "subscription cancellation on account deletion failed; cancel it at the provider");
+              return false;
+            });
+          await withWorkspace(options.db, session.workspaceId, (tx) =>
+            audit(
+              tx,
+              { workspaceId: session.workspaceId, actor: "system" },
+              {
+                action: "billing.cancelled_on_deletion",
+                entityType: "workspace",
+                entityId: session.workspaceId,
+                after: { subscriptionId, cancelled },
+              },
+            ),
+          );
+        }
       }
       return reply.status(204).send(null);
     },

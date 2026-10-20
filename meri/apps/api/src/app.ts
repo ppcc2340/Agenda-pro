@@ -39,6 +39,8 @@ import { briefingRoutes } from "./routes/briefings";
 import { timeRoutes } from "./routes/time-entries";
 import { searchRoutes } from "./routes/search";
 import { agreementRoutes } from "./routes/agreements";
+import { billingRoutes } from "./routes/billing";
+import { stripeWebhookRoutes } from "./routes/webhooks-stripe";
 import { getEntitlementMaxClients } from "@meri/db";
 
 export interface AppDeps {
@@ -140,6 +142,7 @@ export async function buildApp(deps: AppDeps) {
     oauth: deps.integrations.oauth,
     keys: deps.integrations.kms.keys,
     demoMode: config.env.DEMO_MODE,
+    billing: deps.integrations.billing,
   });
   await app.register(taskRoutes, { now: deps.now, onTasksChanged: deps.onTasksChanged });
   await app.register(integrationRoutes, {
@@ -190,7 +193,7 @@ export async function buildApp(deps: AppDeps) {
     onEventsLinked: (workspaceId, traceId) =>
       enqueueTimeInfer(deps.dispatcher, { workspaceId, traceId, reason: "event_assigned" }).then(() => undefined),
   });
-  await app.register(timeRoutes, { now: deps.now });
+  await app.register(timeRoutes, { now: deps.now, analytics: deps.integrations.analytics });
   await app.register(searchRoutes, {});
   await app.register(agreementRoutes, { now: deps.now });
   await app.register(briefingRoutes, {
@@ -203,6 +206,23 @@ export async function buildApp(deps: AppDeps) {
     now: deps.now,
     dispatcher: deps.dispatcher,
     channelToken: config.env.GOOGLE_CALENDAR_CHANNEL_TOKEN,
+  });
+
+  await app.register(billingRoutes, {
+    db: deps.db,
+    billing: deps.integrations.billing,
+    analytics: deps.integrations.analytics,
+    logger: deps.logger,
+    now: deps.now,
+    appUrl: config.env.APP_URL,
+    allowFakeCompletion: deps.integrations.billing.mode === "fake" && !config.isProduction,
+  });
+  await app.register(stripeWebhookRoutes, {
+    db: deps.db,
+    billing: deps.integrations.billing,
+    analytics: deps.integrations.analytics,
+    logger: deps.logger,
+    now: deps.now,
   });
 
   app.get("/docs/json", { schema: { hide: true } }, () => app.swagger());

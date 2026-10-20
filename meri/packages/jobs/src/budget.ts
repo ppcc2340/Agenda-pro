@@ -12,6 +12,7 @@ import {
   localDateKey,
   roundCredits,
   chargeDecision,
+  type Access,
   type AiOperation,
   type CreditBalance,
 } from "@meri/core";
@@ -174,6 +175,7 @@ async function notifyOncePerPeriod(
 export interface AiStatus {
   /** True when no AI operation would run now (the UI shows the "IA en pausa" banner, D-067). */
   paused: boolean;
+  access: Access;
   reason: Exclude<BudgetDenyReason, "briefing_allowance"> | null;
   balance: CreditBalance;
   period: string;
@@ -197,5 +199,5 @@ export async function aiStatus(
       : options.aiMode === "live" && costMicroUsd >= options.costCapUsd * 1_000_000
         ? "cost_cap"
         : null;
-  return { paused: reason !== null, reason, balance, period, costMicroUsd };
+  return { paused: reason !== null, access, reason, balance, period, costMicroUsd };
 }

@@ -498,7 +498,8 @@ export function commitmentRoutes(
             paused: z.boolean(),
             reason: z.enum(["access_inactive", "credits_exhausted", "cost_cap"]).nullable(),
             mode: z.enum(["fake", "live"]),
-            credits: z.object({ allowance: z.number(), used: z.number(), remaining: z.number() }),
+            credits: z.object({ allowance: z.number(), used: z.number(), remaining: z.number(), ratio: z.number() }),
+            access: z.object({ active: z.boolean(), reason: z.string(), trialDaysLeft: z.number().int().nullable() }),
           }),
         },
       },
@@ -520,7 +521,10 @@ export function commitmentRoutes(
           allowance: status.balance.allowance,
           used: status.balance.used,
           remaining: status.balance.remaining,
+          // Capped so JSON never carries Infinity (no allowance but some usage).
+          ratio: Math.min(10, Math.round(status.balance.ratio * 1000) / 1000),
         },
+        access: status.access,
       };
     },
   );

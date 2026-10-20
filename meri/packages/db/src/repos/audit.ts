@@ -135,3 +135,13 @@ export async function listAudit(
   const last = items[items.length - 1];
   return { items, nextCursor: rows.length > limit && last ? last.id : null };
 }
+
+/** True when the workspace already has an audit entry with this action (e.g. "first charge" detection). */
+export async function auditActionExists(tx: WorkspaceTx, workspaceId: WorkspaceId, action: string): Promise<boolean> {
+  const [row] = await tx
+    .select({ id: auditLog.id })
+    .from(auditLog)
+    .where(and(eq(auditLog.workspaceId, workspaceId), eq(auditLog.action, action)))
+    .limit(1);
+  return row !== undefined;
+}

@@ -52,3 +52,5 @@ export { prepareBriefings, BRIEFING_LOOKAHEAD_MS, type BriefingsPrepareResult } 
 export { inferTime, TIME_INFER_WINDOW_DAYS, type TimeInferResult } from "./handlers/time-infer";
 export { enqueueTimeInfer } from "./time-trigger";
 export { aiBudget, aiStatus, chargeAiUsage, notifyAiPaused, type AiStatus, type BudgetDecision, type BudgetDenyReason, type BudgetOptions, type UsageRecord } from "./budget";
+export { ANALYTICS_SCHEMAS, track, type AnalyticsPropsOf } from "./analytics";
+export { processBillingEvent, type BillingEventDeps, type BillingEventOutcome } from "./billing-events";

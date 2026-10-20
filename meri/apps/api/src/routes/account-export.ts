@@ -6,6 +6,8 @@ import {
   listClientsFull,
   listCommitments,
   listContacts,
+  getSubscription,
+  listCancellationFeedback,
   listIntegrationAccounts,
   listNotifications,
   listProjects,
@@ -67,7 +69,7 @@ export async function buildAccountExport(
   const ws = input.workspaceId;
   const prefs = await getPreferences(tx, ws);
   const truncated: string[] = [];
-  const [clients, projects, contacts, tasks, commitments, proposals, timeEntries, events, blocks, notifications, activity, accounts] =
+  const [clients, projects, contacts, tasks, commitments, proposals, timeEntries, events, blocks, notifications, activity, accounts, subscription, feedback] =
     await Promise.all([
       listClientsFull(tx, ws, { includeArchived: true }),
       listProjects(tx, ws),
@@ -81,6 +83,8 @@ export async function buildAccountExport(
       drainCapped("notifications", truncated, (cursor) => listNotifications(tx, ws, { limit: PAGE, cursor })),
       drainCapped("activity", truncated, (cursor) => listAudit(tx, ws, PAGE, cursor)),
       listIntegrationAccounts(tx, ws),
+      getSubscription(tx, ws),
+      listCancellationFeedback(tx, ws),
     ]);
   return {
     format: "meri-export/1",
@@ -194,6 +198,11 @@ export async function buildAccountExport(
       createdAt: a.createdAt.toISOString(),
     })),
     connections: accounts.map((a) => ({ provider: a.provider, email: a.email, status: a.status, scopes: a.scopes, lastSyncAt: iso(a.lastSyncAt), createdAt: a.createdAt.toISOString() })),
+    billing: {
+      plan: subscription?.plan ?? "trial",
+      status: subscription?.status ?? "trialing",
+      cancellationFeedback: feedback.map((f) => ({ reason: f.reason, comment: f.comment, createdAt: f.createdAt.toISOString() })),
+    },
   };
 }
 

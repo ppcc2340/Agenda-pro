@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { insertInferredEntries, listAudit, updatePreferences, upsertCalendarEvent, withWorkspace, type AccountIdentity } from "@meri/db";
+import { entitlements, insertInferredEntries, listAudit, updatePreferences, upsertCalendarEvent, withWorkspace, type AccountIdentity } from "@meri/db";
 import { createTestApp, csrf, NOW, type TestApp } from "../test/harness";
 
 interface Entry {
@@ -188,5 +188,23 @@ describe("time entries review and CSV (F-10 AC1/AC2, D-042, D-046)", () => {
     expect((await t.app.inject({ method: "POST", url: `/v1/time-entries/${third ?? ""}/reject`, headers: { cookie, ...csrf } })).statusCode).toBe(409);
     expect((await t.app.inject({ method: "POST", url: `/v1/time-entries/01a15596-f037-71e4-bfce-25b2f4a80b00/reject`, headers: { cookie, ...csrf } })).statusCode).toBe(404);
     expect((await t.app.inject({ url: "/v1/time-entries/export.csv?week=2026-13", headers: { cookie } })).statusCode).toBe(400);
+  });
+  it("the monthly export needs Pro+ (402 naming the plan); with it, the month's approved rows are exported ([L13])", async () => {
+    const res = await t.app.inject({ url: "/v1/time-entries/export.csv?month=2026-10", headers: { cookie } });
+    expect(res.statusCode).toBe(402);
+    expect(res.json<{ code: string; errors: { path: string; message: string }[] }>()).toMatchObject({
+      code: "ENTITLEMENT_REQUIRED",
+      errors: [{ path: "plan", message: "pro_plus" }],
+    });
+    await withWorkspace(t.handle.db, a.workspaceId, (tx) =>
+      tx.update(entitlements).set({ features: ["briefings_unlimited", "advanced_exports"] }),
+    );
+    const ok = await t.app.inject({ url: "/v1/time-entries/export.csv?month=2026-10&status=all", headers: { cookie } });
+    expect(ok.statusCode).toBe(200);
+    expect(ok.headers["content-disposition"]).toContain("meri-tiempo-2026-10.csv");
+    // The month spans both weeks (the 12th and the 19th–21st).
+    const rows = parseCsv(ok.body.slice(1));
+    expect(rows.length - 1).toBeGreaterThanOrEqual(4);
+    expect((await t.app.inject({ url: "/v1/time-entries/export.csv?month=2026-13", headers: { cookie } })).statusCode).toBe(400);
   });
 });

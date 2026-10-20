@@ -177,6 +177,12 @@ export const AccountExportV1 = z.object({
       createdAt: Iso,
     }),
   ),
+  /** Phase 4: plan state and the cancellation survey (the user's own words, F-16). */
+  billing: z.object({
+    plan: z.string(),
+    status: z.string(),
+    cancellationFeedback: z.array(z.object({ reason: z.string(), comment: z.string().nullable(), createdAt: Iso })),
+  }),
 });
 export type AccountExportV1 = z.infer<typeof AccountExportV1>;
 

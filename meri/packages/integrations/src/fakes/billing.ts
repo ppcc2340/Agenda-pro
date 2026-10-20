@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { IntegrationError, type HealthReport } from "../errors";
 import { signWebhook, verifyWebhookSignature } from "../billing/signature";
 import { normalizeStripeEvent, parseStripeJson } from "../billing/stripe-events";
@@ -63,8 +64,11 @@ export class FakeBilling implements BillingProvider {
     return Promise.resolve({ provider: "stripe", mode: "fake", status: "healthy", detail: "FakeBilling" });
   }
 
+  /** Per-instance salt: ids must stay unique across restarts, or a new event would look like a replay. */
+  private readonly instance = randomUUID().slice(0, 8);
+
   private next(prefix: string): string {
-    return `${prefix}_fake_${String(++this.counter)}`;
+    return `${prefix}_fake_${this.instance}_${String(++this.counter)}`;
   }
 
   private session(

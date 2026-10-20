@@ -5,6 +5,7 @@ export * from "./ids";
 export { runMigrations, ensureDevRoles } from "./migrate";
 export {
   audit,
+  auditActionExists,
   listAudit,
   getAuditEntry,
   type AuditContext,

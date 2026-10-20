@@ -21,7 +21,10 @@ import {
   updateTimeEntry,
   type TimeEntryView,
 } from "@meri/db";
+import type { Analytics } from "@meri/integrations";
+import { track } from "@meri/jobs";
 import { ApiError } from "../errors";
+import { assertEntitlement } from "../plugins/entitlements";
 import { requireSession, sessionOf } from "../plugins/session";
 
 const IdParams = z.object({ id: z.string().uuid() });
@@ -60,6 +63,7 @@ const WeekJson = z.object({
 
 export interface TimeRoutesOptions {
   now: () => Date;
+  analytics: Analytics;
 }
 
 export function timeRoutes(app: FastifyInstance, options: TimeRoutesOptions, done: () => void): void {
@@ -272,20 +276,35 @@ export function timeRoutes(app: FastifyInstance, options: TimeRoutesOptions, don
       preHandler: requireSession,
       schema: {
         tags: ["time"],
-        querystring: z.object({ week: WEEK.optional(), clientId: z.string().uuid().optional(), status: z.enum(["all"]).optional() }),
+        querystring: z.object({
+          week: WEEK.optional(),
+          /** [L13] Monthly export: Pro+ (`advanced_exports`); the weekly one stays on every plan. */
+          month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/).optional(),
+          clientId: z.string().uuid().optional(),
+          status: z.enum(["all"]).optional(),
+        }),
       },
     },
     async (request, reply) => {
       const session = sessionOf(request);
       const now = options.now();
-      const { csv, key } = await request.withWorkspace(async (tx) => {
+      const { csv, key, scope, entries } = await request.withWorkspace(async (tx) => {
         const timezone = (await getPreferences(tx, session.workspaceId))?.timezone ?? "UTC";
-        const week = isoWeekRange(request.query.week ?? isoWeekKey(now.getTime(), timezone), timezone);
-        if (!week) throw new ApiError("VALIDATION_FAILED", "Invalid week.");
+        let range: { from: string; to: string; key: string };
+        if (request.query.month) {
+          await assertEntitlement(tx, session.workspaceId, "advanced_exports");
+          const [y, m] = request.query.month.split("-").map(Number) as [number, number];
+          const last = new Date(Date.UTC(y, m, 0)).getUTCDate();
+          range = { from: `${request.query.month}-01`, to: `${request.query.month}-${String(last)}`, key: request.query.month };
+        } else {
+          const week = isoWeekRange(request.query.week ?? isoWeekKey(now.getTime(), timezone), timezone);
+          if (!week) throw new ApiError("VALIDATION_FAILED", "Invalid week.");
+          range = { from: week.days[0] ?? "", to: week.days[6] ?? "", key: week.key };
+        }
         const [items, names, projects] = await Promise.all([
           listTimeEntries(tx, session.workspaceId, {
-            from: week.days[0] ?? "",
-            to: week.days[6] ?? "",
+            from: range.from,
+            to: range.to,
             clientId: request.query.clientId,
             includeRejected: request.query.status === "all",
           }),
@@ -305,8 +324,14 @@ export function timeRoutes(app: FastifyInstance, options: TimeRoutesOptions, don
             status: e.status,
             approvedAt: e.approvedAt ? e.approvedAt.toISOString() : null,
           }));
-        return { csv: timeEntriesCsv(rows), key: week.key };
+        return {
+          csv: timeEntriesCsv(rows),
+          key: range.key,
+          scope: request.query.month ? ("month" as const) : ("week" as const),
+          entries: rows.length,
+        };
       });
+      track(options.analytics, "time_export", session.workspaceId, { scope, entries });
       return reply
         .header("content-type", "text/csv; charset=utf-8")
         .header("content-disposition", `attachment; filename="meri-tiempo-${key}.csv"`)
