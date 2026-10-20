@@ -24,10 +24,10 @@ export interface DispatcherDeps {
 
 /**
  * D-054: a logically deleted workspace (`DELETE /v1/account`) is never dispatched again; its data waits for the
- * purge job. `p` is the alias of the workspace-scoped table the query reads.
+ * purge job. `alias` names the workspace-scoped table the query reads.
  */
-export function activeWorkspace(sql: postgres.Sql): postgres.PendingQuery<postgres.Row[]> {
-  return sql`exists (select 1 from workspaces w where w.id = p.workspace_id and w.deleted_at is null)`;
+export function activeWorkspace(sql: postgres.Sql, alias = "p"): postgres.PendingQuery<postgres.Row[]> {
+  return sql`exists (select 1 from workspaces w where w.id = ${sql(alias)}.workspace_id and w.deleted_at is null)`;
 }
 
 /** Polling fallback (docs/07): every healthy Google account not synced in the last 5 minutes gets a calendar.sync job. */
@@ -57,7 +57,7 @@ export async function dispatchMailPolling(deps: DispatcherDeps, staleMinutes = 5
   const rows = await deps.adminSql<{ id: string; workspaceId: string }[]>`
     select a.id, a.workspace_id as "workspaceId" from integration_accounts a
     where a.provider = 'google' and a.status in ('healthy', 'degraded')
-      and exists (select 1 from workspaces w where w.id = a.workspace_id and w.deleted_at is null)
+      and ${activeWorkspace(deps.adminSql, "a")}
       and a.scopes ? 'https://www.googleapis.com/auth/gmail.readonly'
       and not exists (select 1 from sync_state s where s.integration_account_id = a.id and s.resource = 'gmail.history' and s.updated_at >= ${olderThan})
     order by a.last_sync_at nulls first limit 500`;

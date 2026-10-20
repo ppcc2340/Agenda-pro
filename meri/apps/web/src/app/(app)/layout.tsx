@@ -10,7 +10,8 @@ import { getServerConfig } from "@/server/config";
 /** Authenticated areas. Session validated against the API; incomplete onboarding is redirected. */
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const me = await getMe();
-  if (!me) redirect("/login");
+  // No account behind a (signed) cookie: clear it rather than bounce between /login and the app.
+  if (!me) redirect("/api/session/expired");
   if (!me.onboarded) redirect("/onboarding");
   const t = await getTranslations("app");
   const [clients, prefs, proposals, owed] = await Promise.all([

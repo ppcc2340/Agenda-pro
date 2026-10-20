@@ -14,5 +14,6 @@ export async function GET(request: Request): Promise<Response> {
   if (!env.DEMO_MODE || modes.google === "live") return new Response("Not found", { status: 404 });
   const next = safeNext(new URL(request.url).searchParams.get("next"));
   await signIn("dev", { ...DEMO_USER, redirectTo: next });
+  // Not reached in practice (Auth.js redirects by throwing); kept as an explicit fallback for the type.
   return new Response(null, { status: 302, headers: { location: next } });
 }

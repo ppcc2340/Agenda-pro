@@ -47,6 +47,34 @@ export async function demoLogin(page: Page): Promise<void> {
   ).toContainText(/20 de octubre|october 20/i, { timeout: 5_000 });
 }
 
+/**
+ * Opens «Ver cómo reorganizar» and accepts it. A background replan (debounced after captures, confirmations or a
+ * calendar poll) can supersede the proposal between opening the diff and accepting it (ADR 0003
+ * basePlanVersion): then the latest proposal is opened and accepted once more.
+ */
+export async function acceptReorganization(page: Page, afterOpen?: () => Promise<void>): Promise<void> {
+  const open = async () => {
+    const reorganize = page.getByRole("button", { name: /ver cómo reorganizar/i }).first();
+    await expect(reorganize).toBeVisible({ timeout: 60_000 });
+    await reorganize.click();
+    await expect(page.getByRole("dialog")).toContainText(/ninguna reunión se mueve/i);
+  };
+  const accept = async () => {
+    await page.getByRole("button", { name: /aceptar cambios/i }).click();
+    await expect(page.getByRole("status")).toContainText(/cambios aplicados/i, { timeout: 10_000 });
+  };
+  await open();
+  if (afterOpen) await afterOpen();
+  try {
+    await accept();
+  } catch {
+    await page.goto("/hoy");
+    await hydrated(page);
+    await open();
+    await accept();
+  }
+}
+
 /** Pending proposals whose payload mentions `text` (read through the API rewrite with the page's session). */
 export async function pendingProposalsMentioning(page: Page, text: string): Promise<number> {
   const res = await page.request.get("/api/v1/proposals?status=pending&limit=100");

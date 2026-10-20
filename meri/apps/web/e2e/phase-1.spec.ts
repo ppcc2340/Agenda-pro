@@ -1,5 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
+import { acceptReorganization } from "./helpers";
 
 /**
  * Phase 1 E2E (docs/10): onboarding → connect calendar (fake) → capture → plan → accept → undo, with axe on every
@@ -109,24 +110,7 @@ test("onboarding → capture → plan → connect calendar → reorganize (accep
   await expectAccessible(page, "control");
   await page.goto("/hoy");
   await hydrated(page);
-  const reorganize = page.getByRole("button", { name: /ver cómo reorganizar/i }).first();
-  await expect(reorganize).toBeVisible({ timeout: 60_000 });
-  await reorganize.click();
-  await expect(page.getByRole("dialog")).toContainText(/ninguna reunión se mueve/i);
-  // A background replan (calendar poll, time inference) can supersede the proposal between opening the diff and
-  // accepting it (ADR 0003 basePlanVersion); then the latest proposal is opened and accepted once more.
-  const accept = async () => {
-    await page.getByRole("button", { name: /aceptar cambios/i }).click();
-    await expect(page.getByRole("status")).toContainText(/cambios aplicados/i, { timeout: 10_000 });
-  };
-  try {
-    await accept();
-  } catch {
-    await page.goto("/hoy");
-    await hydrated(page);
-    await page.getByRole("button", { name: /ver cómo reorganizar/i }).first().click();
-    await accept();
-  }
+  await acceptReorganization(page);
 
   await page.goto("/calendario");
   await hydrated(page);

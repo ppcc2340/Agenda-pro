@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { demoLogin, expectAccessible, goto, pendingProposalsMentioning, pressWithKeyboard, reseedDemo, shot } from "./helpers";
+import { acceptReorganization, demoLogin, expectAccessible, goto, pendingProposalsMentioning, pressWithKeyboard, reseedDemo, shot } from "./helpers";
 
 /** Mobile prototype (PROTOTYPE.md, Pixel 7 = 412 px; plus a 360 px pass) over the seeded demo workspace. */
 test.describe.configure({ mode: "serial" });
@@ -75,13 +75,7 @@ test("4. Reorganize from Hoy, undo from Más → Actividad", async ({ page }) =>
   expect(replan.status()).toBe(200);
   expect((await replan.json()) as { outcome: string }).toMatchObject({ outcome: "proposed" });
   await goto(page, "/hoy");
-  const reorganize = page.getByRole("button", { name: /ver cómo reorganizar/i }).first();
-  await expect(reorganize).toBeVisible();
-  await reorganize.click();
-  await expect(page.getByRole("dialog")).toContainText(/ninguna reunión se mueve/i);
-  await shot(page, "mobile-reorganizar");
-  await page.getByRole("button", { name: /aceptar cambios/i }).click();
-  await expect(page.getByRole("status")).toContainText(/cambios aplicados/i);
+  await acceptReorganization(page, () => shot(page, "mobile-reorganizar"));
   await goto(page, "/mas/actividad");
   const accepted = page.locator("li", { hasText: /aceptaste una reorganización/i }).first();
   await accepted.getByRole("button", { name: /deshacer/i }).click();

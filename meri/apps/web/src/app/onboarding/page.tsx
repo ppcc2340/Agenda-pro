@@ -6,7 +6,7 @@ import { apiFetch, getMe } from "@/server/api";
 
 export default async function OnboardingPage() {
   const me = await getMe();
-  if (!me) redirect("/login");
+  if (!me) redirect("/api/session/expired");
   const prefs = await apiFetch<{
     timezone: string;
     workStart: string;

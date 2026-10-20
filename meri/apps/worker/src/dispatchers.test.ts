@@ -3,24 +3,48 @@ import {
   ADMIN_WORKSPACE_CONTEXT,
   bootstrapAccount,
   createClient,
+  createCommitment,
   createDb,
   ensureDevRoles,
   runMigrations,
   softDeleteAccount,
   updatePreferences,
+  upsertCalendarEvent,
+  upsertContact,
+  upsertIntegrationAccount,
   withWorkspace,
   type AccountIdentity,
   type DbHandle,
 } from "@meri/db";
+import { CALENDAR_SCOPES, GMAIL_SCOPES } from "@meri/integrations";
 import { InMemoryDispatcher } from "@meri/jobs";
 import postgres from "postgres";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { dispatchDailyReview, dispatchTimeInfer, type DispatcherDeps } from "./dispatchers";
+import {
+  dispatchBriefingsPrepare,
+  dispatchCalendarPolling,
+  dispatchClientsScan,
+  dispatchDailyReview,
+  dispatchFollowupsScan,
+  dispatchMailPolling,
+  dispatchTimeInfer,
+  type DispatcherDeps,
+} from "./dispatchers";
 
 const TEST_ADMIN_URL = process.env.DATABASE_ADMIN_URL_TEST ?? "postgres://meri:meri@localhost:5432/meri_test";
 const TEST_APP_URL = process.env.DATABASE_URL_TEST ?? "postgres://meri_app:meri_app@localhost:5432/meri_test";
 // Tuesday 10:40 in Madrid: past the default 09:00 work start, so the digest is due.
 const NOW = new Date("2026-10-20T08:40:00Z");
+
+const DISPATCHERS = {
+  dispatchCalendarPolling,
+  dispatchMailPolling,
+  dispatchDailyReview,
+  dispatchFollowupsScan,
+  dispatchClientsScan,
+  dispatchBriefingsPrepare,
+  dispatchTimeInfer,
+} as const;
 
 describe("dispatchers skip logically deleted workspaces (D-054)", () => {
   let handle: DbHandle;
@@ -28,15 +52,37 @@ describe("dispatchers skip logically deleted workspaces (D-054)", () => {
   let alive: AccountIdentity;
   let deleted: AccountIdentity;
 
-  const onboardWithClient = async (label: string): Promise<AccountIdentity> => {
+  /** A workspace that every dispatcher would pick: Google account, unlinked contact, owed commitment, client meeting. */
+  const prepared = async (label: string): Promise<AccountIdentity> => {
     const account = await bootstrapAccount(handle.db, {
       email: `${label}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}@test.local`,
       name: label,
       now: NOW,
     });
-    await withWorkspace(handle.db, account.workspaceId, async (tx) => {
-      await updatePreferences(tx, account.workspaceId, { timezone: "Europe/Madrid" }, { now: NOW, completeOnboarding: true });
-      await createClient(tx, account.workspaceId, { name: `Cliente ${label}`, domains: [] }, NOW);
+    const ws = account.workspaceId;
+    await withWorkspace(handle.db, ws, async (tx) => {
+      await updatePreferences(tx, ws, { timezone: "Europe/Madrid" }, { now: NOW, completeOnboarding: true });
+      const client = await createClient(tx, ws, { name: `Cliente ${label}`, domains: [] }, NOW);
+      const google = await upsertIntegrationAccount(
+        tx,
+        ws,
+        { provider: "google", externalAccountId: `sub-${label}-${ws}`, email: account.email, scopes: [...CALENDAR_SCOPES, ...GMAIL_SCOPES], encryptedTokens: "x", keyId: "local" },
+        NOW,
+      );
+      await upsertContact(tx, ws, { email: `someone@${label}.example` });
+      await createCommitment(
+        tx,
+        ws,
+        { clientId: client.id, direction: "owed_to_me", kind: "explicit", status: "confirmed", counterpartyEmail: "a@b.example", action: "Enviar datos", dueAt: NOW, dueText: null, confidence: 0.9, evidence: null, threadId: null, externalMessageId: null, dedupeHash: `disp:${ws}` },
+        NOW,
+      );
+      const start = new Date(NOW.getTime() + 86_400_000);
+      await upsertCalendarEvent(
+        tx,
+        ws,
+        { integrationAccountId: google.id, externalId: `ev-${ws}`, etag: "1", title: "Reunión", startsAt: start, endsAt: new Date(start.getTime() + 3_600_000), allDay: false, attendees: [], busy: true, origin: "external", clientId: client.id },
+        NOW,
+      );
     });
     return account;
   };
@@ -46,9 +92,12 @@ describe("dispatchers skip logically deleted workspaces (D-054)", () => {
     await ensureDevRoles(TEST_ADMIN_URL);
     handle = createDb(TEST_APP_URL, { max: 2 });
     adminSql = postgres(TEST_ADMIN_URL, { max: 1, connection: { "app.workspace_id": ADMIN_WORKSPACE_CONTEXT } });
-    alive = await onboardWithClient("alive");
-    deleted = await onboardWithClient("deleted");
+    alive = await prepared("alive");
+    deleted = await prepared("deleted");
     await softDeleteAccount(handle.db, { userId: deleted.userId, workspaceId: deleted.workspaceId, now: NOW });
+    // The deletion revokes the connections; put them back to healthy so the polling tests prove the workspace
+    // filter itself, not only the status filter.
+    await adminSql`update integration_accounts set status = 'healthy' where workspace_id = ${deleted.workspaceId}`;
   });
   afterAll(async () => {
     await adminSql.end();
@@ -61,11 +110,11 @@ describe("dispatchers skip logically deleted workspaces (D-054)", () => {
     return dispatcher.jobs.map((j) => (j.payload as { workspaceId: string }).workspaceId);
   };
 
-  it("daily review and time inference reach the live workspace and never the deleted one", async () => {
-    for (const fn of [dispatchDailyReview, dispatchTimeInfer]) {
+  for (const [name, fn] of Object.entries(DISPATCHERS)) {
+    it(`${name} reaches the live workspace and never the deleted one`, async () => {
       const workspaces = await run(fn);
-      expect(workspaces, fn.name).toContain(alive.workspaceId);
-      expect(workspaces, fn.name).not.toContain(deleted.workspaceId);
-    }
-  });
+      expect(workspaces).toContain(alive.workspaceId);
+      expect(workspaces).not.toContain(deleted.workspaceId);
+    });
+  }
 });

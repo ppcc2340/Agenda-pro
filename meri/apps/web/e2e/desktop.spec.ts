@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { demoLogin, expectAccessible, goto, pendingProposalsMentioning, pressWithKeyboard, reseedDemo, shot } from "./helpers";
+import { acceptReorganization, demoLogin, expectAccessible, goto, pendingProposalsMentioning, pressWithKeyboard, reseedDemo, shot } from "./helpers";
 
 /**
  * Desktop prototype (PROTOTYPE.md criteria 1–10, 1280×800) over the seeded demo workspace. Each test signs in
@@ -97,15 +97,10 @@ test("4. Reorganize: real planner diff, accept writes Meri blocks only, audited 
   expect(replan.status()).toBe(200);
   expect((await replan.json()) as { outcome: string }).toMatchObject({ outcome: "proposed" });
   await goto(page, "/hoy");
-  const reorganize = page.getByRole("button", { name: /ver cómo reorganizar/i }).first();
-  await expect(reorganize).toBeVisible();
-  await reorganize.click();
-  const dialog = page.getByRole("dialog");
-  await expect(dialog).toContainText(/ninguna reunión se mueve/i);
-  await shot(page, "desktop-reorganizar");
-  await expectAccessible(page, "reorganizar (dialog)");
-  await page.getByRole("button", { name: /aceptar cambios/i }).click();
-  await expect(page.getByRole("status")).toContainText(/cambios aplicados/i);
+  await acceptReorganization(page, async () => {
+    await shot(page, "desktop-reorganizar");
+    await expectAccessible(page, "reorganizar (dialog)");
+  });
   // Only Meri blocks reach the (fake) calendar: the meeting is still exactly where it was.
   const events = (await (await page.request.get("/api/v1/calendar/events?from=2026-10-20T00:00:00Z&to=2026-10-21T00:00:00Z")).json()) as {
     items: { title: string; origin: string; startsAt: string }[];
