@@ -17,9 +17,10 @@ Fuente para que backend y frontend se construyan en paralelo. El OpenAPI generad
 | Método y ruta | Descripción |
 |---|---|
 | `GET /v1/me` | Usuario, workspace, plan, derechos |
-| `GET /v1/preferences` · `PUT /v1/preferences` | Horario, bloques de concentración, margen, autonomía |
-| `GET /v1/account/export` | Exportación de los datos del usuario (D-050/D-055). Prototipo: un JSON `meri-export/1` con listas blancas por entidad (clientes, asuntos, contactos, tareas, compromisos, propuestas, tiempo, eventos, bloques, avisos, actividad sin `before/after`, conexiones sin tokens ni claves); `Content-Disposition: attachment`, `Cache-Control: no-store`, 5/min, auditoría `account.exported`. El zip con CSV queda para el job de la fase 5 |
-| `DELETE /v1/account` | Eliminación lógica inmediata (D-054): `users.deleted_at`, `workspaces.deleted_at`, conexiones `revoked` con los tokens cifrados borrados y revocados en el proveedor (sin bloquear el borrado), ningún job vuelve a despacharse para ese workspace, auditoría `account.deleted`; 204. Con `DEMO_MODE=1` la cuenta de demo responde 403. La sesión deja de valer en todas las rutas (guardia con caché de 60 s) y el `bootstrap` de ese correo responde 409 hasta que el job `data.delete_account` purgue (fase 5) |
+| `GET /v1/preferences` · `PUT /v1/preferences` | Horario, bloques de concentración, margen, autonomía, `retentionDays` (7–365, ADR 0007) |
+| `GET /v1/account/export?format=json|zip` | Exportación de los datos del usuario (D-050/D-055, ADR 0007). `zip`: `export.json` + un CSV por colección (mismas listas blancas, celdas neutralizadas). Sin `format`: un JSON `meri-export/1` con listas blancas por entidad (clientes, asuntos, contactos, tareas, compromisos, propuestas, tiempo, eventos, bloques, avisos, actividad sin `before/after`, conexiones sin tokens ni claves); `Content-Disposition: attachment`, `Cache-Control: no-store`, 5/min, auditoría `account.exported` con el formato |
+| `POST /v1/account/sessions/revoke` | Cierra la sesión en todos los dispositivos (ADR 0007): `users.sessions_valid_after = now()`; toda sesión con `authTime` anterior responde 401; auditoría `account.sessions_revoked`; 5/min; 204 |
+| `DELETE /v1/account` | Eliminación lógica inmediata (D-054): `users.deleted_at`, `workspaces.deleted_at`, conexiones `revoked` con los tokens cifrados borrados y revocados en el proveedor (sin bloquear el borrado), ningún job vuelve a despacharse para ese workspace, auditoría `account.deleted`; 204. Con `DEMO_MODE=1` la cuenta de demo responde 403. La sesión deja de valer en todas las rutas (guardia con caché de 60 s) y el `bootstrap` de ese correo responde 409 hasta que el job `data.delete_account` purgue (30 días, ADR 0007) |
 
 ### Tareas y captura
 | `GET/POST /v1/tasks` · `GET/PATCH/DELETE /v1/tasks/:id` | CRUD con filtros `status`, `clientId`, `dueBefore` |
@@ -115,11 +116,11 @@ Todas llevan `{ workspaceId, traceId }` además de su carga.
 | `briefings.prepare` | `{ date }` (diario) | Notificación `briefing.suggested` un día antes de una reunión con cliente si `briefing_before_meetings`; sin IA |
 | `planner.replan` | `{ reason }` | Calcula el diff; aplica diffs seguros y crea propuesta `reschedule` para el resto (ADR 0003). Se encola con debounce de 3 s por workspace al cambiar tareas o eventos |
 | `followups.scan` | `{ date }` (cada hora; cada minuto fuera de producción) | Detecta compromisos de terceros vencidos (→ `at_risk`) e hilos enviados sin respuesta tras `followup_days`; una propuesta `followup` por elemento (hash de deduplicación) y aviso agrupado `followups.due` |
-| `data.retention` | `{ date }` (diario) | Purga hilos indexados más antiguos que `min(preferences.retention_days, tope del plan, 365)` con el mismo orden que la desconexión (D-036) |
+| `data.retention` | `{ date }` (diario) | Purga hilos indexados más antiguos que `min(preferences.retention_days, tope del plan, 365)` con el mismo orden que la desconexión (D-036), y propuestas descartadas o caducadas con la misma retención (ADR 0007) |
 | `daily.review` | `{ date }` (cron cada 15 min: workspaces que pasaron su hora de inicio en su zona) | Resumen del día (plantilla, sin IA), uno por día |
 | `billing.usage_rollup` | `{ period }` por workspace (diario y al cerrar el mes) | Consolida créditos, coste de IA, ingreso estimado del catálogo y margen bruto en `billing_rollups` (alarma < 70 % solo con ingresos); aviso `trial.ending` 3 días antes del fin de una prueba sin tarjeta |
 | `daily.close` | `{ date }` (cron cada 15 min: workspaces que pasaron su fin de jornada) | Cierre del día como notificación (plantilla, sin IA), una por día |
-| `data.delete_account` | `{ userId }` | Borrado completo y verificación |
+| `data.delete_account` | `{ workspaceId }` (diario, por cada workspace borrado hace más de 30 días) | Llama a `purge_workspace` (SECURITY DEFINER) con el rol de la app: borra el workspace en cascada, sus usuarios sin otros workspaces y deja un recibo sin datos personales; después borra el cliente en Stripe (ADR 0007) |
 | `integrations.renew_channels` | `{}` (cron) | Renueva `watch` de Gmail y Calendar |
 
 ## Eventos de dominio (internos)
