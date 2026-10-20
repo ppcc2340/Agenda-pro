@@ -19,7 +19,7 @@ Fuente para que backend y frontend se construyan en paralelo. El OpenAPI generad
 | `GET /v1/me` | Usuario, workspace, plan, derechos |
 | `GET /v1/preferences` · `PUT /v1/preferences` | Horario, bloques de concentración, margen, autonomía |
 | `GET /v1/account/export` | Exportación de los datos del usuario (D-050/D-055). Prototipo: un JSON `meri-export/1` con listas blancas por entidad (clientes, asuntos, contactos, tareas, compromisos, propuestas, tiempo, eventos, bloques, avisos, actividad sin `before/after`, conexiones sin tokens ni claves); `Content-Disposition: attachment`, `Cache-Control: no-store`, 5/min, auditoría `account.exported`. El zip con CSV queda para el job de la fase 5 |
-| `DELETE /v1/account` | Eliminación lógica inmediata (D-054): `users.deleted_at`, `workspaces.deleted_at`, conexiones `revoked` (nada vuelve a sincronizarse), auditoría `account.deleted`; 204. La sesión deja de valer en todas las rutas (guardia con caché de 60 s) y el `bootstrap` de ese correo responde 409 hasta que el job `data.delete_account` purgue (fase 5) |
+| `DELETE /v1/account` | Eliminación lógica inmediata (D-054): `users.deleted_at`, `workspaces.deleted_at`, conexiones `revoked` con los tokens cifrados borrados y revocados en el proveedor (sin bloquear el borrado), ningún job vuelve a despacharse para ese workspace, auditoría `account.deleted`; 204. Con `DEMO_MODE=1` la cuenta de demo responde 403. La sesión deja de valer en todas las rutas (guardia con caché de 60 s) y el `bootstrap` de ese correo responde 409 hasta que el job `data.delete_account` purgue (fase 5) |
 
 ### Tareas y captura
 | `GET/POST /v1/tasks` · `GET/PATCH/DELETE /v1/tasks/:id` | CRUD con filtros `status`, `clientId`, `dueBefore` |

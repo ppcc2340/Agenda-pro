@@ -200,7 +200,8 @@ export interface SoftDeleteResult {
 
 /**
  * Logical deletion (D-050/D-054, `DELETE /v1/account`): user and workspace marked deleted, every integration
- * account revoked so no dispatcher syncs it again, one audit row; all in one transaction. Idempotent. The
+ * account revoked with its encrypted tokens wiped (no dispatcher syncs it again), one audit row; all in one
+ * transaction. Idempotent. The
  * physical purge is the phase 5 `data.delete_account` job.
  */
 export async function softDeleteAccount(
@@ -221,7 +222,8 @@ export async function softDeleteAccount(
     await tx.execute(sql`select set_config('app.workspace_id', ${input.workspaceId}, true)`);
     const revoked = await tx
       .update(integrationAccounts)
-      .set({ status: "revoked", lastError: "account deleted" })
+      // The ciphertext goes too (docs/06 §1): the caller revokes the tokens at the provider before this runs.
+      .set({ status: "revoked", lastError: "account deleted", encryptedTokens: "" })
       .where(eq(integrationAccounts.workspaceId, input.workspaceId))
       .returning({ id: integrationAccounts.id });
     await audit(

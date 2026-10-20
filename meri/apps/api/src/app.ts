@@ -134,10 +134,17 @@ export async function buildApp(deps: AppDeps) {
 
   await app.register(healthRoutes, { db: deps.db });
   await app.register(internalRoutes, { db: deps.db, secret: config.env.INTERNAL_API_SECRET, now: deps.now });
-  await app.register(accountRoutes, { db: deps.db, now: deps.now });
+  await app.register(accountRoutes, {
+    db: deps.db,
+    now: deps.now,
+    oauth: deps.integrations.oauth,
+    keys: deps.integrations.kms.keys,
+    demoMode: config.env.DEMO_MODE,
+  });
   await app.register(taskRoutes, { now: deps.now, onTasksChanged: deps.onTasksChanged });
   await app.register(integrationRoutes, {
     now: deps.now,
+    db: deps.db,
     oauth: deps.integrations.oauth,
     keys: deps.integrations.kms.keys,
     dispatcher: deps.dispatcher,

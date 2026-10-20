@@ -14,6 +14,7 @@ import {
   listIntegrationAccounts,
   setIntegrationStatus,
   upsertIntegrationAccount,
+  type Db,
   type IntegrationAccountView,
 } from "@meri/db";
 import { hasCalendarScopes, hasGmailScopes, scopesFor, type GoogleOAuth } from "@meri/integrations";
@@ -23,6 +24,7 @@ import {
   encryptTokens,
   enqueueTimeInfer,
   purgeAccountMail,
+  readTokens,
   type JobDispatcher,
 } from "@meri/jobs";
 import { ApiError } from "../errors";
@@ -75,6 +77,8 @@ const safeEqual = (a: string, b: string): boolean => {
 
 export interface IntegrationRoutesOptions {
   now: () => Date;
+  /** Owner of the token reads done outside a request transaction (revocation on disconnect). */
+  db: Db;
   oauth: GoogleOAuth;
   keys: KeyProvider;
   dispatcher: JobDispatcher;
@@ -268,6 +272,13 @@ export function integrationRoutes(
     },
     async (request, reply) => {
       const session = sessionOf(request);
+      // docs/06 §1: revoking a connection also revokes its token at the provider (after commit, best effort).
+      const tokens = await readTokens({ db: options.db, keys: options.keys }, session.workspaceId, request.params.id).catch(
+        (err: unknown) => {
+          request.log.warn({ err }, "tokens unreadable on disconnect; deleted without revocation");
+          return null;
+        },
+      );
       await request.withWorkspace(async (tx) => {
         const current = await getIntegrationAccount(tx, session.workspaceId, request.params.id);
         if (!current) throw new ApiError("NOT_FOUND", "Integration not found.");
@@ -286,6 +297,11 @@ export function integrationRoutes(
           },
         );
       });
+      const token = tokens?.refreshToken ?? tokens?.accessToken;
+      if (token)
+        await options.oauth.revoke(token).catch((err: unknown) => {
+          request.log.warn({ err }, "provider revocation failed on disconnect");
+        });
       return reply.status(204).send(null);
     },
   );

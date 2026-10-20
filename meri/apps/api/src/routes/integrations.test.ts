@@ -1,3 +1,4 @@
+import type { FakeGoogleOAuth } from "@meri/integrations";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { getEncryptedTokens, withWorkspace, type AccountIdentity } from "@meri/db";
 import type { FakeCalendar } from "@meri/integrations";
@@ -167,6 +168,7 @@ describe("Google Calendar connection (F-04, D-021)", () => {
         })
       ).statusCode,
     ).toBe(202);
+    const revokedBefore = (t.integrations.oauth as FakeGoogleOAuth).revoked.length;
     expect(
       (
         await t.app.inject({
@@ -176,6 +178,8 @@ describe("Google Calendar connection (F-04, D-021)", () => {
         })
       ).statusCode,
     ).toBe(204);
+    // docs/06 §1: disconnecting also revokes the token at the provider.
+    expect((t.integrations.oauth as FakeGoogleOAuth).revoked.length).toBe(revokedBefore + 1);
     expect(
       (await t.app.inject({ url: "/v1/integrations", headers: { cookie: cookieA } })).json<{
         items: unknown[];

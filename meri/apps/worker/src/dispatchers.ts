@@ -22,13 +22,22 @@ export interface DispatcherDeps {
   now: () => Date;
 }
 
+/**
+ * D-054: a logically deleted workspace (`DELETE /v1/account`) is never dispatched again; its data waits for the
+ * purge job. `p` is the alias of the workspace-scoped table the query reads.
+ */
+export function activeWorkspace(sql: postgres.Sql): postgres.PendingQuery<postgres.Row[]> {
+  return sql`exists (select 1 from workspaces w where w.id = p.workspace_id and w.deleted_at is null)`;
+}
+
 /** Polling fallback (docs/07): every healthy Google account not synced in the last 5 minutes gets a calendar.sync job. */
 export async function dispatchCalendarPolling(deps: DispatcherDeps, staleMinutes = 5): Promise<number> {
   const olderThan = new Date(deps.now().getTime() - staleMinutes * 60_000);
   const rows = await deps.adminSql<{ id: string; workspaceId: string }[]>`
-    select id, workspace_id as "workspaceId" from integration_accounts
-    where provider = 'google' and status in ('healthy', 'degraded') and (last_sync_at is null or last_sync_at < ${olderThan})
-    order by last_sync_at nulls first limit 500`;
+    select p.id, p.workspace_id as "workspaceId" from integration_accounts p
+    where p.provider = 'google' and p.status in ('healthy', 'degraded') and ${activeWorkspace(deps.adminSql)}
+      and (p.last_sync_at is null or p.last_sync_at < ${olderThan})
+    order by p.last_sync_at nulls first limit 500`;
   for (const row of rows) {
     await deps.dispatcher.enqueue(
       CalendarSyncJob,
@@ -48,6 +57,7 @@ export async function dispatchMailPolling(deps: DispatcherDeps, staleMinutes = 5
   const rows = await deps.adminSql<{ id: string; workspaceId: string }[]>`
     select a.id, a.workspace_id as "workspaceId" from integration_accounts a
     where a.provider = 'google' and a.status in ('healthy', 'degraded')
+      and exists (select 1 from workspaces w where w.id = a.workspace_id and w.deleted_at is null)
       and a.scopes ? 'https://www.googleapis.com/auth/gmail.readonly'
       and not exists (select 1 from sync_state s where s.integration_account_id = a.id and s.resource = 'gmail.history' and s.updated_at >= ${olderThan})
     order by a.last_sync_at nulls first limit 500`;
@@ -72,7 +82,7 @@ export async function dispatchDailyReview(deps: DispatcherDeps): Promise<number>
   >`
     select p.workspace_id as "workspaceId", p.timezone, p.work_start as "workStart",
       (select max(n.day) from notifications n where n.workspace_id = p.workspace_id and n.kind = 'digest') as "lastDigestDay"
-    from preferences p where p.onboarded_at is not null limit 5000`;
+    from preferences p where p.onboarded_at is not null and ${activeWorkspace(deps.adminSql)} limit 5000`;
   const due = dueForDigest(rows, deps.now());
   for (const d of due) {
     await deps.dispatcher.enqueue(
@@ -92,7 +102,7 @@ export async function dispatchDailyReview(deps: DispatcherDeps): Promise<number>
 export async function dispatchFollowupsScan(deps: DispatcherDeps, everyMs = 3_600_000): Promise<number> {
   const rows = await deps.adminSql<{ workspaceId: string }[]>`
     select p.workspace_id as "workspaceId" from preferences p
-    where p.onboarded_at is not null and (
+    where p.onboarded_at is not null and ${activeWorkspace(deps.adminSql)} and (
       exists (select 1 from integration_accounts a where a.workspace_id = p.workspace_id
               and a.scopes ? 'https://www.googleapis.com/auth/gmail.readonly' and a.status in ('healthy', 'degraded'))
       or exists (select 1 from commitments c where c.workspace_id = p.workspace_id
@@ -115,7 +125,7 @@ export async function dispatchFollowupsScan(deps: DispatcherDeps, everyMs = 3_60
 export async function dispatchClientsScan(deps: DispatcherDeps): Promise<number> {
   const rows = await deps.adminSql<{ workspaceId: string }[]>`
     select p.workspace_id as "workspaceId" from preferences p
-    where p.onboarded_at is not null
+    where p.onboarded_at is not null and ${activeWorkspace(deps.adminSql)}
       and exists (select 1 from contacts c where c.workspace_id = p.workspace_id and c.client_id is null)
     limit 5000`;
   const date = deps.now().toISOString().slice(0, 10);
@@ -135,7 +145,7 @@ export async function dispatchBriefingsPrepare(deps: DispatcherDeps): Promise<nu
   const horizon = new Date(deps.now().getTime() + 2 * 86_400_000);
   const rows = await deps.adminSql<{ workspaceId: string }[]>`
     select p.workspace_id as "workspaceId" from preferences p
-    where p.onboarded_at is not null and p.briefing_before_meetings
+    where p.onboarded_at is not null and ${activeWorkspace(deps.adminSql)} and p.briefing_before_meetings
       and exists (select 1 from calendar_events e where e.workspace_id = p.workspace_id
                   and e.client_id is not null and e.origin = 'external' and e.starts_at between ${deps.now()} and ${horizon})
     limit 5000`;
@@ -155,7 +165,7 @@ export async function dispatchBriefingsPrepare(deps: DispatcherDeps): Promise<nu
 export async function dispatchTimeInfer(deps: DispatcherDeps): Promise<number> {
   const rows = await deps.adminSql<{ workspaceId: string }[]>`
     select p.workspace_id as "workspaceId" from preferences p
-    where p.onboarded_at is not null
+    where p.onboarded_at is not null and ${activeWorkspace(deps.adminSql)}
       and exists (select 1 from clients c where c.workspace_id = p.workspace_id and c.deleted_at is null)
     limit 5000`;
   const date = deps.now().toISOString().slice(0, 10);

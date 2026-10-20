@@ -38,8 +38,10 @@ export const accountGuardPlugin = fp<AccountGuardOptions>((app: FastifyInstance,
     const hit = liveness.get(key);
     const fresh = hit !== undefined && Date.now() - hit.checkedAt < ttl;
     const active = fresh ? hit.active : await isAccountActive(options.db, session.userId, session.workspaceId);
-    if (!fresh) liveness.set(key, { active, checkedAt: Date.now() });
-    if (!active) request.session = null;
+    // A deletion recorded while this lookup was in flight wins: never overwrite the "deleted" sentinel.
+    const deletedMeanwhile = liveness.get(key)?.checkedAt === Number.POSITIVE_INFINITY;
+    if (!fresh && !deletedMeanwhile) liveness.set(key, { active, checkedAt: Date.now() });
+    if (!active || deletedMeanwhile) request.session = null;
   });
   done();
 });

@@ -23,8 +23,9 @@ export const AUTH_SECRET = "test-auth-secret-at-least-32-characters-long";
 export const INTERNAL_SECRET = "test-internal-secret-16+";
 export const NOW = new Date("2026-10-19T10:40:00Z");
 
-export function testConfig(): AppConfig {
+export function testConfig(overrides: Record<string, string> = {}): AppConfig {
   const env = parseEnv({
+    ...overrides,
     NODE_ENV: "test",
     DATABASE_URL: TEST_APP_URL,
     AUTH_SECRET,
@@ -55,9 +56,9 @@ export async function migrateTestDb(): Promise<void> {
 }
 
 export async function createTestApp(
-  options: { rateLimitMax?: number; flags?: FeatureFlagStore } = {},
+  options: { rateLimitMax?: number; flags?: FeatureFlagStore; env?: Record<string, string> } = {},
 ): Promise<TestApp> {
-  const config = testConfig();
+  const config = testConfig(options.env);
   const handle = createDb(TEST_APP_URL, { max: 3 });
   const integrations = createIntegrations(config, { now: () => NOW });
   if (integrations.ai instanceof FakeAiClient) registerFakeAiHandlers(integrations.ai);

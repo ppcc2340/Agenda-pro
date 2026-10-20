@@ -1,7 +1,17 @@
 import { encode } from "@auth/core/jwt";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { isAccountActive, listAudit, withWorkspace, type AccountIdentity } from "@meri/db";
-import { createTestApp, csrf, INTERNAL_SECRET, type TestApp } from "../test/harness";
+import { DEMO_USER } from "@meri/config";
+import {
+  bootstrapAccount,
+  getEncryptedTokens,
+  isAccountActive,
+  listAudit,
+  listIntegrationAccounts,
+  withWorkspace,
+  type AccountIdentity,
+} from "@meri/db";
+import type { FakeGoogleOAuth } from "@meri/integrations";
+import { createTestApp, csrf, INTERNAL_SECRET, NOW, type TestApp } from "../test/harness";
 
 describe("account routes: session, preferences, audit and tenant isolation", () => {
   let t: TestApp;
@@ -184,7 +194,7 @@ describe("account export and deletion (D-050, D-054, D-055)", () => {
     expect(res.headers["content-disposition"]).toMatch(/^attachment; filename="meri-export-\d{4}-\d{2}-\d{2}\.json"$/);
     expect(res.headers["cache-control"]).toBe("no-store");
     const doc = res.json<Record<string, unknown>>();
-    expect(doc).toMatchObject({ format: "meri-export/1", user: { email: a.email } });
+    expect(doc).toMatchObject({ format: "meri-export/1", truncated: [], user: { email: a.email } });
     const text = JSON.stringify(doc);
     expect(text).toContain("Informe para Acme");
     expect(text).toContain("Acme Corp");
@@ -196,7 +206,8 @@ describe("account export and deletion (D-050, D-054, D-055)", () => {
     expect(Object.keys(doc).sort()).toEqual(
       [
         "activity", "blocks", "calendarEvents", "clients", "commitments", "connections", "contacts", "exportedAt",
-        "format", "notifications", "preferences", "projects", "proposals", "tasks", "timeEntries", "user", "workspace",
+        "format", "notifications", "preferences", "projects", "proposals", "tasks", "timeEntries", "truncated", "user",
+        "workspace",
       ].sort(),
     );
     const activity = (await t.app.inject({ url: "/v1/audit", headers: { cookie: cookieA } })).json<{
@@ -256,5 +267,52 @@ describe("account export and deletion (D-050, D-054, D-055)", () => {
     expect(page.items[0]?.action).toBe("account.deleted");
     expect(await isAccountActive(t.handle.db, c.userId, c.workspaceId)).toBe(false);
     expect(await isAccountActive(t.handle.db, d.userId, d.workspaceId)).toBe(true);
+  });
+});
+
+describe("account deletion revokes connections and protects the demo (D-049, D-054)", () => {
+  it("revokes the Google token at the provider and wipes the stored ciphertext", async () => {
+    const t = await createTestApp();
+    try {
+      const acc = await t.createAccount("revoke");
+      const cookie = await t.cookieFor(acc);
+      const start = await t.app.inject({ method: "POST", url: "/v1/integrations/google/connect", headers: { cookie, ...csrf } });
+      const state = start.cookies.find((c) => c.name === "meri.oauth.state")?.value ?? "";
+      const url = new URL(start.json<{ url: string }>().url);
+      const cb = await t.app.inject({ url: `${url.pathname}${url.search}`, headers: { cookie: `${cookie}; meri.oauth.state=${state}` } });
+      expect(cb.statusCode).toBe(302);
+      const [account] = await withWorkspace(t.handle.db, acc.workspaceId, (tx) => listIntegrationAccounts(tx, acc.workspaceId));
+      if (!account) throw new Error("no account");
+      const oauth = t.integrations.oauth as FakeGoogleOAuth;
+      const before = oauth.revoked.length;
+
+      const del = await t.app.inject({ method: "DELETE", url: "/v1/account", headers: { cookie, ...csrf } });
+      expect(del.statusCode).toBe(204);
+      expect(oauth.revoked.length).toBe(before + 1);
+      const row = await withWorkspace(t.handle.db, acc.workspaceId, (tx) => getEncryptedTokens(tx, acc.workspaceId, account.id));
+      expect(row?.encryptedTokens).toBe("");
+      const [after] = await withWorkspace(t.handle.db, acc.workspaceId, (tx) => listIntegrationAccounts(tx, acc.workspaceId));
+      expect(after?.status).toBe("revoked");
+    } finally {
+      await t.close();
+    }
+  });
+
+  it("refuses to delete the shared demo account under DEMO_MODE and leaves it intact", async () => {
+    const t = await createTestApp({ env: { DEMO_MODE: "1" } });
+    try {
+      const demo = await bootstrapAccount(t.handle.db, { email: DEMO_USER.email, name: DEMO_USER.name, now: NOW });
+      const cookie = await t.cookieFor(demo);
+      const res = await t.app.inject({ method: "DELETE", url: "/v1/account", headers: { cookie, ...csrf } });
+      expect(res.statusCode).toBe(403);
+      expect(res.json()).toMatchObject({ code: "FORBIDDEN" });
+      expect(await isAccountActive(t.handle.db, demo.userId, demo.workspaceId)).toBe(true);
+      // Any other account can still be deleted in DEMO_MODE.
+      const other = await t.createAccount("demo-other");
+      const otherCookie = await t.cookieFor(other);
+      expect((await t.app.inject({ method: "DELETE", url: "/v1/account", headers: { cookie: otherCookie, ...csrf } })).statusCode).toBe(204);
+    } finally {
+      await t.close();
+    }
   });
 });

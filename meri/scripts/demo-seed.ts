@@ -62,6 +62,9 @@ export interface SeedResult {
 export async function seedDemo(options: { now: Date; reset?: boolean; databaseUrl: string; adminUrl?: string | undefined; env: NodeJS.ProcessEnv }): Promise<SeedResult> {
   const { now } = options;
   const config = loadConfig({ ...options.env, DATABASE_URL: options.databaseUrl });
+  // The demo only ever runs against the fake adapters and never on a production configuration (D-047).
+  if (config.isProduction || config.modes.google === "live" || config.modes.ai === "live")
+    throw new Error("demo:seed only runs with GOOGLE_MODE=fake and AI_MODE=fake outside production");
   const handle = createDb(options.databaseUrl, { max: 2 });
   const integrations = createIntegrations(config, { now: () => now });
   const deps: HandlerDeps = { db: handle.db, integrations, keys: integrations.kms.keys, logger: createLogger({ name: "demo-seed", level: "warn" }), now: () => now };

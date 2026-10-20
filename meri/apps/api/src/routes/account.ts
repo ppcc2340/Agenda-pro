@@ -1,4 +1,8 @@
-import type { FastifyInstance } from "fastify";
+import type { FastifyBaseLogger, FastifyInstance } from "fastify";
+import { DEMO_USER } from "@meri/config";
+import type { KeyProvider } from "@meri/config/crypto";
+import type { GoogleOAuth } from "@meri/integrations";
+import { readTokens } from "@meri/jobs";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import { z } from "zod";
 import {
@@ -22,7 +26,9 @@ import {
   softDeleteAccount,
   updatePreferences,
   PreferencesValidationError,
+  withWorkspace,
   type Db,
+  type WorkspaceId,
   type WorkspaceTx,
 } from "@meri/db";
 import { ApiError } from "../errors";
@@ -73,7 +79,10 @@ const iso = (d: Date | null) => (d ? d.toISOString() : null);
 const EXPORT_MAX_ROWS = 5000;
 const PAGE = 100;
 
+/** Collections capped at EXPORT_MAX_ROWS are named in the document's `truncated` list (never silently cut). */
 async function drain<T>(
+  name: string,
+  truncated: string[],
   fetchPage: (cursor: string | undefined) => Promise<{ items: T[]; nextCursor: string | null }>,
 ): Promise<T[]> {
   const all: T[] = [];
@@ -83,7 +92,8 @@ async function drain<T>(
     all.push(...page.items);
     cursor = page.nextCursor ?? undefined;
   } while (cursor && all.length < EXPORT_MAX_ROWS);
-  return all;
+  if (cursor || all.length > EXPORT_MAX_ROWS) truncated.push(name);
+  return all.slice(0, EXPORT_MAX_ROWS);
 }
 
 /**
@@ -97,24 +107,26 @@ export async function buildAccountExport(
   const ws = input.workspaceId as Parameters<typeof listClientsFull>[1];
   const prefs = await getPreferences(tx, ws);
   const year = 366 * 86_400_000;
+  const truncated: string[] = [];
   const [clients, projects, contacts, tasks, commitments, proposals, timeEntries, events, blocks, notifications, activity, accounts] =
     await Promise.all([
       listClientsFull(tx, ws, { includeArchived: true }),
       listProjects(tx, ws),
       listContacts(tx, ws),
-      drain((cursor) => listTasks(tx, ws, { includeCompleted: true }, { limit: PAGE, cursor })),
-      drain((cursor) => listCommitments(tx, ws, { includeProposed: true }, { limit: PAGE, cursor })),
-      drain((cursor) => listProposals(tx, ws, {}, { limit: PAGE, cursor })),
+      drain("tasks", truncated, (cursor) => listTasks(tx, ws, { includeCompleted: true }, { limit: PAGE, cursor })),
+      drain("commitments", truncated, (cursor) => listCommitments(tx, ws, { includeProposed: true }, { limit: PAGE, cursor })),
+      drain("proposals", truncated, (cursor) => listProposals(tx, ws, {}, { limit: PAGE, cursor })),
       listTimeEntries(tx, ws, { from: "2000-01-01", to: "2100-01-01", includeRejected: true }),
       listCalendarEvents(tx, ws, { from: new Date(input.now.getTime() - year), to: new Date(input.now.getTime() + year) }),
       listBlocks(tx, ws),
-      drain((cursor) => listNotifications(tx, ws, { limit: PAGE, cursor })),
-      drain((cursor) => listAudit(tx, ws, PAGE, cursor)),
+      drain("notifications", truncated, (cursor) => listNotifications(tx, ws, { limit: PAGE, cursor })),
+      drain("activity", truncated, (cursor) => listAudit(tx, ws, PAGE, cursor)),
       listIntegrationAccounts(tx, ws),
     ]);
   return {
     format: "meri-export/1",
     exportedAt: input.now.toISOString(),
+    truncated,
     user: { email: input.me.email, name: input.me.name, locale: input.me.locale },
     workspace: { name: input.workspace.name, vertical: input.workspace.vertical },
     preferences: prefs ? { ...prefs, onboardedAt: iso(prefs.onboardedAt) } : null,
@@ -229,6 +241,52 @@ export async function buildAccountExport(
 export interface AccountRoutesOptions {
   db: Db;
   now: () => Date;
+  /** Provider revocation on account deletion (docs/06 §1). */
+  oauth: GoogleOAuth;
+  keys: KeyProvider;
+  /** DEMO_MODE (D-049): the shared demo account can never be deleted. */
+  demoMode: boolean;
+}
+
+/**
+ * Reads every connection's tokens before they are wiped, so they can be revoked at the provider after commit.
+ * A token that cannot be decrypted is skipped (it is wiped anyway).
+ */
+export async function collectTokensToRevoke(
+  deps: { db: Db; keys: KeyProvider },
+  workspaceId: WorkspaceId,
+  logger: FastifyBaseLogger,
+): Promise<{ accountId: string; token: string }[]> {
+  const accounts = await withWorkspace(deps.db, workspaceId, (tx) => listIntegrationAccounts(tx, workspaceId));
+  const out: { accountId: string; token: string }[] = [];
+  for (const account of accounts) {
+    try {
+      const tokens = await readTokens(deps, workspaceId, account.id);
+      const token = tokens?.refreshToken ?? tokens?.accessToken;
+      if (token) out.push({ accountId: account.id, token });
+    } catch (err) {
+      logger.warn({ err, accountId: account.id }, "tokens unreadable before deletion; wiped without revocation");
+    }
+  }
+  return out;
+}
+
+/** Best-effort revocation at the provider (never blocks the deletion); each outcome is logged. */
+export async function revokeAtProvider(
+  oauth: GoogleOAuth,
+  items: { accountId: string; token: string }[],
+  logger: FastifyBaseLogger,
+): Promise<number> {
+  let revoked = 0;
+  for (const item of items) {
+    try {
+      await oauth.revoke(item.token);
+      revoked++;
+    } catch (err) {
+      logger.warn({ err, accountId: item.accountId }, "provider revocation failed; the token stays unusable here");
+    }
+  }
+  return revoked;
 }
 
 export function accountRoutes(app: FastifyInstance, options: AccountRoutesOptions, done: () => void): void {
@@ -354,8 +412,19 @@ export function accountRoutes(app: FastifyInstance, options: AccountRoutesOption
     },
     async (request, reply) => {
       const session = sessionOf(request);
-      await softDeleteAccount(options.db, { userId: session.userId, workspaceId: session.workspaceId, now: options.now() });
+      if (options.demoMode && session.email.toLowerCase() === DEMO_USER.email)
+        throw new ApiError("FORBIDDEN", "The demo account cannot be deleted.");
+      const toRevoke = await collectTokensToRevoke(options, session.workspaceId, request.log);
+      const result = await softDeleteAccount(options.db, {
+        userId: session.userId,
+        workspaceId: session.workspaceId,
+        now: options.now(),
+      });
       markAccountDeleted(session.userId, session.workspaceId);
+      if (result.deleted) {
+        const revoked = await revokeAtProvider(options.oauth, toRevoke, request.log);
+        request.log.info({ revoked, connections: toRevoke.length }, "account deleted; provider tokens revoked");
+      }
       return reply.status(204).send(null);
     },
   );
