@@ -1,7 +1,7 @@
 import { DecryptCommand, EncryptCommand, KMSClient } from "@aws-sdk/client-kms";
 import { CryptoError, KeyRing, type KeyProvider, type WrappedKey } from "@meri/config/crypto";
 import { IntegrationError, type HealthReport } from "../errors";
-import type { KmsAdapter, KmsPurpose } from "./index";
+import type { KmsAdapter, KmsPurpose } from "./types";
 
 /** The slice of the AWS SDK client the adapter uses (injected in tests). */
 export interface KmsSend {
