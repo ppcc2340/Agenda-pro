@@ -11,15 +11,14 @@ import { CreditsPanel } from "@/components/control/credits";
 import { PrivacyPanel } from "@/components/control/privacy";
 import { MasHeader } from "@/components/shell/mas-header";
 import { Panel } from "@/components/ui/section";
-import { apiFetch, getMe } from "@/server/api";
+import { apiFetch } from "@/server/api";
 import { getServerConfig } from "@/server/config";
 
 export default async function MasAjustesPage() {
   const t = await getTranslations("mas");
   const tc = await getTranslations("control");
   const tApp = await getTranslations("app");
-  const [me, prefs] = await Promise.all([
-    getMe(),
+  const [prefs] = await Promise.all([
     apiFetch<{
       timezone: string;
       autonomy: Autonomy;
@@ -41,10 +40,13 @@ export default async function MasAjustesPage() {
         </Suspense>
       </Panel>
       <Panel title={tc("ai.title")} desc={tc("ai.desc")}>
-        <AiSettings gmailAutoconfirm={prefs.gmailAutoconfirm} briefingBeforeMeetings={prefs.briefingBeforeMeetings} />
+        <AiSettings
+          gmailAutoconfirm={prefs.gmailAutoconfirm}
+          briefingBeforeMeetings={prefs.briefingBeforeMeetings}
+        />
       </Panel>
       <Panel title={tc("credits.title")} desc={tc("credits.desc")}>
-        <CreditsPanel capCredits={me?.entitlements.aiCreditsMonthly ?? 0} />
+        <CreditsPanel />
       </Panel>
       <Panel title={tc("mailPrivacy.title")} desc={tc("mailPrivacy.desc")}>
         <Suspense fallback={null}>

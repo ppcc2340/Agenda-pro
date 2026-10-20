@@ -18,6 +18,14 @@ const TEMPLATES = [
   "ai.paused",
   "followups.due",
   "briefing.suggested",
+  "ai.paused.access_inactive",
+  "ai.paused.cost_cap",
+  "ai.paused.briefing_allowance",
+  "credits.warning",
+  "credits.exhausted",
+  "trial.ending",
+  "billing.payment_failed",
+  "daily.close",
 ] as const;
 type Template = (typeof TEMPLATES)[number];
 const isTemplate = (s: string): s is Template => (TEMPLATES as readonly string[]).includes(s);
@@ -44,7 +52,7 @@ export function NotificationsPanel({ initial }: { initial: Notification[] }) {
           <div className="min-w-0 flex-1">
             <span className={n.readAt ? "text-ink2" : "font-semibold"}>
               {isTemplate(n.template)
-                ? t(`templates.${n.template.replace(".", "_") as "risk_grouped"}`, n.params)
+                ? t(`templates.${n.template.replaceAll(".", "_") as "risk_grouped"}`, n.params)
                 : n.title}
             </span>
             <div className="num text-[12.5px] text-ink3">
@@ -53,7 +61,13 @@ export function NotificationsPanel({ initial }: { initial: Notification[] }) {
           </div>
           {n.template === "briefing.suggested" ? (
             <Button size="sm" asChild>
-              <Link href={typeof n.params["clientId"] === "string" ? `/clientes/${n.params["clientId"]}?briefing=1` : "/proyectos?tab=clientes"}>
+              <Link
+                href={
+                  typeof n.params["clientId"] === "string"
+                    ? `/clientes/${n.params["clientId"]}?briefing=1`
+                    : "/proyectos?tab=clientes"
+                }
+              >
                 {t("openBriefing")}
               </Link>
             </Button>

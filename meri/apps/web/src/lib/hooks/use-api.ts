@@ -7,6 +7,10 @@ import { useToast } from "@/components/ui/toast";
 import { clientApi, ClientApiError } from "@/lib/client-api";
 import type {
   AiUsage,
+  BillingSubscription,
+  DailyReview,
+  ValueReport,
+  WeeklyReview,
   CalendarEvent,
   Client,
   Commitment,
@@ -35,6 +39,9 @@ export const keys = {
   aiUsage: ["ai-usage"] as const,
   clients: ["clients"] as const,
   time: ["time"] as const,
+  billing: ["billing"] as const,
+  value: ["value-report"] as const,
+  reviews: ["reviews"] as const,
 };
 
 /** Current plan (persisted blocks + last run). Polled: the worker replans in the background after each change. */
@@ -136,6 +143,36 @@ export function useTimeWeek(week?: string) {
 
 export function useAiUsage() {
   return useQuery({ queryKey: keys.aiUsage, queryFn: () => clientApi<AiUsage>("/v1/ai/usage") });
+}
+
+export function useBillingSubscription() {
+  return useQuery({
+    queryKey: keys.billing,
+    queryFn: () => clientApi<BillingSubscription>("/v1/billing/subscription"),
+  });
+}
+
+export function useValueReport(period: "week" | "month") {
+  return useQuery({
+    queryKey: [...keys.value, period],
+    queryFn: () => clientApi<ValueReport>(`/v1/value-report?period=${period}`),
+  });
+}
+
+export function useWeeklyReview() {
+  return useQuery({
+    queryKey: [...keys.reviews, "weekly"],
+    queryFn: () => clientApi<WeeklyReview>("/v1/reviews/weekly"),
+  });
+}
+
+export function useDailyReview(enabled = true) {
+  return useQuery({
+    queryKey: [...keys.reviews, "daily"],
+    queryFn: () => clientApi<DailyReview>("/v1/reviews/daily"),
+    enabled,
+    refetchInterval: 60_000,
+  });
 }
 
 export function useIntegrations() {

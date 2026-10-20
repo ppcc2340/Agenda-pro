@@ -1,4 +1,13 @@
-import { Activity, ChevronRight, Clock, ShieldCheck, Users, type LucideIcon } from "lucide-react";
+import {
+  Activity,
+  BarChart3,
+  ChevronRight,
+  Clock,
+  CreditCard,
+  ShieldCheck,
+  Users,
+  type LucideIcon,
+} from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { PageHeader } from "@/components/shell/app-shell";
@@ -11,9 +20,16 @@ export default async function MasPage() {
   const week = await apiFetch<TimeWeek>("/v1/time-entries").catch(() => null);
   const suggested = week?.items.filter((i) => i.status === "suggested").length ?? 0;
   const rows: { href: string; icon: LucideIcon; label: string; desc: string }[] = [
-    { href: "/mas/tiempo", icon: Clock, label: t("time"), desc: week ? t("timeDesc", { n: suggested }) : t("timeSubtitle") },
+    {
+      href: "/mas/tiempo",
+      icon: Clock,
+      label: t("time"),
+      desc: week ? t("timeDesc", { n: suggested }) : t("timeSubtitle"),
+    },
     { href: "/mas/clientes", icon: Users, label: t("clients"), desc: t("clientsDesc") },
     { href: "/mas/actividad", icon: Activity, label: t("activity"), desc: t("activityDesc") },
+    { href: "/mas/valor", icon: BarChart3, label: t("value"), desc: t("valueDesc") },
+    { href: "/mas/plan", icon: CreditCard, label: t("plan"), desc: t("planDesc") },
     { href: "/mas/ajustes", icon: ShieldCheck, label: t("settings"), desc: t("settingsDesc") },
   ];
   return (

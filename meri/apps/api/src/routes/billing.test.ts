@@ -95,7 +95,7 @@ describe("billing lifecycle (D-058..D-061, D-066, [H1], [M4], [M5])", () => {
 
     const done = await completeVia(url, cookieA);
     expect(done.statusCode).toBe(303);
-    expect(done.headers.location).toBe("http://localhost:3000/control/plan?billing=success");
+    expect(done.headers.location).toBe("http://localhost:3000/control?billing=success#plan");
     expect(await sub()).toMatchObject({
       plan: "pro",
       status: "trialing",

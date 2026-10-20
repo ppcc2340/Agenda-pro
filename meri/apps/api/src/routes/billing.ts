@@ -102,7 +102,7 @@ async function provider<T>(log: FastifyRequest["log"], fn: () => Promise<T>): Pr
 export function billingRoutes(app: FastifyInstance, options: BillingRoutesOptions, done: () => void): void {
   const r = app.withTypeProvider<ZodTypeProvider>();
   const writes = { preHandler: [requireSession, requireIdempotencyKey] };
-  const returnUrl = (status: string) => `${options.appUrl}/control/plan?billing=${status}`;
+  const returnUrl = (status: string) => `${options.appUrl}/control?billing=${status}#plan`;
 
   r.get(
     "/v1/billing/subscription",

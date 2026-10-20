@@ -1,7 +1,10 @@
-import { getFormatter, getTranslations } from "next-intl/server";
+import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { AutonomySelector } from "@/components/control/autonomy";
 import { CreditsPanel } from "@/components/control/credits";
+import { PlanPanel } from "@/components/billing/plan-panel";
+import { ValueReportPanel } from "@/components/billing/value-report";
+import { WeeklyReviewPanel } from "@/components/billing/weekly-review";
 import { PrivacyPanel } from "@/components/control/privacy";
 import { CaptureButton, PageHeader } from "@/components/shell/app-shell";
 import { Suspense } from "react";
@@ -13,10 +16,9 @@ import { ConnectionsPanel } from "@/components/control/connections";
 import { NotificationsPanel } from "@/components/control/notifications-panel";
 import { getServerConfig } from "@/server/config";
 import { Button } from "@/components/ui/button";
-import { Pill } from "@/components/ui/pill";
 import { Panel } from "@/components/ui/section";
 import type { Notification } from "@/lib/types";
-import { apiFetch, getMe } from "@/server/api";
+import { apiFetch } from "@/server/api";
 
 interface Preferences {
   timezone: string;
@@ -44,21 +46,13 @@ interface AuditPage {
 export default async function ControlPage() {
   const t = await getTranslations("control");
   const nav = await getTranslations("nav");
-  const format = await getFormatter();
-  const [me, prefs, audit, notifications] = await Promise.all([
-    getMe(),
+  const [prefs, audit, notifications] = await Promise.all([
     apiFetch<Preferences>("/v1/preferences"),
     apiFetch<AuditPage>("/v1/audit?limit=12"),
     apiFetch<{ items: Notification[] }>("/v1/notifications?limit=20").catch(() => ({ items: [] })),
   ]);
   const { modes, env } = getServerConfig();
   const fakeMode = modes.google === "fake";
-  const KNOWN_STATUS = ["trialing", "active", "past_due", "canceled", "unpaid"] as const;
-  type PlanStatus = (typeof KNOWN_STATUS)[number];
-  const rawStatus = me?.plan.status ?? "trialing";
-  const planStatus: PlanStatus = (KNOWN_STATUS as readonly string[]).includes(rawStatus)
-    ? (rawStatus as PlanStatus)
-    : "trialing";
   return (
     <>
       <PageHeader title={nav("control")} subtitle={t("subtitle")} action={<CaptureButton />} />
@@ -89,20 +83,22 @@ export default async function ControlPage() {
         </Suspense>
       </Panel>
       <Panel title={t("ai.title")} desc={t("ai.desc")}>
-        <AiSettings gmailAutoconfirm={prefs.gmailAutoconfirm} briefingBeforeMeetings={prefs.briefingBeforeMeetings} />
+        <AiSettings
+          gmailAutoconfirm={prefs.gmailAutoconfirm}
+          briefingBeforeMeetings={prefs.briefingBeforeMeetings}
+        />
+      </Panel>
+      <Panel title={t("plan.title")} desc={t("plan.desc")}>
+        <PlanPanel />
       </Panel>
       <Panel title={t("credits.title")} desc={t("credits.desc")}>
-        <CreditsPanel capCredits={me?.entitlements.aiCreditsMonthly ?? 0} />
+        <CreditsPanel />
       </Panel>
-      <Panel
-        title={t("plan.title")}
-        desc={
-          me?.plan.plan === "trial" && me.plan.trialEndsAt
-            ? t("plan.trial", { date: format.dateTime(new Date(me.plan.trialEndsAt), { dateStyle: "long" }) })
-            : t("plan.pro")
-        }
-      >
-        <Pill variant="plain">{t(`plan.status.${planStatus}`)}</Pill>
+      <Panel title={t("value.title")} desc={t("value.desc")}>
+        <ValueReportPanel />
+      </Panel>
+      <Panel title={t("weekly.title")} desc={t("weekly.desc")}>
+        <WeeklyReviewPanel />
       </Panel>
       <Panel title={t("notifications.title")} desc={t("notifications.desc")}>
         <NotificationsPanel initial={notifications.items} />

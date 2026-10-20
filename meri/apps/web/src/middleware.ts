@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-const PUBLIC = ["/login", "/privacy", "/terms", "/api/auth", "/api/demo", "/api/session", "/manifest.webmanifest", "/icon", "/mobile"];
+const PUBLIC = ["/login", "/privacy", "/terms", "/precios", "/api/auth", "/api/demo", "/api/session", "/manifest.webmanifest", "/icon", "/mobile"];
 
 /**
  * Cheap gate: app areas need a session cookie; the real validation happens server-side (auth() + /v1/me).

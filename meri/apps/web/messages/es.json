@@ -227,15 +227,7 @@
     },
     "plan": {
       "title": "Plan",
-      "trial": "Prueba hasta el {date}",
-      "pro": "Plan Pro",
-      "status": {
-        "trialing": "En prueba",
-        "active": "Activo",
-        "past_due": "Pago pendiente",
-        "canceled": "Cancelado",
-        "unpaid": "Impagado"
-      }
+      "desc": "Tu plan, tu prueba y la facturación. Nada se cobra sin tarjeta."
     },
     "notifications": {
       "title": "Avisos",
@@ -247,7 +239,8 @@
         "risk": "Riesgo",
         "proposals": "Propuestas",
         "plan": "Plan",
-        "integration": "Conexión"
+        "integration": "Conexión",
+        "billing": "Facturación"
       },
       "templates": {
         "risk_grouped": "{count, plural, one {Una tarea ha entrado} other {# tareas han entrado}} en riesgo.",
@@ -258,7 +251,15 @@
         "proposals_new": "{count, plural, one {Una propuesta nueva} other {# propuestas nuevas}} en Entrada.",
         "ai_paused": "La IA está en pausa: se alcanzó el tope mensual de {capUsd} USD. Las reglas y el planificador siguen funcionando.",
         "followups_due": "{count, plural, one {Un seguimiento sugerido} other {# seguimientos sugeridos}} en Entrada.",
-        "briefing_suggested": "Reunión «{title}» con {clientName}: abre el briefing antes de ir."
+        "briefing_suggested": "Reunión «{title}» con {clientName}: abre el briefing antes de ir.",
+        "ai_paused_access_inactive": "La IA está en pausa porque tu prueba o tu plan no están activos. El plan y el calendario siguen funcionando.",
+        "ai_paused_cost_cap": "La IA está en pausa: se alcanzó el tope mensual de {capUsd} USD. Las reglas y el planificador siguen funcionando.",
+        "ai_paused_briefing_allowance": "Usaste los briefings con IA de este mes; los siguientes se preparan con reglas.",
+        "credits_warning": "Has usado el 80 % de los créditos de IA de este mes ({allowance}).",
+        "credits_exhausted": "Créditos de IA agotados. La IA queda en pausa; el plan y el calendario siguen funcionando.",
+        "trial_ending": "Tu prueba termina en {days, plural, one {un día} other {# días}}. Añade una tarjeta en Control → Plan para seguir con la IA.",
+        "billing_payment_failed": "No pudimos cobrar tu suscripción. Actualiza el método de pago; tu acceso sigue activo mientras lo reintentamos.",
+        "daily_close": "Cierre del día: {done} hechas, {toReschedule} por reprogramar, {tomorrow} prioridades para mañana."
       },
       "seeInHoy": "Ver en Hoy",
       "seeClients": "Ver clientes",
@@ -274,7 +275,7 @@
       "used": "de {cap} USD este mes",
       "paused": "IA en pausa",
       "pause": "Al llegar al límite, la IA se pausa: las reglas, el calendario y el plan siguen funcionando.",
-      "fakeNote": "Modo de pruebas: el extractor por reglas no consume créditos.",
+      "fakeNote": "Modo de pruebas: los créditos se cuentan igual, pero no hay coste real.",
       "usedAmount": "{used} USD",
       "briefing": "Avisarme un día antes de cada reunión con un cliente",
       "briefingBody": "Meri te sugiere abrir el briefing del cliente. No llama a la IA hasta que lo abras.",
@@ -323,6 +324,14 @@
       "saved": "Vertical guardada.",
       "note": "Cambiar de vertical no borra nada: solo cambia lo que Meri sugiere.",
       "sample": "{words}…"
+    },
+    "value": {
+      "title": "Informe de valor",
+      "desc": "Lo que Meri te ahorró, con el método y las fuentes de cada cifra."
+    },
+    "weekly": {
+      "title": "Revisión semanal",
+      "desc": "Carga frente a capacidad y estimado frente a real. Sin IA."
     }
   },
   "login": {
@@ -918,6 +927,195 @@
     "settings": "Autonomía y privacidad",
     "settingsDesc": "Permisos, conexiones y créditos de IA",
     "account": "Cuenta",
-    "accountDesc": "Tema, idioma y sesión."
+    "accountDesc": "Tema, idioma y sesión.",
+    "plan": "Plan y créditos",
+    "planDesc": "Tu prueba, la facturación y los créditos de IA",
+    "value": "Valor y revisión",
+    "valueDesc": "Informe de valor y revisión semanal"
+  },
+  "pricing": {
+    "title": "Precios",
+    "subtitle": "Todo lo de Meri desde la prueba. Elige el plan cuando veas el valor.",
+    "testNote": "Precios en prueba durante la beta: pueden cambiar antes del lanzamiento.",
+    "privacy": "Privacidad",
+    "terms": "Términos",
+    "interval": "Facturación",
+    "intervals": {
+      "month": "Mensual",
+      "year": "Anual"
+    },
+    "plans": {
+      "pro": {
+        "name": "Pro",
+        "tagline": "Para una persona con hasta 25 clientes."
+      },
+      "pro_plus": {
+        "name": "Pro+",
+        "tagline": "Más clientes, más IA y exportaciones avanzadas."
+      }
+    },
+    "current": "Tu plan",
+    "perMonth": "/ mes",
+    "billedYearly": "{total} al año",
+    "features": {
+      "credits": "{n} créditos de IA al mes",
+      "clients": "Hasta {n} clientes activos",
+      "retention": "Índice de correo de {n} días",
+      "briefings": "{n} briefings con IA al mes",
+      "briefingsUnlimited": "Briefings con IA sin límite",
+      "advancedExports": "Exportación mensual de tiempo"
+    },
+    "choose": "Elegir {plan}",
+    "chooseShort": "Elegir",
+    "startTrial": "Empezar la prueba",
+    "trialNote": "La prueba dura 14 días con {credits} créditos de IA y no pide tarjeta. Nada se borra si no continúas."
+  },
+  "billing": {
+    "loading": "Cargando el plan…",
+    "unavailable": "No pudimos cargar el plan. Inténtalo de nuevo.",
+    "plans": {
+      "trial": "Prueba",
+      "pro": "Pro",
+      "pro_plus": "Pro+"
+    },
+    "fakeMode": "Facturación simulada",
+    "access": {
+      "trial": "En prueba",
+      "trial_card_on_file": "Prueba con tarjeta",
+      "active": "Activo",
+      "past_due": "Pago pendiente",
+      "trial_ended": "Tu prueba terminó",
+      "canceled": "Cancelado",
+      "unpaid": "Impagado",
+      "ending": "Termina al final del periodo"
+    },
+    "trialWithCard": "Tu tarjeta está guardada. El primer cobro será el {date}.",
+    "trialEnds": "La prueba termina el {date} ({days, plural, =0 {hoy} one {queda un día} other {quedan # días}}).",
+    "endsOn": "Tu plan sigue activo hasta el {date}.",
+    "ended": "Tu plan terminó.",
+    "renewsOn": "Se renueva el {date}.",
+    "inactiveNote": "La IA y las altas de clientes están en pausa. El plan, el calendario, tus datos y la exportación siguen funcionando: nada se borra.",
+    "credits": {
+      "of": "de {allowance} créditos este mes",
+      "label": "Créditos de IA usados",
+      "warning": "Has usado el 80 % de los créditos del mes.",
+      "exhausted": "Créditos agotados: la IA queda en pausa hasta el mes que viene o hasta que compres más.",
+      "monthly": "Se renuevan el día 1 de cada mes. El planificador no gasta créditos."
+    },
+    "actions": {
+      "subscribe": "Contratar un plan",
+      "addCard": "Añadir tarjeta",
+      "manage": "Gestionar facturación",
+      "buyCredits": "Comprar créditos",
+      "reactivate": "Reactivar",
+      "cancel": "Cancelar suscripción"
+    },
+    "choose": {
+      "title": "Elige tu plan",
+      "desc": "No se cobra nada hasta que termine tu prueba."
+    },
+    "packs": {
+      "title": "Comprar créditos",
+      "desc": "Un pago único que se suma a los créditos de este mes.",
+      "buy": "{credits} créditos",
+      "expiry": "Los créditos comprados valen hasta el final del mes natural en que los compras."
+    },
+    "returned": {
+      "success": "Listo: tu plan está actualizado.",
+      "credits": "Créditos añadidos a este mes.",
+      "cancelled": "No se hizo ningún cambio.",
+      "portal": "Volviste del portal de facturación."
+    },
+    "cancel": {
+      "title": "Cancelar la suscripción",
+      "desc": "Tu plan seguirá activo hasta el {date}. Después, la IA se pausa y tus datos se conservan.",
+      "keep": "Mantener el plan",
+      "confirm": "Cancelar al final del periodo",
+      "done": "Cancelada. Sigue activa hasta el {date}.",
+      "question": "¿Por qué cancelas?",
+      "reasons": {
+        "price": "Es caro para mí",
+        "not_using": "No lo estoy usando",
+        "missing_feature": "Le falta algo que necesito",
+        "switched_tool": "Me cambio a otra herramienta",
+        "privacy": "Me preocupa la privacidad",
+        "other": "Otro motivo"
+      },
+      "comment": "¿Algo más que quieras contarnos? (opcional)",
+      "privacy": "Tu comentario solo lo lee el equipo de Meri; no se envía a la analítica."
+    },
+    "banner": {
+      "title": "IA en pausa:",
+      "reasons": {
+        "access_inactive": "tu prueba o tu plan no están activos.",
+        "credits_exhausted": "se agotaron los créditos de este mes.",
+        "cost_cap": "se alcanzó el tope de coste mensual."
+      },
+      "keepsWorking": "El plan y el calendario siguen funcionando.",
+      "action": "Ver el plan"
+    }
+  },
+  "value": {
+    "figures": {
+      "commitments_saved": "Compromisos salvados",
+      "deadline_risks_flagged": "Plazos en riesgo detectados a tiempo",
+      "hours_recovered": "Horas recuperadas"
+    },
+    "noData": "Sin datos todavía.",
+    "units": {
+      "commitments": "{n, plural, one {compromiso} other {compromisos}}",
+      "deadlines": "{n, plural, one {plazo} other {plazos}}",
+      "hours": "horas"
+    },
+    "estimated": "estimadas",
+    "how": "¿Cómo se calcula?",
+    "methods": {
+      "commitment_fulfilled_on_time": "Compromiso cumplido antes de su fecha.",
+      "commitment_fulfilled_after_followup": "Compromiso cumplido después de un seguimiento que guardaste desde Meri.",
+      "task_flagged_at_risk_by_planner": "Tarea que el planificador marcó en riesgo antes del plazo.",
+      "third_party_commitment_overdue": "Compromiso de un tercero que Meri detectó vencido.",
+      "inferred_time_approved": "Entrada sugerida desde una reunión o un bloque y aprobada por ti."
+    },
+    "sources": "{n, plural, one {Una fuente} other {# fuentes}}",
+    "sourceTypes": {
+      "task": "Tarea",
+      "commitment": "Compromiso",
+      "time_entry": "Entrada de tiempo"
+    },
+    "minutes": "{n} min",
+    "period": "Periodo",
+    "periods": {
+      "week": "Esta semana",
+      "month": "Este mes"
+    },
+    "loading": "Calculando…",
+    "unavailable": "No pudimos cargar el informe."
+  },
+  "review": {
+    "weekly": {
+      "loading": "Cargando la revisión…",
+      "unavailable": "No pudimos cargar la revisión.",
+      "load": "Carga por día",
+      "dayOff": "{day}: día no laborable",
+      "dayLoad": "{day}: {planned} h planificadas de {capacity} h disponibles",
+      "totals": "{planned} h planificadas de {capacity} h · {done} h hechas",
+      "trend": "{pct, number}% de carga frente a la semana pasada",
+      "estimates": "Estimado frente a real",
+      "noEstimates": "Aún no hay tareas terminadas con estimación esta semana.",
+      "task": "Tarea",
+      "estimated": "Estimado",
+      "actual": "Real",
+      "minutes": "{n} min",
+      "median": "Desviación típica de tus estimaciones: {pct} %."
+    },
+    "daily": {
+      "title": "Cierre del día",
+      "summary": "{done, plural, =0 {Nada terminado} one {Una tarea hecha} other {# tareas hechas}} · {reschedule, plural, =0 {nada por reprogramar} one {una por reprogramar} other {# por reprogramar}} · {pending, plural, =0 {nada pendiente} one {una pendiente} other {# pendientes}}",
+      "done": "Hecho",
+      "toReschedule": "Por reprogramar",
+      "blocked": "Bloqueado",
+      "newRisks": "Riesgos nuevos",
+      "tomorrow": "Prioridades de mañana"
+    }
   }
 }

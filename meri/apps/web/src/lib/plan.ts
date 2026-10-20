@@ -160,7 +160,10 @@ const TOKEN_OF_HEX: Record<string, string> = {
   "#b0407e": "var(--c-4)",
 };
 
-export function clientColorVar(clientId: string | null, clients: { id: string; color?: string | null }[]): string {
+export function clientColorVar(
+  clientId: string | null,
+  clients: { id: string; color?: string | null }[],
+): string {
   if (!clientId) return "var(--ink3)";
   const own = clients.find((c) => c.id === clientId)?.color;
   if (own) return TOKEN_OF_HEX[own.toLowerCase()] ?? own;

@@ -1,5 +1,6 @@
 import { getFormatter, getLocale } from "next-intl/server";
 import { HoyView } from "@/components/plan/hoy-view";
+import { DailyClose } from "@/components/plan/daily-close";
 import { CaptureButton, PageHeader } from "@/components/shell/app-shell";
 import type { Task } from "@/lib/types";
 import { apiFetch } from "@/server/api";
@@ -11,7 +12,9 @@ export default async function HoyPage() {
   const [tasks, prefs, clients, integrations] = await Promise.all([
     apiFetch<{ items: Task[] }>("/v1/tasks?limit=200"),
     apiFetch<{ timezone: string; workStart: string; workEnd: string }>("/v1/preferences"),
-    apiFetch<{ items: { id: string; name: string; color: string | null }[] }>("/v1/clients").catch(() => ({ items: [] })),
+    apiFetch<{ items: { id: string; name: string; color: string | null }[] }>("/v1/clients").catch(() => ({
+      items: [],
+    })),
     apiFetch<{ items: { scopes: string[] }[] }>("/v1/integrations").catch(() => ({ items: [] })),
   ]);
   const gmailConnected = integrations.items.some((i) => i.scopes.some((s) => s.includes("gmail.readonly")));
@@ -29,10 +32,7 @@ export default async function HoyPage() {
   const es = locale === "es";
   return (
     <>
-      <PageHeader
-        title={es ? capitalized.replace(/,\s*/, " ") : capitalized}
-        action={<CaptureButton />}
-      />
+      <PageHeader title={es ? capitalized.replace(/,\s*/, " ") : capitalized} action={<CaptureButton />} />
       <HoyView
         timezone={prefs.timezone}
         workStart={prefs.workStart}
@@ -41,6 +41,11 @@ export default async function HoyPage() {
         now={demoNow ? now.toISOString() : undefined}
         pendingTasks={pending}
         gmailConnected={gmailConnected}
+      />
+      <DailyClose
+        timezone={prefs.timezone}
+        workEnd={prefs.workEnd}
+        now={demoNow ? now.toISOString() : undefined}
       />
     </>
   );

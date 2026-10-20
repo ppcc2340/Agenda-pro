@@ -4,6 +4,7 @@ import type * as React from "react";
 import { signOutAction } from "@/app/actions";
 import { MobileCapture, PaletteProvider } from "@/components/capture/palette";
 import { AppShell } from "@/components/shell/app-shell";
+import { AiPausedBanner } from "@/components/billing/ai-paused-banner";
 import { apiFetch, getMe } from "@/server/api";
 import { isOverdue } from "@/lib/commitments";
 import { getServerConfig } from "@/server/config";
@@ -16,7 +17,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   if (!me.onboarded) redirect("/onboarding");
   const t = await getTranslations("app");
   const [clients, prefs, proposals, owed] = await Promise.all([
-    apiFetch<{ items: { id: string; name: string; color: string | null }[] }>("/v1/clients").catch(() => ({ items: [] })),
+    apiFetch<{ items: { id: string; name: string; color: string | null }[] }>("/v1/clients").catch(() => ({
+      items: [],
+    })),
     apiFetch<{ timezone: string }>("/v1/preferences"),
     apiFetch<{ items: unknown[] }>("/v1/proposals?status=pending&limit=100").catch(() => ({ items: [] })),
     apiFetch<{ items: { status: string; dueAt: string | null }[] }>(
@@ -43,6 +46,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           </>
         }
       >
+        <AiPausedBanner />
         {children}
       </AppShell>
       <MobileCapture data={paletteData} />

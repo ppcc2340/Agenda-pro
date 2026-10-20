@@ -245,12 +245,113 @@ export interface MailExclusion {
   createdAt: string;
 }
 
+export type AiPauseReason = "access_inactive" | "credits_exhausted" | "cost_cap";
+
+export interface AccessView {
+  active: boolean;
+  reason: "trial" | "trial_card_on_file" | "active" | "past_due" | "trial_ended" | "canceled" | "unpaid";
+  trialDaysLeft: number | null;
+}
+
+export interface CreditsView {
+  allowance: number;
+  used: number;
+  remaining: number;
+}
+
 export interface AiUsage {
   period: string;
   usedUsd: number;
   capUsd: number;
   paused: boolean;
+  reason: AiPauseReason | null;
   mode: "fake" | "live";
+  credits: CreditsView & { ratio: number };
+  access: AccessView;
+}
+
+export type PlanCode = "trial" | "pro" | "pro_plus";
+export type BillingInterval = "month" | "year";
+
+export interface BillingSubscription {
+  plan: PlanCode;
+  status: "trialing" | "active" | "past_due" | "canceled" | "unpaid" | "incomplete";
+  interval: BillingInterval | null;
+  trialEndsAt: string | null;
+  currentPeriodEnd: string | null;
+  cancelAtPeriodEnd: boolean;
+  hasPaymentMethod: boolean;
+  hasBillingAccount: boolean;
+  access: AccessView;
+  entitlements: { maxClients: number; aiCreditsMonthly: number; retentionDays: number; features: string[] };
+  credits: CreditsView;
+  mode: "fake" | "live";
+}
+
+export type ValueMethod =
+  | "commitment_fulfilled_on_time"
+  | "commitment_fulfilled_after_followup"
+  | "task_flagged_at_risk_by_planner"
+  | "third_party_commitment_overdue"
+  | "inferred_time_approved";
+
+export interface ValueFigure {
+  key: "commitments_saved" | "deadline_risks_flagged" | "hours_recovered";
+  value: number | null;
+  unit: "commitments" | "deadlines" | "hours";
+  methods: ValueMethod[];
+  estimated: boolean;
+  sources: {
+    type: string;
+    id: string;
+    label: string | null;
+    method: ValueMethod;
+    quantity: number;
+    occurredAt: string;
+  }[];
+}
+
+export interface ValueReport {
+  period: "week" | "month";
+  key: string;
+  from: string;
+  to: string;
+  figures: ValueFigure[];
+}
+
+export interface ReviewItem {
+  taskId: string;
+  title: string;
+  clientId: string | null;
+}
+
+export interface DailyReview {
+  date: string;
+  done: ReviewItem[];
+  pending: ReviewItem[];
+  toReschedule: ReviewItem[];
+  blocked: ReviewItem[];
+  newRisks: ReviewItem[];
+  tomorrow: (ReviewItem & { startsAt: string })[];
+}
+
+export interface WeeklyReview {
+  week: string;
+  days: {
+    day: string;
+    capacityMinutes: number;
+    plannedMinutes: number;
+    completedMinutes: number;
+    load: number | null;
+  }[];
+  totals: { capacityMinutes: number; plannedMinutes: number; completedMinutes: number };
+  estimates: (ReviewItem & { estimateMinutes: number; actualMinutes: number; deltaPct: number })[];
+  medianEstimateErrorPct: number | null;
+  trend: {
+    previousPlannedMinutes: number;
+    previousCompletedMinutes: number;
+    plannedDeltaPct: number | null;
+  } | null;
 }
 
 export interface ClientStats {
@@ -319,7 +420,12 @@ export interface TimeWeek {
   week: string;
   days: string[];
   items: TimeEntry[];
-  summary: { clientId: string | null; clientName: string | null; minutesApproved: number; minutesSuggested: number }[];
+  summary: {
+    clientId: string | null;
+    clientName: string | null;
+    minutesApproved: number;
+    minutesSuggested: number;
+  }[];
   unassignedEvents: { id: string; title: string | null; startsAt: string; endsAt: string; minutes: number }[];
 }
 
