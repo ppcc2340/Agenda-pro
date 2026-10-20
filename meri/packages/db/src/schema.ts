@@ -17,6 +17,7 @@ import {
   boolean,
   jsonb,
   real,
+  bigint,
   date,
   index,
   uniqueIndex,
@@ -375,6 +376,8 @@ export const proposals = pgTable(
     resolvedAt: timestamp("resolved_at", { withTimezone: true }),
     /** Optional dedupe key: at most one PENDING proposal per hash (F-08 AC1 "una única alerta"). */
     dedupeHash: text("dedupe_hash"),
+    /** First time the proposal was listed to the user (analytics `proposal_shown` once per proposal, [M9]). */
+    shownAt: timestamp("shown_at", { withTimezone: true }),
     createdAt: createdAt(),
   },
   (t) => [
@@ -632,7 +635,13 @@ export const valueEvents = pgTable(
     method: text("method").notNull(), // human-readable calculation method shown in UI
     createdAt: createdAt(),
   },
-  (t) => [index("value_ws_type_idx").on(t.workspaceId, t.type, t.createdAt)],
+  (t) => [
+    index("value_ws_type_idx").on(t.workspaceId, t.type, t.createdAt),
+    // D-063: one event per live entity; undo deletes it, so re-approving can emit it again ([M7]).
+    uniqueIndex("value_ws_type_entity_uq")
+      .on(t.workspaceId, t.type, t.entityId)
+      .where(sql`${t.entityId} is not null`),
+  ],
 );
 
 // ---------- Billing ----------
@@ -648,19 +657,81 @@ export const subscriptions = pgTable(
     trialEndsAt: timestamp("trial_ends_at", { withTimezone: true }),
     currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }),
     cancelAtPeriodEnd: boolean("cancel_at_period_end").notNull().default(false),
+    /** 'month' | 'year' once a paid plan exists. */
+    priceInterval: text("price_interval"),
+    hasPaymentMethod: boolean("has_payment_method").notNull().default(false),
+    /** Creation time of the last provider event applied: older events are recorded without effects ([H1]). */
+    lastEventAt: timestamp("last_event_at", { withTimezone: true }),
     updatedAt: updatedAt(),
   },
   (t) => [uniqueIndex("subs_ws_uq").on(t.workspaceId)],
 );
 
+/** Defaults are the trial row of the plan catalogue (`@meri/core` PLANS.trial). */
 export const entitlements = pgTable("entitlements", {
   workspaceId: workspaceId().primaryKey(),
-  maxClients: integer("max_clients").notNull().default(10),
+  maxClients: integer("max_clients").notNull().default(25),
   aiCreditsMonthly: integer("ai_credits_monthly").notNull().default(300),
   retentionDays: integer("retention_days").notNull().default(90),
   features: jsonb("features").$type<string[]>().notNull().default([]),
+  /** [H2] after a downgrade the previous (longer) retention holds until `retention_grace_until`. */
+  previousRetentionDays: integer("previous_retention_days"),
+  retentionGraceUntil: timestamp("retention_grace_until", { withTimezone: true }),
   updatedAt: updatedAt(),
 });
+
+/** Purchased credit packs (D-061); valid until the end of the calendar month they were bought in ([L16]). */
+export const creditGrants = pgTable(
+  "credit_grants",
+  {
+    id: id(),
+    workspaceId: workspaceId(),
+    credits: integer("credits").notNull(),
+    period: text("period").notNull(), // 'YYYY-MM'
+    pack: text("pack").notNull(),
+    /** Provider event that paid for it: a replayed webhook can never grant twice. */
+    sourceEventId: text("source_event_id").notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    uniqueIndex("credit_grants_source_uq").on(t.sourceEventId),
+    index("credit_grants_ws_period_idx").on(t.workspaceId, t.period),
+  ],
+);
+
+/** Per-workspace monthly margin rollup (D-062). Money in micro-USD; revenue is an estimate from the catalogue. */
+export const billingRollups = pgTable(
+  "billing_rollups",
+  {
+    id: id(),
+    workspaceId: workspaceId(),
+    period: text("period").notNull(),
+    plan: text("plan").notNull(),
+    charged: boolean("charged").notNull(),
+    creditsUsed: real("credits_used").notNull().default(0),
+    aiCostMicroUsd: bigint("ai_cost_micro_usd", { mode: "number" }).notNull().default(0),
+    revenueMicroUsd: bigint("revenue_micro_usd", { mode: "number" }).notNull().default(0),
+    infraCostMicroUsd: bigint("infra_cost_micro_usd", { mode: "number" }).notNull().default(0),
+    paymentFeeMicroUsd: bigint("payment_fee_micro_usd", { mode: "number" }).notNull().default(0),
+    grossMarginPct: real("gross_margin_pct"),
+    marginAlarm: boolean("margin_alarm").notNull().default(false),
+    computedAt: timestamp("computed_at", { withTimezone: true }).notNull(),
+  },
+  (t) => [uniqueIndex("billing_rollups_ws_period_uq").on(t.workspaceId, t.period)],
+);
+
+/** D-066 cancellation survey. The free-text comment never leaves the database (not in analytics, not in logs). */
+export const cancellationFeedback = pgTable(
+  "cancellation_feedback",
+  {
+    id: id(),
+    workspaceId: workspaceId(),
+    reason: text("reason").notNull(),
+    comment: text("comment"),
+    createdAt: createdAt(),
+  },
+  (t) => [index("cancel_feedback_ws_idx").on(t.workspaceId, t.createdAt)],
+);
 
 export const stripeEvents = pgTable("stripe_events", {
   id: text("id").primaryKey(), // Stripe event id => idempotency

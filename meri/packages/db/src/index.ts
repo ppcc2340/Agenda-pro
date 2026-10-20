@@ -94,3 +94,6 @@ export * from "./repos/snapshot";
 export * from "./repos/briefings";
 export * from "./repos/time-entries";
 export * from "./repos/search";
+export * from "./repos/billing";
+export * from "./repos/value-events";
+export * from "./repos/rollups";

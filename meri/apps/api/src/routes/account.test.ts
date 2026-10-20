@@ -60,7 +60,7 @@ describe("account routes: session, preferences, audit and tenant isolation", () 
       user: { id: a.userId, email: a.email, name: "alice" },
       workspace: { id: a.workspaceId },
       plan: { plan: "trial", status: "trialing", trialEndsAt: "2026-11-02T10:40:00.000Z" },
-      entitlements: { maxClients: 10, aiCreditsMonthly: 300 },
+      entitlements: { maxClients: 25, aiCreditsMonthly: 300 },
       onboarded: false,
     });
   });

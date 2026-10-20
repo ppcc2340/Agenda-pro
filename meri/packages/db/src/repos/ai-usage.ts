@@ -1,4 +1,5 @@
 import { and, eq, sql } from "drizzle-orm";
+import { CREDIT_COSTS, creditOperationOf } from "@meri/core";
 import { aiUsage } from "../schema";
 import type { WorkspaceTx } from "../workspace";
 import { newId, type WorkspaceId } from "../ids";
@@ -10,11 +11,20 @@ export interface UsageInput {
   outputTokens: number;
   cachedTokens: number;
   costMicroUsd: number;
-  /** Credits consumed (phase 4 wires plans); cost-based default. */
+  /**
+   * Credits charged for this call. Defaults to the catalogue cost of the operation (D-061); pass 0 for the extra
+   * calls of one operation unit so a unit is charged once ([H3]).
+   */
   credits?: number;
 }
 
 export const periodOf = (date: Date): string => date.toISOString().slice(0, 7);
+
+/** Catalogue credits of one call of a request operation (unknown operations cost nothing). */
+export function creditsFor(requestOperation: string): number {
+  const op = creditOperationOf(requestOperation);
+  return op ? CREDIT_COSTS[op] : 0;
+}
 
 /** docs/05 §5: every AI call is measured (tokens + cost) per workspace and month. */
 export async function recordAiUsage(
@@ -32,7 +42,7 @@ export async function recordAiUsage(
     outputTokens: input.outputTokens,
     cachedTokens: input.cachedTokens,
     costMicroUsd: input.costMicroUsd,
-    credits: input.credits ?? input.costMicroUsd / 1_000_000,
+    credits: input.credits ?? creditsFor(input.operation),
     period: periodOf(now),
     createdAt: now,
   });

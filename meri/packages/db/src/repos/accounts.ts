@@ -1,4 +1,5 @@
 import { and, eq, isNull, sql } from "drizzle-orm";
+import { PLANS, entitlementsFor } from "@meri/core";
 import {
   entitlements,
   integrationAccounts,
@@ -75,7 +76,7 @@ export async function bootstrapAccount(db: Db, input: BootstrapInput): Promise<A
       status: "trialing",
       trialEndsAt: new Date(input.now.getTime() + TRIAL_DAYS * 86_400_000),
     });
-    await tx.insert(entitlements).values({ workspaceId });
+    await tx.insert(entitlements).values({ workspaceId, ...entitlementsFor("trial") });
     return true;
   });
   if (!created) {
@@ -144,7 +145,7 @@ export async function getMe(db: Db, userId: UserId, workspaceId: WorkspaceId): P
         currentPeriodEnd: sub?.currentPeriodEnd ?? null,
       },
       entitlements: {
-        maxClients: ent?.maxClients ?? 10,
+        maxClients: ent?.maxClients ?? PLANS.trial.maxClients,
         aiCreditsMonthly: ent?.aiCreditsMonthly ?? 300,
         retentionDays: ent?.retentionDays ?? 90,
         features: ent?.features ?? [],
@@ -166,7 +167,7 @@ export async function getEntitlementRetentionDays(
 /** Plan ceiling on active clients (docs/08 `max_clients`). */
 export async function getEntitlementMaxClients(tx: WorkspaceTx, workspaceId: WorkspaceId): Promise<number> {
   const ent = await tx.query.entitlements.findFirst({ where: eq(entitlements.workspaceId, workspaceId) });
-  return ent?.maxClients ?? 10;
+  return ent?.maxClients ?? PLANS.trial.maxClients;
 }
 
 /**
