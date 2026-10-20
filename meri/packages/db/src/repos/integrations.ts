@@ -1,5 +1,6 @@
-import { and, asc, eq, gte, inArray, lte, sql } from "drizzle-orm";
+import { and, asc, eq, gte, inArray, lte, ne, sql } from "drizzle-orm";
 import { calendarEvents, integrationAccounts, scheduleBlocks, syncState } from "../schema";
+import type { Db } from "../client";
 import type { WorkspaceTx } from "../workspace";
 import { newId, type WorkspaceId } from "../ids";
 
@@ -66,6 +67,42 @@ export async function getEncryptedTokens(
     columns: { encryptedTokens: true, keyId: true },
   });
   return row ?? null;
+}
+
+/**
+ * Every connection that still holds tokens, across workspaces (key rotation, ADR 0007). Only readable through the
+ * admin read context (D-037): call it on an admin connection with `app.workspace_id = '*'`.
+ */
+export async function listTokenHoldingAccounts(db: Db): Promise<{ id: string; workspaceId: string }[]> {
+  return db
+    .select({ id: integrationAccounts.id, workspaceId: integrationAccounts.workspaceId })
+    .from(integrationAccounts)
+    .where(ne(integrationAccounts.status, "revoked"))
+    .orderBy(integrationAccounts.workspaceId, integrationAccounts.id);
+}
+
+/**
+ * Key rotation write (ADR 0007): replaces the ciphertext only if it is still the one that was read, so a token
+ * refresh committed in between is never overwritten. Returns false on a lost race (the caller re-reads).
+ */
+export async function swapEncryptedTokens(
+  tx: WorkspaceTx,
+  workspaceId: WorkspaceId,
+  id: string,
+  change: { expected: string; next: string; keyId: string },
+): Promise<boolean> {
+  const rows = await tx
+    .update(integrationAccounts)
+    .set({ encryptedTokens: change.next, keyId: change.keyId })
+    .where(
+      and(
+        eq(integrationAccounts.workspaceId, workspaceId),
+        eq(integrationAccounts.id, id),
+        eq(integrationAccounts.encryptedTokens, change.expected),
+      ),
+    )
+    .returning({ id: integrationAccounts.id });
+  return rows.length === 1;
 }
 
 export async function upsertIntegrationAccount(
