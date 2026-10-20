@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { acceptReorganization, demoLogin, expectAccessible, goto, pendingProposalsMentioning, pressWithKeyboard, reseedDemo, shot } from "./helpers";
+import { acceptReorganization, demoLogin, expectAccessible, hydrated, goto, pendingProposalsMentioning, pressWithKeyboard, reseedDemo, shot } from "./helpers";
 
 /** Mobile prototype (PROTOTYPE.md, Pixel 7 = 412 px; plus a 360 px pass) over the seeded demo workspace. */
 test.describe.configure({ mode: "serial" });
@@ -87,6 +87,7 @@ test("5. Commitments tab: Me deben with client filter, follow-up draft", async (
   await demoLogin(page);
   await page.getByRole("link", { name: /compromisos/i }).click();
   await page.waitForURL(/tab=compromisos/);
+  await hydrated(page); // a click before hydration can be lost after a client-side navigation
   await page.getByRole("button", { name: /me deben/i }).click();
   await page.getByRole("button", { name: /^acme corp$/i }).click();
   const overdue = page.locator("li", { hasText: /datos de ventas/i }).first();
@@ -104,6 +105,7 @@ test("6. Agenda: day with the day strip, meetings and Meri blocks", async ({ pag
   await demoLogin(page);
   await page.getByRole("link", { name: /agenda/i }).click();
   await page.waitForURL(/calendario/);
+  await hydrated(page); // a click before hydration can be lost after a client-side navigation
   const agenda = page.getByTestId("agenda-view");
   await expect(agenda).toBeVisible();
   await expect(agenda).toContainText(/llamada semanal con acme/i);
@@ -116,14 +118,16 @@ test("7. Más: time (approve), clients and briefings, activity, autonomy and pri
   await demoLogin(page);
   await page.getByRole("link", { name: /^más$/i }).click();
   await page.waitForURL(/\/mas$/);
-  await expect(page.getByRole("link", { name: /tiempo/i })).toContainText(/entradas? sugeridas? por revisar/i);
+  await hydrated(page); // a click before hydration can be lost after a client-side navigation
+  await expect(page.getByRole("link", { name: /^tiempo/i })).toContainText(/entradas? sugeridas? por revisar/i);
   for (const name of [/clientes y briefings/i, /actividad/i, /autonomía y privacidad/i])
     await expect(page.getByRole("link", { name })).toBeVisible();
   await shot(page, "mobile-mas");
   await expectAccessible(page, "más");
 
-  await page.getByRole("link", { name: /tiempo/i }).click();
+  await page.getByRole("link", { name: /^tiempo/i }).click();
   await page.waitForURL(/\/mas\/tiempo/);
+  await hydrated(page); // a click before hydration can be lost after a client-side navigation
   await expect(page.getByRole("button", { name: /capturar/i })).toHaveCount(0);
   await expect(page.getByText(/aprobadas/i).first()).toBeVisible();
   const suggested = page.locator("li", { hasText: /sugerida/i });
@@ -134,9 +138,11 @@ test("7. Más: time (approve), clients and briefings, activity, autonomy and pri
   await expect(page.getByRole("status")).toContainText(/entrada aprobada/i);
   await page.getByRole("link", { name: /^más$/i }).first().click();
   await page.waitForURL(/\/mas$/);
+  await hydrated(page); // a click before hydration can be lost after a client-side navigation
 
   await page.getByRole("link", { name: /clientes y briefings/i }).click();
   await page.waitForURL(/\/mas\/clientes/);
+  await hydrated(page); // a click before hydration can be lost after a client-side navigation
   const rows = page.getByRole("list", { name: /clientes/i }).getByRole("listitem");
   await expect(rows).toHaveCount(4);
   await shot(page, "mobile-clientes");
