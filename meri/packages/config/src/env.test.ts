@@ -60,7 +60,14 @@ describe("resolveModes", () => {
       /GOOGLE_MODE=live requires GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET\. See docs\/blockers\/google-oauth\.md/,
     );
     expect(() => resolveModes(parseEnv({ ...BASE, KMS_PROVIDER: "aws" }))).toThrow(
-      /KMS_KEY_ID.*docs\/blockers\/kms\.md/,
+      /KMS_KEY_ID, AWS_REGION.*docs\/blockers\/kms\.md/,
+    );
+    // ADR 0007 chose AWS KMS: GCP is refused with a pointer, never a half-working adapter.
+    expect(() => resolveModes(parseEnv({ ...BASE, KMS_PROVIDER: "gcp", KMS_KEY_ID: "k" }))).toThrow(
+      /KMS_PROVIDER=gcp is not available yet \(ADR 0007/,
+    );
+    expect(resolveModes(parseEnv({ ...BASE, KMS_PROVIDER: "aws", KMS_KEY_ID: "arn", AWS_REGION: "eu-west-1" })).kms).toBe(
+      "live",
     );
   });
 
@@ -137,6 +144,7 @@ describe("production secrets", () => {
       POSTHOG_KEY: "p",
       KMS_PROVIDER: "aws",
       KMS_KEY_ID: "arn",
+      AWS_REGION: "eu-west-1",
       AUTH_SECRET: "change-me-dev-only-secret-32-bytes-minimum",
     };
     expect(() => loadConfig(prod)).toThrow(/AUTH_SECRET still hold the \.env\.example placeholder/);

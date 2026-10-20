@@ -102,6 +102,8 @@ export function resolveModes(env: Env, blockers: readonly BlockerDefinition[] = 
       );
   }
 
+  if (env.KMS_PROVIDER === "gcp")
+    errors.push("KMS_PROVIDER=gcp is not available yet (ADR 0007 chose AWS KMS). See docs/blockers/kms.md.");
   if (env.KMS_PROVIDER === "local" && !env.LOCAL_MASTER_KEY) {
     errors.push("KMS_PROVIDER=local requires LOCAL_MASTER_KEY (dev only). See docs/blockers/kms.md.");
   }

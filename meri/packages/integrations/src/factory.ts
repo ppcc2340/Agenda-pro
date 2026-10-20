@@ -18,7 +18,7 @@ import { parsePrices } from "./anthropic/prices";
 import { FakeGoogleOAuth } from "./fakes/oauth";
 import type { GoogleOAuth } from "./oauth/types";
 import { FakeNotifier, type Notifier } from "./notify/types";
-import { LocalKms, type KmsAdapter } from "./kms";
+import { AwsKms, LocalKms, type KmsAdapter } from "./kms";
 
 export interface IntegrationsDeps {
   now: () => Date;
@@ -100,10 +100,19 @@ export function createIntegrations(config: AppConfig, deps: IntegrationsDeps): I
         });
   const kms: KmsAdapter =
     env.KMS_PROVIDER === "local"
-      ? new LocalKms(env.LOCAL_MASTER_KEY ?? "")
-      : (() => {
-          throw notYet(`kms-${env.KMS_PROVIDER}`);
-        })();
+      ? new LocalKms(env.LOCAL_MASTER_KEY ?? "", env.LOCAL_PREVIOUS_MASTER_KEYS)
+      : env.KMS_PROVIDER === "aws"
+        ? new AwsKms({
+            keyId: env.KMS_KEY_ID ?? "",
+            region: env.AWS_REGION ?? "",
+            previousKeyIds: (env.KMS_PREVIOUS_KEY_IDS ?? "")
+              .split(",")
+              .map((v) => v.trim())
+              .filter((v) => v.length > 0),
+          })
+        : (() => {
+            throw notYet(`kms-${env.KMS_PROVIDER}`);
+          })();
 
   // Live delivery (push / transactional email) is wired in phase 6; the in-app inbox works regardless.
   const notifier: Notifier = new FakeNotifier();

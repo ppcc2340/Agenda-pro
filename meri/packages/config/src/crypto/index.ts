@@ -1,5 +1,6 @@
 export { CryptoError, type KeyProvider, type WrappedKey } from "./types";
 export { LocalKeyProvider } from "./local";
+export { KeyRing, localKeyId } from "./keyring";
 export {
   encryptEnvelope,
   decryptEnvelope,

@@ -3,7 +3,7 @@
 **Lee:** `docs/06-security-privacy.md` completo, `docs/10-testing-quality.md`.
 
 ## Tareas
-- [ ] P5-01 **Revisión de amenazas (STRIDE)** del flujo de correo/IA/calendar; documento en `docs/threat-model.md`.
+- [x] P5-01 **Revisión de amenazas (STRIDE)** del flujo de correo/IA/calendar; documento en `docs/threat-model.md`.
 - [ ] P5-02 **Hardening:** CSP estricta, CSRF, rate limiting, límites de tamaño, cabeceras de seguridad, validación de redirecciones OAuth, rotación de sesiones.
 - [ ] P5-03 **Cifrado:** integrar KMS real (proveedor elegido), rotación de claves con re-cifrado, copia de seguridad cifrada, prueba de restauración.
 - [ ] P5-04 **Privacidad F-16:** exportación completa (JSON+CSV), eliminación de cuenta (job `data.delete_account`) con verificación, revocación de conexiones desde UI, retención configurable.

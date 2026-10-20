@@ -18,7 +18,7 @@ export { signWebhook, verifyWebhookSignature, SIGNATURE_TOLERANCE_SECONDS } from
 export { normalizeStripeEvent, parseStripeJson, STRIPE_API_VERSION } from "./billing/stripe-events";
 export { PostHogAnalytics, type PostHogOptions } from "./analytics/posthog";
 export { NoopAnalytics } from "./fakes/analytics";
-export { LocalKms, type KmsAdapter } from "./kms";
+export { AwsKms, AwsKeyProvider, LocalKms, type KmsAdapter, type KmsPurpose } from "./kms";
 export { createIntegrations, type Integrations, type IntegrationsDeps } from "./factory";
 export * from "./oauth/types";
 export { FakeGoogleOAuth } from "./fakes/oauth";

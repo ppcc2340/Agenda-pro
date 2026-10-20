@@ -76,7 +76,12 @@ export const EnvSchema = z.object({
 
   KMS_PROVIDER: z.enum(["local", "aws", "gcp"]).default("local"),
   KMS_KEY_ID: optionalString(),
+  /** Retired key ids still accepted for decryption until every blob and backup is rotated (ADR 0007). */
+  KMS_PREVIOUS_KEY_IDS: optionalString(),
+  AWS_REGION: optionalString(),
   LOCAL_MASTER_KEY: optionalString(),
+  /** Comma-separated previous local master keys (dev rotation drills only). */
+  LOCAL_PREVIOUS_MASTER_KEYS: optionalString(),
 
   DEMO_MODE: z
     .preprocess(emptyToUndefined, z.enum(["0", "1", "true", "false"]).default("0"))

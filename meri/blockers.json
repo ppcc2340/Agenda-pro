@@ -97,11 +97,11 @@
       "critical": false,
       "modeVar": "KMS_PROVIDER",
       "modeValuesLive": [
-        "aws",
-        "gcp"
+        "aws"
       ],
       "env": [
-        "KMS_KEY_ID"
+        "KMS_KEY_ID",
+        "AWS_REGION"
       ],
       "fallback": "Clave maestra local (solo desarrollo). Nunca usar con datos reales",
       "unlocks": [
