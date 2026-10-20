@@ -4,6 +4,7 @@ import { AutonomySelector } from "@/components/control/autonomy";
 import { PlanPanel } from "@/components/billing/plan-panel";
 import { ValueReportPanel } from "@/components/billing/value-report";
 import { WeeklyReviewPanel } from "@/components/billing/weekly-review";
+import { PermissionsPanel } from "@/components/control/permissions";
 import { PrivacyPanel } from "@/components/control/privacy";
 import { CaptureButton, PageHeader } from "@/components/shell/app-shell";
 import { Suspense } from "react";
@@ -81,6 +82,9 @@ export default async function ControlPage() {
           <ConnectionsPanel fakeMode={fakeMode} timezone={prefs.timezone} />
         </Suspense>
       </Panel>
+      <Panel title={t("permissions.title")} desc={t("permissions.desc")}>
+        <PermissionsPanel />
+      </Panel>
       <Panel title={t("ai.title")} desc={t("ai.desc")}>
         <AiSettings
           gmailAutoconfirm={prefs.gmailAutoconfirm}
@@ -94,7 +98,7 @@ export default async function ControlPage() {
         <NotificationsPanel initial={notifications.items} />
       </Panel>
       <Panel title={t("activity.title")} desc={t("activity.desc")}>
-        <ActivityList items={audit.items} />
+        <ActivityList items={audit.items} nextCursor={audit.nextCursor} />
       </Panel>
       <Panel title={t("value.title")} desc={t("value.desc")}>
         <ValueReportPanel />

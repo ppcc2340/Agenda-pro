@@ -7,6 +7,7 @@ import { MailPrivacy } from "@/components/control/mail-privacy";
 import { LocaleSwitch } from "@/components/shell/locale-switch";
 import { ThemeToggle } from "@/components/shell/theme-toggle";
 import { ConnectionsPanel } from "@/components/control/connections";
+import { PermissionsPanel } from "@/components/control/permissions";
 import { PrivacyPanel } from "@/components/control/privacy";
 import { MasHeader } from "@/components/shell/mas-header";
 import { Panel } from "@/components/ui/section";
@@ -37,6 +38,9 @@ export default async function MasAjustesPage() {
         <Suspense fallback={null}>
           <ConnectionsPanel fakeMode={modes.google === "fake"} timezone={prefs.timezone} />
         </Suspense>
+      </Panel>
+      <Panel title={tc("permissions.title")} desc={tc("permissions.desc")}>
+        <PermissionsPanel />
       </Panel>
       <Panel title={tc("ai.title")} desc={tc("ai.desc")}>
         <AiSettings

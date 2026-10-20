@@ -519,3 +519,28 @@ describe("GET /v1/account/export?format=zip (F-16, ADR 0007)", () => {
     expect(plain.json<{ format: string }>().format).toBe("meri-export/1");
   });
 });
+
+describe("GET /v1/audit labels and pages (P5-05)", () => {
+  let t: TestApp;
+  beforeAll(async () => {
+    t = await createTestApp();
+  });
+  afterAll(() => t.close());
+
+  it("names the entity of each entry from the workspace's own data and pages with a cursor", async () => {
+    const account = await t.createAccount("audit-labels");
+    const cookie = await t.cookieFor(account);
+    for (const title of ["Revisar contrato", "Enviar factura", "Llamar a Ana"])
+      await t.app.inject({ method: "POST", url: "/v1/tasks", headers: { cookie, ...csrf }, payload: { title } });
+    const first = (await t.app.inject({ url: "/v1/audit?limit=2", headers: { cookie } })).json<{
+      items: { action: string; entityLabel: string | null }[];
+      nextCursor: string | null;
+    }>();
+    expect(first.items.map((i) => i.entityLabel)).toEqual(["Llamar a Ana", "Enviar factura"]);
+    expect(first.nextCursor).not.toBeNull();
+    const second = (
+      await t.app.inject({ url: `/v1/audit?limit=2&cursor=${first.nextCursor ?? ""}`, headers: { cookie } })
+    ).json<{ items: { entityLabel: string | null }[] }>();
+    expect(second.items[0]?.entityLabel).toBe("Revisar contrato");
+  });
+});

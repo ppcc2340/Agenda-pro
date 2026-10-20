@@ -14,7 +14,9 @@ interface AuditPage {
     createdAt: string;
     undoneAt: string | null;
     undoOfAuditId: string | null;
+    entityLabel: string | null;
   }[];
+  nextCursor: string | null;
 }
 
 export default async function MasActividadPage() {
@@ -27,7 +29,7 @@ export default async function MasActividadPage() {
   return (
     <>
       <MasHeader title={t("activity")} subtitle={t("activityDesc")} />
-      <ActivityList items={audit.items} />
+      <ActivityList items={audit.items} nextCursor={audit.nextCursor} />
       <Panel title={tc("notifications.title")} desc={tc("notifications.desc")}>
         <NotificationsPanel initial={notifications.items} />
       </Panel>

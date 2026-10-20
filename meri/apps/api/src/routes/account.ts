@@ -19,6 +19,7 @@ import {
   getSubscription,
   listIntegrationAccounts,
   listAudit,
+  auditEntityLabels,
   softDeleteAccount,
   updatePreferences,
   withWorkspace,
@@ -59,6 +60,8 @@ const AuditEntryView = z.object({
   action: z.string(),
   entityType: z.string().nullable(),
   entityId: z.string().nullable(),
+  /** Title or name of the entity, read from the workspace's own data (null when gone). */
+  entityLabel: z.string().nullable(),
   reason: z.string().nullable(),
   before: z.unknown().nullable(),
   after: z.unknown().nullable(),
@@ -244,12 +247,14 @@ export function accountRoutes(app: FastifyInstance, options: AccountRoutesOption
     },
     async (request) => {
       const session = sessionOf(request);
-      const page = await request.withWorkspace((tx) =>
-        listAudit(tx, session.workspaceId, request.query.limit, request.query.cursor),
-      );
+      const { page, labels } = await request.withWorkspace(async (tx) => {
+        const listed = await listAudit(tx, session.workspaceId, request.query.limit, request.query.cursor);
+        return { page: listed, labels: await auditEntityLabels(tx, session.workspaceId, listed.items) };
+      });
       return {
         items: page.items.map((i) => ({
           ...i,
+          entityLabel: i.entityId ? (labels.get(i.entityId) ?? null) : null,
           undoneAt: iso(i.undoneAt),
           createdAt: i.createdAt.toISOString(),
         })),

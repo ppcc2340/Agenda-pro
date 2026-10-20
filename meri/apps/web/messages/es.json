@@ -192,10 +192,14 @@
         "agreements_recorded": "Registraste los acuerdos de una reunión.",
         "preferences_autonomy_changed": "Cambiaste la autonomía de Meri.",
         "account_exported": "Exportaste tus datos.",
-        "account_deleted": "Eliminaste tu cuenta."
+        "account_deleted": "Eliminaste tu cuenta.",
+        "account_sessions_revoked": "Cerraste la sesión en todos los dispositivos.",
+        "security_keys_rotated": "Meri rotó las claves que protegen tus conexiones.",
+        "mail_retention_applied": "Meri borró correo indexado y propuestas descartadas según tu retención."
       },
       "undoneOf": "Deshecho: {text}",
-      "undoDone": "Acción deshecha."
+      "undoDone": "Acción deshecha.",
+      "more": "Ver más"
     },
     "preferences": {
       "title": "Preferencias",
@@ -331,6 +335,29 @@
     "weekly": {
       "title": "Revisión semanal",
       "desc": "Carga frente a capacidad y estimado frente a real. Sin IA."
+    },
+    "permissions": {
+      "title": "Permisos",
+      "desc": "Lo que cada conexión permite de verdad, y lo que Meri nunca hace.",
+      "loading": "Cargando permisos…",
+      "unavailable": "No pudimos cargar los permisos.",
+      "none": "No hay conexiones: Meri no tiene acceso a tu correo ni a tu calendario.",
+      "account": "Google · {email}",
+      "unknownEmail": "cuenta sin correo",
+      "granted": "Permisos concedidos",
+      "scopes": {
+        "gmailRead": "Leer tus correos: Meri guarda solo metadatos y una cita de hasta 200 caracteres.",
+        "gmailDrafts": "Crear borradores en tu Gmail. Nunca los envía.",
+        "calendarRead": "Ver tus calendarios para planificar alrededor de tus reuniones.",
+        "calendarWrite": "Crear y mover sus propios bloques en el calendario «Meri»."
+      },
+      "neverTitle": "Meri nunca, con ningún permiso:",
+      "never": {
+        "send": "Envía un correo en tu nombre.",
+        "thirdParty": "Cambia reuniones de otras personas sin tu confirmación.",
+        "train": "Usa tus datos para entrenar modelos de IA.",
+        "attachments": "Descarga adjuntos."
+      }
     }
   },
   "login": {

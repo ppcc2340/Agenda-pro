@@ -192,10 +192,14 @@
         "agreements_recorded": "You recorded the agreements of a meeting.",
         "preferences_autonomy_changed": "You changed Meri's autonomy.",
         "account_exported": "You exported your data.",
-        "account_deleted": "You deleted your account."
+        "account_deleted": "You deleted your account.",
+        "account_sessions_revoked": "You signed out on all devices.",
+        "security_keys_rotated": "Meri rotated the keys that protect your connections.",
+        "mail_retention_applied": "Meri deleted indexed mail and dismissed proposals per your retention."
       },
       "undoneOf": "Undone: {text}",
-      "undoDone": "Action undone."
+      "undoDone": "Action undone.",
+      "more": "Show more"
     },
     "preferences": {
       "title": "Preferences",
@@ -331,6 +335,29 @@
     "weekly": {
       "title": "Weekly review",
       "desc": "Load versus capacity and estimate versus actual. No AI."
+    },
+    "permissions": {
+      "title": "Permissions",
+      "desc": "What each connection really allows, and what Meri never does.",
+      "loading": "Loading permissions…",
+      "unavailable": "We could not load the permissions.",
+      "none": "No connections: Meri has no access to your mail or calendar.",
+      "account": "Google · {email}",
+      "unknownEmail": "account without email",
+      "granted": "Granted permissions",
+      "scopes": {
+        "gmailRead": "Read your mail: Meri keeps only metadata and a quote of up to 200 characters.",
+        "gmailDrafts": "Create drafts in your Gmail. It never sends them.",
+        "calendarRead": "See your calendars to plan around your meetings.",
+        "calendarWrite": "Create and move its own blocks in the «Meri» calendar."
+      },
+      "neverTitle": "Meri never, whatever the permission:",
+      "never": {
+        "send": "Sends an email on your behalf.",
+        "thirdParty": "Changes other people's meetings without your confirmation.",
+        "train": "Uses your data to train AI models.",
+        "attachments": "Downloads attachments."
+      }
     }
   },
   "login": {

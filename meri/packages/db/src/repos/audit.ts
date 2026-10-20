@@ -1,5 +1,5 @@
 import { and, desc, eq, lt, inArray } from "drizzle-orm";
-import { auditLog } from "../schema";
+import { auditLog, clients, commitments, projects, tasks } from "../schema";
 import type { WorkspaceTx } from "../workspace";
 import { newAuditId, type AuditId, type UserId, type WorkspaceId } from "../ids";
 
@@ -155,4 +155,47 @@ export async function auditActionExists(
     )
     .limit(1);
   return row !== undefined;
+}
+
+/**
+ * Human labels of the entities an activity page mentions (P5-05): task and asunto titles, client names, commitment
+ * actions — read in the caller's workspace (RLS), one query per type. Missing entities (deleted) get no label.
+ */
+export async function auditEntityLabels(
+  tx: WorkspaceTx,
+  workspaceId: WorkspaceId,
+  entries: readonly Pick<AuditEntry, "entityType" | "entityId">[],
+): Promise<Map<string, string>> {
+  const idsOf = (type: string) =>
+    [...new Set(entries.filter((e) => e.entityType === type && e.entityId).map((e) => e.entityId as string))];
+  const labels = new Map<string, string>();
+  const tasksIds = idsOf("task");
+  if (tasksIds.length > 0)
+    for (const r of await tx
+      .select({ id: tasks.id, label: tasks.title })
+      .from(tasks)
+      .where(and(eq(tasks.workspaceId, workspaceId), inArray(tasks.id, tasksIds))))
+      labels.set(r.id, r.label);
+  const clientIds = idsOf("client");
+  if (clientIds.length > 0)
+    for (const r of await tx
+      .select({ id: clients.id, label: clients.name })
+      .from(clients)
+      .where(and(eq(clients.workspaceId, workspaceId), inArray(clients.id, clientIds))))
+      labels.set(r.id, r.label);
+  const projectIds = idsOf("project");
+  if (projectIds.length > 0)
+    for (const r of await tx
+      .select({ id: projects.id, label: projects.name })
+      .from(projects)
+      .where(and(eq(projects.workspaceId, workspaceId), inArray(projects.id, projectIds))))
+      labels.set(r.id, r.label);
+  const commitmentIds = idsOf("commitment");
+  if (commitmentIds.length > 0)
+    for (const r of await tx
+      .select({ id: commitments.id, label: commitments.action })
+      .from(commitments)
+      .where(and(eq(commitments.workspaceId, workspaceId), inArray(commitments.id, commitmentIds))))
+      labels.set(r.id, r.label);
+  return labels;
 }

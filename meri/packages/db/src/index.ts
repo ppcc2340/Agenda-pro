@@ -7,6 +7,7 @@ export {
   audit,
   auditActionExists,
   listAudit,
+  auditEntityLabels,
   getAuditEntry,
   type AuditContext,
   type AuditEntry,
