@@ -40,6 +40,19 @@ export async function demoLogin(page: Page): Promise<void> {
   await page.getByRole("button", { name: /entrar|continuar|sign in|iniciar/i }).click();
   await page.waitForURL(/\/hoy/);
   await hydrated(page);
+  // Every expectation below assumes the frozen clock: fail fast (and clearly) when the servers run without it.
+  await expect(
+    page.getByRole("heading", { level: 1 }),
+    `start the servers with DEMO_NOW=${DEMO_NOW} (pnpm demo); the demo clock is not frozen`,
+  ).toContainText(/20 de octubre|october 20/i, { timeout: 5_000 });
+}
+
+/** Pending proposals whose payload mentions `text` (read through the API rewrite with the page's session). */
+export async function pendingProposalsMentioning(page: Page, text: string): Promise<number> {
+  const res = await page.request.get("/api/v1/proposals?status=pending&limit=100");
+  expect(res.status()).toBe(200);
+  const body = (await res.json()) as { items: unknown[] };
+  return body.items.filter((p) => JSON.stringify(p).includes(text)).length;
 }
 
 export async function goto(page: Page, url: string): Promise<void> {

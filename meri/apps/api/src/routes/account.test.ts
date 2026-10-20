@@ -1,9 +1,14 @@
 import { encode } from "@auth/core/jwt";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { DEMO_USER } from "@meri/config";
 import {
   bootstrapAccount,
+  createCommitment,
   getEncryptedTokens,
+  insertInferredEntries,
+  insertNotification,
+  softDeleteAccount,
+  upsertCalendarEvent,
   isAccountActive,
   listAudit,
   listIntegrationAccounts,
@@ -11,7 +16,9 @@ import {
   type AccountIdentity,
 } from "@meri/db";
 import type { FakeGoogleOAuth } from "@meri/integrations";
+import { resetAccountGuard } from "../plugins/account-guard";
 import { createTestApp, csrf, INTERNAL_SECRET, NOW, type TestApp } from "../test/harness";
+import { drainCapped } from "./account";
 
 describe("account routes: session, preferences, audit and tenant isolation", () => {
   let t: TestApp;
@@ -311,6 +318,149 @@ describe("account deletion revokes connections and protects the demo (D-049, D-0
       const other = await t.createAccount("demo-other");
       const otherCookie = await t.cookieFor(other);
       expect((await t.app.inject({ method: "DELETE", url: "/v1/account", headers: { cookie: otherCookie, ...csrf } })).statusCode).toBe(204);
+    } finally {
+      await t.close();
+    }
+  });
+});
+
+describe("export drainCapped (D-055)", () => {
+  const pages = (total: number, size: number) => (cursor: string | undefined) => {
+    const start = cursor ? Number(cursor) : 0;
+    const items = Array.from({ length: Math.max(0, Math.min(size, total - start)) }, (_, i) => start + i);
+    const next = start + items.length;
+    return Promise.resolve({ items, nextCursor: items.length === size && next <= total ? String(next) : null });
+  };
+  it("names a collection cut at the cap and returns exactly the cap", async () => {
+    const truncated: string[] = [];
+    const rows = await drainCapped("tasks", truncated, pages(25, 10), 20);
+    expect(rows).toHaveLength(20);
+    expect(truncated).toEqual(["tasks"]);
+  });
+  it("does not mark a collection that has exactly the cap, even when the last page is full", async () => {
+    const truncated: string[] = [];
+    const rows = await drainCapped("tasks", truncated, pages(20, 10), 20);
+    expect(rows).toHaveLength(20);
+    expect(truncated).toEqual([]);
+  });
+});
+
+describe("export of a populated workspace (D-055)", () => {
+  it("fills every collection from the user's data and carries no tokens, ciphertext or mail bodies", async () => {
+    const t = await createTestApp();
+    try {
+      const acc = await t.createAccount("export-full");
+      const cookie = await t.cookieFor(acc);
+      const ws = acc.workspaceId;
+      const post = (url: string, payload: Record<string, unknown>) =>
+        t.app.inject({ method: "POST", url, headers: { cookie, ...csrf }, payload });
+      // Google connected through the real (fake) OAuth flow: tokens are stored encrypted.
+      const start = await post("/v1/integrations/google/connect", {});
+      const state = start.cookies.find((c) => c.name === "meri.oauth.state")?.value ?? "";
+      const url = new URL(start.json<{ url: string }>().url);
+      await t.app.inject({ url: `${url.pathname}${url.search}`, headers: { cookie: `${cookie}; meri.oauth.state=${state}` } });
+      const [account] = await withWorkspace(t.handle.db, ws, (tx) => listIntegrationAccounts(tx, ws));
+      if (!account) throw new Error("no account");
+      const cipher = (await withWorkspace(t.handle.db, ws, (tx) => getEncryptedTokens(tx, ws, account.id)))?.encryptedTokens ?? "";
+      expect(cipher.length).toBeGreaterThan(20);
+
+      const client = (await post("/v1/clients", { name: "Acme Corp", domains: ["acme.com"] })).json<{ id: string }>();
+      const task = (await post("/v1/tasks", { title: "Informe para Acme", clientId: client.id, estimateMinutes: 60 })).json<{ id: string }>();
+      expect((await post("/v1/capture", { text: "Llamar a Acme el jueves, 30 min" })).statusCode).toBeLessThan(300);
+      expect((await post("/v1/plan/replan", {})).statusCode).toBe(200);
+      const MAIL_BODY = "Cuerpo completo del correo que nunca debe exportarse";
+      await withWorkspace(t.handle.db, ws, async (tx) => {
+        await createCommitment(
+          tx,
+          ws,
+          { clientId: client.id, direction: "owed_to_me", kind: "explicit", status: "confirmed", counterpartyEmail: "ana@acme.com", action: "Enviar el contrato", dueAt: NOW, dueText: null, confidence: 0.9, evidence: "te envío el contrato", threadId: null, externalMessageId: null, dedupeHash: "export-full:c1" },
+          NOW,
+        );
+        const event = await upsertCalendarEvent(
+          tx,
+          ws,
+          { integrationAccountId: account.id, externalId: "ev-1", etag: "1", title: "Llamada con Acme", startsAt: new Date(NOW.getTime() - 7_200_000), endsAt: new Date(NOW.getTime() - 3_600_000), allDay: false, attendees: ["ana@acme.com"], busy: true, origin: "external", clientId: client.id },
+          NOW,
+        );
+        await insertInferredEntries(tx, ws, [{ sourceType: "calendar_event", sourceId: event.id, clientId: client.id, taskId: task.id, day: "2026-10-19", minutes: 60, description: "Llamada con Acme" }], NOW);
+        await insertNotification(tx, ws, { kind: "digest", title: "Resumen", body: "Resumen del día", template: "daily_digest", params: {}, refs: [], day: "2026-10-19" }, NOW);
+      });
+
+      const doc = (await t.app.inject({ url: "/v1/account/export", headers: { cookie } })).json<Record<string, unknown[]>>();
+      for (const k of ["clients", "tasks", "commitments", "proposals", "timeEntries", "calendarEvents", "blocks", "notifications", "activity", "connections"])
+        expect(doc[k]?.length ?? 0, k).toBeGreaterThan(0);
+      expect(Object.keys((doc.connections as Record<string, unknown>[])[0] ?? {}).sort()).toEqual(
+        ["createdAt", "email", "lastSyncAt", "provider", "scopes", "status"],
+      );
+      const text = JSON.stringify(doc);
+      expect(text).not.toContain(cipher.slice(0, 24));
+      expect(text).not.toContain(MAIL_BODY);
+      expect(text).toContain("te envío el contrato"); // the ≤ 200-char evidence the user already sees is theirs
+      const suspicious = walkKeys(doc).filter((k) => /token|secret|encrypted|refresh|access|keyId|cursor|bodyText/i.test(k));
+      expect(suspicious).toEqual([]);
+    } finally {
+      await t.close();
+    }
+  });
+});
+
+function walkKeys(value: unknown, found: string[] = []): string[] {
+  if (Array.isArray(value)) value.forEach((v) => walkKeys(v, found));
+  else if (value && typeof value === "object")
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      found.push(k);
+      walkKeys(v, found);
+    }
+  return found;
+}
+
+describe("deletion edge cases (D-054)", () => {
+  it("still deletes and revokes the connection when the provider revocation fails", async () => {
+    const t = await createTestApp();
+    try {
+      const acc = await t.createAccount("revoke-fails");
+      const cookie = await t.cookieFor(acc);
+      const start = await t.app.inject({ method: "POST", url: "/v1/integrations/google/connect", headers: { cookie, ...csrf } });
+      const state = start.cookies.find((c) => c.name === "meri.oauth.state")?.value ?? "";
+      const url = new URL(start.json<{ url: string }>().url);
+      await t.app.inject({ url: `${url.pathname}${url.search}`, headers: { cookie: `${cookie}; meri.oauth.state=${state}` } });
+      const oauth = t.integrations.oauth as FakeGoogleOAuth;
+      const spy = vi.spyOn(oauth, "revoke").mockRejectedValueOnce(new Error("provider down"));
+      const del = await t.app.inject({ method: "DELETE", url: "/v1/account", headers: { cookie, ...csrf } });
+      expect(del.statusCode).toBe(204);
+      expect(spy).toHaveBeenCalledTimes(1);
+      const [after] = await withWorkspace(t.handle.db, acc.workspaceId, (tx) => listIntegrationAccounts(tx, acc.workspaceId));
+      expect(after?.status).toBe("revoked");
+      spy.mockRestore();
+    } finally {
+      await t.close();
+    }
+  });
+
+  it("softDeleteAccount is idempotent at the repository level and audits once", async () => {
+    const t = await createTestApp();
+    try {
+      const acc = await t.createAccount("soft-twice");
+      const first = await softDeleteAccount(t.handle.db, { userId: acc.userId, workspaceId: acc.workspaceId, now: NOW });
+      const second = await softDeleteAccount(t.handle.db, { userId: acc.userId, workspaceId: acc.workspaceId, now: NOW });
+      expect(first.deleted).toBe(true);
+      expect(second).toEqual({ deleted: false, revokedAccounts: 0 });
+      const page = await withWorkspace(t.handle.db, acc.workspaceId, (tx) => listAudit(tx, acc.workspaceId, 50));
+      expect(page.items.filter((i) => i.action === "account.deleted")).toHaveLength(1);
+    } finally {
+      await t.close();
+    }
+  });
+
+  it("a deletion made elsewhere (another API instance) is learnt from the database once the cache is reset", async () => {
+    const t = await createTestApp();
+    try {
+      const acc = await t.createAccount("elsewhere");
+      const cookie = await t.cookieFor(acc);
+      expect((await t.app.inject({ url: "/v1/me", headers: { cookie } })).statusCode).toBe(200);
+      await softDeleteAccount(t.handle.db, { userId: acc.userId, workspaceId: acc.workspaceId, now: NOW });
+      resetAccountGuard(); // stands in for the 60 s TTL expiring
+      expect((await t.app.inject({ url: "/v1/tasks", headers: { cookie } })).statusCode).toBe(401);
     } finally {
       await t.close();
     }

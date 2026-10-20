@@ -79,11 +79,15 @@ const iso = (d: Date | null) => (d ? d.toISOString() : null);
 const EXPORT_MAX_ROWS = 5000;
 const PAGE = 100;
 
-/** Collections capped at EXPORT_MAX_ROWS are named in the document's `truncated` list (never silently cut). */
-async function drain<T>(
+/**
+ * Reads pages until the collection ends or exceeds `max`; a collection cut at `max` is named in `truncated`
+ * (never silently cut). Reading one row past the cap tells "exactly max" apart from "more than max".
+ */
+export async function drainCapped<T>(
   name: string,
   truncated: string[],
   fetchPage: (cursor: string | undefined) => Promise<{ items: T[]; nextCursor: string | null }>,
+  max = EXPORT_MAX_ROWS,
 ): Promise<T[]> {
   const all: T[] = [];
   let cursor: string | undefined;
@@ -91,9 +95,9 @@ async function drain<T>(
     const page = await fetchPage(cursor);
     all.push(...page.items);
     cursor = page.nextCursor ?? undefined;
-  } while (cursor && all.length < EXPORT_MAX_ROWS);
-  if (cursor || all.length > EXPORT_MAX_ROWS) truncated.push(name);
-  return all.slice(0, EXPORT_MAX_ROWS);
+  } while (cursor && all.length <= max);
+  if (all.length > max) truncated.push(name);
+  return all.slice(0, max);
 }
 
 /**
@@ -113,14 +117,14 @@ export async function buildAccountExport(
       listClientsFull(tx, ws, { includeArchived: true }),
       listProjects(tx, ws),
       listContacts(tx, ws),
-      drain("tasks", truncated, (cursor) => listTasks(tx, ws, { includeCompleted: true }, { limit: PAGE, cursor })),
-      drain("commitments", truncated, (cursor) => listCommitments(tx, ws, { includeProposed: true }, { limit: PAGE, cursor })),
-      drain("proposals", truncated, (cursor) => listProposals(tx, ws, {}, { limit: PAGE, cursor })),
+      drainCapped("tasks", truncated, (cursor) => listTasks(tx, ws, { includeCompleted: true }, { limit: PAGE, cursor })),
+      drainCapped("commitments", truncated, (cursor) => listCommitments(tx, ws, { includeProposed: true }, { limit: PAGE, cursor })),
+      drainCapped("proposals", truncated, (cursor) => listProposals(tx, ws, {}, { limit: PAGE, cursor })),
       listTimeEntries(tx, ws, { from: "2000-01-01", to: "2100-01-01", includeRejected: true }),
       listCalendarEvents(tx, ws, { from: new Date(input.now.getTime() - year), to: new Date(input.now.getTime() + year) }),
       listBlocks(tx, ws),
-      drain("notifications", truncated, (cursor) => listNotifications(tx, ws, { limit: PAGE, cursor })),
-      drain("activity", truncated, (cursor) => listAudit(tx, ws, PAGE, cursor)),
+      drainCapped("notifications", truncated, (cursor) => listNotifications(tx, ws, { limit: PAGE, cursor })),
+      drainCapped("activity", truncated, (cursor) => listAudit(tx, ws, PAGE, cursor)),
       listIntegrationAccounts(tx, ws),
     ]);
   return {

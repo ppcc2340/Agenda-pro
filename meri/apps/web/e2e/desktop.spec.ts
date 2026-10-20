@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { demoLogin, expectAccessible, goto, pressWithKeyboard, reseedDemo, shot } from "./helpers";
+import { demoLogin, expectAccessible, goto, pendingProposalsMentioning, pressWithKeyboard, reseedDemo, shot } from "./helpers";
 
 /**
  * Desktop prototype (PROTOTYPE.md criteria 1–10, 1280×800) over the seeded demo workspace. Each test signs in
@@ -8,6 +8,11 @@ import { demoLogin, expectAccessible, goto, pressWithKeyboard, reseedDemo, shot 
 test.describe.configure({ mode: "serial" });
 test.beforeAll(() => {
   reseedDemo();
+});
+// Test 4 shortens the work day to force a reorganisation; restore it whatever the outcome.
+test.afterEach(async ({ page }, info) => {
+  if (!info.title.startsWith("4.")) return;
+  await page.request.put("/api/v1/preferences", { headers: { "x-requested-with": "meri" }, data: { workEnd: "18:00" } });
 });
 
 const BLOCKS = 'main button[aria-pressed][aria-label*="–"]';
@@ -54,8 +59,10 @@ test("2. Capture with Ctrl K: dashed chips from the real parser, proposal in Ent
   const elapsed = Date.now() - started;
   test.info().annotations.push({ type: "capture-ms", description: String(elapsed) });
   expect(elapsed).toBeLessThan(1000);
-  // Undo from the toast removes the proposal.
+  // The proposal really reached Entrada; undo from the toast removes it (wait for the API, not for a reload).
+  await expect.poll(() => pendingProposalsMentioning(page, "Informe para Acme")).toBe(1);
   await page.getByRole("status").getByRole("button", { name: /deshacer/i }).click();
+  await expect.poll(() => pendingProposalsMentioning(page, "Informe para Acme")).toBe(0);
   await goto(page, "/entrada");
   await expect(page.locator("article", { hasText: /informe para acme/i })).toHaveCount(0);
 });
@@ -110,7 +117,6 @@ test("4. Reorganize: real planner diff, accept writes Meri blocks only, audited 
   await accepted.getByRole("button", { name: /deshacer/i }).click();
   await expect(page.getByRole("status")).toContainText(/deshecha/i);
   await expect(accepted).toContainText(/deshecho/i);
-  expect((await page.request.put("/api/v1/preferences", { headers: csrf, data: { workEnd: "18:00" } })).status()).toBe(200);
 });
 
 test("5. Commitments: Debo / Me deben, client filter, follow-up draft in FakeGmail, no send route", async ({ page }) => {

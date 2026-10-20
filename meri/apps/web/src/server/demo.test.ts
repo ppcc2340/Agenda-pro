@@ -8,6 +8,9 @@ describe("safeNext (open-redirect guard of the demo sign-in)", () => {
     expect(safeNext("//evil.test")).toBe("/hoy");
     expect(safeNext("/\\evil.test")).toBe("/hoy");
     expect(safeNext("https://evil.test")).toBe("/hoy");
+    expect(safeNext("/\t/evil.test")).toBe("/hoy");
+    expect(safeNext("/\n/evil.test")).toBe("/hoy");
+    expect(safeNext("/a\\b")).toBe("/hoy");
     expect(safeNext(null)).toBe("/hoy");
     expect(safeNext(undefined)).toBe("/hoy");
   });
