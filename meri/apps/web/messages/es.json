@@ -218,7 +218,8 @@
       "cancel": "Cancelar",
       "deleted": "Cuenta eliminada.",
       "signOutEverywhere": "Cerrar sesión en todos los dispositivos",
-      "signedOutEverywhere": "Sesiones cerradas en todos los dispositivos."
+      "signedOutEverywhere": "Sesiones cerradas en todos los dispositivos.",
+      "exportZip": "Exportar en ZIP (con CSV)"
     },
     "plan": {
       "title": "Plan",
@@ -289,7 +290,7 @@
       "pausedToast": "Lectura de correo en pausa.",
       "resumedToast": "Lectura de correo reanudada.",
       "purgedToast": "Gmail desconectado. Hilos indexados y propuestas pendientes borrados.",
-      "retention": "Meri guarda solo metadatos y una cita de hasta 200 caracteres por hilo, y los borra a los {days} días.",
+      "retention": "Meri guarda solo metadatos y una cita de hasta 200 caracteres por hilo, y los borra (con las propuestas descartadas) a los {days} días.",
       "exclusions": "Exclusiones",
       "exclusionsBody": "Remitentes, dominios o etiquetas que Meri no leerá nunca.",
       "kindLabel": "Tipo de exclusión",
@@ -308,7 +309,10 @@
       "invalid": "Ese valor no es válido para este tipo.",
       "removeAria": "Quitar exclusión {value}",
       "noExclusions": "Sin exclusiones. Los boletines y correos automáticos ya se descartan por reglas.",
-      "pauseHint": "La pausa detiene la lectura de Gmail y de Google Calendar; nada se borra."
+      "pauseHint": "La pausa detiene la lectura de Gmail y de Google Calendar; nada se borra.",
+      "retentionLabel": "Conservar citas y propuestas descartadas",
+      "retentionOption": "{days} días",
+      "retentionSaved": "Retención guardada: {days} días."
     },
     "vertical": {
       "title": "Vertical y vocabulario",

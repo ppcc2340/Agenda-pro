@@ -218,7 +218,8 @@
       "cancel": "Cancel",
       "deleted": "Account deleted.",
       "signOutEverywhere": "Sign out on all devices",
-      "signedOutEverywhere": "Signed out on all devices."
+      "signedOutEverywhere": "Signed out on all devices.",
+      "exportZip": "Export as ZIP (with CSV)"
     },
     "plan": {
       "title": "Plan",
@@ -289,7 +290,7 @@
       "pausedToast": "Mail reading paused.",
       "resumedToast": "Mail reading resumed.",
       "purgedToast": "Gmail disconnected. Indexed threads and pending proposals deleted.",
-      "retention": "Meri keeps only metadata and a quote of up to 200 characters per thread, and deletes them after {days} days.",
+      "retention": "Meri keeps only metadata and a quote of up to 200 characters per thread, and deletes them (with dismissed proposals) after {days} days.",
       "exclusions": "Exclusions",
       "exclusionsBody": "Senders, domains or labels Meri will never read.",
       "kindLabel": "Exclusion type",
@@ -308,7 +309,10 @@
       "invalid": "That value is not valid for this type.",
       "removeAria": "Remove exclusion {value}",
       "noExclusions": "No exclusions. Newsletters and automated mail are already discarded by rules.",
-      "pauseHint": "Pausing stops reading Gmail and Google Calendar; nothing is deleted."
+      "pauseHint": "Pausing stops reading Gmail and Google Calendar; nothing is deleted.",
+      "retentionLabel": "Keep snippets and dismissed proposals",
+      "retentionOption": "{days} days",
+      "retentionSaved": "Retention saved: {days} days."
     },
     "vertical": {
       "title": "Vertical and vocabulary",

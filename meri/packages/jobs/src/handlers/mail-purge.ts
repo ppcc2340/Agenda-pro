@@ -5,6 +5,7 @@
  */
 import {
   audit,
+  deleteResolvedProposalsOlderThan,
   detachCommitmentsFromThreads,
   deleteThreadsByIds,
   expireProposalsForThreads,
@@ -74,7 +75,7 @@ export async function applyMailRetention(
   deps: HandlerDeps,
   workspaceId: WorkspaceId,
   options: { maxRetentionDays: number },
-): Promise<PurgeResult & { retentionDays: number }> {
+): Promise<PurgeResult & { retentionDays: number; proposalsPurged: number }> {
   const now = deps.now();
   return withWorkspace(deps.db, workspaceId, async (tx) => {
     const prefs = await getPreferences(tx, workspaceId);
@@ -86,8 +87,10 @@ export async function applyMailRetention(
     });
     const before = new Date(now.getTime() - retentionDays * 86_400_000);
     const ids = await listThreadIdsOlderThan(tx, workspaceId, before);
-    const result = await purgeThreads(tx, workspaceId, ids, now);
-    if (result.threads > 0)
+    const threadsResult = await purgeThreads(tx, workspaceId, ids, now);
+    // docs/06 §5: dismissed or expired proposals (and their quoted snippets) follow the same window.
+    const result = { ...threadsResult, proposalsPurged: await deleteResolvedProposalsOlderThan(tx, workspaceId, before) };
+    if (result.threads > 0 || result.proposalsPurged > 0)
       await audit(
         tx,
         { workspaceId, actor: "system" },

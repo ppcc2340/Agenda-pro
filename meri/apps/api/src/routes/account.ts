@@ -26,7 +26,6 @@ import {
   type Db,
 } from "@meri/db";
 import { collectTokensToRevoke, revokeAtProvider } from "./account-deletion";
-import { AccountExportV1, buildAccountExport } from "./account-export";
 import { ApiError } from "../errors";
 import { requireSession, sessionOf } from "../plugins/session";
 
@@ -171,48 +170,6 @@ export function accountRoutes(app: FastifyInstance, options: AccountRoutesOption
     },
   );
 
-  /** D-050/D-055: one JSON document of the user's data (the zip with CSV is the phase 5 job). */
-  r.get(
-    "/v1/account/export",
-    {
-      preHandler: requireSession,
-      config: { rateLimit: { max: 5, timeWindow: "1 minute" } },
-      schema: { tags: ["account"], response: { 200: AccountExportV1 } },
-    },
-    async (request, reply) => {
-      const session = sessionOf(request);
-      const now = options.now();
-      const me = await getMe(options.db, session.userId, session.workspaceId);
-      if (!me) throw new ApiError("UNAUTHENTICATED", "This account no longer exists.");
-      const document = await request.withWorkspace(async (tx) => {
-        const doc = await buildAccountExport(tx, {
-          workspaceId: session.workspaceId,
-          now,
-          me: { email: me.user.email, name: me.user.name, locale: me.user.locale },
-          workspace: { name: me.workspace.name, vertical: me.workspace.vertical },
-        });
-        await audit(
-          tx,
-          { workspaceId: session.workspaceId, actor: "user", actorUserId: session.userId },
-          {
-            action: "account.exported",
-            entityType: "workspace",
-            entityId: session.workspaceId,
-            after: { format: doc.format, truncated: doc.truncated },
-          },
-        );
-        return doc;
-      });
-      void reply.header(
-        "content-disposition",
-        `attachment; filename="meri-export-${now.toISOString().slice(0, 10)}.json"`,
-      );
-      void reply.header("cache-control", "no-store");
-      return document;
-    },
-  );
-
-  /** D-050/D-054: logical deletion now (user, workspace, revoked connections, audit); purge by the phase 5 job. */
   r.delete(
     "/v1/account",
     {

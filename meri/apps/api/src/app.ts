@@ -24,6 +24,7 @@ import { sessionPlugin } from "./plugins/session";
 import { accountGuardPlugin } from "./plugins/account-guard";
 import { accountRoutes } from "./routes/account";
 import { accountSessionRoutes } from "./routes/account-sessions";
+import { accountExportRoutes } from "./routes/export/route";
 import { healthRoutes } from "./routes/health";
 import { internalRoutes } from "./routes/internal";
 import { taskRoutes } from "./routes/tasks";
@@ -166,6 +167,7 @@ export async function buildApp(deps: AppDeps) {
     analytics: deps.integrations.analytics,
   });
   await app.register(accountSessionRoutes, { db: deps.db });
+  await app.register(accountExportRoutes, { db: deps.db, now: deps.now });
   await app.register(accountRoutes, {
     db: deps.db,
     now: deps.now,

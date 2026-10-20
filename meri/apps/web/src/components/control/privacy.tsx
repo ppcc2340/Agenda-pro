@@ -47,6 +47,12 @@ export function PrivacyPanel({ demoMode }: { demoMode: boolean }) {
             {t("export")}
           </a>
         </Button>
+        <Button asChild>
+          <a href="/api/v1/account/export?format=zip" download onClick={() => toast(t("exportedToast"))}>
+            <Download size={14} aria-hidden="true" />
+            {t("exportZip")}
+          </a>
+        </Button>
         <Button
           variant="risk"
           onClick={() => {

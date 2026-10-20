@@ -71,6 +71,7 @@ export {
   reopenProposal,
   createProposalIfAbsent,
   expirePending,
+  deleteResolvedProposalsOlderThan,
   expireProposalsForThreads,
   proposalHashExists,
   markProposalsShown,

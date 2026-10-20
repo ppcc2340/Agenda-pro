@@ -244,3 +244,25 @@ export async function markProposalsShown(
     )
     .returning({ id: proposals.id, kind: proposals.kind });
 }
+
+/**
+ * Retention (docs/06 §5, ADR 0007): dismissed or expired proposals — and the quoted snippets in their payloads — are
+ * deleted once older than the retention window. Pending, confirmed and edited ones stay (they are the user's record).
+ */
+export async function deleteResolvedProposalsOlderThan(
+  tx: WorkspaceTx,
+  workspaceId: WorkspaceId,
+  before: Date,
+): Promise<number> {
+  const rows = await tx
+    .delete(proposals)
+    .where(
+      and(
+        eq(proposals.workspaceId, workspaceId),
+        inArray(proposals.status, ["dismissed", "expired"]),
+        sql`coalesce(${proposals.resolvedAt}, ${proposals.createdAt}) < ${before.toISOString()}::timestamptz`,
+      ),
+    )
+    .returning({ id: proposals.id });
+  return rows.length;
+}

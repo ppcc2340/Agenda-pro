@@ -10,7 +10,12 @@ import { clientApi, ClientApiError } from "@/lib/client-api";
 import { keys, useApiMutation, useIntegrations, useMailExclusions } from "@/lib/hooks/use-api";
 import type { IntegrationAccount, MailExclusion } from "@/lib/types";
 
-/** Privacy controls for mail (P2-13, D-036): pause reading, exclude senders/domains/labels, disconnect and purge. */
+const RETENTION_CHOICES = [7, 30, 90, 180, 365] as const;
+
+/**
+ * Privacy controls for mail (P2-13, D-036): pause reading, exclude senders/domains/labels, disconnect and purge, and
+ * how long snippets and dismissed proposals are kept (7–365 days, ADR 0007).
+ */
 export function MailPrivacy({ retentionDays }: { retentionDays: number }) {
   const t = useTranslations("control.mailPrivacy");
   const tConn = useTranslations("connections");
@@ -21,6 +26,7 @@ export function MailPrivacy({ retentionDays }: { retentionDays: number }) {
   const [kind, setKind] = useState<MailExclusion["kind"]>("sender");
   const [value, setValue] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [retention, setRetention] = useState(retentionDays);
   const google = integrations.data?.items.find((i) => i.provider === "google") ?? null;
   const gmail = google?.scopes.some((s) => s.includes("gmail.readonly")) ?? false;
 
@@ -45,6 +51,17 @@ export function MailPrivacy({ retentionDays }: { retentionDays: number }) {
       },
       onError: (e) =>
         setError(e instanceof ClientApiError && e.problem.status === 400 ? t("invalid") : tApp("errorBody")),
+    },
+  );
+  const saveRetention = useApiMutation(
+    (days: number) => clientApi("/v1/preferences", { method: "PUT", json: { retentionDays: days } }),
+    [],
+    {
+      onSuccess: (_r, days) => toast(t("retentionSaved", { days })),
+      onError: () => {
+        setRetention(retentionDays);
+        toast(tApp("errorBody"));
+      },
     },
   );
   const remove = useApiMutation(
@@ -78,7 +95,30 @@ export function MailPrivacy({ retentionDays }: { retentionDays: number }) {
         )}
       </div>
       <p className="text-[13.5px] text-ink2">{t("pauseHint")}</p>
-      <p className="text-[13.5px] text-ink2">{t("retention", { days: retentionDays })}</p>
+      <div className="flex flex-wrap items-center gap-2 text-[13.5px] text-ink2">
+        <label htmlFor="retention-days">{t("retentionLabel")}</label>
+        <select
+          id="retention-days"
+          value={retention}
+          disabled={saveRetention.isPending}
+          onChange={(e) => {
+            const days = Number(e.target.value);
+            setRetention(days);
+            saveRetention.mutate(days);
+          }}
+          className="rounded-lg border border-rule bg-raised px-2.5 py-1.5 text-ink"
+        >
+          {(RETENTION_CHOICES.includes(retention as (typeof RETENTION_CHOICES)[number])
+            ? RETENTION_CHOICES
+            : [...RETENTION_CHOICES, retention].sort((a, b) => a - b)
+          ).map((d) => (
+            <option key={d} value={d}>
+              {t("retentionOption", { days: d })}
+            </option>
+          ))}
+        </select>
+      </div>
+      <p className="text-[13.5px] text-ink2">{t("retention", { days: retention })}</p>
       <div>
         <h4 className="mb-1 font-semibold">{t("exclusions")}</h4>
         <p className="mb-2 text-[13.5px] text-ink2">{t("exclusionsBody")}</p>

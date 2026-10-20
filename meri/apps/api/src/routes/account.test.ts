@@ -18,6 +18,7 @@ import {
 import type { FakeGoogleOAuth } from "@meri/integrations";
 import { createTestApp, csrf, INTERNAL_SECRET, NOW, type TestApp } from "../test/harness";
 import { drainCapped } from "./account-export";
+import { readZip } from "../test/zip-reader";
 
 describe("account routes: session, preferences, audit and tenant isolation", () => {
   let t: TestApp;
@@ -478,5 +479,43 @@ describe("deletion edge cases (D-054)", () => {
     } finally {
       await t.close();
     }
+  });
+});
+
+describe("GET /v1/account/export?format=zip (F-16, ADR 0007)", () => {
+  let t: TestApp;
+  beforeAll(async () => {
+    t = await createTestApp();
+  });
+  afterAll(() => t.close());
+
+  it("returns export.json plus one CSV per collection, as an uncached attachment, audited with the format", async () => {
+    const account = await t.createAccount("zip");
+    const cookie = await t.cookieFor(account);
+    await t.app.inject({
+      method: "POST",
+      url: "/v1/tasks",
+      headers: { cookie, ...csrf },
+      payload: { title: "=CMD('calc')", estimateMinutes: 30 },
+    });
+    const res = await t.app.inject({ url: "/v1/account/export?format=zip", headers: { cookie } });
+    expect(res.statusCode).toBe(200);
+    expect(res.headers["content-type"]).toBe("application/zip");
+    expect(res.headers["cache-control"]).toBe("no-store");
+    expect(res.headers["content-disposition"]).toMatch(/^attachment; filename="meri-export-\d{4}-\d{2}-\d{2}\.zip"$/);
+    const files = readZip(res.rawPayload);
+    expect(files.has("export.json")).toBe(true);
+    expect(files.has("tasks.csv")).toBe(true);
+    const json = JSON.parse(files.get("export.json")?.toString("utf8") ?? "{}") as { format: string };
+    expect(json.format).toBe("meri-export/1");
+    expect(files.get("tasks.csv")?.toString("utf8")).toContain(`"'=CMD('calc')"`);
+    const all = [...files.values()].map((b) => b.toString("utf8")).join("\n");
+    expect(all).not.toMatch(/encrypted_?tokens|refresh_?token|"v1\./i);
+    const audits = await t.app.inject({ url: "/v1/audit?limit=5", headers: { cookie } });
+    expect(audits.json<{ items: { action: string }[] }>().items[0]?.action).toBe("account.exported");
+    // The JSON format is unchanged for existing clients.
+    const plain = await t.app.inject({ url: "/v1/account/export", headers: { cookie } });
+    expect(plain.headers["content-type"]).toMatch(/application\/json/);
+    expect(plain.json<{ format: string }>().format).toBe("meri-export/1");
   });
 });

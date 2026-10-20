@@ -203,10 +203,13 @@ export async function dispatchTimeInfer(deps: DispatcherDeps): Promise<number> {
   return rows.length;
 }
 
-/** data.retention (D-036): once a day per workspace that has indexed mail. */
+/** data.retention (D-036, ADR 0007): once a day per workspace with indexed mail or resolved proposals. */
 export async function dispatchRetention(deps: DispatcherDeps): Promise<number> {
   const rows = await deps.adminSql<{ workspaceId: string }[]>`
-    select distinct workspace_id as "workspaceId" from threads_index limit 5000`;
+    select workspace_id as "workspaceId" from threads_index
+    union
+    select workspace_id from proposals where status in ('dismissed', 'expired')
+    limit 5000`;
   const date = deps.now().toISOString().slice(0, 10);
   for (const row of rows) {
     await deps.dispatcher.enqueue(
