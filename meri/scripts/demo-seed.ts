@@ -213,8 +213,10 @@ export async function seedDemo(options: { now: Date; reset?: boolean; databaseUr
     await scanFollowups(deps, ws);
     // Last week's entries were reviewed by the user: approve them (audited as the user, like the API does).
     await withWorkspace(handle.db, ws, async (tx) => {
-      const since = addLocalDays(local, -6);
-      const entries = await listTimeEntries(tx, ws, { from: `${String(since.year)}-${String(since.month).padStart(2, "0")}-${String(since.day).padStart(2, "0")}`, to: `${String(local.year)}-${String(local.month).padStart(2, "0")}-${String(local.day - 1).padStart(2, "0")}` });
+      // Calendar arithmetic, never `day - 1`: on the 1st of a month that would build "YYYY-MM-00".
+      const dayKey = (d: { year: number; month: number; day: number }) =>
+        `${String(d.year)}-${String(d.month).padStart(2, "0")}-${String(d.day).padStart(2, "0")}`;
+      const entries = await listTimeEntries(tx, ws, { from: dayKey(addLocalDays(local, -6)), to: dayKey(addLocalDays(local, -1)) });
       const approved = await setTimeEntriesStatus(tx, ws, entries.map((e) => e.id), "approved", new Date(now.getTime() - 86_400_000));
       for (const e of approved) await audit(tx, actorUser, { action: "time.approved", entityType: "time_entry", entityId: e.id, before: { status: "suggested" }, after: { status: "approved", minutes: e.minutes } });
     });

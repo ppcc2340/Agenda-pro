@@ -46,4 +46,17 @@ describe("pnpm demo:seed (PROTOTYPE.md, D-048)", () => {
       await handle.close();
     }
   }, 60_000);
+
+  it("seeds on the first day of a month (date bounds use calendar arithmetic)", async () => {
+    const first = await seedDemo({ now: new Date("2026-11-01T09:00:00Z"), reset: true, databaseUrl: TEST_APP_URL, adminUrl: TEST_ADMIN_URL, env });
+    expect(first.status).toBe("seeded");
+    const handle = createDb(TEST_APP_URL, { max: 1 });
+    const ws = first.workspaceId as WorkspaceId;
+    try {
+      const time = await withWorkspace(handle.db, ws, (tx) => listTimeEntries(tx, ws, { from: "2026-10-19", to: "2026-11-02" }));
+      expect(time.filter((t) => t.status === "approved").length).toBeGreaterThan(0);
+    } finally {
+      await handle.close();
+    }
+  }, 60_000);
 });

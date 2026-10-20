@@ -76,7 +76,9 @@ describe("/v1/plan, /v1/audit/:id/undo (F-05, F-13, ADR 0003)", () => {
     for (const m of body.margin) {
       expect(m.day).toMatch(/^\d{4}-\d{2}-\d{2}$/);
       expect(m.minutes).toBeGreaterThan(0);
-      expect(new Date(m.endsAt).getTime() - new Date(m.startsAt).getTime()).toBe(m.minutes * 60_000);
+      const drawn = new Date(m.endsAt).getTime() - new Date(m.startsAt).getTime();
+      expect(drawn).toBeGreaterThan(0);
+      expect(drawn).toBeLessThanOrEqual(m.minutes * 60_000);
       expect(body.blocks.some((b) => b.startsAt < m.endsAt && b.endsAt > m.startsAt)).toBe(false);
     }
     // Tenant isolation: B sees nothing of A.

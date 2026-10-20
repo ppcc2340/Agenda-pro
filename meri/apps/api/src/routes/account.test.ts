@@ -16,9 +16,8 @@ import {
   type AccountIdentity,
 } from "@meri/db";
 import type { FakeGoogleOAuth } from "@meri/integrations";
-import { resetAccountGuard } from "../plugins/account-guard";
 import { createTestApp, csrf, INTERNAL_SECRET, NOW, type TestApp } from "../test/harness";
-import { drainCapped } from "./account";
+import { drainCapped } from "./account-export";
 
 describe("account routes: session, preferences, audit and tenant isolation", () => {
   let t: TestApp;
@@ -459,7 +458,7 @@ describe("deletion edge cases (D-054)", () => {
       const cookie = await t.cookieFor(acc);
       expect((await t.app.inject({ url: "/v1/me", headers: { cookie } })).statusCode).toBe(200);
       await softDeleteAccount(t.handle.db, { userId: acc.userId, workspaceId: acc.workspaceId, now: NOW });
-      resetAccountGuard(); // stands in for the 60 s TTL expiring
+      t.app.accountGuard.reset(); // stands in for the 60 s TTL expiring
       expect((await t.app.inject({ url: "/v1/tasks", headers: { cookie } })).statusCode).toBe(401);
     } finally {
       await t.close();

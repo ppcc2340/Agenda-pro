@@ -1,7 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import { z } from "zod";
-import { computeDailyMargin } from "@meri/core";
 import {
   audit,
   currentPlanVersion,
@@ -16,8 +15,6 @@ import {
   listProposals,
   updateBlock,
   updateTask,
-  type CalendarEventView,
-  type PreferencesView,
   type ScheduleBlockView,
 } from "@meri/db";
 import {
@@ -29,6 +26,7 @@ import {
   type ReschedulePayload,
 } from "@meri/jobs";
 import { ApiError } from "../errors";
+import { MarginView, marginFor } from "./plan-margin";
 import { requireSession, sessionOf } from "../plugins/session";
 import { serializeTask, TaskViewSchema } from "./tasks";
 
@@ -89,52 +87,6 @@ const PendingProposalView = z.object({
     }),
   ),
 });
-
-const MarginView = z.object({
-  day: z.string(),
-  minutes: z.number(),
-  startsAt: z.string().datetime(),
-  endsAt: z.string().datetime(),
-});
-
-/**
- * D-051: the contingency reserve per local day, from the same capacity math as the planner (core) over the
- * preferences and the third-party events of the range. Not a planner run: nothing is assigned or persisted.
- */
-export function marginFor(
-  prefs: PreferencesView | null,
-  events: CalendarEventView[],
-  range: { now: Date; from: Date; to: Date },
-): z.infer<typeof MarginView>[] {
-  if (!prefs) return [];
-  return computeDailyMargin({
-    now: range.now.toISOString(),
-    horizonStart: range.from.toISOString(),
-    horizonEnd: range.to.toISOString(),
-    tasks: [],
-    fixedEvents: events
-      .filter((e) => e.origin === "external")
-      .map((e) => ({
-        id: e.id,
-        startsAt: e.startsAt.toISOString(),
-        endsAt: e.endsAt.toISOString(),
-        busy: e.busy && !e.allDay,
-      })),
-    existingBlocks: [],
-    preferences: {
-      timezone: prefs.timezone,
-      workStart: prefs.workStart,
-      workEnd: prefs.workEnd,
-      workDays: prefs.workDays,
-      deepWorkWindows: prefs.deepWorkWindows,
-      minBlockMinutes: prefs.minBlockMinutes,
-      minDeepBlockMinutes: prefs.minDeepBlockMinutes,
-      bufferMinutes: prefs.bufferMinutes,
-      contingencyPct: prefs.contingencyPct,
-      riskThresholdHours: prefs.riskThresholdHours,
-    },
-  });
-}
 
 export const PlanView = z.object({
   planVersion: z.number(),
@@ -226,7 +178,7 @@ export function planRoutes(app: FastifyInstance, options: PlanRoutesOptions, don
         const prefs = await getPreferences(tx, ws);
         const events = await listCalendarEvents(tx, ws, { from, to });
         return {
-          margin: marginFor(prefs, events, { now, from, to }),
+          margin: marginFor(prefs, events, blocks, { now, from, to }),
           planVersion: await currentPlanVersion(tx, ws),
           generatedAt: run ? run.createdAt.toISOString() : null,
           blocks: blocks.map(serializeBlock),

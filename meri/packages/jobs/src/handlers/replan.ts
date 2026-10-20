@@ -12,6 +12,7 @@ import {
   type Conflict,
   type PlanInput,
   type PlannedBlock,
+  type PlannerPreferences,
   type PlannerTask,
   type PlanResult,
 } from "@meri/core";
@@ -180,6 +181,22 @@ interface Snapshot {
   input: PlanInput;
 }
 
+/** The planner's view of the user's preferences (shared by the replan job and the plan margin, D-051). */
+export function toPlannerPreferences(prefs: PreferencesView): PlannerPreferences {
+  return {
+    timezone: prefs.timezone,
+    workStart: prefs.workStart,
+    workEnd: prefs.workEnd,
+    workDays: prefs.workDays,
+    deepWorkWindows: prefs.deepWorkWindows,
+    minBlockMinutes: prefs.minBlockMinutes,
+    minDeepBlockMinutes: prefs.minDeepBlockMinutes,
+    bufferMinutes: prefs.bufferMinutes,
+    contingencyPct: prefs.contingencyPct,
+    riskThresholdHours: prefs.riskThresholdHours,
+  };
+}
+
 async function snapshot(tx: WorkspaceTx, workspaceId: WorkspaceId, now: Date): Promise<Snapshot | null> {
   const prefs = await getPreferences(tx, workspaceId);
   if (!prefs) return null;
@@ -220,18 +237,7 @@ async function snapshot(tx: WorkspaceTx, workspaceId: WorkspaceId, now: Date): P
       endsAt: b.endsAt.toISOString(),
       pinned: b.pinned,
     })),
-    preferences: {
-      timezone: prefs.timezone,
-      workStart: prefs.workStart,
-      workEnd: prefs.workEnd,
-      workDays: prefs.workDays,
-      deepWorkWindows: prefs.deepWorkWindows,
-      minBlockMinutes: prefs.minBlockMinutes,
-      minDeepBlockMinutes: prefs.minDeepBlockMinutes,
-      bufferMinutes: prefs.bufferMinutes,
-      contingencyPct: prefs.contingencyPct,
-      riskThresholdHours: prefs.riskThresholdHours,
-    },
+    preferences: toPlannerPreferences(prefs),
   };
   return { prefs, tasks, blocks, liveBlocks, orphans, input };
 }

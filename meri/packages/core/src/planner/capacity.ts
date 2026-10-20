@@ -159,7 +159,10 @@ export interface DailyMargin {
   day: string;
   /** Minutes reserved for the unexpected (never assigned): free minutes minus assignable capacity. */
   minutes: number;
-  /** The reserve is drawn at the end of the work day: [workEnd − minutes, workEnd) in UTC ISO. */
+  /**
+   * Where the reserve is drawn: the tail of the day's last free stretch (after fixed events, their buffer and
+   * the existing blocks), at most `minutes` long, so it never overlaps a meeting or a block. UTC ISO.
+   */
   startsAt: string;
   endsAt: string;
 }
@@ -171,13 +174,21 @@ const isoOfMinutes = (utcMinutes: number): string => new Date(utcMinutes * 60_00
  * without running the planner. Days without free time (or without reserve) are omitted.
  */
 export function computeDailyMargin(input: PlanInput): DailyMargin[] {
-  return buildDays(normalize(input))
-    .map((d) => ({ day: d.key, minutes: slotMinutes(d.baseFree) - d.capacity, workEnd: d.workEnd }))
-    .filter((d) => d.minutes > 0)
-    .map((d) => ({
-      day: d.day,
-      minutes: d.minutes,
-      startsAt: isoOfMinutes(d.workEnd - d.minutes),
-      endsAt: isoOfMinutes(d.workEnd),
-    }));
+  const n = normalize(input);
+  return buildDays(n).flatMap((d) => {
+    const reserve = slotMinutes(d.baseFree) - d.capacity;
+    if (reserve <= 0) return [];
+    let free: Slot[] = [...d.baseFree];
+    for (const block of n.existingBlocks) free = subtractInterval(free, block.start, block.end);
+    const last = free[free.length - 1];
+    if (!last) return [];
+    return [
+      {
+        day: d.key,
+        minutes: reserve,
+        startsAt: isoOfMinutes(Math.max(last.start, last.end - reserve)),
+        endsAt: isoOfMinutes(last.end),
+      },
+    ];
+  });
 }

@@ -15,6 +15,7 @@ export {
 export {
   runReplan,
   toPlannerTask,
+  toPlannerPreferences,
   HORIZON_DAYS,
   DEFAULT_ESTIMATE_MINUTES,
   type ReplanOptions,

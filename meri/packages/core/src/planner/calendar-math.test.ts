@@ -147,6 +147,27 @@ describe("computeDailyMargin (D-051)", () => {
     const free = 540 - 120 - base.preferences.bufferMinutes;
     expect(busy[0]?.minutes).toBe(free - Math.floor(free * 0.9));
     expect(computeDailyMargin({ ...base, preferences: { ...base.preferences, contingencyPct: 0 } })).toEqual([]);
+    // A meeting until the end of the day: the margin is drawn before it (and its buffer), never on top of it.
+    const late = computeDailyMargin({
+      ...base,
+      fixedEvents: [{ id: "e2", startsAt: "2026-10-25T16:00:00.000Z", endsAt: "2026-10-25T17:00:00.000Z", busy: true }],
+    })[0];
+    expect(late?.endsAt).toBe("2026-10-25T16:00:00.000Z");
+    // An existing block at the end of the day pushes the drawn margin before it; the reserve stays the same.
+    const blocked = computeDailyMargin({
+      ...base,
+      existingBlocks: [{ id: "b1", taskId: "t1", startsAt: "2026-10-25T15:30:00.000Z", endsAt: "2026-10-25T17:00:00.000Z", pinned: false }],
+    })[0];
+    expect(blocked?.minutes).toBe(54);
+    expect(blocked?.endsAt).toBe("2026-10-25T15:30:00.000Z");
+    expect(blocked?.startsAt).toBe("2026-10-25T14:36:00.000Z");
+    // A day with no free time left after the blocks has no margin to draw.
+    expect(
+      computeDailyMargin({
+        ...base,
+        existingBlocks: [{ id: "b2", taskId: "t2", startsAt: "2026-10-25T08:00:00.000Z", endsAt: "2026-10-25T17:00:00.000Z", pinned: false }],
+      }),
+    ).toEqual([]);
     expect(
       computeDailyMargin({ ...base, preferences: { ...base.preferences, workDays: [1] } }),
     ).toEqual([]);

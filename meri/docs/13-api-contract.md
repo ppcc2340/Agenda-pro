@@ -51,7 +51,7 @@ Fuente para que backend y frontend se construyan en paralelo. El OpenAPI generad
 | `GET/POST /v1/mail/exclusions` · `DELETE /v1/mail/exclusions/:id` | `{ kind: sender|domain|label, value }`; el valor se valida según el tipo (correo, dominio, etiqueta) y se normaliza en minúsculas salvo etiquetas |
 
 ### Plan y calendario
-| `GET /v1/plan?from=&to=` | Plan vigente: bloques persistidos, tareas referenciadas, riesgos/conflictos del último `plan_run`, propuesta `reschedule` pendiente y `margin: [{ day, minutes, startsAt, endsAt }]` (D-051: reserva de imprevistos por día calculada por `core.computeDailyMargin` sobre preferencias y eventos fijos; se dibuja rayada al final de la jornada, nunca es un bloque). Nunca ejecuta el planificador en la petición |
+| `GET /v1/plan?from=&to=` | Plan vigente: bloques persistidos, tareas referenciadas, riesgos/conflictos del último `plan_run`, propuesta `reschedule` pendiente y `margin: [{ day, minutes, startsAt, endsAt }]` (D-051: `minutes` es la reserva de imprevistos del día calculada por `core.computeDailyMargin` sobre preferencias, eventos fijos y bloques; `startsAt/endsAt` es dónde se dibuja rayada, al final del último hueco libre del día, sin pisar reuniones ni bloques; nunca es un bloque). Nunca ejecuta el planificador en la petición |
 |---|---|
 | `POST /v1/plan/replan` | Ejecuta el planificador ahora. Diff seguro (solo añade bloques o retira los de tareas completadas) → se aplica como acción `system` auditada; cualquier movimiento de un bloque vivo → propuesta `reschedule` con `basePlanVersion` (ADR 0003) |
 | `POST /v1/plan/accept` `{ proposalId }` | Aplica la propuesta y escribe solo eventos Meri en Calendar. `CONFLICT` si el plan cambió desde la propuesta. Acepta `Idempotency-Key` |
