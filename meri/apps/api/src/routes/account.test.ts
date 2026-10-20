@@ -451,6 +451,21 @@ describe("deletion edge cases (D-054)", () => {
     }
   });
 
+  it("a member who is not the owner leaves without taking the workspace or its connections down", async () => {
+    const t = await createTestApp();
+    try {
+      const owner = await t.createAccount("owner");
+      const member = await t.createAccount("member");
+      const result = await softDeleteAccount(t.handle.db, { userId: member.userId, workspaceId: owner.workspaceId, now: NOW });
+      expect(result).toEqual({ deleted: true, revokedAccounts: 0 });
+      expect(await isAccountActive(t.handle.db, owner.userId, owner.workspaceId)).toBe(true);
+      const page = await withWorkspace(t.handle.db, owner.workspaceId, (tx) => listAudit(tx, owner.workspaceId, 5));
+      expect(page.items[0]).toMatchObject({ action: "account.deleted", entityType: "user", entityId: member.userId });
+    } finally {
+      await t.close();
+    }
+  });
+
   it("a deletion made elsewhere (another API instance) is learnt from the database once the cache is reset", async () => {
     const t = await createTestApp();
     try {

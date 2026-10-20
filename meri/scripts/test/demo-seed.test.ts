@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createDb, latestPlanRun, listAudit, listClients, listProposals, listTasks, listTimeEntries, withWorkspace, type WorkspaceId } from "@meri/db";
+import { createDb, latestPlanRun, listAudit, listBlocks, listCalendarEvents, listClients, listProposals, listTasks, listTimeEntries, withWorkspace, type WorkspaceId } from "@meri/db";
 import { seedDemo } from "../demo-seed";
 
 const TEST_APP_URL = process.env.DATABASE_URL_TEST ?? "postgres://meri_app:meri_app@localhost:5432/meri_test";
@@ -46,6 +46,37 @@ describe("pnpm demo:seed (PROTOTYPE.md, D-048)", () => {
       await handle.close();
     }
   }, 60_000);
+
+  it("is deterministic: two seeds from scratch at the same clock give the same workspace (ids aside)", async () => {
+    const snapshot = async () => {
+      const seeded = await seedDemo({ now: NOW, reset: true, databaseUrl: TEST_APP_URL, adminUrl: TEST_ADMIN_URL, env });
+      const ws = seeded.workspaceId as WorkspaceId;
+      const handle = createDb(TEST_APP_URL, { max: 1 });
+      try {
+        return await withWorkspace(handle.db, ws, async (tx) => {
+          const tasks = await listTasks(tx, ws, { includeCompleted: true }, { limit: 50 });
+          const events = await listCalendarEvents(tx, ws, { from: new Date("2026-10-01T00:00:00Z"), to: new Date("2026-11-01T00:00:00Z") });
+          const blocks = await listBlocks(tx, ws);
+          const time = await listTimeEntries(tx, ws, { from: "2026-10-01", to: "2026-11-01" });
+          const proposals = await listProposals(tx, ws, { status: "pending" }, { limit: 50 });
+          const titleOf = new Map<string, string>(tasks.items.map((t) => [t.id, t.title]));
+          return {
+            tasks: tasks.items.map((t) => `${t.title}|${t.status}|${t.dueAt?.toISOString() ?? ""}`).sort(),
+            events: events.map((e) => `${e.title ?? ""}|${e.startsAt.toISOString()}|${e.endsAt.toISOString()}`).sort(),
+            blocks: blocks.map((b) => `${titleOf.get(b.taskId) ?? ""}|${b.startsAt.toISOString()}|${b.endsAt.toISOString()}`).sort(),
+            time: time.map((e) => `${e.day}|${String(e.minutes)}|${e.status}|${e.description ?? ""}`).sort(),
+            proposals: proposals.items.map((p) => `${p.kind}|${String(p.confidence)}`).sort(),
+          };
+        });
+      } finally {
+        await handle.close();
+      }
+    };
+    const a = await snapshot();
+    const b = await snapshot();
+    expect(a.blocks.length).toBeGreaterThan(0);
+    expect(b).toEqual(a);
+  }, 120_000);
 
   it("seeds on the first day of a month (date bounds use calendar arithmetic)", async () => {
     const first = await seedDemo({ now: new Date("2026-11-01T09:00:00Z"), reset: true, databaseUrl: TEST_APP_URL, adminUrl: TEST_ADMIN_URL, env });

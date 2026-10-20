@@ -5,6 +5,7 @@ import { signOutAction } from "@/app/actions";
 import { MobileCapture, PaletteProvider } from "@/components/capture/palette";
 import { AppShell } from "@/components/shell/app-shell";
 import { apiFetch, getMe } from "@/server/api";
+import { isOverdue } from "@/lib/commitments";
 import { getServerConfig } from "@/server/config";
 
 /** Authenticated areas. Session validated against the API; incomplete onboarding is redirected. */
@@ -25,9 +26,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   // Red badge on Proyectos / Compromisos: overdue commitments others owe me (demo: risks + overdue).
   const demoNow = getServerConfig().env.DEMO_NOW;
   const nowMs = demoNow ? Date.parse(demoNow) : Date.now();
-  const overdue = owed.items.filter(
-    (c) => c.status === "at_risk" || (c.status === "confirmed" && c.dueAt !== null && Date.parse(c.dueAt) < nowMs),
-  ).length;
+  const overdue = owed.items.filter((c) => isOverdue(c, new Date(nowMs))).length;
   const paletteData = { clients: clients.items, timezone: prefs.timezone };
   return (
     <PaletteProvider data={paletteData}>

@@ -2,8 +2,9 @@
 /**
  * `pnpm demo` (PROTOTYPE.md, D-047): checks Postgres and Redis, migrates, seeds the demo workspace and starts
  * api, worker and web in fake mode with DEMO_MODE=1, printing the two URLs. One parent process; Ctrl-C stops all.
- * Flags: --dev (next dev instead of a production build), --reset (reseed from scratch), --no-seed, --public (listen on
- * every interface instead of 127.0.0.1: the demo signs anyone in as the demo user).
+ * Flags: --dev (next dev instead of a production build), --build (rebuild the web app even if a build exists),
+ * --reset (reseed from scratch), --no-seed, --public (listen on every interface instead of 127.0.0.1: the demo
+ * signs anyone in as the demo user).
  */
 import { spawn, spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
@@ -82,7 +83,8 @@ const run = (cmd, cmdArgs, extra = {}) => {
 };
 run("pnpm", ["db:migrate"]);
 if (!args.includes("--no-seed")) run("pnpm", ["demo:seed", ...(args.includes("--reset") ? ["--", "--reset"] : [])]);
-if (!dev && !existsSync(resolve(root, "apps/web/.next/BUILD_ID"))) run("pnpm", ["--filter", "@meri/web", "build"]);
+if (!dev && (args.includes("--build") || !existsSync(resolve(root, "apps/web/.next/BUILD_ID"))))
+  run("pnpm", ["--filter", "@meri/web", "build"]);
 
 const children = [
   spawn("pnpm", ["--filter", "@meri/api", "exec", "tsx", "src/main.ts"], { cwd: root, stdio: "inherit", env }),
@@ -95,12 +97,14 @@ const stop = () => {
 };
 process.on("SIGINT", stop);
 process.on("SIGTERM", stop);
-for (const c of children) c.on("exit", (code) => {
-  if (code && code !== 0) {
-    console.error(`a process exited with ${code}`);
+// One process going down (an error exit or a signal) stops the demo: never leave half of it running.
+for (const c of children)
+  c.on("exit", (code, signal) => {
+    if (code === 0) return;
+    console.error(`a process stopped (${signal ?? `exit ${String(code)}`}); stopping the demo`);
     stop();
-  }
-});
+  });
 setTimeout(() => {
-  console.log("\nMeri (demo, adaptadores fake, usuario demo@meri.local):\n  Ordenador: http://localhost:3000/\n  Móvil:     http://localhost:3000/mobile  (o cualquier viewport ≤ 520 px)\n" + (env.DEMO_NOW ? `  Reloj:     DEMO_NOW=${env.DEMO_NOW}\n` : ""));
+  const shown = host === "127.0.0.1" ? "localhost" : "<esta-máquina>";
+  console.log(`\nMeri (demo, adaptadores fake, usuario demo@meri.local, escuchando en ${host}):\n  Ordenador: http://${shown}:3000/\n  Móvil:     http://${shown}:3000/mobile  (o cualquier viewport ≤ 520 px)\n` + (env.DEMO_NOW ? `  Reloj:     DEMO_NOW=${env.DEMO_NOW}\n` : ""));
 }, 4000);

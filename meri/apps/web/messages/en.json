@@ -276,7 +276,6 @@
       "pause": "At the cap the AI pauses: rules, calendar and plan keep working.",
       "fakeNote": "Test mode: the rules extractor uses no credits.",
       "usedAmount": "{used} USD",
-      "credits": "Your plan includes {credits} AI credits a month; spend is shown in USD so you know what it costs.",
       "briefing": "Remind me one day before each client meeting",
       "briefingBody": "Meri suggests opening the client briefing. The AI is not called until you open it.",
       "briefingOn": "Briefing reminders on.",
@@ -742,11 +741,7 @@
       }
     },
     "stats": {
-      "commitments": "Open commitments",
-      "overdue": "{n} overdue",
-      "week": "This week",
       "suggested": "+{h} suggested",
-      "risks": "Tasks at risk",
       "open": "{n, plural, =0 {No open commitments} one {# open commitment} other {# open commitments}}",
       "weekHours": "{h} this week",
       "risk": "{n, plural, one {# at risk} other {# at risk}}",

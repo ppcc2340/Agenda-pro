@@ -1,0 +1,5 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": { "noEmit": true, "declaration": false, "types": ["node"] },
+  "include": ["demo-seed.ts", "seed-perf.ts", "test/**/*.ts", "vitest.config.ts"]
+}

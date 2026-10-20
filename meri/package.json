@@ -15,7 +15,7 @@
     "lint:deps": "depcruise apps packages --config .dependency-cruiser.cjs",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
-    "verify": "turbo run lint typecheck test build && pnpm lint:deps && pnpm test:scripts",
+    "verify": "turbo run lint typecheck test build && pnpm lint:deps && pnpm typecheck:scripts && pnpm test:scripts",
     "db:generate": "pnpm --filter @meri/db generate",
     "db:migrate": "pnpm --filter @meri/db migrate",
     "db:seed": "pnpm --filter @meri/db seed",
@@ -27,6 +27,7 @@
     "status": "node scripts/phase-status.mjs",
     "test:coverage": "turbo run test -- --coverage",
     "test:scripts": "vitest run --config scripts/vitest.config.ts",
+    "typecheck:scripts": "tsc -p scripts/tsconfig.json",
     "seed:perf": "tsx scripts/seed-perf.ts",
     "e2e": "pnpm --filter @meri/web e2e",
     "perf:hoy": "pnpm --filter @meri/web perf:hoy"

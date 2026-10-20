@@ -276,7 +276,6 @@
       "pause": "Al llegar al límite, la IA se pausa: las reglas, el calendario y el plan siguen funcionando.",
       "fakeNote": "Modo de pruebas: el extractor por reglas no consume créditos.",
       "usedAmount": "{used} USD",
-      "credits": "Tu plan incluye {credits} créditos de IA al mes; el gasto se muestra en USD para que sepas qué cuesta.",
       "briefing": "Avisarme un día antes de cada reunión con un cliente",
       "briefingBody": "Meri te sugiere abrir el briefing del cliente. No llama a la IA hasta que lo abras.",
       "briefingOn": "Avisos de briefing activados.",
@@ -742,11 +741,7 @@
       }
     },
     "stats": {
-      "commitments": "Compromisos abiertos",
-      "overdue": "{n} vencidos",
-      "week": "Esta semana",
       "suggested": "+{h} sugeridas",
-      "risks": "Tareas en riesgo",
       "open": "{n, plural, =0 {Sin compromisos abiertos} one {# compromiso abierto} other {# compromisos abiertos}}",
       "weekHours": "{h} esta semana",
       "risk": "{n, plural, one {# en riesgo} other {# en riesgo}}",

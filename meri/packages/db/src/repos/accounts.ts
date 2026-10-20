@@ -215,11 +215,21 @@ export async function softDeleteAccount(
       .where(and(eq(users.id, input.userId), isNull(users.deletedAt)))
       .returning({ id: users.id });
     if (marked.length === 0) return { deleted: false, revokedAccounts: 0 };
-    await tx
+    const owned = await tx
       .update(workspaces)
       .set({ deletedAt: input.now })
-      .where(and(eq(workspaces.id, input.workspaceId), eq(workspaces.ownerId, input.userId)));
+      .where(and(eq(workspaces.id, input.workspaceId), eq(workspaces.ownerId, input.userId)))
+      .returning({ id: workspaces.id });
     await tx.execute(sql`select set_config('app.workspace_id', ${input.workspaceId}, true)`);
+    // Only the owner takes the workspace (and its connections) down; any other member just leaves.
+    if (owned.length === 0) {
+      await audit(
+        tx,
+        { workspaceId: input.workspaceId, actor: "user", actorUserId: input.userId },
+        { action: "account.deleted", entityType: "user", entityId: input.userId, after: { workspaceKept: true } },
+      );
+      return { deleted: true, revokedAccounts: 0 };
+    }
     const revoked = await tx
       .update(integrationAccounts)
       // The ciphertext goes too (docs/06 §1): the caller revokes the tokens at the provider before this runs.

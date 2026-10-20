@@ -13,6 +13,7 @@ import { clientApi } from "@/lib/client-api";
 import { formatDate } from "@/lib/format";
 import { keys, useApiMutation, useCommitments } from "@/lib/hooks/use-api";
 import { clientColorVar } from "@/lib/plan";
+import { isOverdue } from "@/lib/commitments";
 import type { Commitment, CommitmentDirection, CommitmentStatus } from "@/lib/types";
 
 const PILL: Record<CommitmentStatus, "plain" | "risk" | "ok" | "sug" | "sea"> = {
@@ -24,9 +25,7 @@ const PILL: Record<CommitmentStatus, "plain" | "risk" | "ok" | "sug" | "sea"> = 
   dismissed: "plain",
 };
 
-export const isOverdue = (c: Commitment, now: Date) =>
-  c.status === "at_risk" ||
-  (c.dueAt !== null && new Date(c.dueAt).getTime() < now.getTime() && c.status === "confirmed");
+export { isOverdue };
 
 /** Compromisos tab (F-07, F-08; demo tabCompromisos): Debo / Me deben, client filter, states and follow-up. */
 export function CommitmentList({
