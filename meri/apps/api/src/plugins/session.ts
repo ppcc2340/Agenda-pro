@@ -12,7 +12,8 @@ export const SessionClaims = z.object({
   email: z.string().email(),
   locale: z.enum(["es", "en"]).default("es"),
   /** Sign-in instant in ms, set once by the web `jwt` callback and never refreshed (ADR 0007). */
-  authTime: z.number().int().positive(),
+  // Milliseconds since the epoch: a seconds value (< 1e12, before 2001) is refused rather than read as revoked.
+  authTime: z.number().int().min(1e12),
 });
 
 export interface Session {

@@ -120,7 +120,7 @@ Todas llevan `{ workspaceId, traceId }` además de su carga.
 | `daily.review` | `{ date }` (cron cada 15 min: workspaces que pasaron su hora de inicio en su zona) | Resumen del día (plantilla, sin IA), uno por día |
 | `billing.usage_rollup` | `{ period }` por workspace (diario y al cerrar el mes) | Consolida créditos, coste de IA, ingreso estimado del catálogo y margen bruto en `billing_rollups` (alarma < 70 % solo con ingresos); aviso `trial.ending` 3 días antes del fin de una prueba sin tarjeta |
 | `daily.close` | `{ date }` (cron cada 15 min: workspaces que pasaron su fin de jornada) | Cierre del día como notificación (plantilla, sin IA), una por día |
-| `data.delete_account` | `{ workspaceId }` (diario, por cada workspace borrado hace más de 30 días) | Llama a `purge_workspace` (SECURITY DEFINER) con el rol de la app: borra el workspace en cascada, sus usuarios sin otros workspaces y deja un recibo sin datos personales; después borra el cliente en Stripe (ADR 0007) |
+| `data.delete_account` | `{ workspaceId }` (el dispatcher, cada 6 h, encola cada workspace borrado hace más de 30 días) | Borra primero el cliente en Stripe (su id vive en las filas que la purga elimina) y después llama a `purge_workspace` (SECURITY DEFINER) con el rol de la app: borra el workspace en cascada, sus usuarios sin otros workspaces y deja un recibo sin datos personales. Ambos pasos son idempotentes; un fallo del proveedor no purga nada y el reintento completa el trabajo (ADR 0007) |
 | `integrations.renew_channels` | `{}` (cron) | Renueva `watch` de Gmail y Calendar |
 
 ## Eventos de dominio (internos)

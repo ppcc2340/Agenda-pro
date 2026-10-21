@@ -50,6 +50,8 @@ describe("POST /v1/account/sessions/revoke and the session lifetime", () => {
   it("refuses a token without a sign-in instant and one older than the absolute 14-day lifetime", async () => {
     const c = await t.createAccount("sess-c");
     expect((await me(await t.cookieFor(c, { authTime: undefined }))).statusCode).toBe(401);
+    // A seconds timestamp (another issuer following a wrong spec) is refused explicitly, not misread.
+    expect((await me(await t.cookieFor(c, { authTime: Math.floor(Date.now() / 1000) }))).statusCode).toBe(401);
     const old = Date.now() - 15 * 24 * 3600 * 1000;
     expect((await me(await t.cookieFor(c, { authTime: old }))).statusCode).toBe(401);
     expect((await me(await t.cookieFor(c, { authTime: Date.now() - 13 * 24 * 3600 * 1000 }))).statusCode).toBe(200);
