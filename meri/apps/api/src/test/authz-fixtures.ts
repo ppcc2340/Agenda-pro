@@ -19,6 +19,8 @@ export interface Fixtures {
   account: AccountIdentity;
   cookie: string;
   task: string;
+  /** A second task of the same workspace (dependency cases need two). */
+  otherTask: string;
   client: string;
   project: string;
   commitment: string;
@@ -33,6 +35,12 @@ export interface Fixtures {
   exclusion: string;
   /** Distinctive strings of this workspace that must never appear in another workspace's responses. */
   secrets: string[];
+}
+
+/** A fixture that silently fell back to "" would turn `/v1/x/:id` into `/v1/x/` (404) and pass without testing. */
+function must(id: string | undefined, name: string): string {
+  if (!id) throw new Error(`authz fixture "${name}" was not created`);
+  return id;
 }
 
 export async function makeFixtures(t: TestApp, label: string): Promise<Fixtures> {
@@ -52,10 +60,12 @@ export async function makeFixtures(t: TestApp, label: string): Promise<Fixtures>
     clientId: client.id,
     estimateMinutes: 60,
   });
+  const otherTask = await post("/v1/tasks", { title: `Otra tarea ${tag}`, estimateMinutes: 30 });
   // Google connection through the real OAuth flow (state + PKCE).
   const start = await t.app.inject({
     method: "POST",
-    url: "/v1/integrations/google/connect",
+    // Calendar and Gmail, so the mail routes are exercised for real (not refused for lack of scopes).
+    url: "/v1/integrations/google/connect?feature=all",
     headers: { cookie, ...csrf },
   });
   const state = start.cookies.find((c) => c.name === "meri.oauth.state")?.value ?? "";
@@ -93,7 +103,24 @@ export async function makeFixtures(t: TestApp, label: string): Promise<Fixtures>
     const proposal = await createProposal(
       tx,
       ws,
-      { kind: "capture", payload: { title: `Propuesta ${tag}` } },
+      {
+        kind: "capture",
+        // A complete capture payload, as the capture route writes it (a partial one would make confirm fail for
+        // everyone and the denial would prove nothing).
+        payload: {
+          text: `Propuesta ${tag}`,
+          title: `Propuesta ${tag}`,
+          clientId: null,
+          clientName: null,
+          dueAt: null,
+          dueText: null,
+          estimateMinutes: 30,
+          priority: 3,
+          kind: "shallow",
+          deadlineType: null,
+          source: "rules",
+        },
+      },
       NOW,
     );
     const start = new Date(NOW.getTime() - 86_400_000);
@@ -162,23 +189,25 @@ export async function makeFixtures(t: TestApp, label: string): Promise<Fixtures>
     );
     const contact = await upsertContact(tx, ws, { email: `ana@${tag}.example`, clientId: client.id });
     const exclusion = await addMailExclusion(tx, ws, { kind: "domain", value: `${tag}-spam.example` });
-    const audit = (await listAudit(tx, ws, 1)).items[0];
+    // An undoable entry (task.created), so the owner's own undo succeeds.
+    const audit = (await listAudit(tx, ws, 50)).items.find((e) => e.action === "task.created");
     return {
       commitment: commitment.id,
       proposal: proposal.id,
       event: event.id,
-      timeEntry: entries[0]?.id ?? "",
-      block: block?.id ?? "",
+      timeEntry: must(entries[0]?.id, "timeEntry"),
+      block: must(block?.id, "block"),
       notification: notification.id,
       contact: contact.id,
       exclusion: exclusion.id,
-      audit: audit?.id ?? "",
+      audit: must(audit?.id, "audit"),
     };
   });
   return {
     account,
     cookie,
     task: task.id,
+    otherTask: otherTask.id,
     client: client.id,
     project: project.id,
     integration,

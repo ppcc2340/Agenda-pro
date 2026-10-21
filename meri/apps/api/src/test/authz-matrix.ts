@@ -14,6 +14,11 @@ export interface AuthzCase {
   path?: (a: Fixtures, b: Fixtures) => string;
   body?: (a: Fixtures, b: Fixtures) => Record<string, unknown>;
   expect: Expectation;
+  /**
+   * Why this denial has no positive control (the owner's same request is not expected to succeed). Every other
+   * `denied` case is replayed by the owner of the ids, which must get a 2xx.
+   */
+  noControl?: string;
 }
 export type AuthzRule =
   /** Not under /v1: probes, webhooks (signed), internal (shared secret), hidden OpenAPI. */
@@ -74,7 +79,7 @@ export const AUTHZ_MATRIX: Record<string, AuthzRule> = {
     cases: [
       denied(() => ({ blockedBy: [] })),
       {
-        path: (_a, b) => `/v1/tasks/${b.task}/dependencies`,
+        path: (_a, b) => `/v1/tasks/${b.otherTask}/dependencies`,
         body: (a) => ({ blockedBy: [a.task] }),
         expect: "denied",
       },
@@ -85,7 +90,14 @@ export const AUTHZ_MATRIX: Record<string, AuthzRule> = {
   "POST /v1/integrations/:provider/connect": { kind: "own" },
   "GET /v1/integrations/:provider/callback": {
     kind: "tenant",
-    cases: [{ path: () => "/v1/integrations/google/callback?code=fake-code-1&state=x", expect: "denied" }],
+    cases: [
+      {
+        path: () => "/v1/integrations/google/callback?code=fake-code-1&state=x",
+        expect: "denied",
+        noControl:
+          "a forged state is refused for everyone; binding the signed state to its workspace is tested in integrations.test",
+      },
+    ],
   },
   "POST /v1/integrations/:id/pause": { kind: "tenant", param: "integration", cases: [denied()] },
   "DELETE /v1/integrations/:id": { kind: "tenant", param: "integration", cases: [denied()] },
@@ -130,7 +142,17 @@ export const AUTHZ_MATRIX: Record<string, AuthzRule> = {
 
   "GET /v1/plan": { kind: "own" },
   "POST /v1/plan/replan": { kind: "own" },
-  "POST /v1/plan/accept": { kind: "tenant", cases: [denied((a) => ({ proposalId: a.proposal }))] },
+  "POST /v1/plan/accept": {
+    kind: "tenant",
+    cases: [
+      {
+        body: (a) => ({ proposalId: a.proposal }),
+        expect: "denied",
+        noControl:
+          "needs a reschedule diff from a replan; plan.test checks B → 404 then A's own accept → 200",
+      },
+    ],
+  },
   "POST /v1/plan/blocks/:id/pin": {
     kind: "tenant",
     param: "block",
@@ -169,7 +191,14 @@ export const AUTHZ_MATRIX: Record<string, AuthzRule> = {
   "POST /v1/commitments/:id/followup-draft/save": {
     kind: "tenant",
     param: "commitment",
-    cases: [denied(() => ({ body: "Hola, ¿tienes noticias del contrato? Gracias." }))],
+    cases: [
+      {
+        body: () => ({ body: "Hola, ¿tienes noticias del contrato? Gracias." }),
+        expect: "denied",
+        noControl:
+          "needs an indexed Gmail thread; commitments.test saves the owner's draft (201) and refuses B (404)",
+      },
+    ],
   },
   "POST /v1/commitments/:id/remind": { kind: "tenant", param: "commitment", cases: [denied(() => ({}))] },
   "GET /v1/ai/usage": { kind: "own" },
@@ -231,7 +260,14 @@ export const AUTHZ_MATRIX: Record<string, AuthzRule> = {
   "POST /v1/billing/reactivate": { kind: "own" },
   "GET /v1/billing/fake/complete": {
     kind: "tenant",
-    cases: [{ path: () => "/v1/billing/fake/complete?session=cs_fake_unknown", expect: "denied" }],
+    cases: [
+      {
+        path: () => "/v1/billing/fake/complete?session=cs_fake_unknown",
+        expect: "denied",
+        noControl:
+          "an unknown checkout session is refused for everyone; completing one's own checkout is billing.test",
+      },
+    ],
   },
   "GET /v1/value-report": { kind: "own", query: "period=month" },
   "GET /v1/reviews/daily": { kind: "own", query: "date=2026-10-19" },

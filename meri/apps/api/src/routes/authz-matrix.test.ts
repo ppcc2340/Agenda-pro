@@ -93,6 +93,8 @@ describe("authorization matrix over every registered route", () => {
   it("workspace B holding workspace A's ids is denied or isolated, never sees A's data and never changes it", async () => {
     const before = await snapshotA();
     const failures: string[] = [];
+    const controls: { where: string; run: (c: Fixtures) => Promise<{ statusCode: number; body: string }> }[] =
+      [];
     let n = 0;
     for (const r of routes().filter((x) => x.url.startsWith("/v1/"))) {
       const rule = ruleOf(r.key);
@@ -108,11 +110,11 @@ describe("authorization matrix over every registered route", () => {
               },
             ]
           : rule.cases.map((c, i) => ({ ...c, label: `case ${String(i)}` }));
-      for (const c of cases) {
-        const path = c.path
-          ? c.path(a, b)
+      for (const kase of cases) {
+        const path = kase.path
+          ? kase.path(a, b)
           : fill(r.url, rule.kind === "tenant" && rule.param ? a[rule.param] : b.task);
-        const payload = c.body?.(a, b);
+        const payload = kase.body?.(a, b);
         const res = await t.app.inject({
           method: r.method,
           url: path,
@@ -123,17 +125,47 @@ describe("authorization matrix over every registered route", () => {
               ? { payload: {} }
               : {}),
         });
-        const where = `${r.key} [${c.label}]`;
+        const where = `${r.key} [${kase.label}]`;
         if (res.statusCode >= 500) failures.push(`${where} → ${String(res.statusCode)}`);
-        if (c.expect === "denied" && !DENIED.has(res.statusCode))
+        if (kase.expect === "denied" && !DENIED.has(res.statusCode))
           failures.push(`${where} → ${String(res.statusCode)} (expected denial)`);
         const leaked = leaks(res.body, `${path} ${JSON.stringify(payload ?? {})}`);
+        // Positive control (after the loop, each on a fresh owner C): the same request by the owner of the ids
+        // succeeds, so the denial above came from tenancy and not from an invalid or impossible request.
+        if (kase.expect === "denied" && kase.noControl === undefined) {
+          controls.push({
+            where,
+            run: (c) => {
+              const ownPath = kase.path
+                ? kase.path(c, c)
+                : fill(r.url, rule.kind === "tenant" && rule.param ? c[rule.param] : c.task);
+              const ownPayload = kase.body?.(c, c);
+              return t.app.inject({
+                method: r.method,
+                url: ownPath,
+                headers: { cookie: c.cookie, ...csrf, "idempotency-key": `authz-own-${String(++n)}` },
+                ...(ownPayload !== undefined
+                  ? { payload: ownPayload }
+                  : MUTATING.has(r.method) && r.method !== "DELETE"
+                    ? { payload: {} }
+                    : {}),
+              });
+            },
+          });
+        }
         if (leaked.length > 0) failures.push(`${where} leaked ${leaked.join(", ")}`);
       }
     }
+    for (const [i, control] of controls.entries()) {
+      const own = await control.run(await makeFixtures(t, `authz-c${String(i)}`));
+      if (own.statusCode >= 300)
+        failures.push(
+          `${control.where} positive control → ${String(own.statusCode)} ${own.body.slice(0, 300)}`,
+        );
+    }
     expect(failures).toEqual([]);
     expect(await snapshotA()).toBe(before);
-  });
+  }, 180_000);
 
   it("revoking sessions or deleting another account never touches workspace A", async () => {
     const before = await snapshotA();
