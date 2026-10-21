@@ -41,18 +41,32 @@ const ENTITIES: Record<string, string> = {
   euro: "€",
 };
 
+/** Decodes entities; a numeric entity outside Unicode (or a lone surrogate) becomes a space instead of throwing. */
+function decodeEntities(text: string): string {
+  return text.replace(/&(#\d{1,8}|#x[0-9a-f]{1,8}|[a-z]+);/gi, (m, code: string) => {
+    if (code.startsWith("#")) {
+      const cp = code.startsWith("#x") || code.startsWith("#X") ? parseInt(code.slice(2), 16) : Number(code.slice(1));
+      const valid = cp > 0 && cp <= 0x10ffff && !(cp >= 0xd800 && cp <= 0xdfff);
+      return valid ? String.fromCodePoint(cp) : " ";
+    }
+    return ENTITIES[code] ?? ENTITIES[code.toLowerCase()] ?? m;
+  });
+}
+
+const stripTags = (text: string) => text.replace(/<[^>]+>/g, " ");
+/** Second pass after decoding: only tag-shaped text (`<a`, `</a`, `<!--`, `<?`) — "a < b y c > d" is prose. */
+const stripDecodedTags = (text: string) => text.replace(/<[a-z/!?][^<>]*>/gi, " ");
+
 export function stripHtml(input: string): string {
-  return input
-    .replace(/<style[\s\S]*?<\/style>/gi, " ")
-    .replace(/<script[\s\S]*?<\/script>/gi, " ")
-    .replace(/<br\s*\/?>/gi, "\n")
-    .replace(/<\/(p|div|li|tr|h[1-6])>/gi, "\n")
-    .replace(/<[^>]+>/g, " ")
-    .replace(/&(#\d+|#x[0-9a-f]+|[a-z]+);/gi, (m, code: string) => {
-      if (code.startsWith("#x")) return String.fromCodePoint(parseInt(code.slice(2), 16));
-      if (code.startsWith("#")) return String.fromCodePoint(Number(code.slice(1)));
-      return ENTITIES[code] ?? ENTITIES[code.toLowerCase()] ?? m;
-    });
+  const withoutMarkup = stripTags(
+    input
+      .replace(/<style[\s\S]*?<\/style>/gi, " ")
+      .replace(/<script[\s\S]*?<\/script>/gi, " ")
+      .replace(/<br\s*\/?>/gi, "\n")
+      .replace(/<\/(p|div|li|tr|h[1-6])>/gi, "\n"),
+  );
+  // Second pass: encoded markup ("&lt;script&gt;") must not come back as a tag after decoding (fuzzing, P5-06).
+  return stripDecodedTags(decodeEntities(withoutMarkup));
 }
 
 const QUOTE_HEADERS = [

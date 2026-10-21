@@ -226,3 +226,11 @@ describe("policy and context (docs/05 §6, F-09 AC1)", () => {
     ).toEqual([]);
   });
 });
+
+describe("sanitizer regressions found by fuzzing (P5-06)", () => {
+  it("does not crash on numeric entities outside Unicode and never turns encoded markup into tags", () => {
+    expect(() => sanitizeMailBody("Hola &#99999999; &#xD800; &#x110000; adiós")).not.toThrow();
+    expect(sanitizeMailBody("&lt;script&gt;alert(1)&lt;/script&gt; texto")).not.toMatch(/<\/?script/i);
+    expect(sanitizeMailBody("a &lt; b y c &gt; d")).toContain("a < b");
+  });
+});
