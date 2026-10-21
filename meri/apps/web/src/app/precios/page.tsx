@@ -12,6 +12,7 @@ export async function generateMetadata() {
 export default async function PricingPage() {
   const t = await getTranslations("pricing");
   const tApp = await getTranslations("app");
+  const tSecurity = await getTranslations("security");
   return (
     <main className="mx-auto max-w-[920px] px-4 py-10">
       <Link href="/" className="mb-6 flex items-center gap-2.5 font-head text-2xl font-bold tracking-tight">
@@ -20,9 +21,7 @@ export default async function PricingPage() {
       </Link>
       <h1 className="text-[28px] leading-[1.1] md:text-[34px]">{t("title")}</h1>
       <p className="mt-2 max-w-[60ch] text-[15.5px] text-ink2">{t("subtitle")}</p>
-      <p className="mt-3 rounded-lg border border-rule bg-raised px-3 py-2 text-ink2">
-        {t("testNote")}
-      </p>
+      <p className="mt-3 rounded-lg border border-rule bg-raised px-3 py-2 text-ink2">{t("testNote")}</p>
       <div className="mt-6">
         <PlanComparator ctaHref="/login" />
       </div>
@@ -33,6 +32,10 @@ export default async function PricingPage() {
         ·{" "}
         <Link href="/terms" className="underline">
           {t("terms")}
+        </Link>{" "}
+        ·{" "}
+        <Link href="/seguridad" className="underline">
+          {tSecurity("link")}
         </Link>
       </p>
     </main>

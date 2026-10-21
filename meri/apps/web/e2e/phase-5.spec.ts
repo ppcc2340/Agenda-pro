@@ -21,7 +21,29 @@ async function signUp(page: Page): Promise<void> {
 }
 
 test.describe("phase 5: permissions, retention, export and sessions", () => {
-  test("Control shows the real permissions, what Meri never does, and the export formats", async ({ page }) => {
+  test("«Cómo protegemos tus datos» is public, linked from login, pricing and the legal pages, and accessible", async ({
+    browser,
+  }) => {
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    for (const from of ["/login?manual=1", "/precios", "/privacy", "/terms"]) {
+      await page.goto(from);
+      await expect(page.getByRole("link", { name: "Cómo protegemos tus datos" })).toHaveAttribute(
+        "href",
+        "/seguridad",
+      );
+    }
+    await page.goto("/seguridad");
+    await expect(page).toHaveURL(/\/seguridad$/);
+    await expect(page.getByRole("heading", { level: 1, name: "Cómo protegemos tus datos" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 2, name: "Qué no hacemos nunca" })).toBeVisible();
+    await expectAccessible(page, "security-page");
+    await context.close();
+  });
+
+  test("Control shows the real permissions, what Meri never does, and the export formats", async ({
+    page,
+  }) => {
     await demoLogin(page);
     await goto(page, "/control");
     await expect(page.getByRole("heading", { name: "Permisos" })).toBeVisible();

@@ -1153,5 +1153,47 @@
       "newRisks": "New risks",
       "tomorrow": "Tomorrow's priorities"
     }
+  },
+  "security": {
+    "title": "How we protect your data",
+    "intro": "Meri works with your professional email and calendar. This is what it does with them, described from what the code does.",
+    "sections": {
+      "read": {
+        "title": "What we read",
+        "body": "The events in your calendars, to plan around your meetings, and your email threads, to detect commitments and follow-ups. You can exclude senders and domains, and connect only your calendar."
+      },
+      "store": {
+        "title": "What we store",
+        "body": "We do not store the body of your emails or their attachments: only ids, minimal metadata and a quote of up to 200 characters that explains each proposal. Dismissed proposals and their quotes are deleted according to the retention you choose (90 days by default)."
+      },
+      "never": {
+        "title": "What we never do",
+        "body": "We never send email on your behalf: we only prepare drafts that you review and send. We cannot change your meetings: our write permission in Google is limited to the «Meri» calendar. We never use your data for advertising or to train general models."
+      },
+      "ai": {
+        "title": "AI proposes, you decide",
+        "body": "What the AI suggests stays a proposal, drawn with a dashed line, until you confirm it. Email text is treated as untrusted data: it is sanitised and instructions inside it are never followed. The AI provider receives only the fragments each operation needs."
+      },
+      "encryption": {
+        "title": "Encryption",
+        "body": "Google credentials are protected with envelope encryption (AES-256-GCM) and keys held in a key management service, with rotation. Everything travels over HTTPS with HSTS, and backups are encrypted."
+      },
+      "isolation": {
+        "title": "Isolation",
+        "body": "Every account is isolated in the database with row-level security, and every API route is tested so one account can never see or change another's data. Information about one client is never mixed into another client's context."
+      },
+      "control": {
+        "title": "You are in control",
+        "body": "In Control you see the permissions you granted and every automatic action, which you can undo. You can revoke a connection, sign out on every device, export all your data (JSON or ZIP) and delete your account: after 30 days everything is erased and we verify nothing is left."
+      },
+      "incidents": {
+        "title": "If something goes wrong",
+        "body": "We follow an incident response procedure. If an incident affects your personal data we tell you and, where required, notify the authority within 72 hours."
+      }
+    },
+    "privacy": "Privacy policy",
+    "terms": "Terms",
+    "back": "Back",
+    "link": "How we protect your data"
   }
 }

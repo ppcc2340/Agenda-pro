@@ -20,6 +20,7 @@ export default async function LoginPage({
   if (session?.user) redirect(next);
   const t = await getTranslations("login");
   const tApp = await getTranslations("app");
+  const tSecurity = await getTranslations("security");
   const { modes, env } = getServerConfig();
   // DEMO_MODE (PROTOTYPE.md, D-049/D-053): sign in as the demo user without a form, through the route handler
   // that may set cookies. `?manual=1` (sign-out, E2E of other accounts) and `?error` keep the form.
@@ -101,6 +102,11 @@ export default async function LoginPage({
               </Link>
             ),
           })}
+        </p>
+        <p className="mt-2 text-[12.5px] text-ink3">
+          <Link href="/seguridad" className="underline">
+            {tSecurity("link")}
+          </Link>
         </p>
       </div>
     </main>

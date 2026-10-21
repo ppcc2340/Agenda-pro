@@ -1153,5 +1153,47 @@
       "newRisks": "Riesgos nuevos",
       "tomorrow": "Prioridades de mañana"
     }
+  },
+  "security": {
+    "title": "Cómo protegemos tus datos",
+    "intro": "Meri trabaja con tu correo y tu calendario profesionales. Esto es lo que hace con ellos, contado desde lo que hace el código.",
+    "sections": {
+      "read": {
+        "title": "Qué leemos",
+        "body": "Los eventos de tus calendarios, para planificar alrededor de tus reuniones, y los hilos de tu correo, para detectar compromisos y seguimientos. Puedes excluir remitentes y dominios, y conectar solo el calendario."
+      },
+      "store": {
+        "title": "Qué guardamos",
+        "body": "No guardamos el cuerpo de tus correos ni sus adjuntos: solo identificadores, metadatos mínimos y una cita de hasta 200 caracteres que explica cada propuesta. Las propuestas descartadas y sus citas se borran según la retención que elijas (90 días por defecto)."
+      },
+      "never": {
+        "title": "Qué no hacemos nunca",
+        "body": "No enviamos correos en tu nombre: solo preparamos borradores que tú revisas y envías. No podemos modificar tus reuniones: el permiso de escritura en Google se limita al calendario «Meri». No usamos tus datos para publicidad ni para entrenar modelos generales."
+      },
+      "ai": {
+        "title": "La IA propone, tú decides",
+        "body": "Lo que sugiere la IA queda como propuesta, con trazo discontinuo, hasta que lo confirmas. El texto de los correos se trata como dato no confiable: se sanea y nunca se ejecutan instrucciones que contenga. El proveedor de IA recibe solo los fragmentos necesarios para cada operación."
+      },
+      "encryption": {
+        "title": "Cifrado",
+        "body": "Las credenciales de Google se cifran con cifrado de sobre (AES-256-GCM) y claves gestionadas en un servicio de claves, con rotación. Todo viaja por HTTPS con HSTS, y las copias de seguridad van cifradas."
+      },
+      "isolation": {
+        "title": "Aislamiento",
+        "body": "Cada cuenta está aislada en la base de datos con seguridad a nivel de fila, y cada ruta de la API se prueba para que una cuenta nunca vea ni cambie datos de otra. La información de un cliente tampoco se mezcla en el contexto de otro."
+      },
+      "control": {
+        "title": "Tú tienes el control",
+        "body": "En Control ves qué permisos concediste y toda la actividad automática, que puedes deshacer. Puedes revocar una conexión, cerrar sesión en todos los dispositivos, exportar todos tus datos (JSON o ZIP) y borrar la cuenta: a los 30 días se elimina todo y se verifica que no queda nada."
+      },
+      "incidents": {
+        "title": "Si algo falla",
+        "body": "Tenemos un procedimiento de respuesta a incidentes. Si un incidente afecta a tus datos personales, te avisamos y, cuando corresponda, lo notificamos a la autoridad en menos de 72 horas."
+      }
+    },
+    "privacy": "Política de privacidad",
+    "terms": "Términos",
+    "back": "Volver",
+    "link": "Cómo protegemos tus datos"
   }
 }

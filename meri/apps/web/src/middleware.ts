@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { buildCsp, newNonce } from "./server/csp";
 
-const PUBLIC = ["/login", "/privacy", "/terms", "/precios", "/api/auth", "/api/demo", "/api/session", "/manifest.webmanifest", "/icon", "/mobile"];
+const PUBLIC = ["/login", "/privacy", "/terms", "/precios", "/seguridad", "/api/auth", "/api/demo", "/api/session", "/manifest.webmanifest", "/icon", "/mobile"];
 
 /**
  * Per-request CSP nonce (D-080): Next reads the policy from the request headers and stamps the nonce on its own
