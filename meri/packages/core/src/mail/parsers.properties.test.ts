@@ -64,7 +64,9 @@ describe("mail and capture parsers under hostile input (P5-06)", () => {
         fc.dictionary(fc.string({ maxLength: 20 }), fc.string({ maxLength: 60 }), { maxKeys: 5 }),
         fc.array(fc.string({ maxLength: 20 }), { maxLength: 4 }),
         (from, to, subject, headers, labels) => {
-          const r = prefilterMessage({ from, to, subject, headers, labels }, [{ kind: "domain", value: "spam.example" }]);
+          const r = prefilterMessage({ from, to, subject, headers, labels }, [
+            { kind: "domain", value: "spam.example" },
+          ]);
           expect(typeof r.keep).toBe("boolean");
           if (!r.keep) expect(r.reason).not.toBeNull();
           expect(typeof emailDomain(from)).toBe("string");

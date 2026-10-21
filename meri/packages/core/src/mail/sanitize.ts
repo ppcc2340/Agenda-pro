@@ -45,7 +45,8 @@ const ENTITIES: Record<string, string> = {
 function decodeEntities(text: string): string {
   return text.replace(/&(#\d{1,8}|#x[0-9a-f]{1,8}|[a-z]+);/gi, (m, code: string) => {
     if (code.startsWith("#")) {
-      const cp = code.startsWith("#x") || code.startsWith("#X") ? parseInt(code.slice(2), 16) : Number(code.slice(1));
+      const cp =
+        code.startsWith("#x") || code.startsWith("#X") ? parseInt(code.slice(2), 16) : Number(code.slice(1));
       const valid = cp > 0 && cp <= 0x10ffff && !(cp >= 0xd800 && cp <= 0xdfff);
       return valid ? String.fromCodePoint(cp) : " ";
     }
