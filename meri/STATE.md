@@ -1,6 +1,6 @@
 # STATE — estado vivo del proyecto
 
-**Fase actual:** fase 6 (beta cerrada e instrumentación de validación), parte técnica. Fases 0–3 cerradas el 2026-10-19; hito de prototipo y fase 4 el 2026-10-20; fase 5 el 2026-10-21 (con tres criterios que esperan a personas: rotación en staging, revisión de Google y CASA).
+**Fase actual:** construcción autónoma terminada. Fases 0–3 cerradas el 2026-10-19; hito de prototipo y fase 4 el 2026-10-20; fase 5 y la **parte técnica de la fase 6** el 2026-10-21. Lo que queda necesita personas: cuentas y claves, despliegue, verificación de Google y CASA, revisión legal, la beta con clientes y su decisión. Ver «Informe final» justo debajo.
 
 ## Fases
 | # | Fase | Estado |
@@ -12,8 +12,74 @@
 | — | Hito de prototipo (`PROTOTYPE.md`, `pnpm demo`) | ✅ cerrado (2026-10-20) — `docs/prototype/ACCEPTANCE.md` |
 | 4 | Facturación, créditos de IA e informes de valor | ✅ cerrada (2026-10-20) — `phases/04-billing-value/ACCEPTANCE.md` |
 | 5 | Seguridad, cumplimiento y verificación OAuth | ✅ cerrada (2026-10-21) — `phases/05-security-compliance/ACCEPTANCE.md` (staging, Google y CASA pendientes de personas) |
-| 6 | Beta cerrada e instrumentación de validación | pendiente |
+| 6 | Beta cerrada e instrumentación de validación | 🟡 parte técnica cerrada (2026-10-21) — `phases/06-beta-validation/ACCEPTANCE.md`; los cinco criterios esperan a la beta con personas |
 | 7 | Post-MVP (Outlook, Notion, equipos, voz) | backlog |
+
+## Informe final (2026-10-21)
+
+### Qué se construyó
+Meri, el asistente de agenda para profesionales con clientes, de punta a punta en modo `fake` y con los adaptadores `live` escritos:
+- **Planificación** (fase 1): tareas, captura ⌘K por reglas o IA, planificador puro con propiedades, replanificación con diffs seguros, propuestas, deshacer y bloques en un calendario «Meri» propio.
+- **Correo** (fase 2): Gmail sin cuerpos en base de datos, extracción de compromisos con política anti-inyección, seguimiento con **borradores** (nunca envío), privacidad y retención.
+- **Clientes, tiempo y briefings** (fase 3), con aislamiento por cliente probado por propiedades.
+- **Prototipo navegable** (`pnpm demo`).
+- **Facturación, créditos de IA e informe de valor** (fase 4).
+- **Seguridad y cumplimiento** (fase 5): sesiones revocables, CSRF, KMS con rotación, copias cifradas, supresión verificada, auditoría inmutable, matriz de autorización.
+- **Fase 6, parte técnica**:
+  - adaptadores de Google en vivo (OAuth con PKCE, Calendar, Gmail, refresco de tokens con *compare-and-swap*);
+  - imágenes Docker y comprobación de migraciones;
+  - beta cerrada con invitaciones y lista de espera, comentarios in-app y encuesta Sean Ellis;
+  - experimento de precio por cohortes con flags en base de datos;
+  - panel de decisión e informe borrador;
+  - muestra de calidad de IA con consentimiento.
+
+Las reglas de producto se cumplen en código y tests: la IA propone, las reglas deciden y la persona confirma; lo confirmado es sólido y lo sugerido punteado; no hay envío de correo; nunca se tocan reuniones de terceros; toda acción automática se audita y se puede deshacer; el aislamiento por cliente tiene propiedades fast-check.
+
+### Cómo ejecutarlo
+- Servicios: Postgres 16 y Redis (`docker compose up -d`, o `pg_ctlcluster 16 main start` + `redis-server --daemonize yes`).
+- Dependencias y base: `pnpm install`, después `pnpm db:migrate`.
+- Demo completa con datos: `pnpm --filter @meri/web build && DEMO_NOW=2026-10-20T08:40:00Z pnpm demo --reset` → `http://localhost:3000` (entra sola como la cuenta de demo). `pnpm demo --build` falla hoy en este contenedor (deuda abajo): construir la web antes, como en el comando.
+- Desarrollo: `cp .env.example .env` y `pnpm dev`.
+- Calidad:
+  - `DATABASE_URL_TEST=postgres://meri_app:meri_app@localhost:5432/meri_test pnpm verify`
+  - `DEMO_NOW=2026-10-20T08:40:00Z pnpm e2e`, con la demo corriendo
+  - `pnpm eval`
+- Estado de los bloqueos: `pnpm blockers`.
+
+### Qué se probó y con qué cobertura
+- `pnpm verify` en verde: lint, typecheck, build, dependency-cruiser, `check:migrations` y **682 tests** (api 165, core 135, integrations 111, jobs 72, scripts 64, db 43, config 27, web 27, ai 20, worker 18). Corren contra Postgres y Redis reales, con RLS forzada y el rol de la aplicación sin privilegios.
+- Cobertura: `core` 99,3 % de líneas y 92,1 % de ramas; `api` 98,2 % y 86,0 %.
+- E2E con Playwright y axe (AA) en escritorio y móvil: **47 pasan y 4 se omiten** por ser «solo escritorio». El de la fase 6 encontró un fallo real: la lista de espera no llegaba nunca a la API. Está corregido.
+- Evals de IA al 100 % en sus cinco conjuntos (captura, prefiltro, 238 compromisos, 28 correos hostiles, 12 briefings), **solo contra el cliente de IA simulado**.
+- Revisores (code, security, test, ux) al cierre de cada fase. Los hallazgos altos y medios están corregidos; los bajos, en «Deuda técnica».
+
+### Qué se probó solo contra simuladores (léase con cuidado)
+- **Google**: OAuth, Calendar y Gmail en vivo están probados contra un simulador HTTP propio (`calendar-simulator.ts`, `fetch` simulado) que imita la API documentada. **Nunca han hablado con Google.** La primera prueba real es `pnpm smoke google-oauth`, que hace una persona con credenciales. Los esquemas Zod rechazan respuestas inesperadas con un error claro.
+- **Anthropic**: el cliente, el pipeline y la política anti-inyección se probaron con transporte simulado. El 100 % de los evals es sobre casos sintéticos alineados con las reglas, no una medida de la calidad del modelo real (`AI_MODE=live pnpm eval` pendiente).
+- **Stripe**: el adaptador en vivo se probó con `fetch` simulado y la firma de webhooks con el simulador; nunca contra Stripe.
+- **AWS KMS**: el cliente se probó simulado; la rotación solo se ha ejecutado en local.
+- **Observabilidad**: Sentry, OpenTelemetry y PostHog son no-op o simulados.
+- **Notificaciones**: solo bandeja in-app y `FakeNotifier`; no existe proveedor de correo transaccional ni push.
+- **Despliegue**: las imágenes se construyen y arrancan en CI (`images.yml`). No hay staging ni producción, así que no hay uptime, alertas ni rotación en staging medidos.
+- **CI**: el push a GitHub devuelve 403 desde el commit 883bb0b, así que los workflows nunca se han ejecutado en GitHub con este código. Todo se verificó en local.
+
+### Lo que queda para una persona (en orden)
+
+| # | Qué | Cómo incorporarlo |
+|---|---|---|
+| 1 | Reconectar GitHub y subir los commits locales (más de 75) | Reconectar en https://claude.ai/connect-github y después `git push -u origin claude/new-session-1uwiqv`. Revisar que CI (`ci.yml`, `codeql.yml`, `images.yml`) quede en verde. Si el repositorio es privado, activar GitHub Advanced Security para CodeQL |
+| 2 | Dominio y marca | `docs/blockers/domain-brand.md` → `/connect-blocker domain-brand` · `pnpm smoke domain-brand` |
+| 3 | Proyecto OAuth de Google en modo «Testing» (≤ 100 usuarios de prueba) | `docs/blockers/google-oauth.md` → `/connect-blocker google-oauth`, `GOOGLE_MODE=live`, `pnpm smoke google-oauth` (con `SMOKE_GOOGLE_REFRESH_TOKEN` y `SMOKE_GOOGLE_EMAIL`) |
+| 4 | Verificación de Google (vídeo, uso limitado) y evaluación CASA | `docs/google-verification.md` (paquete completo). Empezar en cuanto exista el dominio: tarda semanas |
+| 5 | Clave de Anthropic y evals contra el modelo real | `/connect-blocker anthropic` · `pnpm smoke anthropic` · `AI_MODE=live pnpm eval` (umbrales de `docs/05` §7) |
+| 6 | Stripe en modo test (y precios B si se hace el experimento) | `/connect-blocker stripe` · `pnpm smoke stripe` · `docs/runbooks/beta.md` §3 → `pnpm flags:set price_experiment on` |
+| 7 | KMS de producción, rotación en staging | `/connect-blocker kms` · `pnpm smoke kms` · `pnpm keys:rotate` (`docs/runbooks/key-rotation.md`) |
+| 8 | Sentry y PostHog | `/connect-blocker observability` · `pnpm smoke observability` |
+| 9 | Hosting, staging y producción, copias programadas y alertas | `docs/runbooks/deploy.md` (imágenes `api`, `worker`, `web`, `migrate`; `TRUST_PROXY_HOPS` contando la web; `BETA_INVITE_REQUIRED=1`) · `pnpm backup` diario con bloqueo de objetos · `pnpm dr:drill --report` (`docs/runbooks/backup-restore.md`) |
+| 10 | Proveedor de correo transaccional y soporte | Elegir proveedor, implementar un `Notifier` en vivo (D-020; hoy solo `FakeNotifier`) y un buzón de soporte en el dominio |
+| 11 | Revisión legal | `docs/compliance/` (registro de tratamientos, subencargados, DPA), `/privacy`, `/terms`, `/seguridad` (borradores marcados como tales) |
+| 12 | Beta | `pnpm beta:invite <correo>` (15–25 clientes de diseño) · cada semana `pnpm beta:panel`, `pnpm ai:review-sample` (etiquetar a mano y reescribir como casos sintéticos en `evals/`) · `pnpm beta:report` al final · registrar aquí la decisión (avanzar / iterar / pivotar) |
+| 13 | Cobrar, borrar fuera del entorno local, enviar correo | Siempre las hace una persona. El código no envía correo (solo borradores) |
 
 ## Decisiones
 - D-001: Vertical inicial = profesionales de servicios con clientes/matters.
@@ -88,6 +154,15 @@
 - D-093: scopes de Calendar = `calendar.readonly` + `calendar.app.created` (antes `calendar.events`, que además no permitía crear el calendario «Meri»); escritura limitada por permiso a los calendarios de Meri; `FORBIDDEN_SCOPES` con test; adenda en ADR 0007.
 - D-094: la puerta de autenticación, el CSRF y la idempotencia deciden por la ruta resuelta (`request.routeOptions.url`), nunca por `request.url`: el router decodifica `%xx` antes de enrutar (hallazgo de los revisores, corregido con test por ruta codificada en la matriz).
 - D-095: cada denegación de la matriz de autorización exige control positivo (la misma petición del dueño responde 2xx) o un motivo explícito (`noControl`) con el test donde vive su control.
+- D-096..D-104: contrato de la fase 6 (texto completo en `phases/06-beta-validation/PLAN.md` y ADR 0008): adaptadores de Google en vivo sobre `fetch` con hosts y métodos cerrados; `GoogleAccountRef` y refresco con *compare-and-swap*; despliegue preparado, no ejecutado; beta cerrada con invitaciones, lista de espera, comentarios y Sean Ellis; panel de decisión con funciones puras y muestra mínima; cohortes de precio fijas por workspace; muestra de calidad de IA con consentimiento y censura; estabilización e informe humanos.
+- D-105: el logger no censura `*.code`, porque ocultaría los códigos de error de toda la aplicación. El `code` de OAuth solo viaja en la query string del callback, y el serializador de peticiones la elimina de los registros.
+- D-106: la cohorte de precio usa FNV-1a en lugar del sha256 del plan, para que `core` siga siendo puro y sin `crypto`. No es una decisión de seguridad: solo hace falta un reparto determinista y estable.
+- D-107: las flags viven en la base de datos (`DbFlagStore`, caché de 30 s). Las cambia una persona con `pnpm flags:set`; la aplicación solo las lee. `flags:set` rechaza `price_experiment on` con `STRIPE_MODE=live` si faltan los precios B, salvo con `--force`.
+- D-108: la variable final es `BETA_INVITE_REQUIRED`; el plan la llamaba `BETA_INVITE_ONLY`.
+- D-109: un workspace que ya paga queda fijo en la cohorte A aunque se active el experimento. A los demás se les asigna cohorte la primera vez que ven su plan, y no cambia nunca.
+- D-110: `/api/v1/waitlist` es la única ruta de la API que el middleware de la web deja pasar sin sesión. La API sigue exigiendo CSRF, `Origin` exacto, límites y honeypot.
+- D-111: las muestras de calidad de IA se guardan fuera del repositorio (`~/meri-review-samples` o `MERI_REVIEW_SAMPLE_DIR`); el comando rechaza una carpeta dentro. Se censuran también los identificadores.
+- D-112: el tamaño del lote de sondeo es una opción del despachador (`pollBatch`, 500 por defecto). Los tests ya no reescriben filas de otras suites que corren en paralelo sobre la base compartida.
 - D-009: La demo `demo/desktop.html` y `demo/mobile.html` es la referencia visual y de textos (ver `docs/11-design-system.md`).
 
 ## Bloqueos humanos
@@ -107,6 +182,8 @@ Comprobar estado: `pnpm blockers`. Incorporar uno: `/connect-blocker <id>`.
 La verificación de scopes de Gmail tarda semanas: conviene empezarla en cuanto exista el dominio.
 
 Pendientes humanos añadidos en la fase 5 (sin adaptador que los sustituya): crear la clave de AWS KMS y su política, staging para ejecutar la rotación (`docs/runbooks/key-rotation.md`), programar la copia diaria y su almacenamiento con bloqueo de objetos (`docs/runbooks/backup-restore.md`), GitHub Advanced Security si el repositorio es privado (CodeQL), revisión legal de privacidad, términos y DPA (`docs/compliance/`), y el paquete de verificación de Google con el vídeo y la evaluación CASA (`docs/google-verification.md`). El push a GitHub devuelve 403 desde el commit 883bb0b (reconectar GitHub en claude.ai).
+
+Pendientes humanos de la fase 6: la beta en sí (reclutar, invitar, entrevistar, decidir), hosting y despliegue, proveedor de correo transaccional y soporte, precios B en Stripe si se hace el experimento, y la primera prueba real de los adaptadores de Google (`pnpm smoke google-oauth`). Lista completa con comandos en «Informe final».
 
 ## Fase 0 — qué se construyó
 - Monorepo pnpm + Turborepo con `pnpm verify` (lint, typecheck, test, build, dependency-cruiser) en verde y CI en `.github/workflows/ci.yml` (raíz del repo, `working-directory: meri`): servicios Postgres/Redis, migración sobre base limpia, verify, 6 pruebas de humo, artefacto OpenAPI, gitleaks y `pnpm audit`.
@@ -186,6 +263,17 @@ Cómo probarlo: `pnpm demo`, Control → «Plan» → «Elegir plan» (checkout 
 
 Cómo probarlo: `pnpm demo` → Control → «Permisos», «Privacidad» (exportar JSON/ZIP, cerrar sesión en todos los dispositivos), «Correo y privacidad» (retención); `/seguridad` sin sesión; `pnpm dr:drill`; `pnpm keys:rotate`.
 
+## Fase 6 — qué se construyó (parte técnica)
+- **Google en vivo** (D-096/D-097): cliente HTTP con hosts y métodos permitidos, sin redirecciones y con tope de tamaño; OAuth con PKCE, revocación de concesiones con scopes prohibidos; Calendar (paginación, `syncToken`, 410, recurrentes, calendarios ocultos fuera, calendario «Meri» buscado por dueño, nombre y marca, escritura solo en él); Gmail (historial reanudable, MIME, mensajes borrados entre listar y leer, borradores sin inyección de cabeceras); refresco de tokens con *compare-and-swap* compartido entre referencias; todo probado contra un simulador.
+- **Despliegue** (D-098): `Dockerfile` multi-etapa no-root con base fijada por digest (api, worker, web *standalone*, migrate), `.dockerignore` sin `.env*`, `images.yml` que construye y arranca las cuatro, `pnpm check:migrations` (destructivas y de seguridad, con marca de aprobación revisada por CODEOWNERS), `docs/runbooks/deploy.md`.
+- **Beta** (D-099/D-101, D-108, D-110): migraciones 0022/0023, invitaciones y lista de espera (`global_personal`, purgadas al crear la cuenta y por correo), `pnpm beta:invite` / `beta:forget`, `POST /v1/waitlist` público con CSRF, `Origin`, límites y honeypot, `POST /v1/feedback` (20 al día), encuesta Sean Ellis en Hoy (una respuesta por cuenta, índice único), política de privacidad ampliada.
+- **Precio** (D-102, D-106, D-107, D-109): cohortes A/B deterministas, flags en base de datos, precios por cohorte en el comparador, checkout y rollup; `pnpm flags:set`.
+- **Panel e informe** (D-100, D-104): `pnpm beta:panel` y `pnpm beta:report` desde agregados, en sesión de solo lectura.
+- **Calidad de IA** (D-103, D-111): consentimiento `evalConsent` (apagado por defecto), `pnpm ai:review-sample` con censura y auditoría `ai.review_sampled` visible en la actividad.
+- **Calidad**: E2E `apps/web/e2e/phase-6.spec.ts` (desktop y móvil, axe), tests de cada pieza; revisores code/security/test/ux con altos y medios corregidos.
+
+Cómo probarlo: `pnpm demo` → `/login?manual=1&beta=invite` (lista de espera), «Enviar comentarios» en la barra lateral o en «Más», Control → IA → «Ayudar a mejorar la IA de Meri»; `pnpm beta:panel`; `pnpm flags:set price_experiment on` y Control → «Plan».
+
 ## Deuda técnica
 Hallazgos de severidad baja de los revisores de la fase 0 (los altos y medios están corregidos):
 - Seguridad: `users` y `workspaces` son legibles por cualquier contexto de workspace (lo necesita el bootstrap); añadir política por usuario/membresía cuando la sesión lleve `userId` a SQL. CSP estricta con nonce en la fase 5 (P5-02); hoy `script-src 'unsafe-inline'` (+ `'unsafe-eval'` solo en desarrollo). El proveedor de acceso de desarrollo existe siempre que `GOOGLE_MODE=fake` fuera de producción: limitar a `localhost`/`DEMO_MODE` antes de un staging público. El panel de salud del worker escucha sin autenticación (ligarlo a la red interna en despliegue). Avisos de `pnpm audit` solo en herramientas de desarrollo (vitest/vite/tinypool), seguidos por Dependabot; el audit bloqueante de CI cubre dependencias de producción.
@@ -206,6 +294,25 @@ Hallazgos de severidad baja de los revisores de la fase 0 (los altos y medios es
 
 - Fase 5 (hallazgos bajos de los revisores; altos y medios corregidos en los commits `fix(security)`, `fix(db)`, `fix(web)`, `test(security)` y `ci(security)` del cierre): `SESSION_MAX_AGE_MS` duplicado en web y API y `splitList` repetido en `integrations/src/factory.ts` (mover a `@meri/config`); `repos/accounts.ts` (≈330) y `repos/integrations.ts` (386) superan las 300 líneas; la ruta de exportación no declara la respuesta 200 en OpenAPI (dos tipos de contenido); el callback `jwt` de la web solo aplica la caducidad absoluta (la revocación la aplica la API, que la web consulta en cada carga); `rotate-keys.ts` importa `tokenAad` de un handler (llevar a un módulo de cripto compartido); sin herramienta para reprocesar la cola `dead-letter` ni interruptor único de la extracción de compromisos (runbooks); CSP sin `report-to` hasta Sentry en vivo y fuentes desde Google Fonts; tests bajos pendientes del revisor de tests (semilla fija de fast-check, propiedades más estrictas de evidencia y de etiquetas HTML, marcas de tiempo futuras en la firma de Stripe, `rotate-keys` leyendo solo con la clave nueva, límites 6/366 de `retentionDays`, captura 60/min, Redis caído en el rate limit, `offline`/`consent` ausentes en el login, timeout de `AwsKms`, umbrales de cobertura en `config` e `integrations`, instantánea de A que ignora la actividad en la matriz); UX bajos (títulos h4 en otros paneles de Control, «Ver actividad anterior»).
 
+- Fase 6 (hallazgos bajos de los revisores; altos y medios corregidos en `1d743e7`, `946461b`, `97025e2` y en el commit de textos):
+  - Seguridad y operación:
+    - El límite por IP de la lista de espera depende de `TRUST_PROXY_HOPS` contando la web (documentado). El tope global de 300/h es por proceso: moverlo a Redis o al borde.
+    - Si `exchangeCode` falla tras emitir Google los tokens (correo no verificado), la concesión no se revoca en Google; los tokens se descartan.
+    - `pnpm demo --build` falla con el error `<Html>` de Next en este contenedor; construir la web aparte funciona.
+    - El sondeo de calendarios se ordena por `last_sync_at nulls first`: cuentas que fallan siempre sin sincronizar podrían acaparar el lote de 500.
+  - Tests:
+    - El aislamiento de lectura de comentarios y encuestas se comprueba con repos que ya filtran (usar `count(*)` en el contexto de B).
+    - Sin tests:
+      - del tope global de la lista de espera;
+      - de que el serializador del logger quita la query string;
+      - del timeout real y del tope de `Retry-After` en OAuth;
+      - de la asignación de cohorte desde el webhook;
+      - del checkout con precios B parciales.
+    - El E2E no cubre la tarjeta Sean Ellis en Hoy ni la cohorte en `/precios`. La lista de espera se prueba con `?beta=invite`, no con un rechazo real del bootstrap.
+  - UX:
+    - El anillo de foco de la barra lateral (`--sea` sobre el fondo del rail, ≈ 2,7:1) no llega a 3:1.
+    - La nota de cohorte se muestra siempre en el diálogo de planes, no solo cuando el precio difiere del catálogo.
+
 ## Registro de sesiones
 (Claude Code: añade una línea por sesión con fecha, fase y resumen.)
 - 2026-10-19 · Fase 0 · Kit sin `.claude/`, `PROTOTYPE.md` ni CI: se crearon (D-011). Construida la base completa (config, db+RLS, integraciones fake, api, worker, web, auth, onboarding, legales, CI, runbook); `pnpm verify` en verde; flujo login→onboarding→Hoy→control verificado en Chromium. Revisores code/security/test/ux: corregidos el callback JWT que fallaba en cada lectura de sesión, el bootstrap de cuenta no atómico ante carreras, la validación parcial de horario, `trustProxy` total, redirección abierta con barra invertida, secretos de ejemplo en producción, CSP/HSTS, censura de parámetros SQL en logs, vulnerabilidades de dependencias de producción (drizzle-orm 0.45, sin swagger-ui), accesibilidad (ARIA del selector de autonomía, etiquetas de días, contraste AA) y textos del Centro de control; añadidos tests de cobertura RLS, carrera de bootstrap, formulario de onboarding, páginas legales, callback de auth y `pnpm blockers`.
@@ -215,3 +322,4 @@ Hallazgos de severidad baja de los revisores de la fase 0 (los altos y medios es
 - 2026-10-20 · Hito de prototipo · `pnpm demo` (comprobación de servicios, migraciones, semilla determinista con repositorios y handlers reales, arranque en `fake` con `DEMO_MODE=1` en `127.0.0.1`), inicio automático seguro, margen rayado en `GET /v1/plan`, exportación tipada y eliminación de cuenta (revocación en el proveedor, worker detenido, guardia de sesión), UI alineada con la demo (Tiempo, Clientes, Centro de control, «Más» móvil, riesgos por compromisos vencidos, paleta accesible), E2E `desktop.spec.ts`/`mobile.spec.ts` con capturas en `docs/prototype/`. Revisores code/ux sobre el plan (D-052..D-056) y code/security/test/ux sobre el hito: altos y medios corregidos (D-057 incluida), bajos en «Deuda técnica». Dos reinicios del contenedor durante la sesión (servicios y revisores relanzados).
 - 2026-10-20 · Fase 4 · Catálogo de planes y acceso en `core`, proveedor de pagos en vivo y simulado con webhooks releídos e idempotentes, créditos de IA con una única puerta y caída a reglas, rollup de márgenes, informe de valor desde hechos verificables, cierre del día y revisión semanal, analítica tipada con PostHog, `/precios`, panel «Plan», cancelación con encuesta, E2E fase 4. Revisores code/security/test/ux: altos y medios corregidos (claves de idempotencia por intención, paquetes solo pagados, suscripciones huérfanas y duplicadas, acceso para funciones de pago, timeouts, encuesta opcional, estados honestos en la UI, métodos del informe siempre visibles), bajos en «Deuda técnica». El push al remoto devuelve 403 desde el commit 883bb0b: los commits quedan en local hasta reconectar GitHub.
 - 2026-10-21 · Fase 5 · Sesiones revocables e identidad por sujeto, puerta de autenticación y CSRF, OAuth con PKCE, KMS de AWS con anillo y rotación, copias cifradas con simulacro medido, supresión F-16 verificada tabla a tabla, auditoría inmutable, exportación ZIP, permisos y retención en la UI, matriz de autorización de 81 rutas, propiedades de parsers (dos fallos del saneador encontrados y corregidos), CodeQL/SBOM/gitleaks, scopes de Calendar estrechados (D-093), paquete de verificación de Google, cumplimiento, `/seguridad` y runbooks. Revisores code/security/test/ux: alto de ruta codificada que saltaba autenticación y CSRF, controles positivos de la matriz, verificación de copias, textos públicos no ciertos y confirmaciones; todo corregido. `ci.yml` no era YAML válido desde la fase 0 (CI nunca se ejecutó): corregido y con test. Push sigue en 403.
+- 2026-10-21 · Fase 6 (parte técnica) · Adaptadores de Google en vivo con refresco seguro (probados contra simulador), imágenes Docker y comprobación de migraciones, beta cerrada (invitaciones, lista de espera, comentarios, Sean Ellis), experimento de precio con flags en base de datos, panel de decisión e informe borrador, muestra de calidad de IA con consentimiento. Revisores code/security/test/ux: corregidos, entre otros, el calendario «Meri» duplicado y la marca aceptada en cualquier calendario, calendarios ocultos tratados como ocupados, el historial largo de Gmail que bloqueaba la sincronización, `check:migrations` fácil de esquivar, dos respuestas a la encuesta desde dos pestañas, ids en la muestra de IA y su carpeta dentro del repo, y textos de privacidad. El E2E encontró que la lista de espera nunca llegaba a la API (middleware): corregido. Un test del worker reescribía filas de otras suites en paralelo: corregido. Informe final escrito arriba. Push sigue en 403.
