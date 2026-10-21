@@ -29,15 +29,31 @@ Cierre de la **parte técnica**: 2026-10-21. Los cinco criterios de la fase mide
 | P6-06 revisión de calidad de IA | ✅ herramienta; el etiquetado es humano | `packages/core/src/beta/review-sample.test.ts`, `scripts/test/review-sample.test.ts` |
 | P6-07 estabilización, P6-08 informe | humano | dependen de la beta |
 
+## Cierre del MVP (2026-10-21)
+
+Plan y decisiones en `PLAN-mvp-final.md` (D-113..D-117) y ADR 0009. Es el único hueco de código del MVP que quedaba (D-020): la entrega de avisos por correo transaccional propio, con preferencia y baja en un clic. Además se cerró la deuda asequible de la fase 6.
+
+| Pieza | Evidencia |
+|---|---|
+| Adaptador SMTP | `packages/integrations/src/notify/smtp.test.ts` contra un servidor SMTP real en proceso: autenticación, cabeceras RFC 8058, inyección de cabeceras, 5xx en RCPT TO definitivo, autenticación/remitente/red reintentables, TLS exigido fuera de localhost |
+| Qué se envía y cómo se escribe | `packages/core/src/notify/email.test.ts`: preferencia, plurales, escape; propiedad de que ningún parámetro salvo los recuentos llega al correo |
+| Entrega | `packages/jobs/src/handlers/notify-email.test.ts`; `apps/worker/src/dispatchers.test.ts` (paridad del SQL con `emailAllowed` en off/digest/all); `packages/db/src/repos/notification-email.test.ts` (una sola vez, RLS) |
+| Aviso de conexión perdida | `packages/jobs/src/google-access.test.ts` (uno por transición) |
+| Baja en un clic | `packages/config/src/crypto/unsubscribe.test.ts` (1 000 casos); `apps/api/src/routes/email.test.ts` (form, multipart, JSON, GET 303, tokens falsos, idempotencia, auditoría, aislamiento); matriz de autorización `signed` |
+| Web | E2E `apps/web/e2e/phase-6.spec.ts`: preferencia en Control, página de baja con enlace inválido y válido, POST de servidor de correo por el origen web; middleware |
+| Deuda de la fase 6 | Tope de lista de espera en Redis (`beta.test.ts`, también con Redis caído), `pnpm demo --build`, E2E de Sean Ellis y `/precios`, foco del rail, nota de cohorte |
+
+Sin probar contra un proveedor real: `pnpm smoke email` es la primera prueba real (humana, `docs/blockers/email.md`).
+
 ## Revisores
 
-code-reviewer, security-auditor, test-engineer y ux-reviewer sobre la fase completa. Altos y medios corregidos en `1d743e7` (Google), `946461b` (beta, facturación, migraciones, Docker) y `97025e2` (web); bajos en «Deuda técnica» de `STATE.md`.
+code-reviewer, security-auditor, test-engineer y ux-reviewer sobre la fase completa. Altos y medios corregidos en `1d743e7` (Google), `946461b` (beta, facturación, migraciones, Docker) y `97025e2` (web). Sobre el cierre del MVP, otra ronda de los cuatro, con altos y medios corregidos en `f45b723`. Los bajos están en «Deuda técnica» de `STATE.md`.
 
 ## Verificación
 
 | Comprobación | Resultado |
 |---|---|
-| `pnpm verify` (lint, typecheck, test, build, dependency-cruiser, `check:migrations`, scripts) | ✅ 36/36 tareas de Turbo; 682 tests (api 165, core 135, integrations 111, jobs 72, scripts 64, db 43, config 27, web 27, ai 20, worker 18) sobre `946461b`; `97025e2` pasó typecheck, lint y los tests de la web |
-| Cobertura | `core` 99,3 % líneas / 92,1 % ramas; `api` 98,2 % / 86,0 % |
-| `pnpm e2e` (desktop + móvil, axe AA) | ✅ 47 passed, 4 skipped (casos «solo desktop» en el proyecto móvil), 5,7 min, build de `97025e2` |
+| `pnpm verify` (lint, typecheck, test, build, dependency-cruiser, `check:migrations`, scripts) | ✅ 724 tests (api 174, core 144, integrations 117, jobs 80, scripts 66, db 45, config 30, web 28, ai 20, worker 20) sobre `f45b723` |
+| Cobertura | `core` 96,1 % líneas / 92,4 % ramas; `api` 98,2 % / 86,2 % |
+| `pnpm e2e` (desktop + móvil, axe AA) | ✅ 57 passed, 4 skipped («solo desktop» en móvil), 7,6 min, build de `f45b723`. La ejecución anterior tuvo un fallo intermitente («Más → Valor y revisión», navegación que no terminó bajo carga) que no se repitió aislado (2/2) ni en esta ejecución; anotado en la deuda |
 | `pnpm eval` (adaptador de IA simulado) | 100 % en captura, prefiltro, compromisos (238), inyección (28) y briefings (12) |
