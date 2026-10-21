@@ -29,6 +29,8 @@
     "beta:invite": "tsx scripts/beta-admin.ts invite",
     "beta:forget": "tsx scripts/beta-admin.ts forget",
     "flags:set": "tsx scripts/flags-set.ts",
+    "beta:panel": "tsx scripts/beta-panel.ts panel",
+    "beta:report": "tsx scripts/beta-panel.ts report",
     "eval": "pnpm --filter @meri/ai eval",
     "blockers": "node scripts/check-blockers.mjs",
     "format": "prettier --write .",

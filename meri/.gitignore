@@ -26,6 +26,9 @@ evals/reports/*.json
 *.log
 **/e2e/.results/
 backups/
+# Beta reports and AI review samples stay on the operator's machine until a person reviews them (phase 6)
+docs/beta/report-*.md
+evals/candidates/
 
 # Local Redis snapshot
 dump.rdb

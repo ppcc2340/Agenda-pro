@@ -70,21 +70,54 @@ describe("dispatchers skip logically deleted workspaces (D-054)", () => {
       const google = await upsertIntegrationAccount(
         tx,
         ws,
-        { provider: "google", externalAccountId: `sub-${label}-${ws}`, email: account.email, scopes: [...CALENDAR_SCOPES, ...GMAIL_SCOPES], encryptedTokens: "x", keyId: "local" },
+        {
+          provider: "google",
+          externalAccountId: `sub-${label}-${ws}`,
+          email: account.email,
+          scopes: [...CALENDAR_SCOPES, ...GMAIL_SCOPES],
+          encryptedTokens: "x",
+          keyId: "local",
+        },
         NOW,
       );
       await upsertContact(tx, ws, { email: `someone@${label}.example` });
       await createCommitment(
         tx,
         ws,
-        { clientId: client.id, direction: "owed_to_me", kind: "explicit", status: "confirmed", counterpartyEmail: "a@b.example", action: "Enviar datos", dueAt: NOW, dueText: null, confidence: 0.9, evidence: null, threadId: null, externalMessageId: null, dedupeHash: `disp:${ws}` },
+        {
+          clientId: client.id,
+          direction: "owed_to_me",
+          kind: "explicit",
+          status: "confirmed",
+          counterpartyEmail: "a@b.example",
+          action: "Enviar datos",
+          dueAt: NOW,
+          dueText: null,
+          confidence: 0.9,
+          evidence: null,
+          threadId: null,
+          externalMessageId: null,
+          dedupeHash: `disp:${ws}`,
+        },
         NOW,
       );
       const start = new Date(NOW.getTime() + 86_400_000);
       await upsertCalendarEvent(
         tx,
         ws,
-        { integrationAccountId: google.id, externalId: `ev-${ws}`, etag: "1", title: "Reunión", startsAt: start, endsAt: new Date(start.getTime() + 3_600_000), allDay: false, attendees: [], busy: true, origin: "external", clientId: client.id },
+        {
+          integrationAccountId: google.id,
+          externalId: `ev-${ws}`,
+          etag: "1",
+          title: "Reunión",
+          startsAt: start,
+          endsAt: new Date(start.getTime() + 3_600_000),
+          allDay: false,
+          attendees: [],
+          busy: true,
+          origin: "external",
+          clientId: client.id,
+        },
         NOW,
       );
     });
@@ -95,7 +128,10 @@ describe("dispatchers skip logically deleted workspaces (D-054)", () => {
     await runMigrations(TEST_ADMIN_URL);
     await ensureDevRoles(TEST_ADMIN_URL);
     handle = createDb(TEST_APP_URL, { max: 2 });
-    adminSql = postgres(TEST_ADMIN_URL, { max: 1, connection: { "app.workspace_id": ADMIN_WORKSPACE_CONTEXT } });
+    adminSql = postgres(TEST_ADMIN_URL, {
+      max: 1,
+      connection: { "app.workspace_id": ADMIN_WORKSPACE_CONTEXT },
+    });
     // A long-lived local test database keeps never-synced connections from earlier runs; past the polling batch
     // (500) they would crowd this run's accounts out. Mark leftovers older than an hour as synced, one workspace at a
     // time (RLS: the admin context is read-only). A fresh CI database has none.
@@ -113,7 +149,11 @@ describe("dispatchers skip logically deleted workspaces (D-054)", () => {
       end $$;`);
     alive = await prepared("alive");
     deleted = await prepared("deleted");
-    await softDeleteAccount(handle.db, { userId: deleted.userId, workspaceId: deleted.workspaceId, now: NOW });
+    await softDeleteAccount(handle.db, {
+      userId: deleted.userId,
+      workspaceId: deleted.workspaceId,
+      now: NOW,
+    });
     // The deletion revokes the connections; put them back to healthy so the polling tests prove the workspace
     // filter itself, not only the status filter.
     await adminSql`update integration_accounts set status = 'healthy' where workspace_id = ${deleted.workspaceId}`;
@@ -125,7 +165,12 @@ describe("dispatchers skip logically deleted workspaces (D-054)", () => {
 
   const run = async (fn: (deps: DispatcherDeps) => Promise<number>) => {
     const dispatcher = new InMemoryDispatcher();
-    await fn({ adminSql, dispatcher, logger: createLogger({ name: "worker-test", level: "silent" }), now: () => NOW });
+    await fn({
+      adminSql,
+      dispatcher,
+      logger: createLogger({ name: "worker-test", level: "silent" }),
+      now: () => NOW,
+    });
     return dispatcher.jobs.map((j) => (j.payload as { workspaceId: string }).workspaceId);
   };
 
@@ -181,5 +226,27 @@ describe("dispatchers skip logically deleted workspaces (D-054)", () => {
     const evening = await at("2026-10-20T17:30:00Z"); // 19:30 in Madrid, past the default 18:00 end
     expect(evening).toContain(alive.workspaceId);
     expect(evening).not.toContain(deleted.workspaceId);
+  });
+});
+
+describe("workspace scans are paginated, never capped (D-054 follow-up)", () => {
+  it("eachPage walks every page by workspace id until a short page", async () => {
+    const { eachPage, PAGE } = await import("./dispatchers");
+    const ids = Array.from(
+      { length: PAGE * 2 + 3 },
+      (_, i) => `0192aaaa-0000-7000-8000-${String(i).padStart(12, "0")}`,
+    );
+    const calls: string[] = [];
+    const rows = await eachPage((after) => {
+      calls.push(after);
+      return Promise.resolve(
+        ids
+          .filter((id) => id > after)
+          .slice(0, PAGE)
+          .map((workspaceId) => ({ workspaceId })),
+      );
+    });
+    expect(rows.map((r) => r.workspaceId)).toEqual(ids);
+    expect(calls).toHaveLength(3);
   });
 });

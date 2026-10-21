@@ -35,6 +35,28 @@ export function activeWorkspace(sql: postgres.Sql, alias = "p"): postgres.Pendin
   return sql`exists (select 1 from workspaces w where w.id = ${sql(alias)}.workspace_id and w.deleted_at is null)`;
 }
 
+/** Page size of the workspace scans. */
+export const PAGE = 1000;
+const FIRST_UUID = "00000000-0000-0000-0000-000000000000";
+
+/**
+ * Keyset pagination over workspace ids: every eligible workspace is reached, a page at a time. A fixed `limit`
+ * would silently skip the rest once the product has more workspaces than the limit.
+ */
+export async function eachPage<T extends { workspaceId: string }>(
+  page: (after: string) => Promise<T[]>,
+): Promise<T[]> {
+  const all: T[] = [];
+  let after = FIRST_UUID;
+  for (;;) {
+    const rows = await page(after);
+    all.push(...rows);
+    const last = rows.at(-1);
+    if (rows.length < PAGE || !last) return all;
+    after = last.workspaceId;
+  }
+}
+
 /** Polling fallback (docs/07): every healthy Google account not synced in the last 5 minutes gets a calendar.sync job. */
 export async function dispatchCalendarPolling(deps: DispatcherDeps, staleMinutes = 5): Promise<number> {
   const olderThan = new Date(deps.now().getTime() - staleMinutes * 60_000);
@@ -82,12 +104,15 @@ export async function dispatchMailPolling(deps: DispatcherDeps, staleMinutes = 5
  * digest for today gets one `daily.review` job (jobId per workspace and day, so re-runs are harmless).
  */
 export async function dispatchDailyReview(deps: DispatcherDeps): Promise<number> {
-  const rows = await deps.adminSql<
-    { workspaceId: string; timezone: string; workStart: string; lastDigestDay: string | null }[]
-  >`
+  const rows = await eachPage(
+    (after) => deps.adminSql<
+      { workspaceId: string; timezone: string; workStart: string; lastDigestDay: string | null }[]
+    >`
     select p.workspace_id as "workspaceId", p.timezone, p.work_start as "workStart",
       (select max(n.day) from notifications n where n.workspace_id = p.workspace_id and n.kind = 'digest') as "lastDigestDay"
-    from preferences p where p.onboarded_at is not null and ${activeWorkspace(deps.adminSql)} limit 5000`;
+    from preferences p where p.onboarded_at is not null and ${activeWorkspace(deps.adminSql)}
+      and p.workspace_id > ${after} order by p.workspace_id limit ${PAGE}`,
+  );
   const due = dueForDigest(rows, deps.now());
   for (const d of due) {
     await deps.dispatcher.enqueue(
@@ -102,12 +127,15 @@ export async function dispatchDailyReview(deps: DispatcherDeps): Promise<number>
 
 /** End-of-day close (D-064): onboarded workspaces past their work end with no close for today. */
 export async function dispatchDailyClose(deps: DispatcherDeps): Promise<number> {
-  const rows = await deps.adminSql<
-    { workspaceId: string; timezone: string; workEnd: string; lastCloseDay: string | null }[]
-  >`
+  const rows = await eachPage(
+    (after) => deps.adminSql<
+      { workspaceId: string; timezone: string; workEnd: string; lastCloseDay: string | null }[]
+    >`
     select p.workspace_id as "workspaceId", p.timezone, p.work_end as "workEnd",
       (select max(n.day) from notifications n where n.workspace_id = p.workspace_id and n.template = 'daily.close') as "lastCloseDay"
-    from preferences p where p.onboarded_at is not null and ${activeWorkspace(deps.adminSql)} limit 5000`;
+    from preferences p where p.onboarded_at is not null and ${activeWorkspace(deps.adminSql)}
+      and p.workspace_id > ${after} order by p.workspace_id limit ${PAGE}`,
+  );
   const due = dueForClose(rows, deps.now());
   for (const d of due)
     await deps.dispatcher.enqueue(
@@ -124,14 +152,16 @@ export async function dispatchDailyClose(deps: DispatcherDeps): Promise<number> 
  * jobId per workspace and hour bucket so retries within the hour collapse.
  */
 export async function dispatchFollowupsScan(deps: DispatcherDeps, everyMs = 3_600_000): Promise<number> {
-  const rows = await deps.adminSql<{ workspaceId: string }[]>`
+  const rows = await eachPage(
+    (after) => deps.adminSql<{ workspaceId: string }[]>`
     select p.workspace_id as "workspaceId" from preferences p
     where p.onboarded_at is not null and ${activeWorkspace(deps.adminSql)} and (
       exists (select 1 from integration_accounts a where a.workspace_id = p.workspace_id
               and a.scopes ? 'https://www.googleapis.com/auth/gmail.readonly' and a.status in ('healthy', 'degraded'))
       or exists (select 1 from commitments c where c.workspace_id = p.workspace_id
               and c.direction = 'owed_to_me' and c.status in ('confirmed', 'at_risk')))
-    limit 5000`;
+      and p.workspace_id > ${after} order by p.workspace_id limit ${PAGE}`,
+  );
   const date = deps.now().toISOString().slice(0, 10);
   const bucket = String(Math.floor(Date.now() / everyMs)); // wall clock: DEMO_NOW is frozen
   for (const row of rows) {
@@ -147,11 +177,13 @@ export async function dispatchFollowupsScan(deps: DispatcherDeps, everyMs = 3_60
 
 /** clients.scan (D-040): once a day per onboarded workspace with contacts (job id keyed by date). */
 export async function dispatchClientsScan(deps: DispatcherDeps): Promise<number> {
-  const rows = await deps.adminSql<{ workspaceId: string }[]>`
+  const rows = await eachPage(
+    (after) => deps.adminSql<{ workspaceId: string }[]>`
     select p.workspace_id as "workspaceId" from preferences p
     where p.onboarded_at is not null and ${activeWorkspace(deps.adminSql)}
       and exists (select 1 from contacts c where c.workspace_id = p.workspace_id and c.client_id is null)
-    limit 5000`;
+      and p.workspace_id > ${after} order by p.workspace_id limit ${PAGE}`,
+  );
   const date = deps.now().toISOString().slice(0, 10);
   for (const row of rows) {
     await deps.dispatcher.enqueue(
@@ -167,12 +199,14 @@ export async function dispatchClientsScan(deps: DispatcherDeps): Promise<number>
 /** briefings.prepare (D-043): once a day per workspace with the preference on and a client meeting ahead. */
 export async function dispatchBriefingsPrepare(deps: DispatcherDeps): Promise<number> {
   const horizon = new Date(deps.now().getTime() + 2 * 86_400_000);
-  const rows = await deps.adminSql<{ workspaceId: string }[]>`
+  const rows = await eachPage(
+    (after) => deps.adminSql<{ workspaceId: string }[]>`
     select p.workspace_id as "workspaceId" from preferences p
     where p.onboarded_at is not null and ${activeWorkspace(deps.adminSql)} and p.briefing_before_meetings
       and exists (select 1 from calendar_events e where e.workspace_id = p.workspace_id
                   and e.client_id is not null and e.origin = 'external' and e.starts_at between ${deps.now()} and ${horizon})
-    limit 5000`;
+      and p.workspace_id > ${after} order by p.workspace_id limit ${PAGE}`,
+  );
   const date = deps.now().toISOString().slice(0, 10);
   for (const row of rows) {
     await deps.dispatcher.enqueue(
@@ -187,11 +221,13 @@ export async function dispatchBriefingsPrepare(deps: DispatcherDeps): Promise<nu
 
 /** time.infer (D-042): once a day per onboarded workspace with a client (job id keyed by date; triggers add more). */
 export async function dispatchTimeInfer(deps: DispatcherDeps): Promise<number> {
-  const rows = await deps.adminSql<{ workspaceId: string }[]>`
+  const rows = await eachPage(
+    (after) => deps.adminSql<{ workspaceId: string }[]>`
     select p.workspace_id as "workspaceId" from preferences p
     where p.onboarded_at is not null and ${activeWorkspace(deps.adminSql)}
       and exists (select 1 from clients c where c.workspace_id = p.workspace_id and c.deleted_at is null)
-    limit 5000`;
+      and p.workspace_id > ${after} order by p.workspace_id limit ${PAGE}`,
+  );
   const date = deps.now().toISOString().slice(0, 10);
   for (const row of rows) {
     await deps.dispatcher.enqueue(
@@ -206,11 +242,15 @@ export async function dispatchTimeInfer(deps: DispatcherDeps): Promise<number> {
 
 /** data.retention (D-036, ADR 0007): once a day per workspace with indexed mail or resolved proposals. */
 export async function dispatchRetention(deps: DispatcherDeps): Promise<number> {
-  const rows = await deps.adminSql<{ workspaceId: string }[]>`
-    select workspace_id as "workspaceId" from threads_index
-    union
-    select workspace_id from proposals where status in ('dismissed', 'expired')
-    limit 5000`;
+  const rows = await eachPage(
+    (after) => deps.adminSql<{ workspaceId: string }[]>`
+    select u.workspace_id as "workspaceId" from (
+      select workspace_id from threads_index
+      union
+      select workspace_id from proposals where status in ('dismissed', 'expired')
+    ) u
+    where u.workspace_id > ${after} order by u.workspace_id limit ${PAGE}`,
+  );
   const date = deps.now().toISOString().slice(0, 10);
   for (const row of rows) {
     await deps.dispatcher.enqueue(
@@ -251,8 +291,11 @@ export async function dispatchAccountPurge(deps: DispatcherDeps): Promise<number
  * the first two days so the closing figures include the last day (job ids keyed by period and date).
  */
 export async function dispatchUsageRollup(deps: DispatcherDeps): Promise<number> {
-  const rows = await deps.adminSql<{ workspaceId: string }[]>`
-    select s.workspace_id as "workspaceId" from subscriptions s where ${activeWorkspace(deps.adminSql, "s")} limit 5000`;
+  const rows = await eachPage(
+    (after) => deps.adminSql<{ workspaceId: string }[]>`
+    select s.workspace_id as "workspaceId" from subscriptions s where ${activeWorkspace(deps.adminSql, "s")}
+      and s.workspace_id > ${after} order by s.workspace_id limit ${PAGE}`,
+  );
   const now = deps.now();
   const date = now.toISOString().slice(0, 10);
   const periods = [date.slice(0, 7)];
