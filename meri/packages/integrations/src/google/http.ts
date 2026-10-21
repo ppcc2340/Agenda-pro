@@ -26,7 +26,11 @@ export const GOOGLE_HOSTS = [
   "gmail.googleapis.com",
 ] as const;
 
-export type TokenSupplier = () => Promise<string>;
+/** Bearer token supplier; called again with `forceRefresh` once after a 401 (ADR 0008). */
+export type TokenSupplier = (options?: { forceRefresh?: boolean }) => Promise<string>;
+
+/** A 401 from Google (as opposed to `invalid_grant` while refreshing): worth one retry with a fresh token. */
+export class GoogleUnauthorized extends IntegrationError {}
 
 export interface GoogleRequest {
   method?: "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
@@ -95,9 +99,26 @@ export class GoogleHttp {
     this.maxResponseBytes = options.maxResponseBytes ?? 15 * 1024 * 1024;
   }
 
+  /**
+   * One retry with a forced refresh after a 401: an access token can be revoked or rotated before its expiry. A
+   * second 401, or `invalid_grant` while refreshing, is an expired connection (AuthExpired).
+   */
   async request<T>(
     schema: z.ZodType<T, z.ZodTypeDef, unknown>,
     req: GoogleRequest,
+  ): Promise<GoogleResponse<T>> {
+    try {
+      return await this.once(schema, req, false);
+    } catch (err) {
+      if (!req.token || !(err instanceof GoogleUnauthorized)) throw err;
+      return this.once(schema, req, true);
+    }
+  }
+
+  private async once<T>(
+    schema: z.ZodType<T, z.ZodTypeDef, unknown>,
+    req: GoogleRequest,
+    forceRefresh: boolean,
   ): Promise<GoogleResponse<T>> {
     const url = new URL(req.url);
     if (url.protocol !== "https:" || !this.allowedHosts.has(url.hostname))
@@ -109,7 +130,8 @@ export class GoogleHttp {
     for (const [k, v] of Object.entries(req.query ?? {}))
       if (v !== undefined && v !== null) url.searchParams.set(k, String(v));
     const headers: Record<string, string> = { accept: "application/json", ...req.headers };
-    if (req.token) headers.authorization = `Bearer ${await req.token()}`;
+    if (req.token)
+      headers.authorization = `Bearer ${await req.token(forceRefresh ? { forceRefresh } : undefined)}`;
     let body: string | undefined;
     if (req.json !== undefined) {
       headers["content-type"] = "application/json";
@@ -161,7 +183,9 @@ export class GoogleHttp {
     // Status and Google's reason codes only: response texts may echo request data and end up in audit rows.
     const reasons = err.reasons.filter((r) => /^[A-Za-z_]{1,64}$/.test(r)).slice(0, 3);
     const message = `${this.provider} ${String(res.status)}${reasons.length ? ` ${reasons.join(",")}` : ""}`;
-    if (res.status === 401 || err.reasons.includes("invalid_grant"))
+    if (res.status === 401) throw new GoogleUnauthorized("AuthExpired", this.provider, message);
+    // invalid_grant (refresh revoked or expired) and a missing scope both need the user to reconnect.
+    if (err.reasons.includes("invalid_grant") || err.reasons.includes("insufficientPermissions"))
       throw new IntegrationError("AuthExpired", this.provider, message);
     if (res.status === 429 || (res.status === 403 && err.reasons.some((r) => RATE_LIMIT_REASONS.has(r))))
       throw new IntegrationError("RateLimited", this.provider, message, {

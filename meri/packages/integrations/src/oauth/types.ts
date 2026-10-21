@@ -41,3 +41,12 @@ export interface GoogleOAuth {
 }
 
 export { CALENDAR_SCOPES } from "./scopes";
+
+/**
+ * A connected Google account as the live adapters see it (ADR 0008): the address plus a token supplier that
+ * refreshes when needed. `forceRefresh` renews even an unexpired token (used once after a 401). Fakes ignore it.
+ */
+export interface GoogleAccountRef {
+  email: string;
+  accessToken(options?: { forceRefresh?: boolean }): Promise<string>;
+}

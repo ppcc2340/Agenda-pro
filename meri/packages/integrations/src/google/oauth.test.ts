@@ -272,4 +272,37 @@ describe("GoogleHttp error mapping", () => {
     }).catch((e: unknown) => e);
     expect((err as Error).message).toBe("google-test 400 invalid");
   });
+
+  it("retries once with a forced refresh after a 401, and a second 401 is AuthExpired", async () => {
+    const google = new SimulatedGoogle().on("GET", "/x", (req) =>
+      req.headers.authorization === "Bearer fresh" ? { json: { ok: true } } : { status: 401, json: {} },
+    );
+    const http = new GoogleHttp("google-test", { fetch: google.fetch, allowedHosts: ["api.test"] });
+    const calls: (boolean | undefined)[] = [];
+    const token = (o?: { forceRefresh?: boolean }) => {
+      calls.push(o?.forceRefresh);
+      return Promise.resolve(o?.forceRefresh ? "fresh" : "stale");
+    };
+    expect(
+      (await http.request(z.object({ ok: z.boolean() }), { url: "https://api.test/x", token })).body,
+    ).toEqual({ ok: true });
+    expect(calls).toEqual([undefined, true]);
+    const never = (o?: { forceRefresh?: boolean }) =>
+      Promise.resolve(o?.forceRefresh ? "still-bad" : "stale");
+    await expect(
+      http.request(z.unknown(), { url: "https://api.test/x", token: never }),
+    ).rejects.toMatchObject({
+      kind: "AuthExpired",
+    });
+    expect(google.requests).toHaveLength(4);
+    // A missing scope needs a reconnect too.
+    const scope = new SimulatedGoogle().on("GET", "/x", () => ({
+      status: 403,
+      json: { error: { code: 403, message: "x", errors: [{ reason: "insufficientPermissions" }] } },
+    }));
+    const h2 = new GoogleHttp("google-test", { fetch: scope.fetch, allowedHosts: ["api.test"] });
+    await expect(h2.request(z.unknown(), { url: "https://api.test/x" })).rejects.toMatchObject({
+      kind: "AuthExpired",
+    });
+  });
 });
