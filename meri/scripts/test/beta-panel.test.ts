@@ -1,6 +1,6 @@
 import { bootstrapAccount, createDb } from "@meri/db";
 import { afterAll, describe, expect, it } from "vitest";
-import { collectPanel, renderReport, renderText } from "../lib/beta-panel";
+import { collectPanel, renderReport, renderText, toDecisionInput } from "../lib/beta-panel";
 
 const APP = process.env.DATABASE_URL_TEST ?? "postgres://meri_app:meri_app@localhost:5432/meri_test";
 const ADMIN = process.env.DATABASE_ADMIN_URL_TEST ?? "postgres://meri:meri@localhost:5432/meri_test";
@@ -66,5 +66,33 @@ describe("pnpm beta:panel / beta:report (D-100, D-104)", () => {
     } finally {
       await ro.close();
     }
+  });
+
+  it("maps every aggregate to its indicator; Sean Ellis counts only people with an opinion", () => {
+    const rate = (hits: number, n: number) => ({ hits, n });
+    const input = toDecisionInput({
+      retention: { 30: rate(9, 10), 60: rate(8, 10), 90: rate(7, 10) },
+      trialToPaid: rate(3, 12),
+      trialToPaidByCohort: { A: rate(2, 6), B: rate(1, 6) },
+      confirmedUnedited: rate(40, 50),
+      gmailKept30: rate(5, 6),
+      seanEllis: { very: 4, somewhat: 3, not: 3, na: 5 },
+      grossMargin: { meanPct: 71.5, n: 4, period: "2026-09" },
+      accounts: { degraded: 1, needsReauth: 2 },
+    });
+    expect(input.indicators).toEqual({
+      retention60: rate(8, 10),
+      trialToPaid: rate(3, 12),
+      confirmedUnedited: rate(40, 50),
+      gmailKept30: rate(5, 6),
+      seanEllisVery: rate(4, 10),
+      grossMargin: { meanPct: 71.5, n: 4 },
+    });
+    expect(input.extra).toEqual({
+      retention30: rate(9, 10),
+      retention90: rate(7, 10),
+      "trialToPaid.A": rate(2, 6),
+      "trialToPaid.B": rate(1, 6),
+    });
   });
 });

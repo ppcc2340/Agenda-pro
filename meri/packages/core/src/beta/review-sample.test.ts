@@ -27,6 +27,12 @@ describe("AI review sample (D-103, SEC-H2)", () => {
     );
   });
 
+  it("redacts identifiers embedded in text before numbers and phones can split them", () => {
+    expect(
+      redactForReview("ver 0192ABCD-0000-7000-8000-000000000042 y 0192abcd-1111-7000-8000-123456789012"),
+    ).toBe("ver [id] y [id]");
+  });
+
   it("drops identifier keys and redacts nested strings", () => {
     expect(
       redactValue(

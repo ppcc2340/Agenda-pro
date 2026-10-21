@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { Logger } from "@meri/config";
 import { PURGE_AFTER_DAYS } from "@meri/db";
+import { CALENDAR_SCOPES } from "@meri/integrations";
 import {
   BillingUsageRollupJob,
   BriefingsPrepareJob,
@@ -25,7 +26,11 @@ export interface DispatcherDeps {
   dispatcher: JobDispatcher;
   logger: Logger;
   now: () => Date;
+  /** Accounts per polling run (default 500: bounds the burst of sync jobs each cycle). */
+  pollBatch?: number;
 }
+
+const POLL_BATCH = 500;
 
 /**
  * D-054: a logically deleted workspace (`DELETE /v1/account`) is never dispatched again; its data waits for the
@@ -53,6 +58,9 @@ export async function eachPage<T extends { workspaceId: string }>(
     all.push(...rows);
     const last = rows.at(-1);
     if (rows.length < PAGE || !last) return all;
+    // A page query that forgets `> after` or `order by workspace_id` would loop forever: fail loudly instead.
+    if (last.workspaceId <= after)
+      throw new Error("eachPage: page query must order by workspace_id after the cursor");
     after = last.workspaceId;
   }
 }
@@ -63,8 +71,10 @@ export async function dispatchCalendarPolling(deps: DispatcherDeps, staleMinutes
   const rows = await deps.adminSql<{ id: string; workspaceId: string }[]>`
     select p.id, p.workspace_id as "workspaceId" from integration_accounts p
     where p.provider = 'google' and p.status in ('healthy', 'degraded') and ${activeWorkspace(deps.adminSql)}
+      -- A Gmail-only connection has no calendar to read: polling it would end in 403 and a needless needs_reauth.
+      and p.scopes ? ${CALENDAR_SCOPES[0]}
       and (p.last_sync_at is null or p.last_sync_at < ${olderThan})
-    order by p.last_sync_at nulls first limit 500`;
+    order by p.last_sync_at nulls first limit ${deps.pollBatch ?? POLL_BATCH}`;
   for (const row of rows) {
     await deps.dispatcher.enqueue(
       CalendarSyncJob,
@@ -87,7 +97,7 @@ export async function dispatchMailPolling(deps: DispatcherDeps, staleMinutes = 5
       and ${activeWorkspace(deps.adminSql, "a")}
       and a.scopes ? 'https://www.googleapis.com/auth/gmail.readonly'
       and not exists (select 1 from sync_state s where s.integration_account_id = a.id and s.resource = 'gmail.history' and s.updated_at >= ${olderThan})
-    order by a.last_sync_at nulls first limit 500`;
+    order by a.last_sync_at nulls first limit ${deps.pollBatch ?? POLL_BATCH}`;
   for (const row of rows) {
     await deps.dispatcher.enqueue(
       GmailSyncJob,

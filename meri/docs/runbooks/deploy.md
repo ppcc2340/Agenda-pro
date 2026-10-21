@@ -25,7 +25,7 @@ Cómo se lleva Meri a staging o producción (fase 6, D-098). Lo preparado en el 
 | `REDIS_URL` | api, worker | Redis con persistencia AOF y contraseña |
 | `AUTH_SECRET`, `INTERNAL_API_SECRET` | api, web | Rotación: `docs/runbooks/key-rotation.md` |
 | `APP_URL`, `API_URL`, `AUTH_URL`, `PUBLIC_DOMAIN` | todas | HTTPS; `APP_URL` es el origen exacto que comprueba el CSRF |
-| `TRUST_PROXY_HOPS` | api | Número **exacto** de proxies delante de la API (balanceador = 1). Con 0 se ignora `X-Forwarded-For`; un valor mayor que el real deja falsificar la IP y saltarse los límites por IP |
+| `TRUST_PROXY_HOPS` | api | Número **exacto** de proxies delante de la API. El navegador llega a la API a través de la reescritura `/api/v1` de la web, así que la web cuenta como un salto: balanceador + web = 2. Con 0 se ignora `X-Forwarded-For`; un valor mayor que el real deja falsificar la IP y saltarse los límites por IP; uno menor hace que todos compartan la IP de la web y el límite de 5/min de la lista de espera se agote para todos. Compruébalo tras el despliegue: dos peticiones desde redes distintas deben verse con IPs distintas en los registros. El tope global de la lista de espera (300/h) es por proceso: con N réplicas de la API el tope efectivo es N × 300 |
 | `GOOGLE_MODE=live`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | api, worker | `docs/blockers/google-oauth.md`. En `live` no hay *push*: el worker sondea cada 5 min (ADR 0008) |
 | `AI_MODE=live`, `ANTHROPIC_API_KEY` | api, worker | `docs/blockers/anthropic.md` |
 | `STRIPE_MODE=live`, `STRIPE_*` | api, worker | `docs/blockers/stripe.md` |

@@ -152,6 +152,8 @@ export function billingRoutes(app: FastifyInstance, options: BillingRoutesOption
       workspaceId,
       stored: sub?.priceCohort ?? null,
       experimentOn: await options.flags.isEnabled("price_experiment"),
+      // A subscription that already exists was priced at A: the experiment never re-prices it (review M4).
+      billed: Boolean(sub?.stripeSubscriptionId),
     });
     return resolved.assign ? assignPriceCohort(tx, workspaceId, resolved.cohort) : resolved.cohort;
   };

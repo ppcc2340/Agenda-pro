@@ -110,10 +110,53 @@ const RULES: Rule[] = [
     },
   },
   {
+    kind: "destructive",
+    rule: "DROP INDEX without replacement",
+    test: (s, all) => {
+      const name = /\bDROP\s+INDEX\s+(?:CONCURRENTLY\s+)?(?:IF\s+EXISTS\s+)?("?[\w.]+"?)/i.exec(s)?.[1];
+      if (!name) return false;
+      const bare = name.replace(/"/g, "").split(".").pop()?.toLowerCase() ?? "";
+      // The old code's upserts target the index: dropping it without recreating it breaks them mid-deploy.
+      return !all.some((o) =>
+        new RegExp(
+          `\\bCREATE\\s+(UNIQUE\\s+)?INDEX\\s+(CONCURRENTLY\\s+)?(IF\\s+NOT\\s+EXISTS\\s+)?"?${bare}"?(\\s|$)`,
+          "i",
+        ).test(o),
+      );
+    },
+  },
+  {
+    kind: "destructive",
+    rule: "DROP SCHEMA/FUNCTION/TYPE/VIEW/SEQUENCE",
+    test: has(/\bDROP\s+(SCHEMA|FUNCTION|TYPE|VIEW|MATERIALIZED\s+VIEW|SEQUENCE)\b/i),
+  },
+  {
+    kind: "destructive",
+    rule: "CASCADE",
+    // DROP … CASCADE or TRUNCATE … CASCADE; a foreign key's ON DELETE CASCADE is a normal definition.
+    test: has(/\b(DROP|TRUNCATE)\b[\s\S]*\bCASCADE\b/i),
+  },
+  { kind: "destructive", rule: "SET NOT NULL", test: has(/\bSET\s+NOT\s+NULL\b/i) },
+  {
+    kind: "destructive",
+    rule: "ADD COLUMN NOT NULL without DEFAULT",
+    test: (s) => /\bADD\s+COLUMN\b[^,;]*\bNOT\s+NULL\b/i.test(s) && !/\bDEFAULT\b/i.test(s),
+  },
+  {
     kind: "security",
     rule: "DISABLE ROW LEVEL SECURITY",
     test: has(/\bDISABLE\s+ROW\s+LEVEL\s+SECURITY\b/i),
   },
+  { kind: "security", rule: "CREATE/ALTER POLICY", test: has(/\b(CREATE|ALTER)\s+POLICY\b/i) },
+  { kind: "security", rule: "DISABLE TRIGGER", test: has(/\bDISABLE\s+TRIGGER\b/i) },
+  { kind: "security", rule: "ALTER ROLE", test: has(/\bALTER\s+(ROLE|USER)\b/i) },
+  { kind: "security", rule: "GRANT … TO PUBLIC", test: has(/\bGRANT\b[\s\S]*\bTO\s+PUBLIC\b/i) },
+  {
+    kind: "security",
+    rule: "replaces an audit_log function",
+    test: has(/\bCREATE\s+(OR\s+REPLACE\s+)?FUNCTION\s+"?audit_log/i),
+  },
+  { kind: "security", rule: "dynamic SQL (EXECUTE in DO)", test: has(/^\s*DO\b[\s\S]*\bEXECUTE\b/i) },
   {
     kind: "security",
     rule: "NO FORCE ROW LEVEL SECURITY",
@@ -131,16 +174,18 @@ const RULES: Rule[] = [
     kind: "security",
     rule: "DELETE/UPDATE without WHERE",
     test: (s) =>
-      // Only top-level statements: a DO block or function body is one statement and is judged by the rules above.
+      // Top-level statements and CTEs (`WITH d AS (DELETE FROM t RETURNING 1) …`). A DO block or function body is
+      // one statement and is judged by the rules above.
       !/^\s*(DO|CREATE)\b/i.test(s) &&
-      /^\s*(WITH\b[\s\S]*?\)\s*)?(DELETE\s+FROM|UPDATE)\b/i.test(s) &&
+      /\b(DELETE\s+FROM|UPDATE\s+\S+\s+SET)\b/i.test(s) &&
       !/\bWHERE\b/i.test(s),
   },
 ];
 
 /** Analyzes one migration file. */
 export function checkMigration(sql: string): MigrationReport {
-  const marker = new RegExp(`--[ \\t]*${APPROVAL_MARKER}[ \\t]+(.+)$`, "m").exec(sql);
+  // Only a comment line of its own approves: never text inside a string or a function body.
+  const marker = new RegExp(`^[ \\t]*--[ \\t]*${APPROVAL_MARKER}[ \\t]+(.+)$`, "m").exec(sql);
   const reason = marker?.[1]?.trim() ?? "";
   const statements = splitStatements(sql.replace(/-->\s*statement-breakpoint/g, ";"));
   const findings: MigrationFinding[] = [];

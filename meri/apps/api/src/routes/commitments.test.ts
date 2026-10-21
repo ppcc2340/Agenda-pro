@@ -5,14 +5,16 @@ import {
   createProposalIfAbsent,
   getCommitment,
   listAudit,
+  getIntegrationAccount,
   listThreads,
   newId,
+  setIntegrationStatus,
   updatePreferences,
   withWorkspace,
   type AccountIdentity,
 } from "@meri/db";
 import { registerFakeAiHandlers } from "@meri/ai";
-import { GMAIL_SCOPES, type FakeAiClient, type FakeGmail } from "@meri/integrations";
+import { GMAIL_SCOPES, IntegrationError, type FakeAiClient, type FakeGmail } from "@meri/integrations";
 import { extractThreadCommitments, syncMailAccount } from "@meri/jobs";
 import { createTestApp, csrf, NOW, type TestApp } from "../test/harness";
 
@@ -301,6 +303,42 @@ describe("commitment radar and follow-ups (F-07 AC2, F-08, D-034..D-036)", () =>
     });
     expect(remind.statusCode).toBe(201);
     expect(remind.json<{ task: { title: string; dueAt: string } }>().task.title).toContain("Seguimiento:");
+  });
+
+  it("saving a draft on an expired Gmail grant answers INTEGRATION_NEEDS_REAUTH and flags the connection; a transient error does not (CR-10)", async () => {
+    const owed = await t.app.inject({
+      url: "/v1/commitments?direction=owed_to_me&status=confirmed",
+      headers: { cookie: cookieA },
+    });
+    const [c] = owed.json<{ items: CommitmentJson[] }>().items;
+    const save = (key: string) =>
+      t.app.inject({
+        method: "POST",
+        url: `/v1/commitments/${c?.id ?? ""}/followup-draft/save`,
+        headers: { cookie: cookieA, ...csrf, "idempotency-key": key },
+        payload: { body: "Hola Ana, ¿cómo va el poder notarial?", subject: "Re: Poder notarial" },
+      });
+    const original = mail.createDraft.bind(mail);
+    const status = () =>
+      withWorkspace(t.handle.db, a.workspaceId, (tx) => getIntegrationAccount(tx, a.workspaceId, accountId));
+    try {
+      mail.createDraft = () => Promise.reject(new IntegrationError("Transient", "gmail", "gmail 503"));
+      expect((await save("reauth-1")).statusCode).toBeGreaterThanOrEqual(400);
+      expect((await status())?.status).toBe("healthy");
+      mail.createDraft = () =>
+        Promise.reject(new IntegrationError("AuthExpired", "gmail", "gmail 403 insufficientPermissions"));
+      const res = await save("reauth-2");
+      expect(res.statusCode).toBe(409);
+      expect(res.json()).toMatchObject({ code: "INTEGRATION_NEEDS_REAUTH" });
+      expect((await status())?.status).toBe("needs_reauth");
+      const page = await withWorkspace(t.handle.db, a.workspaceId, (tx) => listAudit(tx, a.workspaceId, 50));
+      expect(page.items.some((e) => e.action === "integration.needs_reauth")).toBe(true);
+    } finally {
+      mail.createDraft = original;
+      await withWorkspace(t.handle.db, a.workspaceId, (tx) =>
+        setIntegrationStatus(tx, a.workspaceId, accountId, { status: "healthy", lastError: null }),
+      );
+    }
   });
 
   it("mutes follow-ups per contact and per client; validates mail exclusions per kind", async () => {

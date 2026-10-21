@@ -86,4 +86,35 @@ describe("beta metrics aggregates", () => {
     // Only counts come out: no ids or addresses.
     expect(JSON.stringify(agg)).not.toMatch(/@|[0-9a-f]{8}-[0-9a-f]{4}/);
   });
+
+  it("counts commitment confirmations as activation, keeps a recent needs_reauth as kept, and ignores deleted workspaces", async () => {
+    const c = await bootstrapAccount(app.db, {
+      email: `bm-c-${newId()}@test.local`,
+      now: new Date(daysAgo(30)),
+    });
+    const d = await bootstrapAccount(app.db, {
+      email: `bm-d-${newId()}@test.local`,
+      now: new Date(daysAgo(30)),
+    });
+    await inWs(c.workspaceId, async (tx) => {
+      await audit(tx, c.workspaceId, c.userId, "commitment.confirmed", daysAgo(65));
+      await audit(tx, c.workspaceId, c.userId, "task.completed", daysAgo(9));
+      // A system row in the window is not user activity.
+      await audit(tx, c.workspaceId, null, "calendar.synced", daysAgo(8));
+      await audit(tx, c.workspaceId, c.userId, "integration.connected", daysAgo(40), { scopes: [GMAIL] });
+      await audit(tx, c.workspaceId, null, "integration.needs_reauth", daysAgo(3));
+      await tx`insert into integration_accounts (id, workspace_id, provider, external_account_id, scopes, encrypted_tokens, key_id, status)
+               values (${newId()}, ${c.workspaceId}, 'google', ${`sub-${newId()}`}, ${JSON.stringify([GMAIL])}::jsonb, 'x', 'local', 'needs_reauth')`;
+    });
+    await inWs(d.workspaceId, async (tx) => {
+      await audit(tx, d.workspaceId, d.userId, "plan.accepted", daysAgo(70));
+      await audit(tx, d.workspaceId, d.userId, "task.created", daysAgo(12));
+      await tx`insert into survey_responses (id, workspace_id, kind, answer) values (${newId()}, ${d.workspaceId}, 'sean_ellis', 'very')`;
+    });
+    await owner.sql`update workspaces set deleted_at = now() where id = ${d.workspaceId}`;
+    const agg = await loadBetaAggregates(owner.db, NOW, { workspaceIds: [c.workspaceId, d.workspaceId] });
+    expect(agg.retention[60]).toEqual({ hits: 1, n: 1 });
+    expect(agg.gmailKept30).toEqual({ hits: 1, n: 1 });
+    expect(agg.seanEllis.very).toBe(0);
+  });
 });

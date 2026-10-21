@@ -19,7 +19,7 @@ export async function joinWaitlist(
     .onConflictDoNothing();
 }
 
-/** Daily retention (SEC-M4): waitlist entries older than 180 days. Returns the number removed. */
+/** Daily retention (SEC-M4): waitlist entries older than 180 days, with the owner connection. Returns the number removed. */
 export async function pruneWaitlist(db: Db): Promise<number> {
   const [row] = await db.execute<{ n: number | string }>(sql`select prune_waitlist() as n`);
   return Number(row?.n ?? 0);
@@ -101,14 +101,20 @@ export async function recordSurvey(
   tx: WorkspaceTx,
   workspaceId: WorkspaceId,
   input: { answer: SurveyAnswer; comment: string | null; now: Date } | { dismissed: true; now: Date },
-): Promise<void> {
-  await tx.insert(surveyResponses).values({
-    id: newId(),
-    workspaceId,
-    kind: "sean_ellis",
-    ...("dismissed" in input
-      ? { answer: null, comment: null, dismissedAt: input.now }
-      : { answer: input.answer, comment: input.comment, dismissedAt: null }),
-    createdAt: input.now,
-  });
+): Promise<boolean> {
+  // A second answer from a concurrent tab hits `survey_one_answer_uq`: nothing is written and the caller says so.
+  const rows = await tx
+    .insert(surveyResponses)
+    .values({
+      id: newId(),
+      workspaceId,
+      kind: "sean_ellis",
+      ...("dismissed" in input
+        ? { answer: null, comment: null, dismissedAt: input.now }
+        : { answer: input.answer, comment: input.comment, dismissedAt: null }),
+      createdAt: input.now,
+    })
+    .onConflictDoNothing()
+    .returning({ id: surveyResponses.id });
+  return rows.length > 0;
 }

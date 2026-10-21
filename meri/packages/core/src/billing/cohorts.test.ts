@@ -34,6 +34,17 @@ describe("price experiment cohorts (D-102)", () => {
     );
   });
 
+  it("a workspace already billed by the provider is fixed at A, whatever the experiment says (review M4)", () => {
+    for (const experimentOn of [true, false])
+      expect(resolvePriceCohort({ workspaceId: "w", stored: null, experimentOn, billed: true })).toEqual({
+        cohort: "A",
+        assign: true,
+      });
+    expect(
+      resolvePriceCohort({ workspaceId: "w", stored: "B", experimentOn: true, billed: true }).cohort,
+    ).toBe("B");
+  });
+
   it("cohort A is the published catalogue; B uses the configured monthly anchors", () => {
     expect(cohortPrices("A")).toEqual({ pro: PLANS.pro.priceCents, pro_plus: PLANS.pro_plus.priceCents });
     expect(cohortPrices("B")).toEqual(DEFAULT_ANCHOR_B);

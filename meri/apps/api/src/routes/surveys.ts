@@ -59,13 +59,14 @@ export function surveyRoutes(app: FastifyInstance, options: { now: () => Date },
         const due = seanEllisEligibility({ onboardedAt: prefs?.onboardedAt ?? null, now, history });
         if (!due.eligible) throw new ApiError("CONFLICT", `The survey is not due (${due.reason}).`);
         const body = request.body;
-        await recordSurvey(
+        const recorded = await recordSurvey(
           tx,
           session.workspaceId,
           "dismiss" in body
             ? { dismissed: true, now }
             : { answer: body.answer, comment: body.comment ? body.comment : null, now },
         );
+        if (!recorded) throw new ApiError("CONFLICT", "The survey was already answered.");
       });
       return reply.status(204).send(null);
     },

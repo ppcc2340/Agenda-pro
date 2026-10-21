@@ -86,7 +86,9 @@ describe("beta tables", () => {
     await owner.db.execute(
       sql`insert into waitlist (email, consent_at, created_at) values (${old}, now(), now() - interval '181 days')`,
     );
-    expect(await pruneWaitlist(app.db)).toBeGreaterThanOrEqual(1);
+    expect(await pruneWaitlist(owner.db)).toBeGreaterThanOrEqual(1);
+    // The app role cannot run it (0023): only the worker's owner connection does.
+    await expect(pruneWaitlist(app.db)).rejects.toSatisfy((e) => /permission denied/.test(pgMessage(e)));
     expect(await count("waitlist", old)).toBe(0);
   });
 

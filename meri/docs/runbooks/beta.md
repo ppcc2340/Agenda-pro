@@ -27,7 +27,7 @@ Comandos y decisiones de la fase 6 (D-099..D-104). Todos se ejecutan con la cone
 
 ## 5. Revisión semanal de calidad de IA (D-103)
 1. Solo entran cuentas que activaron «Ayudar a mejorar la IA de Meri» (Control → IA; apagado por defecto) y solo propuestas **descartadas o editadas que no vienen del correo** (captura, calendario, planificador). Nunca hilos de Gmail, seguimientos ni vínculos de contactos.
-2. `pnpm ai:review-sample [--days 7] [--limit 50]` escribe `evals/candidates/<fecha>.jsonl` (0600, carpeta 0700, ignorada por git y por Docker) con todo el texto censurado: correos, enlaces, RUT, teléfonos, números largos y nombres de clientes y contactos de esa cuenta. Sin ids de workspace. Cada cuenta incluida recibe una entrada `ai.review_sampled` en su auditoría.
+2. `pnpm ai:review-sample [--days 7] [--limit 50]` escribe `<carpeta>/<fecha>.jsonl` (0600, carpeta 0700) con todo el texto censurado: ids, correos, enlaces, RUT, teléfonos, números largos y nombres de clientes y contactos de esa cuenta. Sin ids de workspace. La carpeta está **fuera del repositorio**: `~/meri-review-samples` o `MERI_REVIEW_SAMPLE_DIR`; el comando rechaza una carpeta dentro del repo, así que una muestra no puede acabar en un commit ni en una imagen. Cada cuenta incluida recibe una entrada `ai.review_sampled` en su auditoría.
 3. Una persona etiqueta los casos y reescribe los útiles como casos sintéticos en `evals/` (nunca se copia el texto real). Los ficheros de muestra se borran a los 30 días en la siguiente ejecución.
 
 ## 6. Qué queda para personas

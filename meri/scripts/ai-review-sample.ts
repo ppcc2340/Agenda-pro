@@ -1,12 +1,11 @@
 /**
  * pnpm ai:review-sample [--days 7] [--limit 50]
- * Writes evals/candidates/<date>.jsonl for human labelling (D-103). Needs DATABASE_ADMIN_URL. Never commit the file:
- * after labelling, only reviewed, rewritten cases go into evals/ (docs/runbooks/beta.md).
+ * Writes <dir>/<date>.jsonl for human labelling (D-103). Needs DATABASE_ADMIN_URL. The folder lives outside the
+ * repository (default ~/meri-review-samples, or MERI_REVIEW_SAMPLE_DIR) so a sample can never be committed or copied
+ * into an image; after labelling, only reviewed, rewritten cases go into evals/ (docs/runbooks/beta.md).
  */
-import { resolve } from "node:path";
-import { fileURLToPath } from "node:url";
 import { loadDotenv } from "@meri/config";
-import { exportReviewSample } from "./lib/review-sample";
+import { exportReviewSample, sampleDir } from "./lib/review-sample";
 
 const arg = (args: string[], flag: string): number | undefined => {
   const i = args.indexOf(flag);
@@ -20,7 +19,7 @@ if (process.argv[1]?.endsWith("ai-review-sample.ts")) {
   loadDotenv(".env");
   const args = process.argv.slice(2);
   const adminUrl = process.env.DATABASE_ADMIN_URL;
-  const outDir = resolve(fileURLToPath(new URL(".", import.meta.url)), "..", "evals", "candidates");
+  const outDir = sampleDir(process.env.MERI_REVIEW_SAMPLE_DIR);
   (adminUrl
     ? exportReviewSample({
         adminUrl,

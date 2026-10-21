@@ -827,5 +827,9 @@ export const surveyResponses = pgTable(
     dismissedAt: timestamp("dismissed_at", { withTimezone: true }),
     createdAt: createdAt(),
   },
-  (t) => [index("survey_ws_kind_idx").on(t.workspaceId, t.kind, t.createdAt)],
+  (t) => [
+    index("survey_ws_kind_idx").on(t.workspaceId, t.kind, t.createdAt),
+    // One answer per account and survey, even with two tabs submitting at once (review T8).
+    uniqueIndex("survey_one_answer_uq").on(t.workspaceId, t.kind).where(sql`${t.answer} is not null`),
+  ],
 );

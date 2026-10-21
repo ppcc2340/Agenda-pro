@@ -15,6 +15,8 @@ export function isReviewEligible(p: { kind: string; status: string; sourceType: 
   return p.sourceType === null || !MAIL_SOURCES.has(p.sourceType);
 }
 
+/** Identifiers pasted into text (a workspace, task or event id): they point back at an account. */
+const UUID = /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/giu;
 const EMAIL = /[\p{L}\p{N}._%+-]+@[\p{L}\p{N}.-]+\.[\p{L}]{2,}/gu;
 const URL_RE = /\b(?:https?:\/\/|www\.)[^\s<>"')]+/giu;
 /** Chilean RUT, with or without dots: 12.345.678-5, 12345678-K. */
@@ -27,11 +29,12 @@ const LONG_NUMBER = /\b\d{6,}\b/gu;
 const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 /**
- * Redacts one string: addresses, links, RUTs, phones, long numbers, and the workspace's own client and contact
+ * Redacts one string: identifiers, addresses, links, RUTs, phones, long numbers, and the workspace's own client and contact
  * names (longest first, whole words, any case). Short names (< 3 letters) are left alone to avoid shredding words.
  */
 export function redactForReview(text: string, names: readonly string[] = []): string {
   let out = text
+    .replace(UUID, "[id]")
     .replace(EMAIL, "[correo]")
     .replace(URL_RE, "[enlace]")
     .replace(RUT, "[rut]")

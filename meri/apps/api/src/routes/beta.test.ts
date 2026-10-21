@@ -1,7 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createDb, ADMIN_WORKSPACE_CONTEXT, type DbHandle } from "@meri/db";
 import { INTERNAL_HEADER } from "../plugins/internal";
-import { createTestApp, csrf, INTERNAL_SECRET, type TestApp } from "../test/harness";
+import { FEEDBACK_PER_DAY } from "./beta";
+import { createTestApp, csrf, INTERNAL_SECRET, NOW, type TestApp } from "../test/harness";
 
 const TEST_ADMIN_URL = process.env.DATABASE_ADMIN_URL_TEST ?? "postgres://meri:meri@localhost:5432/meri_test";
 const ORIGIN = "http://localhost:3000";
@@ -83,6 +84,36 @@ describe("closed beta (D-099)", () => {
     });
     expect(ok.statusCode).toBe(200);
     expect(ok.json()).toMatchObject({ created: true });
+  });
+
+  it("caps feedback at 20 per workspace in the last 24 h, counting only that workspace", async () => {
+    const a = await t.createAccount("fb-cap");
+    const other = await t.createAccount("fb-cap-other");
+    const seed = async (workspaceId: string, count: number, hoursAgo: number) => {
+      const at = new Date(NOW.getTime() - hoursAgo * 3_600_000).toISOString();
+      await owner.sql.begin(async (tx) => {
+        await tx`select set_config('app.workspace_id', ${workspaceId}, true)`;
+        for (let i = 0; i < count; i++)
+          await tx`insert into feedback (id, workspace_id, kind, message, created_at)
+            values (gen_random_uuid(), ${workspaceId}, 'idea', 'seed', ${at}::timestamptz)`;
+      });
+    };
+    // Older than a day: does not count. Another workspace's rows: do not count either.
+    await seed(a.workspaceId, 5, 25);
+    await seed(other.workspaceId, FEEDBACK_PER_DAY, 1);
+    await seed(a.workspaceId, FEEDBACK_PER_DAY - 1, 2);
+    const cookie = await t.cookieFor(a);
+    const send = () =>
+      t.app.inject({
+        method: "POST",
+        url: "/v1/feedback",
+        headers: { cookie, ...csrf },
+        payload: { kind: "idea", message: "una más" },
+      });
+    expect((await send()).statusCode).toBe(201);
+    const refused = await send();
+    expect(refused.statusCode).toBe(429);
+    expect(refused.json()).toMatchObject({ code: "RATE_LIMITED" });
   });
 
   it("stores feedback in the workspace with the path only, limited per day, isolated between tenants", async () => {

@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { ADMIN_WORKSPACE_CONTEXT, bootstrapAccount, createDb, newId } from "@meri/db";
 import { afterAll, describe, expect, it } from "vitest";
-import { exportReviewSample } from "../lib/review-sample";
+import { exportReviewSample, sampleDir } from "../lib/review-sample";
 
 const APP = process.env.DATABASE_URL_TEST ?? "postgres://meri_app:meri_app@localhost:5432/meri_test";
 const ADMIN = process.env.DATABASE_ADMIN_URL_TEST ?? "postgres://meri:meri@localhost:5432/meri_test";
@@ -85,5 +85,51 @@ describe("pnpm ai:review-sample (D-103, SEC-H2)", () => {
     const notAudited =
       await owner.sql`select 1 from audit_log where workspace_id = ${b.workspaceId} and action = 'ai.review_sampled'`;
     expect(notAudited.length).toBe(0);
+  });
+
+  it("redacts the edited version, the explanation, contact names and embedded ids, at a fixed time", async () => {
+    const now = new Date("2026-10-19T10:00:00Z");
+    const acc = await bootstrapAccount(app.db, { email: `rs-c-${newId()}@test.local`, now });
+    const marker = `zr${newId().slice(-6)}`;
+    await inWs(acc.workspaceId, async (tx) => {
+      await tx`update preferences set eval_consent = true where workspace_id = ${acc.workspaceId}`;
+      await tx`insert into contacts (id, workspace_id, email, name)
+               values (${newId()}, ${acc.workspaceId}, 'rosa@cliente.cl', 'Rosa Valdés')`;
+      await tx`insert into proposals (id, workspace_id, kind, status, payload, resolution, explanation, resolved_at)
+               values (${newId()}, ${acc.workspaceId}, 'capture', 'edited',
+                       ${JSON.stringify({ title: `${marker} llamar a Rosa Valdés` })}::jsonb,
+                       ${JSON.stringify({
+                         action: "edit",
+                         editedPayload: { title: `${marker} llamar a rosa valdés`, ref: acc.workspaceId },
+                       })}::jsonb,
+                       ${`Pedido por Rosa Valdés en ${acc.workspaceId}`},
+                       ${new Date(now.getTime() - 86_400_000).toISOString()}::timestamptz)`;
+    });
+    const outDir = mkdtempSync(join(tmpdir(), "meri-candidates-"));
+    const r = await exportReviewSample({ adminUrl: ADMIN, now, outDir, days: 7, limit: 500 });
+    expect(r.file).toBe(join(outDir, "2026-10-19.jsonl"));
+    const line = readFileSync(r.file ?? "", "utf8")
+      .split("\n")
+      .find((l) => l.includes(marker));
+    const rec = JSON.parse(line ?? "{}") as {
+      proposed: { title: string };
+      edited: { title: string; ref: string };
+      explanation: string;
+      day: string;
+    };
+    expect(rec.day).toBe("2026-10-18");
+    expect(rec.proposed.title).toBe(`${marker} llamar a [nombre]`);
+    expect(rec.edited).toEqual({ title: `${marker} llamar a [nombre]`, ref: "[id]" });
+    expect(rec.explanation).toBe("Pedido por [nombre] en [id]");
+    expect(line).not.toContain(acc.workspaceId);
+  });
+
+  it("keeps samples outside the repository", () => {
+    expect(sampleDir(undefined, "/home/ops")).toBe("/home/ops/meri-review-samples");
+    expect(sampleDir("/srv/samples")).toBe("/srv/samples");
+    expect(() => sampleDir(join(__dirname, "..", "..", "evals", "candidates"))).toThrow(
+      /outside the repository/,
+    );
+    expect(() => sampleDir(join(__dirname, "..", "..", ".."))).toThrow(/outside the repository/);
   });
 });

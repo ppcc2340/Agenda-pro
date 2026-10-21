@@ -49,5 +49,5 @@ Evidencia automática: `apps/api/src/routes/account-erasure.test.ts` crea una cu
 Si el usuario no puede borrar la cuenta por sí mismo: verificar la identidad desde el email de la cuenta, ejecutar el borrado lógico por el mismo camino de la API (nunca SQL manual), confirmar por escrito el plazo de 30 días y, tras la purga, enviar el hash del recibo como justificante.
 
 ## Muestras de revisión de IA (fase 6, D-103)
-Las muestras de `pnpm ai:review-sample` no contienen ids de cuenta ni datos sin censurar y viven fuera de la base de datos (carpeta local `evals` › candidates, 0600, ignorada por git y por Docker). No se pueden ligar a una cuenta para borrarlas una a una: por eso se borran todas a los 30 días (en la siguiente ejecución del comando) y solo incluyen cuentas con consentimiento. Retirar el consentimiento excluye la cuenta de las muestras siguientes.
+Las muestras de `pnpm ai:review-sample` no contienen ids de cuenta ni datos sin censurar y viven fuera de la base de datos (carpeta local fuera del repositorio, `~/meri-review-samples` o `MERI_REVIEW_SAMPLE_DIR`, ficheros 0600). No se pueden ligar a una cuenta para borrarlas una a una: por eso se borran todas a los 30 días (en la siguiente ejecución del comando) y solo incluyen cuentas con consentimiento. Retirar el consentimiento excluye la cuenta de las muestras siguientes.
 

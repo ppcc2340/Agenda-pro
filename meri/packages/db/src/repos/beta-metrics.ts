@@ -6,7 +6,7 @@ import type { Db } from "../client";
  * (`app.workspace_id = '*'`), ideally inside a read-only transaction (`pnpm beta:panel`). Only counts leave this
  * module: no ids, addresses or content. Deleted workspaces are left out.
  * Definitions (plan review CR-L): activity = an `audit_log` row written by the user; activated = their first
- * confirmed or edited proposal, or first accepted plan.
+ * confirmed or edited proposal or commitment, or first accepted plan.
  */
 export interface Rate {
   hits: number;
@@ -41,7 +41,7 @@ async function retentionAt(db: Db, now: Date, days: 30 | 60 | 90, scope: Metrics
       select a.actor_user_id as user_id, min(a.created_at) as d0
       from audit_log a join workspaces w on w.id = a.workspace_id and w.deleted_at is null ${scoped(scope)}
       where a.actor = 'user' and a.actor_user_id is not null
-        and a.action in ('proposal.confirmed', 'proposal.edited', 'plan.accepted')
+        and a.action in ('proposal.confirmed', 'proposal.edited', 'commitment.confirmed', 'plan.accepted')
       group by a.actor_user_id
     )
     select

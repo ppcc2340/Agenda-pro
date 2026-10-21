@@ -39,8 +39,11 @@ export function resolvePriceCohort(input: {
   workspaceId: string;
   stored: PriceCohort | null;
   experimentOn: boolean;
+  /** Already has a provider subscription (billed at the published prices): never moved into the experiment. */
+  billed?: boolean;
 }): { cohort: PriceCohort; assign: boolean } {
   if (input.stored) return { cohort: input.stored, assign: false };
+  if (input.billed) return { cohort: "A", assign: true };
   if (!input.experimentOn) return { cohort: "A", assign: false };
   return { cohort: priceCohortOf(input.workspaceId), assign: true };
 }

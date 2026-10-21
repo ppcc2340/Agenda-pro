@@ -52,6 +52,16 @@ describe("surveys", () => {
     expect(rows).toEqual([{ answer: "very", comment: "Me ahorra el lunes" }]);
   });
 
+  it("two tabs answering at once record one answer and the other gets 409", async () => {
+    const { acc, cookie } = await account(20);
+    const codes = (await Promise.all([post(cookie, { answer: "very" }), post(cookie, { answer: "not" })]))
+      .map((r) => r.statusCode)
+      .sort();
+    expect(codes).toEqual([204, 409]);
+    const rows = await owner.sql`select answer from survey_responses where workspace_id = ${acc.workspaceId}`;
+    expect(rows).toHaveLength(1);
+  });
+
   it("a dismissal hides it, and invalid answers are refused", async () => {
     const { cookie } = await account(20);
     expect((await post(cookie, { answer: "maybe" })).statusCode).toBe(400);

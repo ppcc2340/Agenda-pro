@@ -56,7 +56,7 @@ jobs:
           for target in api worker web migrate; do
             uid=$(docker run --rm --entrypoint id "meri-$target:ci" -u)
             if [ "$uid" = "0" ]; then echo "meri-$target runs as root"; exit 1; fi
-            if docker run --rm --entrypoint sh "meri-$target:ci" -c 'ls -a /app' | grep -E '^\.env'; then
+            if docker run --rm --entrypoint sh "meri-$target:ci" -c "find /app -name '.env*' -not -path '*/node_modules/*'" | grep .; then
               echo "meri-$target contains an .env file"; exit 1
             fi
             if docker image inspect "meri-$target:ci" --format '{{json .Config.Env}}' | grep -iE 'SECRET|API_KEY|PASSWORD|MASTER_KEY'; then

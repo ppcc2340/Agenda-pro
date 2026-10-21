@@ -11,9 +11,10 @@
 **/*.tsbuildinfo
 
 # Secrets and configuration: runtime values come from the environment, never from the image.
-.env
-.env.*
-!.env.example
+# `**/`: a plain `.env` only matches the context root, and apps/web/.env would end up in the standalone server.
+**/.env
+**/.env.*
+!**/.env.example
 **/*.pem
 **/*.key
 

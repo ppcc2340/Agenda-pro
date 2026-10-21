@@ -132,21 +132,6 @@ describe("dispatchers skip logically deleted workspaces (D-054)", () => {
       max: 1,
       connection: { "app.workspace_id": ADMIN_WORKSPACE_CONTEXT },
     });
-    // A long-lived local test database keeps never-synced connections from earlier runs; past the polling batch
-    // (500) they would crowd this run's accounts out. Mark leftovers older than an hour as synced, one workspace at a
-    // time (RLS: the admin context is read-only). A fresh CI database has none.
-    await adminSql.unsafe(`
-      do $$
-      declare ws uuid;
-      begin
-        for ws in select distinct workspace_id from integration_accounts
-                  where last_sync_at is null and created_at < now() - interval '1 hour' loop
-          perform set_config('app.workspace_id', ws::text, true);
-          update integration_accounts set last_sync_at = created_at
-            where workspace_id = ws and last_sync_at is null and created_at < now() - interval '1 hour';
-        end loop;
-        perform set_config('app.workspace_id', '*', true);
-      end $$;`);
     alive = await prepared("alive");
     deleted = await prepared("deleted");
     await softDeleteAccount(handle.db, {
@@ -170,6 +155,9 @@ describe("dispatchers skip logically deleted workspaces (D-054)", () => {
       dispatcher,
       logger: createLogger({ name: "worker-test", level: "silent" }),
       now: () => NOW,
+      // A long-lived local test database keeps never-synced connections from earlier runs (and other suites run
+      // in parallel): past the default batch they would crowd this run's accounts out. Never mutate their rows.
+      pollBatch: 1_000_000,
     });
     return dispatcher.jobs.map((j) => (j.payload as { workspaceId: string }).workspaceId);
   };
@@ -248,5 +236,13 @@ describe("workspace scans are paginated, never capped (D-054 follow-up)", () => 
     });
     expect(rows.map((r) => r.workspaceId)).toEqual(ids);
     expect(calls).toHaveLength(3);
+  });
+
+  it("eachPage refuses a page query that ignores the cursor instead of looping forever", async () => {
+    const { eachPage, PAGE } = await import("./dispatchers");
+    const full = Array.from({ length: PAGE }, (_, i) => ({
+      workspaceId: `0192aaaa-0000-7000-8000-${String(i).padStart(12, "0")}`,
+    }));
+    await expect(eachPage(() => Promise.resolve(full))).rejects.toThrow(/order by workspace_id/);
   });
 });

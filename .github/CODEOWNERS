@@ -4,5 +4,7 @@
 /meri/packages/db/drizzle/        @ppcc2340
 /meri/scripts/sql/                @ppcc2340
 /meri/scripts/lib/migration-check.ts @ppcc2340
+/meri/scripts/check-migrations.ts @ppcc2340
+/meri/package.json                @ppcc2340
 /meri/Dockerfile                  @ppcc2340
 /.github/                         @ppcc2340

@@ -1,16 +1,32 @@
 /**
  * Weekly AI quality review sample (D-103, plan review SEC-H2). Exports discarded or edited proposals of accounts that
  * consented (`preferences.eval_consent`), never mail-derived ones, with every string redacted, to a local JSONL file
- * (0600, in a 0700 folder ignored by git and by Docker) for a person to label. Files older than 30 days are deleted.
+ * (0600, in a 0700 folder outside the repository, `sampleDir()`) for a person to label. Files older than 30 days are deleted.
  * Each workspace that contributed gets an `ai.review_sampled` audit entry with the count.
  */
 import { randomUUID } from "node:crypto";
 import { chmodSync, mkdirSync, readdirSync, statSync, unlinkSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { homedir } from "node:os";
+import { isAbsolute, join, relative, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { isReviewEligible, redactValue } from "@meri/core";
 import { ADMIN_WORKSPACE_CONTEXT, createDb, newId } from "@meri/db";
 
 export const SAMPLE_KEEP_DAYS = 30;
+
+const REPO_ROOT = resolve(fileURLToPath(new URL(".", import.meta.url)), "..", "..", "..");
+
+/**
+ * Where samples go: MERI_REVIEW_SAMPLE_DIR or ~/meri-review-samples. A folder inside the repository is refused, so a
+ * redacted but real sample can never end up in a commit, a build context or an image.
+ */
+export function sampleDir(fromEnv: string | undefined, home = homedir()): string {
+  const dir = resolve(fromEnv?.trim() ? fromEnv : join(home, "meri-review-samples"));
+  const rel = relative(REPO_ROOT, dir);
+  if (rel === "" || (!rel.startsWith("..") && !isAbsolute(rel)))
+    throw new Error(`Review samples must live outside the repository (${dir}). Set MERI_REVIEW_SAMPLE_DIR.`);
+  return dir;
+}
 
 export interface SampleRecord {
   sample: string;

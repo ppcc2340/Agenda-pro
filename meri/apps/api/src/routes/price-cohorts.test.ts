@@ -1,6 +1,6 @@
 import { InMemoryFlagStore } from "@meri/config";
 import { DEFAULT_ANCHOR_B, PLANS, priceCohortOf } from "@meri/core";
-import type { AccountIdentity } from "@meri/db";
+import { getSubscription, subscriptions, withWorkspace, type AccountIdentity } from "@meri/db";
 import type { FakeBilling } from "@meri/integrations";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createTestApp, csrf, type TestApp } from "../test/harness";
@@ -34,6 +34,10 @@ describe("price cohorts", () => {
     const acc = await accountIn("B");
     const cookie = await t.cookieFor(acc);
     expect(await view(cookie)).toMatchObject({ priceCohort: "A", prices: { pro: PLANS.pro.priceCents } });
+    const stored = await withWorkspace(t.handle.db, acc.workspaceId, (tx) =>
+      getSubscription(tx, acc.workspaceId),
+    );
+    expect(stored?.priceCohort).toBeNull();
   });
 
   it("with the experiment on a B workspace sees anchor B, keeps it after the experiment ends, and is charged B", async () => {
@@ -60,5 +64,20 @@ describe("price cohorts", () => {
     flags.set("price_experiment", true);
     const acc = await accountIn("A");
     expect((await view(await t.cookieFor(acc))).priceCohort).toBe("A");
+  });
+
+  it("a workspace that already pays (subscribed before the experiment) is never re-priced at B (review M4)", async () => {
+    flags.set("price_experiment", true);
+    const acc = await accountIn("B");
+    await withWorkspace(t.handle.db, acc.workspaceId, (tx) =>
+      tx
+        .update(subscriptions)
+        .set({ stripeSubscriptionId: "sub_paid_before", status: "active", plan: "pro" }),
+    );
+    expect((await view(await t.cookieFor(acc))).priceCohort).toBe("A");
+    const stored = await withWorkspace(t.handle.db, acc.workspaceId, (tx) =>
+      getSubscription(tx, acc.workspaceId),
+    );
+    expect(stored?.priceCohort).toBe("A");
   });
 });
