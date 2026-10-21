@@ -15,9 +15,11 @@ La aplicación no puede borrar workspaces ni usuarios por su cuenta (`DELETE` y 
 
 ## 2. Verificación en Postgres
 
-Toda tabla está clasificada en `TABLE_CLASSIFICATION` (`packages/db/src/purge.ts`): `workspace`, `user` o `global` (sin datos personales: `stripe_events`, `deletion_receipts`). Un test falla si aparece una tabla sin clasificar.
+Toda tabla está clasificada en `TABLE_CLASSIFICATION` (`packages/db/src/purge.ts`): `workspace`, `user`, `global` (sin datos personales: `stripe_events`, `deletion_receipts`) o `global_personal` (un correo guardado antes de que exista la cuenta: `beta_invites`, `waitlist`; fase 6). Un test falla si aparece una tabla sin clasificar.
 
-`remainingPersonalRows(adminDb, { workspaceId, userIds })` cuenta, con una conexión administradora en el contexto de lectura `app.workspace_id='*'`, las filas que aún referencian el workspace o sus usuarios en cada tabla, más `audit_log.actor_user_id`. Tras la purga todas deben ser 0.
+`remainingPersonalRows(adminDb, { workspaceId, userIds, emails })` cuenta, con una conexión administradora en el contexto de lectura `app.workspace_id='*'`, las filas que aún referencian el workspace o sus usuarios en cada tabla, más `audit_log.actor_user_id`, y las filas de `beta_invites`/`waitlist` con los correos de los miembros (leídos antes de la purga). Tras la purga todas deben ser 0 (`packages/db/src/repos/beta.test.ts`).
+
+Las filas `global_personal` desaparecen también al crear la cuenta (`consume_beta_email()`, en la misma transacción del alta), a los 180 días (lista de espera, `prune_waitlist()` en el despacho diario de retención) o a petición de alguien que nunca llegó a tener cuenta: `pnpm beta:forget <correo>`.
 
 Comprobación manual (staging o producción, con el rol propietario):
 

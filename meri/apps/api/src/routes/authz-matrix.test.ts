@@ -54,7 +54,7 @@ describe("authorization matrix over every registered route", () => {
 
   it("every /v1 route answers 401 without a session and with a deleted account's session", async () => {
     const failures: string[] = [];
-    for (const r of routes().filter((x) => x.url.startsWith("/v1/"))) {
+    for (const r of routes().filter((x) => x.url.startsWith("/v1/") && ruleOf(x.key).kind !== "public")) {
       // The router percent-decodes paths: the encoded spelling must be refused too.
       for (const url of [fill(r.url, a.task), fill(r.url, a.task).replace(/^\/v1\//, "/%761/")]) {
         for (const cookie of [undefined, deletedCookie]) {
@@ -98,7 +98,8 @@ describe("authorization matrix over every registered route", () => {
     let n = 0;
     for (const r of routes().filter((x) => x.url.startsWith("/v1/"))) {
       const rule = ruleOf(r.key);
-      if (rule.kind === "outside" || (rule.kind === "own" && rule.destructive)) continue;
+      if (rule.kind === "outside" || rule.kind === "public" || (rule.kind === "own" && rule.destructive))
+        continue;
       const cases: (AuthzCase & { label: string })[] =
         rule.kind === "own"
           ? [

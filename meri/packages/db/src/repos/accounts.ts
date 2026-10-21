@@ -23,6 +23,8 @@ export interface BootstrapInput {
   locale?: "es" | "en";
   /** Injected clock: trial length is computed from it. */
   now: Date;
+  /** Closed beta (D-099): a new account needs an invitation. Existing accounts always sign in. */
+  requireInvite?: boolean;
 }
 
 export interface AccountIdentity {
@@ -35,6 +37,14 @@ export interface AccountIdentity {
 }
 
 export const TRIAL_DAYS = 14;
+
+/** First sign-in of an address without an invitation while the beta is invite-only (D-099). */
+export class BetaInviteRequiredError extends Error {
+  override readonly name = "BetaInviteRequiredError";
+  constructor() {
+    super("An invitation is required to create an account during the closed beta.");
+  }
+}
 
 /** Sign-in of an email whose account was logically deleted (D-054): refused until the purge job removes it. */
 export class AccountDeletedError extends Error {
@@ -81,6 +91,12 @@ export async function bootstrapAccount(db: Db, input: BootstrapInput): Promise<A
       .onConflictDoNothing({ target: users.email })
       .returning({ id: users.id });
     if (inserted.length === 0) return false;
+    // The invitation and any waitlist entry of this address go in the same transaction (nothing personal stays
+    // in the beta tables); without an invitation an invite-only beta rolls the whole bootstrap back.
+    const [beta] = await tx.execute<{ invited: boolean }>(
+      sql`select consume_beta_email(${email}) as invited`,
+    );
+    if (input.requireInvite && !beta?.invited) throw new BetaInviteRequiredError();
     await tx
       .insert(workspaces)
       .values({ id: workspaceId, name: input.name ?? email, ownerId: userId, vertical: "generic" });

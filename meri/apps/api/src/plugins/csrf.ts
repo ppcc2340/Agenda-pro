@@ -33,7 +33,10 @@ export const csrfPlugin = fp<CsrfOptions>((app: FastifyInstance, options, done) 
   // preParsing (after the per-route rate limit, before body parsing and validation): a forged request is refused
   // before any route logic runs.
   app.addHook("preParsing", (request, _reply, payload, next) => {
-    const needsCheck = MUTATING.has(request.method) && isV1Route(request) && request.session !== null;
+    // Public routes (no session, e.g. the waitlist) get the same checks, and their Origin is mandatory (SEC-M4).
+    const isPublic = request.routeOptions.config.public === true;
+    const needsCheck =
+      MUTATING.has(request.method) && isV1Route(request) && (request.session !== null || isPublic);
     if (!needsCheck) {
       next(null, payload);
       return;
@@ -48,6 +51,10 @@ export const csrfPlugin = fp<CsrfOptions>((app: FastifyInstance, options, done) 
       return;
     }
     const origin = request.headers.origin;
+    if (isPublic && typeof origin !== "string") {
+      next(new ApiError("FORBIDDEN", "Request origin required."));
+      return;
+    }
     if (typeof origin === "string" && !allowed.has(originOf(origin) ?? "\0")) {
       next(new ApiError("FORBIDDEN", "Request origin refused."));
       return;

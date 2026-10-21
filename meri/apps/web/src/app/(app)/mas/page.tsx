@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
+import { FeedbackDialog } from "@/components/beta/feedback-dialog";
 import { PageHeader } from "@/components/shell/app-shell";
 import type { TimeWeek } from "@/lib/types";
 import { apiFetch } from "@/server/api";
@@ -49,6 +50,8 @@ export default async function MasPage() {
           </li>
         ))}
       </ul>
+      {/* On mobile the rail is hidden: feedback is reached from «Más». */}
+      <FeedbackDialog triggerClassName="mt-4 flex w-full items-center gap-2 rounded-2xl border border-rule bg-raised px-4 py-3.5 font-semibold text-sea" />
     </>
   );
 }

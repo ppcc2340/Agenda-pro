@@ -26,7 +26,12 @@ export type AuthzRule =
   /** Acts only on the caller's workspace and takes no id: checked for auth/CSRF and isolation. */
   | { kind: "own"; body?: Record<string, unknown>; query?: string; destructive?: true }
   /** Addresses resources by id (path, body or query). */
-  | { kind: "tenant"; param?: IdKey; cases: AuthzCase[] };
+  | { kind: "tenant"; param?: IdKey; cases: AuthzCase[] }
+  /**
+   * Reachable without a session (`config.public`): reads nothing and writes no tenant data. Still CSRF-checked
+   * (header and exact Origin); `noControl` says why there is no tenant case.
+   */
+  | { kind: "public"; noControl: string };
 
 const denied = (body?: AuthzCase["body"]): AuthzCase => ({ expect: "denied", ...(body ? { body } : {}) });
 
@@ -271,5 +276,10 @@ export const AUTHZ_MATRIX: Record<string, AuthzRule> = {
   },
   "GET /v1/value-report": { kind: "own", query: "period=month" },
   "GET /v1/reviews/daily": { kind: "own", query: "date=2026-10-19" },
+  "POST /v1/waitlist": {
+    kind: "public",
+    noControl: "insert-only into the global waitlist; same answer whatever the address (beta.test.ts)",
+  },
+  "POST /v1/feedback": { kind: "own", body: { kind: "idea", message: "authz matrix" } },
   "GET /v1/reviews/weekly": { kind: "own" },
 };

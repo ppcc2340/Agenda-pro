@@ -1,7 +1,14 @@
 import type { FastifyInstance } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import { z } from "zod";
-import { AccountDeletedError, IdentityMismatchError, TRIAL_DAYS, bootstrapAccount, type Db } from "@meri/db";
+import {
+  AccountDeletedError,
+  BetaInviteRequiredError,
+  IdentityMismatchError,
+  TRIAL_DAYS,
+  bootstrapAccount,
+  type Db,
+} from "@meri/db";
 import type { Analytics } from "@meri/integrations";
 import { track } from "@meri/jobs";
 import { ApiError } from "../errors";
@@ -19,7 +26,7 @@ export const BootstrapBody = z.object({
 /** ADR 0001: called by apps/web on every sign-in. Idempotent. Hidden from OpenAPI. */
 export function internalRoutes(
   app: FastifyInstance,
-  options: { db: Db; secret: string; now: () => Date; analytics: Analytics },
+  options: { db: Db; secret: string; now: () => Date; analytics: Analytics; betaInviteRequired: boolean },
   done: () => void,
 ): void {
   const r = app.withTypeProvider<ZodTypeProvider>();
@@ -57,17 +64,22 @@ export function internalRoutes(
       },
     },
     async (request) => {
-      const account = await bootstrapAccount(options.db, { ...request.body, now: options.now() }).catch(
-        (err: unknown) => {
-          // D-054: a logically deleted account cannot sign in again until the purge job removes it.
-          if (err instanceof AccountDeletedError)
-            throw new ApiError("CONFLICT", "This account was deleted and is pending purge.");
-          // A recycled address (same email, another provider identity) never inherits the old account.
-          if (err instanceof IdentityMismatchError)
-            throw new ApiError("CONFLICT", "This email belongs to another sign-in identity.");
-          throw err;
-        },
-      );
+      const account = await bootstrapAccount(options.db, {
+        ...request.body,
+        now: options.now(),
+        requireInvite: options.betaInviteRequired,
+      }).catch((err: unknown) => {
+        // D-099: closed beta. The web shows the waitlist instead of an error.
+        if (err instanceof BetaInviteRequiredError)
+          throw new ApiError("BETA_INVITE_REQUIRED", "An invitation is required during the closed beta.");
+        // D-054: a logically deleted account cannot sign in again until the purge job removes it.
+        if (err instanceof AccountDeletedError)
+          throw new ApiError("CONFLICT", "This account was deleted and is pending purge.");
+        // A recycled address (same email, another provider identity) never inherits the old account.
+        if (err instanceof IdentityMismatchError)
+          throw new ApiError("CONFLICT", "This email belongs to another sign-in identity.");
+        throw err;
+      });
       if (account.created) {
         track(options.analytics, "signup", account.workspaceId, {});
         track(options.analytics, "trial_started", account.workspaceId, { trialDays: TRIAL_DAYS });

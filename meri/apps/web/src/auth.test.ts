@@ -74,7 +74,10 @@ describe("auth config (ADR 0001)", () => {
     // A token without a sign-in instant (issued before ADR 0007) or past the absolute lifetime ends the session.
     const legacy = { token: { sub: "x", workspaceId: "w" }, account: null } as unknown as JwtArgs;
     expect(await jwt(legacy)).toBeNull();
-    const stale = { token: { sub: "x", authTime: Date.now() - 15 * 86_400_000 }, account: null } as unknown as JwtArgs;
+    const stale = {
+      token: { sub: "x", authTime: Date.now() - 15 * 86_400_000 },
+      account: null,
+    } as unknown as JwtArgs;
     expect(await jwt(stale)).toBeNull();
   });
 
@@ -89,18 +92,19 @@ describe("auth config (ADR 0001)", () => {
   });
 
   it("binds Google sign-ins to the Google subject and refuses unverified addresses", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(
-      new Response(
-        JSON.stringify({
-          userId: "0192aaaa-0000-7000-8000-000000000001",
-          workspaceId: "0192aaaa-0000-7000-8000-000000000002",
-          email: "a@b.co",
-          name: null,
-          locale: "es",
-          created: false,
-        }),
-        { status: 200 },
-      ),
+    const fetchMock = vi.fn().mockImplementation(
+      () =>
+        new Response(
+          JSON.stringify({
+            userId: "0192aaaa-0000-7000-8000-000000000001",
+            workspaceId: "0192aaaa-0000-7000-8000-000000000002",
+            email: "a@b.co",
+            name: null,
+            locale: "es",
+            created: false,
+          }),
+          { status: 200 },
+        ),
     );
     vi.stubGlobal("fetch", fetchMock);
     const { buildAuthConfig } = await import("./auth");
@@ -111,13 +115,42 @@ describe("auth config (ADR 0001)", () => {
     type SignInArgs = Parameters<typeof signIn>[0];
     const google = { provider: "google", providerAccountId: "1234567890", type: "oidc" };
     const args = (emailVerified: boolean) =>
-      ({ user: { email: "a@b.co" }, account: google, profile: { email_verified: emailVerified } }) as unknown as SignInArgs;
+      ({
+        user: { email: "a@b.co" },
+        account: google,
+        profile: { email_verified: emailVerified },
+      }) as unknown as SignInArgs;
     expect(await signIn(args(true))).toBe(true);
     expect(await signIn(args(false))).toBe(false);
     type JwtArgs = Parameters<typeof jwt>[0];
     await jwt({ token: {}, user: { id: "x", email: "a@b.co" }, account: google } as unknown as JwtArgs);
     const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(JSON.parse(init.body as string)).toMatchObject({ subject: "google:1234567890" });
+    // The bootstrap done in signIn is reused by jwt for the same sign-in (same user object): one call, not two.
+    fetchMock.mockClear();
+    const user = { id: "y", email: "a@b.co" };
+    const signInArgs = { user, account: google, profile: { email_verified: true } } as unknown as SignInArgs;
+    expect(await signIn(signInArgs)).toBe(true);
+    const token = await jwt({ token: {}, user, account: google } as unknown as JwtArgs);
+    expect(token).toMatchObject({ workspaceId: "0192aaaa-0000-7000-8000-000000000002" });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("sends a first sign-in without beta invitation to the waitlist, without the address in the URL (D-099)", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockImplementation(
+          () => new Response(JSON.stringify({ code: "BETA_INVITE_REQUIRED", status: 403 }), { status: 403 }),
+        ),
+    );
+    const { buildAuthConfig, BETA_WAITLIST_URL } = await import("./auth");
+    const signIn = buildAuthConfig().callbacks?.signIn;
+    if (!signIn) throw new Error("signIn callback missing");
+    const result = await signIn({ user: { email: "nuevo@b.co" }, account: null });
+    expect(result).toBe(BETA_WAITLIST_URL);
+    expect(String(result)).not.toContain("nuevo");
   });
 
   it("refuses the development provider in production", async () => {

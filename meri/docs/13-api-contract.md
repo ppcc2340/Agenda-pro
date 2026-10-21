@@ -9,7 +9,7 @@ Fuente para que backend y frontend se construyan en paralelo. El OpenAPI generad
 - Errores `application/problem+json`: `{ type, title, status, code, detail, traceId }`.
 - Listas con cursor: `?cursor=&limit=` → `{ items, nextCursor }`.
 - `Idempotency-Key` en `POST` que crean, cobran o aplican planes.
-- Códigos de error estables: `VALIDATION_FAILED`, `UNAUTHENTICATED`, `FORBIDDEN`, `NOT_FOUND`, `CONFLICT`, `RATE_LIMITED`, `ENTITLEMENT_REQUIRED`, `AI_CREDITS_EXHAUSTED`, `INTEGRATION_NEEDS_REAUTH`, `INTERNAL`.
+- Códigos de error estables: `VALIDATION_FAILED`, `UNAUTHENTICATED`, `FORBIDDEN`, `NOT_FOUND`, `CONFLICT`, `RATE_LIMITED`, `ENTITLEMENT_REQUIRED`, `AI_CREDITS_EXHAUSTED`, `INTEGRATION_NEEDS_REAUTH`, `BETA_INVITE_REQUIRED` (403: primer acceso sin invitación con `BETA_INVITE_REQUIRED=1`; la web muestra la lista de espera, D-099), `INTERNAL`.
 
 ## Rutas
 
@@ -21,6 +21,12 @@ Fuente para que backend y frontend se construyan en paralelo. El OpenAPI generad
 | `GET /v1/account/export?format=json|zip` | Exportación de los datos del usuario (D-050/D-055, ADR 0007). `zip`: `export.json` + un CSV por colección (mismas listas blancas, celdas neutralizadas). Sin `format`: un JSON `meri-export/1` con listas blancas por entidad (clientes, asuntos, contactos, tareas, compromisos, propuestas, tiempo, eventos, bloques, avisos, actividad sin `before/after`, conexiones sin tokens ni claves); `Content-Disposition: attachment`, `Cache-Control: no-store`, 5/min, auditoría `account.exported` con el formato |
 | `POST /v1/account/sessions/revoke` | Cierra la sesión en todos los dispositivos (ADR 0007): `users.sessions_valid_after = now()`; toda sesión con `authTime` anterior responde 401; auditoría `account.sessions_revoked`; 5/min; 204 |
 | `DELETE /v1/account` | Eliminación lógica inmediata (D-054): `users.deleted_at`, `workspaces.deleted_at`, conexiones `revoked` con los tokens cifrados borrados y revocados en el proveedor (sin bloquear el borrado), ningún job vuelve a despacharse para ese workspace, auditoría `account.deleted`; 204. Con `DEMO_MODE=1` la cuenta de demo responde 403. La sesión deja de valer en todas las rutas (guardia con caché de 60 s) y el `bootstrap` de ese correo responde 409 hasta que el job `data.delete_account` purgue (30 días, ADR 0007) |
+
+### Beta cerrada (fase 6, D-099)
+| Método y ruta | Descripción |
+|---|---|
+| `POST /v1/waitlist` `{ email, consent: true, locale?, website? }` | **Sin sesión** (`config.public`, única ruta así). Exige `x-requested-with: meri` y `Origin` exacto (APP_URL/API_URL); 5/min por IP y un tope global por proceso (300/h); `website` es un campo trampa (si llega relleno no se guarda nada). Siempre `202 { ok: true }`, exista o no el correo. El rol de la app solo puede insertar en `waitlist` |
+| `POST /v1/feedback` `{ kind: bug|idea|other, message ≤ 2000, pagePath? }` | Comentario en el workspace; `pagePath` sin query ni fragmento; 10/min y 20/día por workspace (`RATE_LIMITED`). Nunca va a analítica ni a la IA. 201 `{ id }` |
 
 ### Tareas y captura
 | `GET/POST /v1/tasks` · `GET/PATCH/DELETE /v1/tasks/:id` | CRUD con filtros `status`, `clientId`, `dueBefore` |

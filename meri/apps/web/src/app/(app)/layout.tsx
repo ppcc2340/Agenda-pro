@@ -8,6 +8,7 @@ import { AiPausedBanner } from "@/components/billing/ai-paused-banner";
 import { apiFetch, getMe } from "@/server/api";
 import { isOverdue } from "@/lib/commitments";
 import { getServerConfig } from "@/server/config";
+import { FeedbackDialog } from "@/components/beta/feedback-dialog";
 
 /** Authenticated areas. Session validated against the API; incomplete onboarding is redirected. */
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -37,6 +38,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         badges={{ entrada: proposals.items.length, proyectos: overdue }}
         footer={
           <>
+            <FeedbackDialog triggerClassName="flex items-center gap-2 bg-transparent p-0 text-left text-rail-ink" />
             <form action={signOutAction}>
               <button type="submit" className="bg-transparent p-0 text-left text-rail-ink">
                 {t("signOut")}

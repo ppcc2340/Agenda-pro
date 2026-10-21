@@ -155,6 +155,8 @@ export const preferences = pgTable("preferences", {
   vertical: text("vertical").$type<"legal" | "consulting" | "generic">().notNull().default("generic"),
   /** D-043: notify one day before a client meeting so the briefing can be opened (notification only, no task). */
   briefingBeforeMeetings: boolean("briefing_before_meetings").notNull().default(true),
+  /** D-103: consent to include this account's discarded or edited (non-mail) proposals in the AI review sample. */
+  evalConsent: boolean("eval_consent").notNull().default(false),
   updatedAt: updatedAt(),
 });
 
@@ -434,7 +436,14 @@ export const briefings = pgTable(
     eventId: uuid("event_id"),
     items: jsonb("items")
       .$type<
-        { claim: string; kind: string; sourceType: string; sourceId: string; url?: string; sourceTitle?: string }[]
+        {
+          claim: string;
+          kind: string;
+          sourceType: string;
+          sourceId: string;
+          url?: string;
+          sourceTitle?: string;
+        }[]
       >()
       .notNull()
       .default([]),
@@ -672,6 +681,8 @@ export const subscriptions = pgTable(
     hasPaymentMethod: boolean("has_payment_method").notNull().default(false),
     /** Creation time of the last provider event applied: older events are recorded without effects ([H1]). */
     lastEventAt: timestamp("last_event_at", { withTimezone: true }),
+    /** D-102: price experiment cohort, fixed when assigned so a workspace never changes price mid-trial. */
+    priceCohort: text("price_cohort").$type<"A" | "B">(),
     updatedAt: updatedAt(),
   },
   (t) => [uniqueIndex("subs_ws_uq").on(t.workspaceId)],
@@ -771,4 +782,50 @@ export const featureFlags = pgTable(
     enabled: boolean("enabled").notNull().default(false),
   },
   (t) => [uniqueIndex("flags_key_ws_uq").on(t.key, t.workspaceId)],
+);
+
+/**
+ * Closed beta (D-099). Invitations and the waitlist hold an address before any account exists, so they have no
+ * workspace: class `global_personal` (purge.ts). The application role cannot read them (migration 0022): the
+ * bootstrap goes through `consume_beta_email()` and the waitlist route may only insert.
+ */
+export const betaInvites = pgTable("beta_invites", {
+  email: text("email").primaryKey(),
+  invitedAt: timestamp("invited_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const waitlist = pgTable("waitlist", {
+  email: text("email").primaryKey(),
+  locale: text("locale").notNull().default("es"),
+  consentAt: timestamp("consent_at", { withTimezone: true }).notNull(),
+  createdAt: createdAt(),
+});
+
+/** In-app feedback (D-099): kind, text and the page path only; never sent to analytics or to the AI. */
+export const feedback = pgTable(
+  "feedback",
+  {
+    id: id(),
+    workspaceId: workspaceId(),
+    kind: text("kind").$type<"bug" | "idea" | "other">().notNull(),
+    message: text("message").notNull(),
+    pagePath: text("page_path"),
+    createdAt: createdAt(),
+  },
+  (t) => [index("feedback_ws_idx").on(t.workspaceId, t.createdAt)],
+);
+
+/** In-app surveys (D-101): one row per answer or dismissal. */
+export const surveyResponses = pgTable(
+  "survey_responses",
+  {
+    id: id(),
+    workspaceId: workspaceId(),
+    kind: text("kind").$type<"sean_ellis">().notNull(),
+    answer: text("answer").$type<"very" | "somewhat" | "not" | "na">(),
+    comment: text("comment"),
+    dismissedAt: timestamp("dismissed_at", { withTimezone: true }),
+    createdAt: createdAt(),
+  },
+  (t) => [index("survey_ws_kind_idx").on(t.workspaceId, t.kind, t.createdAt)],
 );

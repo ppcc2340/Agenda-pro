@@ -181,8 +181,23 @@ export const AccountExportV1 = z.object({
   billing: z.object({
     plan: z.string(),
     status: z.string(),
-    cancellationFeedback: z.array(z.object({ reason: z.string(), comment: z.string().nullable(), createdAt: Iso })),
+    cancellationFeedback: z.array(
+      z.object({ reason: z.string(), comment: z.string().nullable(), createdAt: Iso }),
+    ),
+  }),
+  /** Phase 6: in-app feedback and survey answers (the user's own words, F-16). */
+  beta: z.object({
+    feedback: z.array(
+      z.object({ kind: z.string(), message: z.string(), pagePath: z.string().nullable(), createdAt: Iso }),
+    ),
+    surveys: z.array(
+      z.object({
+        answer: z.string().nullable(),
+        comment: z.string().nullable(),
+        dismissedAt: IsoNull,
+        createdAt: Iso,
+      }),
+    ),
   }),
 });
 export type AccountExportV1 = z.infer<typeof AccountExportV1>;
-

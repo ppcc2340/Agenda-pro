@@ -10,6 +10,9 @@ import { UserId, type WorkspaceId } from "./ids";
  * - `workspace`: rows belong to one workspace (`workspace_id`, or `id` for `workspaces` itself): all removed.
  * - `user`: the person (`users`): removed when they keep no other workspace.
  * - `global`: no personal data (Stripe event ids and types, erasure receipts with a hashed id).
+ * - `global_personal`: an address held before any account exists (beta invitations, waitlist, D-099). Removed when
+ *   the account is created (`consume_beta_email`), when its workspace is purged (by the members' addresses), after
+ *   180 days (waitlist), or on request (`pnpm beta:forget`).
  */
 export const TABLE_CLASSIFICATION = {
   ai_usage: "workspace",
@@ -24,6 +27,7 @@ export const TABLE_CLASSIFICATION = {
   credit_grants: "workspace",
   entitlements: "workspace",
   feature_flags: "workspace",
+  feedback: "workspace",
   idempotency_keys: "workspace",
   integration_accounts: "workspace",
   mail_exclusions: "workspace",
@@ -35,6 +39,7 @@ export const TABLE_CLASSIFICATION = {
   proposals: "workspace",
   schedule_blocks: "workspace",
   subscriptions: "workspace",
+  survey_responses: "workspace",
   sync_state: "workspace",
   task_dependencies: "workspace",
   tasks: "workspace",
@@ -43,9 +48,11 @@ export const TABLE_CLASSIFICATION = {
   value_events: "workspace",
   workspaces: "workspace",
   users: "user",
+  beta_invites: "global_personal",
+  waitlist: "global_personal",
   stripe_events: "global",
   deletion_receipts: "global",
-} as const satisfies Record<string, "workspace" | "user" | "global">;
+} as const satisfies Record<string, "workspace" | "user" | "global" | "global_personal">;
 export type TableName = keyof typeof TABLE_CLASSIFICATION;
 
 /** Days between the logical deletion and the physical purge (fixed in `purge_workspace()`, migration 0018). */
@@ -84,12 +91,13 @@ export async function purgeWorkspace(db: Db, workspaceId: WorkspaceId): Promise<
 }
 
 /**
- * Verification query (docs/compliance/deletion-verification.md): rows still referencing the workspace or its users,
- * per table. Run with an admin connection under the admin read context (`app.workspace_id = '*'`).
+ * Verification query (docs/compliance/deletion-verification.md): rows still referencing the workspace, its users or
+ * their addresses, per table. Run with an admin connection under the admin read context (`app.workspace_id = '*'`).
+ * `emails` are the members' addresses, read before the purge (the users rows are gone after it).
  */
 export async function remainingPersonalRows(
   adminDb: Db,
-  input: { workspaceId: string; userIds: string[] },
+  input: { workspaceId: string; userIds: string[]; emails?: string[] },
 ): Promise<Record<string, number>> {
   const out: Record<string, number> = {};
   const ids = input.userIds.map((id) => UserId.parse(id));
@@ -97,6 +105,19 @@ export async function remainingPersonalRows(
   const userArray = `{${ids.join(",")}}`;
   for (const [table, kind] of Object.entries(TABLE_CLASSIFICATION)) {
     if (kind === "global") continue;
+    if (kind === "global_personal") {
+      const emails = (input.emails ?? []).map((e) => e.trim().toLowerCase());
+      if (emails.length === 0) {
+        out[table] = 0;
+        continue;
+      }
+      // drizzle expands a JS array into a parameter list: `in ($1, $2, …)`.
+      const rows = await adminDb.execute(
+        sql`select count(*)::int as n from ${sql.identifier(table)} where email in ${emails}`,
+      );
+      out[table] = Number((rows[0] as { n: number | string } | undefined)?.n ?? 0);
+      continue;
+    }
     const query =
       table === "workspaces"
         ? sql`select count(*)::int as n from workspaces where id = ${input.workspaceId}::uuid`

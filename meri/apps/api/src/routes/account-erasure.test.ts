@@ -93,10 +93,16 @@ describe("account erasure end to end", () => {
       await tx`insert into sync_state (workspace_id, integration_account_id, resource) values (${ws}, ${fx.integration}, 'gmail.history')`;
       await tx`insert into threads_index (id, workspace_id, integration_account_id, external_thread_id) values (gen_random_uuid(), ${ws}, ${fx.integration}, 'erase-thread')`;
       await tx`insert into value_events (id, workspace_id, type, method) values (gen_random_uuid(), ${ws}, 'commitment_fulfilled_on_time', 'explicit')`;
+      await tx`insert into feedback (id, workspace_id, kind, message, page_path) values (gen_random_uuid(), ${ws}, 'idea', 'erase me', '/hoy')`;
+      await tx`insert into survey_responses (id, workspace_id, kind, answer) values (gen_random_uuid(), ${ws}, 'sean_ellis', 'very')`;
     });
+    // Beta rows naming the member's address (phase 6): an invitation and a waitlist entry left after sign-up.
+    await admin.sql`insert into beta_invites (email) values (${account.email})`;
+    await admin.sql`insert into waitlist (email, consent_at) values (${account.email}, now())`;
     const before = await remainingPersonalRows(admin.db, {
       workspaceId: account.workspaceId,
       userIds: [account.userId],
+      emails: [account.email],
     });
     // Every classified table holds a row of this account, so «0 after the purge» proves the erasure for each one.
     expect(Object.entries(before).filter(([, n]) => n === 0)).toEqual([]);
@@ -121,6 +127,7 @@ describe("account erasure end to end", () => {
     const after = await remainingPersonalRows(admin.db, {
       workspaceId: account.workspaceId,
       userIds: [account.userId],
+      emails: [account.email],
     });
     expect(Object.entries(after).filter(([, n]) => n > 0)).toEqual([]);
     // Retrying the job is harmless.

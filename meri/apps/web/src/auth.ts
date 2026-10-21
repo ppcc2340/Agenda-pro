@@ -27,9 +27,32 @@ export async function bootstrapAccount(input: {
     body: JSON.stringify(input),
     cache: "no-store",
   });
+  if (res.status === 403) {
+    const problem = (await res.json().catch(() => ({}))) as { code?: string };
+    if (problem.code === "BETA_INVITE_REQUIRED") throw new BetaInviteRequired();
+  }
   if (!res.ok) throw new Error(`bootstrap failed with status ${String(res.status)}`);
   return BootstrapResponse.parse(await res.json());
 }
+
+/** The API refused a first sign-in during the closed beta (D-099): the login page shows the waitlist. */
+export class BetaInviteRequired extends Error {
+  constructor() {
+    super("BETA_INVITE_REQUIRED");
+  }
+}
+
+/** Where a refused sign-in lands: the login page with the waitlist (no address in the URL). */
+export const BETA_WAITLIST_URL = "/login?beta=invite";
+
+type BootstrapResult = Awaited<ReturnType<typeof bootstrapAccount>>;
+/** The bootstrap done in `signIn`, handed to `jwt` for the same sign-in (same user object) to avoid a second call. */
+const bootstrapped = new WeakMap<object, BootstrapResult>();
+
+const subjectOf = (email: string, provider?: { provider: string; providerAccountId: string } | null) =>
+  provider?.provider === "google"
+    ? `google:${provider.providerAccountId}`
+    : `dev:${email.trim().toLowerCase()}`;
 
 function providers(): NextAuthConfig["providers"] {
   const { env, modes, isProduction } = getServerConfig();
@@ -77,24 +100,36 @@ export function buildAuthConfig(): NextAuthConfig {
     useSecureCookies: isProduction,
     callbacks: {
       // Only addresses Google has verified may sign in (a recycled or unverified address never inherits an account).
-      signIn({ account, profile }) {
-        if (account?.provider === "google") return profile?.email_verified === true;
-        return true;
+      async signIn({ user, account, profile }) {
+        if (account?.provider === "google" && profile?.email_verified !== true) return false;
+        if (!user.email) return false;
+        // The account is created (or found) here so a closed beta can send the person to the waitlist (D-099).
+        try {
+          const result = await bootstrapAccount({
+            email: user.email,
+            subject: subjectOf(user.email, account),
+            name: user.name ?? null,
+            image: user.image ?? null,
+          });
+          bootstrapped.set(user, result);
+          return true;
+        } catch (err) {
+          if (err instanceof BetaInviteRequired) return BETA_WAITLIST_URL;
+          throw err;
+        }
       },
       async jwt({ token, user, account: provider }) {
         // `user` is only present at sign-in; later session reads call this callback without it (typed as required).
         const signingIn = user as User | undefined;
         if (signingIn?.email) {
-          const subject =
-            provider?.provider === "google"
-              ? `google:${provider.providerAccountId}`
-              : `dev:${signingIn.email.trim().toLowerCase()}`;
-          const account = await bootstrapAccount({
-            email: signingIn.email,
-            subject,
-            name: signingIn.name ?? null,
-            image: signingIn.image ?? null,
-          });
+          const account =
+            bootstrapped.get(signingIn) ??
+            (await bootstrapAccount({
+              email: signingIn.email,
+              subject: subjectOf(signingIn.email, provider),
+              name: signingIn.name ?? null,
+              image: signingIn.image ?? null,
+            }));
           token.sub = account.userId;
           token.workspaceId = account.workspaceId;
           token.email = account.email;
@@ -104,7 +139,8 @@ export function buildAuthConfig(): NextAuthConfig {
           token.authTime = Date.now();
           return token;
         }
-        if (typeof token.authTime !== "number" || Date.now() - token.authTime > SESSION_MAX_AGE_MS) return null;
+        if (typeof token.authTime !== "number" || Date.now() - token.authTime > SESSION_MAX_AGE_MS)
+          return null;
         return token;
       },
       session({ session, token }) {

@@ -379,7 +379,10 @@
     "name": "Name",
     "devSubmit": "Sign in",
     "legal": "By continuing you accept the <terms>terms</terms> and the <privacy>privacy policy</privacy>.",
-    "error": "We could not sign you in. Please try again."
+    "error": "We could not sign you in. Please try again.",
+    "betaTitle": "Meri is in closed beta",
+    "betaBody": "Creating an account needs an invitation. Join the waitlist and we will write to you.",
+    "betaRequired": "Your address does not have a beta invitation yet."
   },
   "onboarding": {
     "title": "Before we start",
@@ -1205,5 +1208,29 @@
     "terms": "Terms",
     "back": "Back",
     "link": "How we protect your data"
+  },
+  "feedback": {
+    "open": "Send feedback",
+    "title": "Send feedback",
+    "body": "Tell us what is broken or what you miss. The Meri team reads it.",
+    "kindLabel": "Type",
+    "kind": {
+      "bug": "Something is broken",
+      "idea": "Idea",
+      "other": "Other"
+    },
+    "messageLabel": "Comment",
+    "privacy": "Stored with your account together with the page you are on (without parameters). Never sent to analytics or to the AI.",
+    "send": "Send",
+    "thanks": "Thanks. We got it."
+  },
+  "waitlist": {
+    "title": "Beta waitlist",
+    "email": "Email",
+    "website": "Leave empty",
+    "consent": "I agree that Meri may write to me about the beta. We keep the address for up to 180 days (<privacy>privacy</privacy>).",
+    "submit": "Join",
+    "done": "Done. We will write when there is a seat.",
+    "error": "We could not add you. Check the address and try again."
   }
 }

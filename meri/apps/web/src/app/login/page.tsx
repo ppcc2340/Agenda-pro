@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth, signIn } from "@/auth";
+import { WaitlistForm } from "@/components/beta/waitlist-form";
 import { Logo } from "@/components/shell/logo";
 import { Button } from "@/components/ui/button";
 import { getServerConfig } from "@/server/config";
@@ -12,7 +13,7 @@ export const dynamic = "force-dynamic";
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string; error?: string; manual?: string }>;
+  searchParams: Promise<{ next?: string; error?: string; manual?: string; beta?: string }>;
 }) {
   const session = await auth();
   const params = await searchParams;
@@ -49,6 +50,11 @@ export default async function LoginPage({
         </div>
         <h1 className="text-2xl">{t("title")}</h1>
         <p className="mt-2 text-ink2">{t("body")}</p>
+        {params.beta === "invite" ? (
+          <p role="alert" className="mt-4 rounded-lg bg-risk-soft px-3 py-2 text-risk">
+            {t("betaRequired")}
+          </p>
+        ) : null}
         {params.error ? (
           <p role="alert" className="mt-4 rounded-lg bg-risk-soft px-3 py-2 text-risk">
             {t("error")}
@@ -89,6 +95,15 @@ export default async function LoginPage({
             </Button>
           </form>
         )}
+        {env.BETA_INVITE_REQUIRED || params.beta === "invite" ? (
+          <section className="mt-6 border-t border-rule pt-5" aria-labelledby="beta-title">
+            <h2 id="beta-title" className="text-base">
+              {t("betaTitle")}
+            </h2>
+            <p className="mt-1 text-[13.5px] text-ink2">{t("betaBody")}</p>
+            <WaitlistForm />
+          </section>
+        ) : null}
         <p className="mt-5 text-[12.5px] text-ink3">
           {t.rich("legal", {
             terms: (chunks) => (

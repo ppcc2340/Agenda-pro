@@ -8,6 +8,8 @@ import {
   listContacts,
   getSubscription,
   listCancellationFeedback,
+  listFeedback,
+  listSurveyHistory,
   listIntegrationAccounts,
   listNotifications,
   listProjects,
@@ -69,7 +71,7 @@ export async function buildAccountExport(
   const ws = input.workspaceId;
   const prefs = await getPreferences(tx, ws);
   const truncated: string[] = [];
-  const [clients, projects, contacts, tasks, commitments, proposals, timeEntries, events, blocks, notifications, activity, accounts, subscription, feedback] =
+  const [clients, projects, contacts, tasks, commitments, proposals, timeEntries, events, blocks, notifications, activity, accounts, subscription, feedback, appFeedback, surveys] =
     await Promise.all([
       listClientsFull(tx, ws, { includeArchived: true }),
       listProjects(tx, ws),
@@ -85,6 +87,8 @@ export async function buildAccountExport(
       listIntegrationAccounts(tx, ws),
       getSubscription(tx, ws),
       listCancellationFeedback(tx, ws),
+      listFeedback(tx, ws),
+      listSurveyHistory(tx, ws),
     ]);
   return {
     format: "meri-export/1",
@@ -202,6 +206,10 @@ export async function buildAccountExport(
       plan: subscription?.plan ?? "trial",
       status: subscription?.status ?? "trialing",
       cancellationFeedback: feedback.map((f) => ({ reason: f.reason, comment: f.comment, createdAt: f.createdAt.toISOString() })),
+    },
+    beta: {
+      feedback: appFeedback.map((f) => ({ kind: f.kind, message: f.message, pagePath: f.pagePath, createdAt: f.createdAt.toISOString() })),
+      surveys: surveys.map((r) => ({ answer: r.answer, comment: r.comment, dismissedAt: iso(r.dismissedAt), createdAt: r.createdAt.toISOString() })),
     },
   };
 }

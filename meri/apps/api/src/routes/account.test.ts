@@ -212,7 +212,7 @@ describe("account export and deletion (D-050, D-054, D-055)", () => {
     expect(suspicious).toEqual([]);
     expect(Object.keys(doc).sort()).toEqual(
       [
-        "activity", "billing", "blocks", "calendarEvents", "clients", "commitments", "connections", "contacts", "exportedAt",
+        "activity", "beta", "billing", "blocks", "calendarEvents", "clients", "commitments", "connections", "contacts", "exportedAt",
         "format", "notifications", "preferences", "projects", "proposals", "tasks", "timeEntries", "truncated", "user",
         "workspace",
       ].sort(),

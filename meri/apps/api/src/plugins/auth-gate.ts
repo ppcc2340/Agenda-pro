@@ -5,7 +5,7 @@ import { isV1Route } from "./route-scope";
 
 declare module "fastify" {
   interface FastifyContextConfig {
-    /** A `/v1` route reachable without a session (none today; the gate fails closed by default). */
+    /** A `/v1` route reachable without a session (only `POST /v1/waitlist`; the gate fails closed by default). */
     public?: boolean;
   }
 }

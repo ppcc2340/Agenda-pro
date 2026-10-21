@@ -13,6 +13,7 @@ export const ERROR_CODES = {
   ENTITLEMENT_REQUIRED: 402,
   AI_CREDITS_EXHAUSTED: 402,
   INTEGRATION_NEEDS_REAUTH: 409,
+  BETA_INVITE_REQUIRED: 403,
   INTERNAL: 500,
 } as const;
 export type ErrorCode = keyof typeof ERROR_CODES;
@@ -51,6 +52,7 @@ const TITLES: Record<ErrorCode, string> = {
   ENTITLEMENT_REQUIRED: "Plan upgrade required",
   AI_CREDITS_EXHAUSTED: "AI credits exhausted",
   INTEGRATION_NEEDS_REAUTH: "Integration needs re-authorisation",
+  BETA_INVITE_REQUIRED: "Invitation required",
   INTERNAL: "Internal error",
 };
 

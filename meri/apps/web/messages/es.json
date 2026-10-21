@@ -379,7 +379,10 @@
     "name": "Nombre",
     "devSubmit": "Entrar",
     "legal": "Al continuar aceptas los <terms>términos</terms> y la <privacy>política de privacidad</privacy>.",
-    "error": "No pudimos iniciar sesión. Vuelve a intentarlo."
+    "error": "No pudimos iniciar sesión. Vuelve a intentarlo.",
+    "betaTitle": "Meri está en beta cerrada",
+    "betaBody": "Para crear una cuenta hace falta una invitación. Apúntate a la lista de espera y te escribiremos.",
+    "betaRequired": "Tu correo todavía no tiene invitación a la beta."
   },
   "onboarding": {
     "title": "Antes de empezar",
@@ -1205,5 +1208,29 @@
     "terms": "Términos",
     "back": "Volver",
     "link": "Cómo protegemos tus datos"
+  },
+  "feedback": {
+    "open": "Enviar comentarios",
+    "title": "Enviar comentarios",
+    "body": "Cuéntanos qué falla o qué echas de menos. Lo lee el equipo de Meri.",
+    "kindLabel": "Tipo",
+    "kind": {
+      "bug": "Algo falla",
+      "idea": "Idea",
+      "other": "Otro"
+    },
+    "messageLabel": "Comentario",
+    "privacy": "Se guarda con tu cuenta junto a la página en la que estás (sin parámetros). No se envía a analítica ni a la IA.",
+    "send": "Enviar",
+    "thanks": "Gracias. Lo hemos recibido."
+  },
+  "waitlist": {
+    "title": "Lista de espera de la beta",
+    "email": "Correo",
+    "website": "No rellenar",
+    "consent": "Acepto que Meri me escriba sobre la beta. Guardamos el correo hasta 180 días (<privacy>privacidad</privacy>).",
+    "submit": "Apuntarme",
+    "done": "Listo. Te escribiremos cuando haya plaza.",
+    "error": "No pudimos apuntarte. Revisa el correo e inténtalo de nuevo."
   }
 }

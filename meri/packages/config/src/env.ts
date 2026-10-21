@@ -86,6 +86,10 @@ export const EnvSchema = z.object({
   DEMO_MODE: z
     .preprocess(emptyToUndefined, z.enum(["0", "1", "true", "false"]).default("0"))
     .transform((v) => v === "1" || v === "true"),
+  /** Closed beta (D-099): new accounts need an invitation (`pnpm beta:invite`). Off in development and the demo. */
+  BETA_INVITE_REQUIRED: z
+    .preprocess(emptyToUndefined, z.enum(["0", "1", "true", "false"]).default("0"))
+    .transform((v) => v === "1" || v === "true"),
   DEMO_NOW: z.preprocess(emptyToUndefined, z.string().datetime({ offset: true }).optional()),
 });
 

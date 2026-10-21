@@ -220,6 +220,9 @@ export async function dispatchRetention(deps: DispatcherDeps): Promise<number> {
     );
   }
   if (rows.length > 0) deps.logger.info({ workspaces: rows.length }, "retention dispatched");
+  // The waitlist has no workspace: its 180-day retention (D-099, SEC-M4) runs here, once per dispatch.
+  const [pruned] = await deps.adminSql<{ n: number }[]>`select prune_waitlist() as n`;
+  if (pruned && pruned.n > 0) deps.logger.info({ removed: pruned.n }, "waitlist retention applied");
   return rows.length;
 }
 

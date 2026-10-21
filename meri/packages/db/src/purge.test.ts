@@ -29,7 +29,9 @@ describe("workspace purge and erasure verification", () => {
   });
 
   it("every table in the schema is classified (a new table must say how it is erased)", async () => {
-    const rows = await admin.db.execute(sql`select tablename from pg_tables where schemaname = 'public' order by 1`);
+    const rows = await admin.db.execute(
+      sql`select tablename from pg_tables where schemaname = 'public' order by 1`,
+    );
     const tables = rows.map((r) => (r as { tablename: string }).tablename);
     expect(tables.sort()).toEqual(Object.keys(TABLE_CLASSIFICATION).sort());
     for (const [table, kind] of Object.entries(TABLE_CLASSIFICATION)) {
@@ -43,8 +45,8 @@ describe("workspace purge and erasure verification", () => {
 
   it("the application role cannot delete workspaces or users, nor read erasure receipts", async () => {
     const a = await bootstrapAccount(app.db, { email: `nodel-${newId()}@test.local`, now });
-    await expect(app.db.execute(sql`delete from workspaces where id = ${a.workspaceId}`)).rejects.toSatisfy((e) =>
-      /permission denied/.test(pgMessage(e)),
+    await expect(app.db.execute(sql`delete from workspaces where id = ${a.workspaceId}`)).rejects.toSatisfy(
+      (e) => /permission denied/.test(pgMessage(e)),
     );
     await expect(app.db.execute(sql`delete from users where id = ${a.userId}`)).rejects.toSatisfy((e) =>
       /permission denied/.test(pgMessage(e)),
@@ -58,19 +60,35 @@ describe("workspace purge and erasure verification", () => {
     const a = await bootstrapAccount(app.db, { email: `purge-${newId()}@test.local`, now });
     const b = await bootstrapAccount(app.db, { email: `keep-${newId()}@test.local`, now });
     await withWorkspace(app.db, a.workspaceId, async (tx) => {
-      await tx.insert(clients).values({ id: newId(), workspaceId: a.workspaceId, name: "Acme", domains: ["acme.com"] });
-      await audit(tx, { workspaceId: a.workspaceId, actor: "user", actorUserId: a.userId }, { action: "client.created", entityType: "client", entityId: newId() });
+      await tx
+        .insert(clients)
+        .values({ id: newId(), workspaceId: a.workspaceId, name: "Acme", domains: ["acme.com"] });
+      await audit(
+        tx,
+        { workspaceId: a.workspaceId, actor: "user", actorUserId: a.userId },
+        { action: "client.created", entityType: "client", entityId: newId() },
+      );
     });
     await softDeleteAccount(app.db, { userId: a.userId, workspaceId: a.workspaceId, now });
     // Not yet: the logical deletion happened now.
-    await expect(purgeWorkspace(app.db, a.workspaceId)).rejects.toSatisfy((e) => /not eligible/.test(pgMessage(e)));
+    await expect(purgeWorkspace(app.db, a.workspaceId)).rejects.toSatisfy((e) =>
+      /not eligible/.test(pgMessage(e)),
+    );
     // An active workspace can never be purged either.
-    await expect(purgeWorkspace(app.db, b.workspaceId)).rejects.toSatisfy((e) => /not eligible/.test(pgMessage(e)));
+    await expect(purgeWorkspace(app.db, b.workspaceId)).rejects.toSatisfy((e) =>
+      /not eligible/.test(pgMessage(e)),
+    );
 
-    await admin.db.execute(sql`update workspaces set deleted_at = now() - interval '31 days' where id = ${a.workspaceId}`);
+    await admin.db.execute(
+      sql`update workspaces set deleted_at = now() - interval '31 days' where id = ${a.workspaceId}`,
+    );
     const removed = await purgeWorkspace(app.db, a.workspaceId);
     expect(removed).toBeGreaterThan(5);
-    const left = await remainingPersonalRows(admin.db, { workspaceId: a.workspaceId, userIds: [a.userId] });
+    const left = await remainingPersonalRows(admin.db, {
+      workspaceId: a.workspaceId,
+      userIds: [a.userId],
+      emails: [a.email],
+    });
     expect(Object.entries(left).filter(([, n]) => n > 0)).toEqual([]);
     const receipt = await admin.db.execute(
       sql`select rows_deleted, users_deleted from deletion_receipts where subject_hash = ${deletionSubjectHash(a.workspaceId)}`,
