@@ -3,6 +3,7 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import fp from "fastify-plugin";
 import { finalizeIdempotencyKey, releaseIdempotencyKey, reserveIdempotencyKey } from "@meri/db";
 import { ApiError } from "../errors";
+import { isV1Route } from "./route-scope";
 
 export const IDEMPOTENCY_HEADER = "idempotency-key";
 
@@ -25,7 +26,7 @@ export const idempotencyPlugin = fp<{ now: () => Date }>((app: FastifyInstance, 
   app.decorateRequest("idempotency", null);
 
   app.addHook("preHandler", async (request: FastifyRequest, reply: FastifyReply) => {
-    if (request.method !== "POST" || !request.session || !request.url.startsWith("/v1/")) return;
+    if (request.method !== "POST" || !request.session || !isV1Route(request)) return;
     const raw = request.headers[IDEMPOTENCY_HEADER];
     const key = typeof raw === "string" ? raw.trim() : "";
     if (!key) return;

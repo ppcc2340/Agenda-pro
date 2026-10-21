@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import fp from "fastify-plugin";
 import { ApiError } from "../errors";
+import { isV1Route } from "./route-scope";
 
 const MUTATING = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 export const CSRF_HEADER = "x-requested-with";
@@ -32,8 +33,7 @@ export const csrfPlugin = fp<CsrfOptions>((app: FastifyInstance, options, done) 
   // preParsing (after the per-route rate limit, before body parsing and validation): a forged request is refused
   // before any route logic runs.
   app.addHook("preParsing", (request, _reply, payload, next) => {
-    const needsCheck =
-      MUTATING.has(request.method) && request.url.startsWith("/v1/") && request.session !== null;
+    const needsCheck = MUTATING.has(request.method) && isV1Route(request) && request.session !== null;
     if (!needsCheck) {
       next(null, payload);
       return;

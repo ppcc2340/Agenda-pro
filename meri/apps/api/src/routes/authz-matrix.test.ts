@@ -55,15 +55,19 @@ describe("authorization matrix over every registered route", () => {
   it("every /v1 route answers 401 without a session and with a deleted account's session", async () => {
     const failures: string[] = [];
     for (const r of routes().filter((x) => x.url.startsWith("/v1/"))) {
-      const url = fill(r.url, a.task);
-      for (const cookie of [undefined, deletedCookie]) {
-        const res = await t.app.inject({
-          method: r.method,
-          url,
-          headers: cookie ? { cookie, ...csrf } : { ...csrf },
-        });
-        if (res.statusCode !== 401)
-          failures.push(`${r.key} (${cookie ? "deleted" : "anonymous"}) → ${String(res.statusCode)}`);
+      // The router percent-decodes paths: the encoded spelling must be refused too.
+      for (const url of [fill(r.url, a.task), fill(r.url, a.task).replace(/^\/v1\//, "/%761/")]) {
+        for (const cookie of [undefined, deletedCookie]) {
+          const res = await t.app.inject({
+            method: r.method,
+            url,
+            headers: cookie ? { cookie, ...csrf } : { ...csrf },
+          });
+          if (res.statusCode !== 401)
+            failures.push(
+              `${url} ${r.method} (${cookie ? "deleted" : "anonymous"}) → ${String(res.statusCode)}`,
+            );
+        }
       }
     }
     expect(failures).toEqual([]);
@@ -72,15 +76,16 @@ describe("authorization matrix over every registered route", () => {
   it("every mutating /v1 route refuses a request without the CSRF header, or from another site", async () => {
     const failures: string[] = [];
     for (const r of routes().filter((x) => x.url.startsWith("/v1/") && MUTATING.has(x.method))) {
-      const url = fill(r.url, b.task);
-      const bare = await t.app.inject({ method: r.method, url, headers: { cookie: b.cookie } });
-      const cross = await t.app.inject({
-        method: r.method,
-        url,
-        headers: { cookie: b.cookie, ...csrf, "sec-fetch-site": "cross-site" },
-      });
-      if (bare.statusCode !== 403 || cross.statusCode !== 403)
-        failures.push(`${r.key} → ${String(bare.statusCode)}/${String(cross.statusCode)}`);
+      for (const url of [fill(r.url, b.task), fill(r.url, b.task).replace(/^\/v1\//, "/%761/")]) {
+        const bare = await t.app.inject({ method: r.method, url, headers: { cookie: b.cookie } });
+        const cross = await t.app.inject({
+          method: r.method,
+          url,
+          headers: { cookie: b.cookie, ...csrf, "sec-fetch-site": "cross-site" },
+        });
+        if (bare.statusCode !== 403 || cross.statusCode !== 403)
+          failures.push(`${url} ${r.method} → ${String(bare.statusCode)}/${String(cross.statusCode)}`);
+      }
     }
     expect(failures).toEqual([]);
   });

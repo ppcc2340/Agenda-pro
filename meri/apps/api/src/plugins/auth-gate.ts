@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import fp from "fastify-plugin";
 import { ApiError } from "../errors";
+import { isV1Route } from "./route-scope";
 
 declare module "fastify" {
   interface FastifyContextConfig {
@@ -18,9 +19,7 @@ declare module "fastify" {
  */
 export const authGatePlugin = fp((app: FastifyInstance, _options, done) => {
   app.addHook("preParsing", (request, _reply, payload, next) => {
-    const isV1 = request.url.startsWith("/v1/");
-    const matched = request.routeOptions.url !== undefined;
-    if (isV1 && matched && !request.session && request.routeOptions.config.public !== true) {
+    if (isV1Route(request) && !request.session && request.routeOptions.config.public !== true) {
       next(new ApiError("UNAUTHENTICATED", "Sign in to continue."));
       return;
     }

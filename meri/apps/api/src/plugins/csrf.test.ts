@@ -20,9 +20,9 @@ describe("CSRF defence in two layers", () => {
 
   it("accepts same-origin browser requests and server-to-server calls without provenance headers", async () => {
     expect((await write({ ...csrf })).statusCode).toBe(200);
-    expect((await write({ ...csrf, origin: "https://app.meri.test", "sec-fetch-site": "same-origin" })).statusCode).toBe(
-      200,
-    );
+    expect(
+      (await write({ ...csrf, origin: "https://app.meri.test", "sec-fetch-site": "same-origin" })).statusCode,
+    ).toBe(200);
     expect((await write({ ...csrf, origin: "https://api.meri.test" })).statusCode).toBe(200);
   });
 
@@ -35,6 +35,34 @@ describe("CSRF defence in two layers", () => {
     expect((await write({ ...csrf, origin: "https://app.meri.test.evil.test" })).statusCode).toBe(403);
     expect((await write({ ...csrf, origin: "null" })).statusCode).toBe(403);
     expect((await write({ ...csrf, origin: "http://app.meri.test" })).statusCode).toBe(403);
+  });
+
+  it("cannot be skipped with a percent-encoded /v1 path (the router decodes it, the check must too)", async () => {
+    for (const url of ["/%761/preferences", "/v%31/preferences", "/%76%31/preferences"]) {
+      const forged = await t.app.inject({
+        method: "PUT",
+        url,
+        headers: { cookie },
+        payload: { contingencyPct: 20 },
+      });
+      expect(forged.statusCode).toBe(403);
+      // Without a session the fail-closed gate answers first, encoded or not.
+      const anonymous = await t.app.inject({
+        method: "PUT",
+        url,
+        headers: csrf,
+        payload: { contingencyPct: 20 },
+      });
+      expect(anonymous.statusCode).toBe(401);
+    }
+    // Positive control: the encoded path does reach the route when the request is legitimate.
+    const ok = await t.app.inject({
+      method: "PUT",
+      url: "/%761/preferences",
+      headers: { cookie, ...csrf },
+      payload: { contingencyPct: 20 },
+    });
+    expect(ok.statusCode).toBe(200);
   });
 
   it("never applies to reads", async () => {
