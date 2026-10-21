@@ -1,3 +1,4 @@
+import { UserId, WorkspaceId } from "@meri/db";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createTestApp, csrf, INTERNAL_SECRET, type TestApp } from "../test/harness";
 import { INTERNAL_HEADER } from "../plugins/internal";
@@ -105,8 +106,12 @@ describe("POST /internal/auth/bootstrap (ADR 0001)", () => {
         payload: { email, subject: `google:deleted-${run}` },
       });
     const first = await boot(`gone-${run}@test.local`);
-    const account = first.json<{ userId: string; workspaceId: string; email: string }>();
-    const cookie = await t.cookieFor(account);
+    const body = first.json<{ userId: string; workspaceId: string; email: string }>();
+    const cookie = await t.cookieFor({
+      userId: UserId.parse(body.userId),
+      workspaceId: WorkspaceId.parse(body.workspaceId),
+      email: body.email,
+    });
     expect(
       (await t.app.inject({ method: "DELETE", url: "/v1/account", headers: { cookie, ...csrf } })).statusCode,
     ).toBe(204);
