@@ -27,17 +27,20 @@ export function PrivacyPanel({ demoMode }: { demoMode: boolean }) {
       await signOutAction();
     },
   });
-  const revoke = useApiMutation(
-    () => clientApi<null>("/v1/account/sessions/revoke", { method: "POST" }),
-    [],
-    {
-      onError: () => toast(tApp("errorBody")),
-      onSuccess: async () => {
-        toast(t("signedOutEverywhere"));
-        await signOutAction();
-      },
-    },
-  );
+  // Not a useApiMutation: its router.refresh() would re-render this page with a session the API now refuses.
+  const [revoking, setRevoking] = useState(false);
+  const revokeEverywhere = async () => {
+    setRevoking(true);
+    try {
+      await clientApi<null>("/v1/account/sessions/revoke", { method: "POST" });
+      toast(t("signedOutEverywhere"));
+      // This session is already refused by the API; the route handler clears the cookie and goes to /login.
+      window.location.assign("/api/session/expired");
+    } catch {
+      toast(tApp("errorBody"));
+      setRevoking(false);
+    }
+  };
   return (
     <div>
       <div className="flex flex-wrap gap-2">
@@ -63,7 +66,7 @@ export function PrivacyPanel({ demoMode }: { demoMode: boolean }) {
           <Trash2 size={14} aria-hidden="true" />
           {t("delete")}
         </Button>
-        <Button variant="quiet" disabled={revoke.isPending} onClick={() => revoke.mutate(undefined)}>
+        <Button variant="quiet" disabled={revoking} onClick={() => void revokeEverywhere()}>
           <LogOut size={14} aria-hidden="true" />
           {t("signOutEverywhere")}
         </Button>

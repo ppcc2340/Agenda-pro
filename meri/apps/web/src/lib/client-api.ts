@@ -34,5 +34,7 @@ export async function clientApi<T>(path: string, init: RequestInit & { json?: un
       .catch(() => ({ code: "INTERNAL", title: "Error", status: res.status }))) as Problem;
     throw new ClientApiError(problem);
   }
+  // 204 No Content (DELETE /v1/account, session revocation…): there is no body to parse.
+  if (res.status === 204 || res.headers.get("content-length") === "0") return null as T;
   return (await res.json()) as T;
 }
