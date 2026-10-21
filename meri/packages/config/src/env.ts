@@ -76,6 +76,12 @@ export const EnvSchema = z.object({
   /** Estimated infrastructure cost per user and month for the margin rollup (D-062). */
   INFRA_COST_USD_PER_USER: z.preprocess(emptyToUndefined, z.coerce.number().nonnegative().default(3)),
 
+  /** Transactional email (D-113): SMTP of any provider. `SMTP_URL` like smtps://user:pass@host:465. */
+  NOTIFY_MODE: FakeLive.default("fake"),
+  SMTP_URL: optionalString(),
+  /** Sender, e.g. `Meri <avisos@example.com>`: an address on Meri's own domain, never the user's mailbox. */
+  MAIL_FROM: optionalString(),
+
   ANALYTICS_MODE: z.enum(["noop", "live"]).default("noop"),
   SENTRY_DSN: optionalString(),
   POSTHOG_KEY: optionalString(),

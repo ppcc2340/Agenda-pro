@@ -8,3 +8,4 @@ export {
   rewrapEnvelope,
   parseEnvelope,
 } from "./envelope";
+export { signUnsubscribeToken, verifyUnsubscribeToken } from "./unsubscribe";

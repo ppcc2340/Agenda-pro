@@ -208,3 +208,4 @@ export {
   type Verdict,
 } from "./beta/decision";
 export { isReviewEligible, redactForReview, redactValue } from "./beta/review-sample";
+export * from "./notify/email";

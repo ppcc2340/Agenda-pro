@@ -15,7 +15,7 @@ describe("pnpm blockers (scripts/check-blockers.mjs)", () => {
     const r = run({ HOME: "/nonexistent" });
     expect(r.status).toBe(0);
     expect(r.stdout).toMatch(/Proyecto OAuth de Google.*\[crítico\]/);
-    expect((r.stdout.match(/⏳ pendiente/g) ?? []).length).toBe(6);
+    expect((r.stdout.match(/⏳ pendiente/g) ?? []).length).toBe(7);
     expect(r.stdout).toContain("docs/blockers/google-oauth.md");
   });
 

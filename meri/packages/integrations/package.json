@@ -15,10 +15,13 @@
   "dependencies": {
     "@aws-sdk/client-kms": "3.999.0",
     "@meri/config": "workspace:*",
+    "nodemailer": "10.0.15",
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@types/smtp-server": "3.5.13",
     "fast-check": "^3.22.0",
+    "smtp-server": "3.19.17",
     "typescript": "^5.6.0",
     "vitest": "^3.2.6"
   }

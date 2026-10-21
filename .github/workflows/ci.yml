@@ -81,7 +81,7 @@ jobs:
       - name: Start the web app for the domain smoke test
         run: (pnpm --filter @meri/web start > /tmp/web.log 2>&1 &) && for i in $(seq 1 30); do curl -sf localhost:3000/privacy > /dev/null && break; sleep 1; done
       - name: Smoke tests against fake adapters
-        run: for id in google-oauth anthropic stripe observability domain-brand kms; do pnpm smoke "$id"; done
+        run: for id in google-oauth anthropic stripe observability domain-brand kms email; do pnpm smoke "$id"; done
         env:
           SMOKE_REQUIRE_WEB: "1"
       - name: OpenAPI artifact

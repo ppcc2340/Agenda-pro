@@ -23,7 +23,8 @@ export { AwsKms, AwsKeyProvider, LocalKms, type KmsAdapter, type KmsPurpose } fr
 export { createIntegrations, type Integrations, type IntegrationsDeps } from "./factory";
 export * from "./oauth/types";
 export { FakeGoogleOAuth } from "./fakes/oauth";
-export { FakeNotifier, type Notifier, type OutboundNotification } from "./notify/types";
+export { FakeNotifier, type Notifier, type OutboundEmail } from "./notify/types";
+export { SmtpNotifier, type SmtpNotifierOptions } from "./notify/smtp";
 export {
   GMAIL_SCOPES,
   FORBIDDEN_SCOPES,

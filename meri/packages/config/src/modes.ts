@@ -15,7 +15,7 @@ export interface BlockerDefinition {
 export const BLOCKERS: readonly BlockerDefinition[] = (blockersManifest as { blockers: BlockerDefinition[] })
   .blockers;
 
-export type IntegrationId = "google" | "ai" | "stripe" | "analytics" | "kms";
+export type IntegrationId = "google" | "ai" | "stripe" | "analytics" | "kms" | "notify";
 export type ResolvedModes = Record<IntegrationId, "fake" | "live">;
 
 const MODE_VAR_TO_INTEGRATION: Record<string, IntegrationId> = {
@@ -24,6 +24,7 @@ const MODE_VAR_TO_INTEGRATION: Record<string, IntegrationId> = {
   STRIPE_MODE: "stripe",
   ANALYTICS_MODE: "analytics",
   KMS_PROVIDER: "kms",
+  NOTIFY_MODE: "notify",
 };
 
 function isLive(def: BlockerDefinition, value: string | undefined): boolean {
@@ -54,7 +55,14 @@ export const fakesOnProductionBuild = (env: Pick<Env, "NODE_ENV" | "APP_ENV">): 
 export function resolveModes(env: Env, blockers: readonly BlockerDefinition[] = BLOCKERS): ResolvedModes {
   const raw = env as unknown as Record<string, unknown>;
   const errors: string[] = [];
-  const modes: ResolvedModes = { google: "fake", ai: "fake", stripe: "fake", analytics: "fake", kms: "fake" };
+  const modes: ResolvedModes = {
+    google: "fake",
+    ai: "fake",
+    stripe: "fake",
+    analytics: "fake",
+    kms: "fake",
+    notify: "fake",
+  };
 
   for (const def of blockers) {
     if (!def.modeVar) continue;

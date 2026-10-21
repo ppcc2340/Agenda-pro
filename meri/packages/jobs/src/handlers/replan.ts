@@ -496,16 +496,6 @@ export async function runReplan(
   if (outcome.firstPlan) track(analytics, "first_plan_generated", workspaceId, { blocks: outcome.blocks });
   for (const taskId of outcome.newlyAtRisk)
     track(analytics, "commitment_at_risk_flagged", workspaceId, { entityType: "task", entityId: taskId });
-  // Outbound copies after commit (fake notifier in development; never the user's Gmail).
-  for (const n of outcome.notifications) {
-    await deps.integrations.notifier.deliver({
-      workspaceId,
-      kind: n.kind,
-      title: n.title,
-      body: n.body,
-      refs: n.refs,
-    });
-  }
   // Calendar writes happen after commit (ADR 0003 §3): safe diffs reach Google only with `auto_low_risk`.
   let calendar: ReplanResult["calendar"] = null;
   if (outcome.applied && outcome.autonomy === "auto_low_risk") {

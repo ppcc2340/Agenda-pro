@@ -17,6 +17,7 @@ pnpm blockers -- --id stripe    # un solo bloqueo
 | Stripe (modo test) | no | Facturación simulada | [stripe.md](stripe.md) |
 | Sentry y PostHog | no | Logs locales, analítica no-op | [observability.md](observability.md) |
 | KMS de producción | no | Clave local (solo dev) | [kms.md](kms.md) |
+| Correo transaccional (SMTP) | no | Avisos solo dentro de Meri | [email.md](email.md) |
 
 Orden recomendado: **dominio, Google, Anthropic, Stripe, observabilidad, KMS**. Google y el dominio van primero porque la verificación de Gmail tarda semanas.
 

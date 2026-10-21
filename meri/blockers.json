@@ -117,6 +117,22 @@
       ],
       "guide": "docs/blockers/kms.md",
       "leadTime": "Minutos"
+    },
+    {
+      "id": "email",
+      "title": "Proveedor de correo transaccional (SMTP)",
+      "critical": false,
+      "modeVar": "NOTIFY_MODE",
+      "env": [
+        "SMTP_URL",
+        "MAIL_FROM"
+      ],
+      "fallback": "FakeNotifier: los avisos solo se ven dentro de Meri (bandeja in-app)",
+      "unlocks": [
+        "Fase 6: resumen diario y avisos de cuenta por correo (D-113)"
+      ],
+      "guide": "docs/blockers/email.md",
+      "leadTime": "Minutos con el dominio ya verificado (SPF, DKIM y DMARC); sin dominio, depende de domain-brand"
     }
   ]
 }

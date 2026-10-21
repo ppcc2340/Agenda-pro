@@ -1,6 +1,6 @@
 /**
  * daily.review (docs/13, D-020): start-of-day digest as a template (no AI), one per workspace and local day.
- * Writes the in-app inbox row and hands a copy to the Notifier (fake in development, never the user's Gmail).
+ * Writes the in-app inbox row; the `notify.email` job sends the email copy (D-115), never from the user's Gmail.
  */
 import { localDateKey, toLocalParts } from "@meri/core";
 import {
@@ -100,14 +100,5 @@ export async function runDailyReview(
     );
     return { status: "sent" as const, ...params, notification };
   });
-  if (result.status === "sent") {
-    await deps.integrations.notifier.deliver({
-      workspaceId,
-      kind: "digest",
-      title: result.notification.title,
-      body: result.notification.body,
-      refs: result.notification.refs,
-    });
-  }
   return { status: result.status, blocks: result.blocks, risks: result.risks, proposals: result.proposals };
 }

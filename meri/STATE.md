@@ -178,6 +178,7 @@ Comprobar estado: `pnpm blockers`. Incorporar uno: `/connect-blocker <id>`.
 | `stripe` | Cuenta de Stripe (modo test) | no | ⏳ pendiente | docs/blockers/stripe.md |
 | `observability` | Sentry y PostHog | no | ⏳ pendiente | docs/blockers/observability.md |
 | `kms` | KMS de producción | no | ⏳ pendiente | docs/blockers/kms.md |
+| `email` | Proveedor de correo transaccional (SMTP) | no | ⏳ pendiente | docs/blockers/email.md |
 
 La verificación de scopes de Gmail tarda semanas: conviene empezarla en cuanto exista el dominio.
 

@@ -52,6 +52,7 @@ describe("resolveModes", () => {
       stripe: "fake",
       analytics: "fake",
       kms: "fake",
+      notify: "fake",
     });
   });
 
@@ -62,6 +63,12 @@ describe("resolveModes", () => {
     expect(() => resolveModes(parseEnv({ ...BASE, KMS_PROVIDER: "aws" }))).toThrow(
       /KMS_KEY_ID, AWS_REGION.*docs\/blockers\/kms\.md/,
     );
+    expect(() => resolveModes(parseEnv({ ...BASE, NOTIFY_MODE: "live", SMTP_URL: "smtp://h" }))).toThrow(
+      /NOTIFY_MODE=live requires MAIL_FROM\. See docs\/blockers\/email\.md/,
+    );
+    expect(
+      resolveModes(parseEnv({ ...BASE, NOTIFY_MODE: "live", SMTP_URL: "smtp://h", MAIL_FROM: "Meri <a@b.c>" })).notify,
+    ).toBe("live");
     // ADR 0007 chose AWS KMS: GCP is refused with a pointer, never a half-working adapter.
     expect(() => resolveModes(parseEnv({ ...BASE, KMS_PROVIDER: "gcp", KMS_KEY_ID: "k" }))).toThrow(
       /KMS_PROVIDER=gcp is not available yet \(ADR 0007/,
@@ -145,6 +152,9 @@ describe("production secrets", () => {
       KMS_PROVIDER: "aws",
       KMS_KEY_ID: "arn",
       AWS_REGION: "eu-west-1",
+      NOTIFY_MODE: "live",
+      SMTP_URL: "smtps://u:p@smtp.example.com:465",
+      MAIL_FROM: "Meri <avisos@example.com>",
       AUTH_SECRET: "change-me-dev-only-secret-32-bytes-minimum",
     };
     expect(() => loadConfig(prod)).toThrow(/AUTH_SECRET still hold the \.env\.example placeholder/);

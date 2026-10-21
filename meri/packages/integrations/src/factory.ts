@@ -20,6 +20,7 @@ import type { GoogleAccountRef, GoogleOAuth } from "./oauth/types";
 import { LiveGoogleOAuth } from "./google/oauth";
 import { LiveGoogleCalendar } from "./google/calendar";
 import { LiveGmail } from "./google/gmail";
+import { SmtpNotifier } from "./notify/smtp";
 import { FakeNotifier, type Notifier } from "./notify/types";
 import { AwsKms, LocalKms, type KmsAdapter } from "./kms";
 
@@ -136,8 +137,11 @@ export function createIntegrations(config: AppConfig, deps: IntegrationsDeps): I
             throw notYet(`kms-${env.KMS_PROVIDER}`);
           })();
 
-  // Live delivery (push / transactional email) is wired in phase 6; the in-app inbox works regardless.
-  const notifier: Notifier = new FakeNotifier();
+  // Transactional email (D-113); the in-app inbox works regardless. Credentials are checked by resolveModes.
+  const notifier: Notifier =
+    modes.notify === "live"
+      ? new SmtpNotifier({ url: env.SMTP_URL ?? "", from: env.MAIL_FROM ?? "" })
+      : new FakeNotifier();
   return {
     ai,
     oauth,

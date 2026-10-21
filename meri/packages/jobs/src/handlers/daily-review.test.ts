@@ -10,7 +10,7 @@ import {
   type DbHandle,
   type WorkspaceId,
 } from "@meri/db";
-import { createIntegrations, type FakeNotifier, type Integrations } from "@meri/integrations";
+import { createIntegrations, type Integrations } from "@meri/integrations";
 import type { HandlerDeps } from "./context";
 import { dueForDigest, runDailyReview } from "./daily-review";
 import { runReplan } from "./replan";
@@ -66,13 +66,10 @@ describe("daily.review digest (D-020)", () => {
     expect(dueForDigest(rows, NOW)).toEqual([{ workspaceId: "a", date: "2026-10-19" }]);
   });
 
-  it("writes one digest per day with the plan summary and delivers it through the notifier", async () => {
-    const notifier = integrations.notifier as FakeNotifier;
+  it("writes one digest per day with the plan summary (the email copy is the notify.email job's)", async () => {
     const first = await runDailyReview(deps, ws, { date: "2026-10-19" });
     expect(first.status).toBe("sent");
     expect(first.blocks).toBeGreaterThanOrEqual(1);
-    expect(notifier.delivered.at(-1)).toMatchObject({ workspaceId: ws, kind: "digest" });
-    expect(notifier.delivered.at(-1)?.body).not.toContain("Preparar reunión"); // ids only, never content
     const again = await runDailyReview(deps, ws, { date: "2026-10-19" });
     expect(again.status).toBe("duplicate");
     const notes = await withWorkspace(handle.db, ws, (tx) => listNotifications(tx, ws, { limit: 20 }));
