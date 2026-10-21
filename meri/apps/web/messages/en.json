@@ -194,12 +194,13 @@
         "account_exported": "You exported your data.",
         "account_deleted": "You deleted your account.",
         "account_sessions_revoked": "You signed out on all devices.",
-        "security_keys_rotated": "Meri rotated the keys that protect your connections.",
-        "mail_retention_applied": "Meri deleted indexed mail and dismissed proposals per your retention."
+        "security_keys_rotated": "Meri renewed the encryption keys of your connections.",
+        "mail_retention_applied": "Meri deleted indexed mail and dismissed proposals per the retention period you chose."
       },
       "undoneOf": "Undone: {text}",
       "undoDone": "Action undone.",
-      "more": "Show more"
+      "more": "Show more",
+      "loadingMore": "Loading…"
     },
     "preferences": {
       "title": "Preferences",
@@ -212,18 +213,22 @@
     "privacy": {
       "title": "Privacy",
       "desc": "Your data is yours.",
-      "export": "Export my data",
+      "export": "Export as JSON",
       "delete": "Delete my account",
-      "body": "The export is a JSON with your clients, tasks, commitments, time and activity. Deleting the account disables it at once; the final erasure completes within the legal period.",
+      "body": "You can export your clients, tasks, commitments, time and activity as JSON or as a ZIP with CSV sheets. Deleting the account deactivates it at once and the final erasure completes after 30 days.",
       "exportedToast": "Exporting your data.",
       "demoDelete": "Nothing is deleted in the demo.",
       "confirmTitle": "Delete your account?",
-      "confirmBody": "You will be signed out, Meri stops reading your accounts and revokes its access. The final erasure of your data completes within the legal period. This cannot be undone.",
+      "confirmBody": "You will be signed out, Meri stops reading your accounts and revokes its access. Your data is permanently erased after 30 days. This cannot be undone.",
       "cancel": "Cancel",
       "deleted": "Account deleted.",
       "signOutEverywhere": "Sign out on all devices",
       "signedOutEverywhere": "Signed out on all devices.",
-      "exportZip": "Export as ZIP (with CSV)"
+      "exportZip": "Export as ZIP (JSON and CSV)",
+      "revokeTitle": "Sign out on every device?",
+      "revokeBody": "This device is signed out too and you will need to sign in again.",
+      "revokeConfirm": "Sign out everywhere",
+      "demoRevoke": "In the demo, other visitors' sessions are not signed out."
     },
     "plan": {
       "title": "Plan",
@@ -294,7 +299,7 @@
       "pausedToast": "Mail reading paused.",
       "resumedToast": "Mail reading resumed.",
       "purgedToast": "Gmail disconnected. Indexed threads and pending proposals deleted.",
-      "retention": "Meri keeps only metadata and a quote of up to 200 characters per thread, and deletes them (with dismissed proposals) after {days} days.",
+      "retention": "Meri keeps only metadata and a snippet of up to 200 characters per thread, and deletes them (with dismissed proposals) after {days} days.",
       "exclusions": "Exclusions",
       "exclusionsBody": "Senders, domains or labels Meri will never read.",
       "kindLabel": "Exclusion type",
@@ -314,9 +319,11 @@
       "removeAria": "Remove exclusion {value}",
       "noExclusions": "No exclusions. Newsletters and automated mail are already discarded by rules.",
       "pauseHint": "Pausing stops reading Gmail and Google Calendar; nothing is deleted.",
-      "retentionLabel": "Keep snippets and dismissed proposals",
+      "retentionLabel": "Keep mail snippets and dismissed proposals for",
       "retentionOption": "{days} days",
-      "retentionSaved": "Retention saved: {days} days."
+      "retentionSaved": "Retention saved: {days} days.",
+      "retentionPlanCap": "Your plan keeps at most {days} days.",
+      "retentionShortenConfirm": "Keep only {days} days? Mail snippets and dismissed proposals older than {days} days will be deleted at the next clean-up. This cannot be undone."
     },
     "vertical": {
       "title": "Vertical and vocabulary",
@@ -346,18 +353,19 @@
       "unknownEmail": "account without email",
       "granted": "Granted permissions",
       "scopes": {
-        "gmailRead": "Read your mail: Meri keeps only metadata and a quote of up to 200 characters.",
-        "gmailDrafts": "Create drafts in your Gmail. It never sends them.",
+        "gmailRead": "Read your mail: Meri keeps only metadata and a snippet of up to 200 characters.",
+        "gmailDrafts": "Manage drafts in your Gmail. Google's permission also covers sending; Meri never sends, it only creates drafts.",
         "calendarRead": "See your calendars to plan around your meetings.",
         "calendarWrite": "Create and move its own blocks in the «Meri» calendar.",
-        "calendarWriteLegacy": "Edit events in any of your calendars (an older, wider permission: reconnect Google to limit it to the «Meri» calendar). Meri only touches its own blocks."
+        "calendarWriteLegacy": "Edit events in any of your calendars (an older, wider permission: reconnect Google to limit it to the «Meri» calendar). Meri only touches its own blocks.",
+        "identity": "See your Google name and email to identify you."
       },
-      "neverTitle": "Meri never, whatever the permission:",
+      "neverTitle": "What Meri never does, whatever the permission:",
       "never": {
-        "send": "Sends an email on your behalf.",
-        "thirdParty": "Changes other people's meetings without your confirmation.",
-        "train": "Uses your data to train AI models.",
-        "attachments": "Downloads attachments."
+        "send": "Send email on your behalf.",
+        "thirdParty": "Change other people's meetings without your confirmation.",
+        "train": "Use your data to train AI models.",
+        "attachments": "Download attachments."
       }
     }
   },
@@ -422,7 +430,8 @@
       "p3": "Data obtained from Google is used solely for the features you see in the app, in line with Google's Limited Use policy. It is never used for advertising or to train general models.",
       "p4": "You can export and delete all your data from the Control centre. Connections can be revoked at any time.",
       "p5": "Contact: privacy@ on Meri's domain (domain pending).",
-      "p6": "Meri's use and transfer to any other app of information received from Google APIs will adhere to the Google API Services User Data Policy, including the Limited Use requirements."
+      "p6": "Meri's use and transfer to any other app of information received from Google APIs will adhere to the Google API Services User Data Policy, including the Limited Use requirements.",
+      "p6link": "Google API Services User Data Policy"
     },
     "terms": {
       "p1": "Meri is an assistance tool. Legal dates and procedural deadlines must always be verified with your own professional judgement.",
@@ -1156,7 +1165,7 @@
   },
   "security": {
     "title": "How we protect your data",
-    "intro": "Meri works with your professional email and calendar. This is what it does with them, described from what the code does.",
+    "intro": "Meri works with your professional email and calendar. This is exactly what it does with them.",
     "sections": {
       "read": {
         "title": "What we read",
@@ -1164,27 +1173,27 @@
       },
       "store": {
         "title": "What we store",
-        "body": "We do not store the body of your emails or their attachments: only ids, minimal metadata and a quote of up to 200 characters that explains each proposal. Dismissed proposals and their quotes are deleted according to the retention you choose (90 days by default)."
+        "body": "We do not store the body of your emails or their attachments: only ids, minimal metadata and a snippet of up to 200 characters that explains each proposal. Dismissed proposals and those snippets are deleted after the period you choose (90 days by default)."
       },
       "never": {
         "title": "What we never do",
-        "body": "We never send email on your behalf: we only prepare drafts that you review and send. We cannot change your meetings: our write permission in Google is limited to the «Meri» calendar. We never use your data for advertising or to train general models."
+        "body": "We never send email on your behalf: we only prepare drafts that you review and send. Accounts connected now can only write to the «Meri» calendar, so we cannot change your meetings; if you connected Google earlier, the Control centre shows a wider permission and you can reconnect to narrow it. We never use your data for advertising or to train general models."
       },
       "ai": {
         "title": "AI proposes, you decide",
-        "body": "What the AI suggests stays a proposal, drawn with a dashed line, until you confirm it. Email text is treated as untrusted data: it is sanitised and instructions inside it are never followed. The AI provider receives only the fragments each operation needs."
+        "body": "What the AI suggests stays a proposal, with a dotted border, until you confirm it. Email text is treated as untrusted data: it is sanitised and instructions inside it are never followed. The AI provider receives only the fragments each operation needs."
       },
       "encryption": {
         "title": "Encryption",
-        "body": "Google credentials are protected with envelope encryption (AES-256-GCM) and keys held in a key management service, with rotation. Everything travels over HTTPS with HSTS, and backups are encrypted."
+        "body": "Google credentials are stored encrypted (AES-256-GCM) with keys that can be rotated. Everything travels over HTTPS, and backups are encrypted before they are stored."
       },
       "isolation": {
         "title": "Isolation",
-        "body": "Every account is isolated in the database with row-level security, and every API route is tested so one account can never see or change another's data. Information about one client is never mixed into another client's context."
+        "body": "Every account is kept separate in the database and we test every feature so one account can never see or change another's data. Information about one client is never mixed into another client's context."
       },
       "control": {
         "title": "You are in control",
-        "body": "In Control you see the permissions you granted and every automatic action, which you can undo. You can revoke a connection, sign out on every device, export all your data (JSON or ZIP) and delete your account: after 30 days everything is erased and we verify nothing is left."
+        "body": "In the Control centre you see the permissions you granted and every automatic action, and you can undo the ones that allow it. You can revoke a connection, sign out on every device, export all your data (JSON or ZIP) and delete your account: after 30 days everything is erased and we verify nothing is left."
       },
       "incidents": {
         "title": "If something goes wrong",

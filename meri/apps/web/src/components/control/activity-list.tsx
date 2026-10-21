@@ -141,7 +141,9 @@ export function ActivityList({
               <div className="min-w-0 flex-1">
                 {item.undoOfAuditId ? t("undoneOf", { text }) : text}
                 {item.entityLabel ? (
-                  <span className="block truncate text-ink2">{item.entityLabel}</span>
+                  <span className="block truncate text-ink2" title={item.entityLabel}>
+                    {item.entityLabel}
+                  </span>
                 ) : null}
                 <div className="num text-[12.5px] text-ink3">
                   {format.dateTime(new Date(item.createdAt), { dateStyle: "medium", timeStyle: "short" })}
@@ -169,8 +171,14 @@ export function ActivityList({
         })}
       </ul>
       {cursor ? (
-        <Button size="sm" className="mt-2" disabled={loading} onClick={() => void loadMore()}>
-          {t("more")}
+        <Button
+          size="sm"
+          className="mt-2"
+          disabled={loading}
+          aria-busy={loading}
+          onClick={() => void loadMore()}
+        >
+          {loading ? t("loadingMore") : t("more")}
         </Button>
       ) : null}
     </>

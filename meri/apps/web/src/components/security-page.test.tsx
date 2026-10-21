@@ -41,6 +41,8 @@ describe("SecurityPage", () => {
   it("states the product promises the code enforces: drafts only, Meri calendar only, no training", () => {
     expect(es.security.sections.never.body).toMatch(/solo preparamos borradores/);
     expect(es.security.sections.never.body).toMatch(/calendario «Meri»/);
+    // Accounts connected before D-093 keep a wider permission: the page must not deny it.
+    expect(es.security.sections.never.body).toMatch(/si conectaste Google antes/);
     expect(en.security.sections.never.body).toMatch(/train general models/);
   });
 });

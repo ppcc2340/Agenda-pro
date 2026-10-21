@@ -7,7 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Pill } from "@/components/ui/pill";
 import { useToast } from "@/components/ui/toast";
 import { clientApi, ClientApiError } from "@/lib/client-api";
-import { keys, useApiMutation, useIntegrations, useMailExclusions } from "@/lib/hooks/use-api";
+import {
+  keys,
+  useApiMutation,
+  useBillingSubscription,
+  useIntegrations,
+  useMailExclusions,
+} from "@/lib/hooks/use-api";
 import type { IntegrationAccount, MailExclusion } from "@/lib/types";
 
 const RETENTION_CHOICES = [7, 30, 90, 180, 365] as const;
@@ -27,6 +33,9 @@ export function MailPrivacy({ retentionDays }: { retentionDays: number }) {
   const [value, setValue] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [retention, setRetention] = useState(retentionDays);
+  // The purge keeps min(preference, plan): show what really applies (D-074).
+  const planDays = useBillingSubscription().data?.entitlements.retentionDays ?? null;
+  const effectiveRetention = planDays === null ? retention : Math.min(retention, planDays);
   const google = integrations.data?.items.find((i) => i.provider === "google") ?? null;
   const gmail = google?.scopes.some((s) => s.includes("gmail.readonly")) ?? false;
 
@@ -103,6 +112,8 @@ export function MailPrivacy({ retentionDays }: { retentionDays: number }) {
           disabled={saveRetention.isPending}
           onChange={(e) => {
             const days = Number(e.target.value);
+            // Shortening deletes data at the next clean-up: confirm first (it cannot be undone).
+            if (days < retention && !window.confirm(t("retentionShortenConfirm", { days }))) return;
             setRetention(days);
             saveRetention.mutate(days);
           }}
@@ -118,7 +129,10 @@ export function MailPrivacy({ retentionDays }: { retentionDays: number }) {
           ))}
         </select>
       </div>
-      <p className="text-[13.5px] text-ink2">{t("retention", { days: retention })}</p>
+      <p className="text-[13.5px] text-ink2">
+        {t("retention", { days: effectiveRetention })}
+        {planDays !== null && retention > planDays ? ` ${t("retentionPlanCap", { days: planDays })}` : null}
+      </p>
       <div>
         <h4 className="mb-1 font-semibold">{t("exclusions")}</h4>
         <p className="mb-2 text-[13.5px] text-ink2">{t("exclusionsBody")}</p>

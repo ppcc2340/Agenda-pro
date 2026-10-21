@@ -2,6 +2,8 @@ import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { Logo } from "@/components/shell/logo";
 
+const GOOGLE_USER_DATA_POLICY = "https://developers.google.com/terms/api-services-user-data-policy";
+
 /** Public legal pages (P0-13). Drafts: a person reviews them before the beta (docs/06 §8). */
 export async function LegalPage({ kind }: { kind: "privacy" | "terms" }) {
   const t = await getTranslations("legal");
@@ -29,6 +31,13 @@ export async function LegalPage({ kind }: { kind: "privacy" | "terms" }) {
             {kind === "privacy" ? t(`privacy.${p}` as "privacy.p1") : t(`terms.${p}` as "terms.p1")}
           </p>
         ))}
+        {kind === "privacy" ? (
+          <p>
+            <a href={GOOGLE_USER_DATA_POLICY} className="underline" rel="noopener noreferrer" target="_blank">
+              {t("privacy.p6link")}
+            </a>
+          </p>
+        ) : null}
       </div>
       <p className="mt-8">
         <Link href="/seguridad" className="underline">

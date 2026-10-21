@@ -220,7 +220,7 @@ test("9. Control centre: autonomy, connections, credits, activity with undo, pri
   await expect(page.locator("li").filter({ has: page.getByRole("button", { name: /deshacer/i }) }).first()).toBeVisible();
   await shot(page, "desktop-control");
   await expectAccessible(page, "control");
-  const [download] = await Promise.all([page.waitForEvent("download"), page.getByRole("link", { name: /exportar mis datos/i }).click()]);
+  const [download] = await Promise.all([page.waitForEvent("download"), page.getByRole("link", { name: /exportar en json/i }).click()]);
   expect(download.suggestedFilename()).toMatch(/^meri-export-\d{4}-\d{2}-\d{2}\.json$/);
   const chunks: Buffer[] = [];
   for await (const chunk of await download.createReadStream()) chunks.push(Buffer.from(chunk));

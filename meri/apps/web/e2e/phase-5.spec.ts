@@ -47,8 +47,8 @@ test.describe("phase 5: permissions, retention, export and sessions", () => {
     await demoLogin(page);
     await goto(page, "/control");
     await expect(page.getByRole("heading", { name: "Permisos" })).toBeVisible();
-    await expect(page.getByText("Meri nunca, con ningún permiso:")).toBeVisible();
-    await expect(page.getByText("Envía un correo en tu nombre.")).toBeVisible();
+    await expect(page.getByText("Lo que Meri nunca hace, tenga el permiso que tenga:")).toBeVisible();
+    await expect(page.getByText("Enviar correos en tu nombre.")).toBeVisible();
     await expect(page.getByRole("link", { name: /exportar en zip/i })).toHaveAttribute(
       "href",
       "/api/v1/account/export?format=zip",
@@ -62,15 +62,24 @@ test.describe("phase 5: permissions, retention, export and sessions", () => {
     test.skip(info.project.name === "mobile", "runs once, on desktop");
     await signUp(page);
     await goto(page, "/control");
-    const retention = page.getByLabel(/conservar citas y propuestas descartadas/i);
+    const retention = page.getByLabel(/conservar fragmentos de correo y propuestas descartadas/i);
+    // Shortening deletes data at the next clean-up, so it asks first.
+    page.once("dialog", (dialog) => {
+      expect(dialog.message()).toMatch(/conservar solo 30 días/i);
+      void dialog.accept();
+    });
     await retention.selectOption("30");
     await expect(page.getByRole("status").filter({ hasText: /retención guardada: 30 días/i })).toBeVisible();
     const cookies = await page.context().cookies();
+    const cookieHeader = cookies.map((c) => `${c.name}=${c.value}`).join("; ");
+    // Positive control: the same explicit cookie replay works before the revocation.
+    expect((await page.request.get("/api/v1/me", { headers: { cookie: cookieHeader } })).status()).toBe(200);
     await page.getByRole("button", { name: /cerrar sesión en todos los dispositivos/i }).click();
+    await page.getByRole("button", { name: "Cerrar todas las sesiones" }).click();
     await page.waitForURL(/\/login/);
     // The old cookie, replayed, is refused by the API.
     const replay = await page.request.get("/api/v1/me", {
-      headers: { cookie: cookies.map((c) => `${c.name}=${c.value}`).join("; ") },
+      headers: { cookie: cookieHeader },
     });
     expect(replay.status()).toBe(401);
   });

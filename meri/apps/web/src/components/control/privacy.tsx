@@ -20,6 +20,7 @@ export function PrivacyPanel({ demoMode }: { demoMode: boolean }) {
   const tApp = useTranslations("app");
   const { toast } = useToast();
   const [confirm, setConfirm] = useState(false);
+  const [confirmRevoke, setConfirmRevoke] = useState(false);
   const remove = useApiMutation(() => clientApi<null>("/v1/account", { method: "DELETE" }), [], {
     onError: () => toast(tApp("errorBody")),
     onSuccess: async () => {
@@ -57,6 +58,18 @@ export function PrivacyPanel({ demoMode }: { demoMode: boolean }) {
           </a>
         </Button>
         <Button
+          variant="quiet"
+          disabled={revoking}
+          onClick={() => {
+            // In DEMO_MODE every visitor shares one account: never sign the others out.
+            if (demoMode) toast(t("demoRevoke"));
+            else setConfirmRevoke(true);
+          }}
+        >
+          <LogOut size={14} aria-hidden="true" />
+          {t("signOutEverywhere")}
+        </Button>
+        <Button
           variant="risk"
           onClick={() => {
             if (demoMode) toast(t("demoDelete"));
@@ -66,12 +79,28 @@ export function PrivacyPanel({ demoMode }: { demoMode: boolean }) {
           <Trash2 size={14} aria-hidden="true" />
           {t("delete")}
         </Button>
-        <Button variant="quiet" disabled={revoking} onClick={() => void revokeEverywhere()}>
-          <LogOut size={14} aria-hidden="true" />
-          {t("signOutEverywhere")}
-        </Button>
       </div>
       <p className="mt-2 max-w-[60ch] text-[12.5px] text-ink3">{t("body")}</p>
+      <Dialog open={confirmRevoke} onOpenChange={setConfirmRevoke}>
+        {confirmRevoke ? (
+          <DialogContent
+            title={t("revokeTitle")}
+            description={t("revokeBody")}
+            footer={
+              <>
+                <Button variant="quiet" onClick={() => setConfirmRevoke(false)}>
+                  {t("cancel")}
+                </Button>
+                <Button variant="risk" disabled={revoking} onClick={() => void revokeEverywhere()}>
+                  {t("revokeConfirm")}
+                </Button>
+              </>
+            }
+          >
+            {null}
+          </DialogContent>
+        ) : null}
+      </Dialog>
       <Dialog open={confirm} onOpenChange={setConfirm}>
         {confirm ? (
           <DialogContent

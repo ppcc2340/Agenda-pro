@@ -194,12 +194,13 @@
         "account_exported": "Exportaste tus datos.",
         "account_deleted": "Eliminaste tu cuenta.",
         "account_sessions_revoked": "Cerraste la sesión en todos los dispositivos.",
-        "security_keys_rotated": "Meri rotó las claves que protegen tus conexiones.",
-        "mail_retention_applied": "Meri borró correo indexado y propuestas descartadas según tu retención."
+        "security_keys_rotated": "Meri renovó las claves de cifrado de tus conexiones.",
+        "mail_retention_applied": "Meri borró correo indexado y propuestas descartadas según el plazo de conservación que elegiste."
       },
       "undoneOf": "Deshecho: {text}",
       "undoDone": "Acción deshecha.",
-      "more": "Ver más"
+      "more": "Ver más",
+      "loadingMore": "Cargando…"
     },
     "preferences": {
       "title": "Preferencias",
@@ -212,18 +213,22 @@
     "privacy": {
       "title": "Privacidad",
       "desc": "Tus datos son tuyos.",
-      "export": "Exportar mis datos",
+      "export": "Exportar en JSON",
       "delete": "Eliminar mi cuenta",
-      "body": "La exportación es un JSON con tus clientes, tareas, compromisos, tiempo y actividad. Eliminar la cuenta la desactiva al momento; el borrado definitivo se completa en el plazo legal.",
+      "body": "Puedes exportar tus clientes, tareas, compromisos, tiempo y actividad en JSON o en un ZIP con hojas CSV. Eliminar la cuenta la desactiva al momento y el borrado definitivo se completa a los 30 días.",
       "exportedToast": "Exportando tus datos.",
       "demoDelete": "En la demo no se elimina nada.",
       "confirmTitle": "¿Eliminar tu cuenta?",
-      "confirmBody": "Se cierra la sesión, Meri deja de leer tus cuentas y revoca su acceso. El borrado definitivo de tus datos se completa en el plazo legal. No se puede deshacer.",
+      "confirmBody": "Se cierra la sesión, Meri deja de leer tus cuentas y revoca su acceso. El borrado definitivo de tus datos se completa a los 30 días. No se puede deshacer.",
       "cancel": "Cancelar",
       "deleted": "Cuenta eliminada.",
       "signOutEverywhere": "Cerrar sesión en todos los dispositivos",
       "signedOutEverywhere": "Sesiones cerradas en todos los dispositivos.",
-      "exportZip": "Exportar en ZIP (con CSV)"
+      "exportZip": "Exportar en ZIP (JSON y CSV)",
+      "revokeTitle": "¿Cerrar sesión en todos los dispositivos?",
+      "revokeBody": "También se cerrará aquí y tendrás que volver a entrar.",
+      "revokeConfirm": "Cerrar todas las sesiones",
+      "demoRevoke": "En la demo no se cierran las sesiones de los demás visitantes."
     },
     "plan": {
       "title": "Plan",
@@ -294,7 +299,7 @@
       "pausedToast": "Lectura de correo en pausa.",
       "resumedToast": "Lectura de correo reanudada.",
       "purgedToast": "Gmail desconectado. Hilos indexados y propuestas pendientes borrados.",
-      "retention": "Meri guarda solo metadatos y una cita de hasta 200 caracteres por hilo, y los borra (con las propuestas descartadas) a los {days} días.",
+      "retention": "Meri guarda solo metadatos y un fragmento de hasta 200 caracteres por hilo, y los borra (con las propuestas descartadas) a los {days} días.",
       "exclusions": "Exclusiones",
       "exclusionsBody": "Remitentes, dominios o etiquetas que Meri no leerá nunca.",
       "kindLabel": "Tipo de exclusión",
@@ -314,9 +319,11 @@
       "removeAria": "Quitar exclusión {value}",
       "noExclusions": "Sin exclusiones. Los boletines y correos automáticos ya se descartan por reglas.",
       "pauseHint": "La pausa detiene la lectura de Gmail y de Google Calendar; nada se borra.",
-      "retentionLabel": "Conservar citas y propuestas descartadas",
+      "retentionLabel": "Conservar fragmentos de correo y propuestas descartadas durante",
       "retentionOption": "{days} días",
-      "retentionSaved": "Retención guardada: {days} días."
+      "retentionSaved": "Retención guardada: {days} días.",
+      "retentionPlanCap": "Tu plan conserva como máximo {days} días.",
+      "retentionShortenConfirm": "¿Conservar solo {days} días? Los fragmentos de correo y las propuestas descartadas con más de {days} días se borrarán en la próxima limpieza. No se puede deshacer."
     },
     "vertical": {
       "title": "Vertical y vocabulario",
@@ -346,18 +353,19 @@
       "unknownEmail": "cuenta sin correo",
       "granted": "Permisos concedidos",
       "scopes": {
-        "gmailRead": "Leer tus correos: Meri guarda solo metadatos y una cita de hasta 200 caracteres.",
-        "gmailDrafts": "Crear borradores en tu Gmail. Nunca los envía.",
+        "gmailRead": "Leer tus correos: Meri guarda solo metadatos y un fragmento de hasta 200 caracteres.",
+        "gmailDrafts": "Gestionar borradores en tu Gmail. El permiso de Google incluye también enviar, pero Meri nunca envía: solo crea borradores.",
         "calendarRead": "Ver tus calendarios para planificar alrededor de tus reuniones.",
         "calendarWrite": "Crear y mover sus propios bloques en el calendario «Meri».",
-        "calendarWriteLegacy": "Editar eventos en cualquiera de tus calendarios (permiso anterior, más amplio de lo necesario: reconecta Google para limitarlo al calendario «Meri»). Meri solo toca sus propios bloques."
+        "calendarWriteLegacy": "Editar eventos en cualquiera de tus calendarios (permiso anterior, más amplio de lo necesario: reconecta Google para limitarlo al calendario «Meri»). Meri solo toca sus propios bloques.",
+        "identity": "Ver tu nombre y tu correo de Google para identificarte."
       },
-      "neverTitle": "Meri nunca, con ningún permiso:",
+      "neverTitle": "Lo que Meri nunca hace, tenga el permiso que tenga:",
       "never": {
-        "send": "Envía un correo en tu nombre.",
-        "thirdParty": "Cambia reuniones de otras personas sin tu confirmación.",
-        "train": "Usa tus datos para entrenar modelos de IA.",
-        "attachments": "Descarga adjuntos."
+        "send": "Enviar correos en tu nombre.",
+        "thirdParty": "Cambiar reuniones de otras personas sin tu confirmación.",
+        "train": "Usar tus datos para entrenar modelos de IA.",
+        "attachments": "Descargar adjuntos."
       }
     }
   },
@@ -422,7 +430,8 @@
       "p3": "Los datos obtenidos de Google se usan únicamente para las funciones que ves en la aplicación, conforme a la política de uso limitado de datos de usuario de Google. No se usan para publicidad ni para entrenar modelos generales.",
       "p4": "Puedes exportar y eliminar todos tus datos desde el Centro de control. Las conexiones se pueden revocar en cualquier momento.",
       "p5": "Contacto: privacidad@ en el dominio de Meri (pendiente de dominio).",
-      "p6": "El uso y la transferencia a cualquier otra aplicación de la información recibida de las API de Google por parte de Meri se ajustará a la Política de datos de usuario de los servicios de API de Google, incluidos los requisitos de uso limitado."
+      "p6": "El uso y la transferencia a cualquier otra aplicación de la información recibida de las API de Google por parte de Meri se ajustará a la Política de datos de usuario de los servicios de API de Google, incluidos los requisitos de uso limitado.",
+      "p6link": "Política de datos de usuario de los servicios de API de Google"
     },
     "terms": {
       "p1": "Meri es una herramienta de asistencia. Las fechas legales y los plazos procesales deben verificarse siempre con tu propio criterio profesional.",
@@ -1156,7 +1165,7 @@
   },
   "security": {
     "title": "Cómo protegemos tus datos",
-    "intro": "Meri trabaja con tu correo y tu calendario profesionales. Esto es lo que hace con ellos, contado desde lo que hace el código.",
+    "intro": "Meri trabaja con tu correo y tu calendario profesionales. Esto es exactamente lo que hace con ellos.",
     "sections": {
       "read": {
         "title": "Qué leemos",
@@ -1164,27 +1173,27 @@
       },
       "store": {
         "title": "Qué guardamos",
-        "body": "No guardamos el cuerpo de tus correos ni sus adjuntos: solo identificadores, metadatos mínimos y una cita de hasta 200 caracteres que explica cada propuesta. Las propuestas descartadas y sus citas se borran según la retención que elijas (90 días por defecto)."
+        "body": "No guardamos el cuerpo de tus correos ni sus adjuntos: solo identificadores, metadatos mínimos y un fragmento de hasta 200 caracteres que explica cada propuesta. Las propuestas descartadas y esos fragmentos se borran según el plazo que elijas (90 días por defecto)."
       },
       "never": {
         "title": "Qué no hacemos nunca",
-        "body": "No enviamos correos en tu nombre: solo preparamos borradores que tú revisas y envías. No podemos modificar tus reuniones: el permiso de escritura en Google se limita al calendario «Meri». No usamos tus datos para publicidad ni para entrenar modelos generales."
+        "body": "No enviamos correos en tu nombre: solo preparamos borradores que tú revisas y envías. Las cuentas conectadas ahora solo pueden escribir en el calendario «Meri», así que no podemos modificar tus reuniones; si conectaste Google antes, verás en el Centro de control un permiso más amplio y podrás reconectar para limitarlo. No usamos tus datos para publicidad ni para entrenar modelos generales."
       },
       "ai": {
         "title": "La IA propone, tú decides",
-        "body": "Lo que sugiere la IA queda como propuesta, con trazo discontinuo, hasta que lo confirmas. El texto de los correos se trata como dato no confiable: se sanea y nunca se ejecutan instrucciones que contenga. El proveedor de IA recibe solo los fragmentos necesarios para cada operación."
+        "body": "Lo que sugiere la IA queda como propuesta, con borde punteado, hasta que lo confirmas. El texto de los correos se trata como dato no confiable: se sanea y nunca se siguen instrucciones que contenga. El proveedor de IA recibe solo los fragmentos necesarios para cada operación."
       },
       "encryption": {
         "title": "Cifrado",
-        "body": "Las credenciales de Google se cifran con cifrado de sobre (AES-256-GCM) y claves gestionadas en un servicio de claves, con rotación. Todo viaja por HTTPS con HSTS, y las copias de seguridad van cifradas."
+        "body": "Las credenciales de Google se guardan cifradas (AES-256-GCM) con claves que se pueden rotar. Todo viaja por HTTPS, y las copias de seguridad se cifran antes de guardarse."
       },
       "isolation": {
         "title": "Aislamiento",
-        "body": "Cada cuenta está aislada en la base de datos con seguridad a nivel de fila, y cada ruta de la API se prueba para que una cuenta nunca vea ni cambie datos de otra. La información de un cliente tampoco se mezcla en el contexto de otro."
+        "body": "Cada cuenta está separada en la base de datos y probamos cada función para que una cuenta nunca vea ni cambie datos de otra. La información de un cliente tampoco se mezcla en el contexto de otro."
       },
       "control": {
         "title": "Tú tienes el control",
-        "body": "En Control ves qué permisos concediste y toda la actividad automática, que puedes deshacer. Puedes revocar una conexión, cerrar sesión en todos los dispositivos, exportar todos tus datos (JSON o ZIP) y borrar la cuenta: a los 30 días se elimina todo y se verifica que no queda nada."
+        "body": "En el Centro de control ves qué permisos concediste y toda la actividad automática, y puedes deshacer las acciones que lo permiten. Puedes revocar una conexión, cerrar sesión en todos los dispositivos, exportar todos tus datos (JSON o ZIP) y borrar la cuenta: a los 30 días se elimina todo y se verifica que no queda nada."
       },
       "incidents": {
         "title": "Si algo falla",
