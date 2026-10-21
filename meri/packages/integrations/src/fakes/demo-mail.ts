@@ -65,7 +65,8 @@ export const DEMO_MAIL_THREADS: readonly DemoMailThread[] = [
       {
         from: "them",
         daysAgo: 2,
-        bodyText: "Hola,\n\nQuizá podríamos vernos a fin de mes para cerrar el proyecto con el equipo.\n\nLaura Vidal\nEstudio Norte",
+        bodyText:
+          "Hola,\n\nQuizá podríamos vernos a fin de mes para cerrar el proyecto con el equipo.\n\nLaura Vidal\nEstudio Norte",
       },
     ],
   },
@@ -80,7 +81,8 @@ export const DEMO_MAIL_THREADS: readonly DemoMailThread[] = [
       {
         from: "them",
         daysAgo: 9,
-        bodyText: "Hola,\n\nte paso los datos de ventas del tercer trimestre mañana, en cuanto cierre finanzas.\n\nCarlos Ibáñez\nAcme Corp",
+        bodyText:
+          "Hola,\n\nte paso los datos de ventas del tercer trimestre mañana, en cuanto cierre finanzas.\n\nCarlos Ibáñez\nAcme Corp",
       },
       { from: "me", daysAgo: 8, bodyText: "Gracias, Carlos. Quedo atento a los datos.\n" },
     ],
@@ -128,7 +130,9 @@ export function seedDemoMail(mail: FakeGmail, me: string, now: Date): void {
       labels: [m.from === "me" ? "SENT" : "INBOX"],
       subject: t.subject,
       date: demoMailDate(now, m.daysAgo),
-      snippet: m.bodyText.split("\n").find((line) => line.trim().length > 0 && !/^(hola|buenos días)/i.test(line)) ?? "",
+      snippet:
+        m.bodyText.split("\n").find((line) => line.trim().length > 0 && !/^(hola|buenos días)/i.test(line)) ??
+        "",
       bodyText: m.bodyText,
     })),
   );

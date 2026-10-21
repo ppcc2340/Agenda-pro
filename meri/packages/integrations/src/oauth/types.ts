@@ -49,4 +49,8 @@ export { CALENDAR_SCOPES } from "./scopes";
 export interface GoogleAccountRef {
   email: string;
   accessToken(options?: { forceRefresh?: boolean }): Promise<string>;
+  /** The connection's dedicated «Meri» calendar, when already created (ADR 0008). */
+  meriCalendarId?: string | null;
+  /** Persists the id of a newly created «Meri» calendar (called once). */
+  rememberMeriCalendar?(calendarId: string): Promise<void>;
 }

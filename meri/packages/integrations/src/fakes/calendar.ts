@@ -91,9 +91,10 @@ export class FakeCalendar implements CalendarProvider {
   ): Promise<CalendarEvent> {
     const current = this.requireMeri(calendarId, externalId);
     if (current instanceof IntegrationError) return Promise.reject(current);
+    // 412 like Google: permanent for this call, the caller re-syncs before retrying (ADR 0008).
     if (etag !== null && current.etag !== etag) {
       return Promise.reject(
-        new IntegrationError("Transient", "google-calendar", "412 Precondition Failed: etag mismatch"),
+        new IntegrationError("Permanent", "google-calendar", "412 Precondition Failed: etag mismatch"),
       );
     }
     const updated: CalendarEvent = {
@@ -108,6 +109,9 @@ export class FakeCalendar implements CalendarProvider {
   }
 
   deleteMeriEvent(calendarId: string, externalId: string): Promise<void> {
+    // Deleting what no longer exists is done (same as the live adapter, ADR 0008).
+    const existing = this.events.get(externalId);
+    if (!existing || existing.calendarId !== calendarId) return Promise.resolve();
     const current = this.requireMeri(calendarId, externalId);
     if (current instanceof IntegrationError) return Promise.reject(current);
     this.events.set(externalId, { ...current, status: "cancelled", etag: String(++this.version) });

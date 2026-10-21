@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { z } from "zod";
 import { parseEnv, resolveModes } from "@meri/config";
 import { FakeCalendar } from "./calendar";
+import { calendarContract } from "../calendar/contract";
 import { FakeGmail } from "./mail";
 import { FakeAiClient } from "./ai";
 import { NoopAnalytics } from "./analytics";
@@ -12,57 +13,19 @@ import type { MailProvider } from "../mail/types";
 const now = () => new Date("2026-10-19T10:40:00Z");
 
 describe("FakeCalendar contract (docs/07: Meri only touches its own events)", () => {
-  it("creates, updates and deletes Meri events and syncs incrementally", async () => {
+  calendarContract(() => {
     const cal = new FakeCalendar({ now });
-    const id = await cal.ensureMeriCalendar();
-    const ev = await cal.createMeriEvent(id, {
-      title: "Deep work",
-      startsAt: "2026-10-19T13:00:00Z",
-      endsAt: "2026-10-19T15:00:00Z",
+    return Promise.resolve({
+      calendar: cal,
+      addExternal: (input) => {
+        const ev = cal.addExternalEvent(input);
+        return Promise.resolve({ calendarId: ev.calendarId, externalId: ev.externalId });
+      },
     });
-    expect(ev.meri).toBe(true);
-    const page1 = await cal.sync({
-      calendarId: id,
-      cursor: null,
-      from: "2026-10-19T00:00:00Z",
-      to: "2026-10-20T00:00:00Z",
-    });
-    expect(page1.events.map((e) => e.externalId)).toEqual([ev.externalId]);
-    const page2 = await cal.sync({
-      calendarId: id,
-      cursor: page1.nextCursor,
-      from: "2026-10-19T00:00:00Z",
-      to: "2026-10-20T00:00:00Z",
-    });
-    expect(page2.events).toHaveLength(0);
-    await expect(cal.updateMeriEvent(id, ev.externalId, { title: "x" }, "stale")).rejects.toMatchObject({
-      kind: "Transient",
-    });
-    const updated = await cal.updateMeriEvent(id, ev.externalId, { title: "Deep work (moved)" }, ev.etag);
-    expect(updated.title).toBe("Deep work (moved)");
-    await cal.deleteMeriEvent(id, ev.externalId);
-    expect(cal.events.get(ev.externalId)?.status).toBe("cancelled");
-    expect((await cal.sync({ calendarId: "bad", cursor: "NaN", from: "", to: "" })).fullResyncRequired).toBe(
-      true,
-    );
   });
 
-  it("refuses to modify or delete events it did not create", async () => {
-    const cal = new FakeCalendar({ now });
-    const meeting = cal.addExternalEvent({
-      title: "Reunión con Acme",
-      startsAt: "2026-10-19T09:30:00Z",
-      endsAt: "2026-10-19T10:15:00Z",
-    });
-    await expect(
-      cal.updateMeriEvent(cal.primaryCalendarId, meeting.externalId, { title: "hijack" }, null),
-    ).rejects.toThrow(/non-Meri/);
-    await expect(cal.deleteMeriEvent(cal.primaryCalendarId, meeting.externalId)).rejects.toThrow(/non-Meri/);
-    await expect(cal.deleteMeriEvent(cal.meriCalendarId, "missing")).rejects.toMatchObject({
-      kind: "Permanent",
-    });
-    expect(cal.events.get(meeting.externalId)?.title).toBe("Reunión con Acme");
-    expect(cal.currentTime().toISOString()).toBe("2026-10-19T10:40:00.000Z");
+  it("exposes the injected clock", () => {
+    expect(new FakeCalendar({ now }).currentTime().toISOString()).toBe("2026-10-19T10:40:00.000Z");
   });
 });
 

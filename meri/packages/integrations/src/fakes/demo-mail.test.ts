@@ -23,7 +23,12 @@ describe("demo mailbox and fakes for demo@meri.local (D-052)", () => {
   it("the demo account's calendar starts empty and its mailbox holds exactly the seeded threads", async () => {
     const integrations = createIntegrations(devConfig(), { now: () => NOW });
     const calendar = integrations.calendarFor(DEMO_USER.email);
-    const page = await calendar.sync({ calendarId: PRIMARY, cursor: null, from: "2026-10-01T00:00:00Z", to: "2026-11-01T00:00:00Z" });
+    const page = await calendar.sync({
+      calendarId: PRIMARY,
+      cursor: null,
+      from: "2026-10-01T00:00:00Z",
+      to: "2026-11-01T00:00:00Z",
+    });
     expect(page.events).toEqual([]);
     const mail = integrations.mailFor(DEMO_USER.email) as FakeGmail;
     expect(mail.messages.size).toBe(DEMO_MAIL_MESSAGE_COUNT);
@@ -41,7 +46,12 @@ describe("demo mailbox and fakes for demo@meri.local (D-052)", () => {
   it("any other account keeps the sample meetings and mailbox", async () => {
     const integrations = createIntegrations(devConfig(), { now: () => NOW });
     const calendar = integrations.calendarFor("someone@meri.local");
-    const page = await calendar.sync({ calendarId: PRIMARY, cursor: null, from: "2026-10-01T00:00:00Z", to: "2026-11-01T00:00:00Z" });
+    const page = await calendar.sync({
+      calendarId: PRIMARY,
+      cursor: null,
+      from: "2026-10-01T00:00:00Z",
+      to: "2026-11-01T00:00:00Z",
+    });
     expect(page.events.length).toBeGreaterThan(0); // same query as above: the demo's empty calendar is meaningful
     const mail = integrations.mailFor("someone@meri.local") as FakeGmail;
     expect([...mail.messages.keys()].some((id) => id.startsWith("demo-"))).toBe(false);

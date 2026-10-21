@@ -47,7 +47,9 @@ export class FakeGoogleOAuth implements GoogleOAuth {
     this.codes.delete(input.code);
     const challenge = createHash("sha256").update(input.codeVerifier).digest("base64url");
     if (challenge !== entry.challenge)
-      return Promise.reject(new IntegrationError("Permanent", "google-oauth", "PKCE verifier does not match"));
+      return Promise.reject(
+        new IntegrationError("Permanent", "google-oauth", "PKCE verifier does not match"),
+      );
     return Promise.resolve(this.tokens(entry.email, entry.scopes));
   }
 

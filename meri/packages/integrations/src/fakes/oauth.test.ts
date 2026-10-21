@@ -27,7 +27,9 @@ describe("FakeGoogleOAuth", () => {
       scopes: ["a"],
       expiresAt: "2026-10-19T11:40:00.000Z",
     });
-    await expect(oauth.exchangeCode({ code, redirectUri: "x", codeVerifier: "verifier-1" })).rejects.toMatchObject({ kind: "Permanent" });
+    await expect(
+      oauth.exchangeCode({ code, redirectUri: "x", codeVerifier: "verifier-1" }),
+    ).rejects.toMatchObject({ kind: "Permanent" });
     const refreshed = await oauth.refresh(tokens.refreshToken ?? "");
     // A refresh renews only the access token: identity and refresh token stay with the caller.
     expect(refreshed).toMatchObject({ refreshToken: null, scopes: null });
@@ -47,11 +49,15 @@ describe("FakeGoogleOAuth", () => {
       }),
     );
     const code = url.searchParams.get("code") ?? "";
-    await expect(oauth.exchangeCode({ code, redirectUri: "x", codeVerifier: "wrong" })).rejects.toMatchObject({
-      kind: "Permanent",
-    });
-    await expect(oauth.exchangeCode({ code, redirectUri: "x", codeVerifier: "right" })).rejects.toMatchObject({
-      kind: "Permanent",
-    });
+    await expect(oauth.exchangeCode({ code, redirectUri: "x", codeVerifier: "wrong" })).rejects.toMatchObject(
+      {
+        kind: "Permanent",
+      },
+    );
+    await expect(oauth.exchangeCode({ code, redirectUri: "x", codeVerifier: "right" })).rejects.toMatchObject(
+      {
+        kind: "Permanent",
+      },
+    );
   });
 });
