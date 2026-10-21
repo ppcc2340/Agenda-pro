@@ -58,7 +58,11 @@ describe("audit_log immutability", () => {
     await expect(asOwner(sql`delete from audit_log where id = ${id}`, true)).rejects.toSatisfy((e) =>
       /only removed with their workspace/.test(pgMessage(e)),
     );
-    // Read back under the admin read context: untouched.
+    // TRUNCATE skips row triggers: a statement trigger refuses it for the owner as well (migration 0020).
+    await expect(owner.db.execute(sql`truncate audit_log`)).rejects.toSatisfy((e) =>
+      /cannot be truncated/.test(pgMessage(e)),
+    );
+        // Read back under the admin read context: untouched.
     const still = await owner.db.execute(sql`select action from audit_log where id = ${id}`);
     expect(still[0]).toMatchObject({ action: "task.created" });
   });
