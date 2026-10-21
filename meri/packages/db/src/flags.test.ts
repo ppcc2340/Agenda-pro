@@ -34,6 +34,8 @@ describe("feature flags in the database and the price cohort (D-102)", () => {
     expect(await store.isEnabled("time_inference")).toBe(true);
     clock = 2_000;
     expect(await store.isEnabled("time_inference")).toBe(false);
+    // The test database is shared with suites running in parallel: leave no global row behind.
+    await owner.db.execute(sql`delete from feature_flags where key = 'time_inference'`);
     await expect(setFlag(owner.db, { flag: "nope", enabled: true })).rejects.toThrow(/unknown flag/);
     await expect(
       app.db.execute(sql`insert into feature_flags (id, key, enabled) values (${newId()}, 'x', true)`),

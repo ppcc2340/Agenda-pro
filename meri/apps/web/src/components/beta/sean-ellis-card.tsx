@@ -77,6 +77,7 @@ export function SeanEllisCard() {
           className="rounded-lg border border-rule bg-panel px-3 py-2 font-normal text-ink"
         />
       </label>
+      <p className="mt-2 text-[12.5px] text-ink3">{t("privacy")}</p>
       <div className="mt-3 flex flex-wrap justify-end gap-2">
         <Button variant="quiet" disabled={send.isPending} onClick={() => send.mutate({ dismiss: true })}>
           {t("later")}

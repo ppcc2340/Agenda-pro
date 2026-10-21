@@ -38,10 +38,10 @@ test.describe("phase 6: closed beta, feedback and AI review consent", () => {
     await beta.getByLabel("Correo", { exact: true }).fill(email("waitlist"));
     // Consent is required by the form and by the API.
     await beta.getByRole("button", { name: "Unirme a la lista" }).click();
-    await expect(page.getByText("Listo. Te escribiremos")).toHaveCount(0);
+    await expect(page.getByText("Te uniste a la lista")).toHaveCount(0);
     await beta.getByRole("checkbox").check();
     await beta.getByRole("button", { name: "Unirme a la lista" }).click();
-    const done = page.getByText("Listo. Te escribiremos cuando haya una plaza libre.");
+    const done = page.getByText("Te uniste a la lista. Te escribiremos si se abre una plaza.");
     await expect(done).toBeVisible();
     await expect(done).toBeFocused();
     await context.close();
@@ -59,7 +59,7 @@ test.describe("phase 6: closed beta, feedback and AI review consent", () => {
     await expect(dialog.getByRole("button", { name: "Enviar" })).toBeDisabled();
     await dialog.getByLabel("Comentario").fill("El resumen del viernes no aparece en el móvil.");
     await dialog.getByRole("button", { name: "Enviar" }).click();
-    await expect(page.getByText("Gracias. Lo hemos recibido.")).toBeVisible();
+    await expect(page.getByText("Gracias. Comentario enviado.")).toBeVisible();
     await expect(dialog).toBeHidden();
   });
 

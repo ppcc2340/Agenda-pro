@@ -17,7 +17,14 @@ type Kind = "bug" | "idea" | "other";
  * «Enviar comentarios» (D-099): kind, text and the current page path (no query). Stored in the workspace; never sent
  * to analytics or to the AI.
  */
-export function FeedbackDialog({ triggerClassName }: { triggerClassName?: string }) {
+export function FeedbackDialog({
+  triggerClassName,
+  iconSize = 16,
+}: {
+  triggerClassName?: string;
+  /** 16 in the rail, 20 in the «Más» list (same size as its other rows). */
+  iconSize?: number;
+}) {
   const t = useTranslations("feedback");
   const pathname = usePathname();
   const { toast } = useToast();
@@ -45,7 +52,7 @@ export function FeedbackDialog({ triggerClassName }: { triggerClassName?: string
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <button type="button" className={triggerClassName}>
-          <MessageSquarePlus size={16} aria-hidden="true" />
+          <MessageSquarePlus size={iconSize} aria-hidden="true" />
           <span>{t("open")}</span>
         </button>
       </DialogTrigger>

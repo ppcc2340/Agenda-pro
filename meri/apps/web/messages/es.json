@@ -387,7 +387,7 @@
     "error": "No pudimos iniciar sesión. Vuelve a intentarlo.",
     "betaTitle": "Meri está en beta cerrada",
     "betaBody": "Para crear una cuenta hace falta una invitación. Apúntate a la lista de espera y te escribiremos.",
-    "betaRequired": "Para crear una cuenta en Meri hace falta una invitación, y este correo todavía no tiene una. Únete a la lista de espera y te escribiremos cuando haya plaza."
+    "betaRequired": "Para crear una cuenta en Meri hace falta una invitación, y este correo todavía no tiene una. Únete a la lista de espera y te escribiremos si se abre una plaza."
   },
   "onboarding": {
     "title": "Antes de empezar",
@@ -630,7 +630,7 @@
     "neverSynced": "Todavía no sincronizado",
     "fakeNote": "Modo de pruebas: se conecta un calendario simulado con el mismo flujo que el real.",
     "connected": "Calendario conectado. Meri solo escribirá en el calendario «Meri».",
-    "connectError": "Google no completó la conexión. Inténtalo de nuevo en unos minutos.",
+    "connectError": "No pudimos completar la conexión con Google. Vuelve a pulsar «Conectar».",
     "denied": "No se completó la conexión.",
     "disconnected": "Desconectado. Los eventos copiados se han borrado.",
     "confirmDisconnect": "¿Desconectar Google (Calendar y Gmail)? Se borran los eventos copiados, los hilos indexados y las propuestas pendientes. Los compromisos que confirmaste se conservan.",
@@ -1222,7 +1222,7 @@
   "feedback": {
     "open": "Enviar comentarios",
     "title": "Enviar comentarios",
-    "body": "Cuéntanos qué falla o qué echas de menos. Lo lee el equipo de Meri.",
+    "body": "Cuéntanos qué falla o qué te falta. Lo lee el equipo de Meri.",
     "kindLabel": "Tipo",
     "kind": {
       "bug": "Algo falla",
@@ -1230,9 +1230,9 @@
       "other": "Otro"
     },
     "messageLabel": "Comentario",
-    "privacy": "Se guarda con tu cuenta junto a la página en la que estás (sin parámetros). No se envía a analítica ni a la IA.",
+    "privacy": "Se guarda con tu cuenta, junto con la dirección de la página (sin búsquedas ni filtros), hasta que la elimines. No se envía a analítica ni a la IA.",
     "send": "Enviar",
-    "thanks": "Gracias. Lo hemos recibido.",
+    "thanks": "Gracias. Comentario enviado.",
     "error": "No pudimos enviar el comentario. Inténtalo de nuevo.",
     "limit": "Has enviado muchos comentarios hoy. Inténtalo mañana o escríbenos por correo."
   },
@@ -1242,7 +1242,7 @@
     "website": "No rellenar",
     "consent": "Acepto que Meri me escriba sobre la beta. Guardamos el correo hasta 180 días (<privacy>privacidad</privacy>).",
     "submit": "Unirme a la lista",
-    "done": "Listo. Te escribiremos cuando haya una plaza libre.",
+    "done": "Te uniste a la lista. Te escribiremos si se abre una plaza.",
     "error": "No pudimos añadir el correo. Revísalo e inténtalo de nuevo.",
     "limit": "Demasiados intentos seguidos. Espera un minuto e inténtalo de nuevo."
   },
@@ -1258,8 +1258,9 @@
     "later": "Ahora no",
     "send": "Enviar",
     "thanks": "Gracias por responder.",
-    "dismissed": "De acuerdo. Quizá te lo preguntemos más adelante.",
+    "dismissed": "De acuerdo, la dejamos por ahora.",
     "eyebrow": "Una pregunta rápida",
-    "error": "No pudimos guardar la respuesta. Inténtalo de nuevo."
+    "error": "No pudimos guardar la respuesta. Inténtalo de nuevo.",
+    "privacy": "Tu respuesta se guarda con tu cuenta y solo la lee el equipo de Meri."
   }
 }

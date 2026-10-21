@@ -387,7 +387,7 @@
     "error": "We could not sign you in. Please try again.",
     "betaTitle": "Meri is in closed beta",
     "betaBody": "Creating an account needs an invitation. Join the waitlist and we will write to you.",
-    "betaRequired": "Creating a Meri account needs an invitation, and this email does not have one yet. Join the waitlist and we will write to you when there is a seat."
+    "betaRequired": "Creating a Meri account requires an invitation, and this email does not have one yet. Join the waitlist and we will write to you if a spot opens up."
   },
   "onboarding": {
     "title": "Before we start",
@@ -630,7 +630,7 @@
     "neverSynced": "Not synced yet",
     "fakeNote": "Test mode: a simulated calendar connects through the same flow as the real one.",
     "connected": "Calendar connected. Meri will only write to the “Meri” calendar.",
-    "connectError": "Google did not complete the connection. Try again in a few minutes.",
+    "connectError": "We could not complete the connection with Google. Press “Connect” again.",
     "denied": "The connection was not completed.",
     "disconnected": "Disconnected. Mirrored events were deleted.",
     "confirmDisconnect": "Disconnect Google (Calendar and Gmail)? Copied events, indexed threads and pending proposals are deleted. Commitments you confirmed are kept.",
@@ -1225,14 +1225,14 @@
     "body": "Tell us what is broken or what you miss. The Meri team reads it.",
     "kindLabel": "Type",
     "kind": {
-      "bug": "Something is broken",
+      "bug": "Problem",
       "idea": "Idea",
       "other": "Other"
     },
     "messageLabel": "Comment",
-    "privacy": "Stored with your account together with the page you are on (without parameters). Never sent to analytics or to the AI.",
+    "privacy": "Stored with your account, together with the page address (without searches or filters), until you delete it. Never sent to analytics or to the AI.",
     "send": "Send",
-    "thanks": "Thanks. We got it.",
+    "thanks": "Thanks. Feedback sent.",
     "error": "We could not send your feedback. Please try again.",
     "limit": "You have sent a lot of feedback today. Try again tomorrow or write to us by email."
   },
@@ -1241,8 +1241,8 @@
     "email": "Email",
     "website": "Leave empty",
     "consent": "I agree that Meri may write to me about the beta. We keep the address for up to 180 days (<privacy>privacy</privacy>).",
-    "submit": "Join the list",
-    "done": "Done. We will write to you when a seat opens up.",
+    "submit": "Join the waitlist",
+    "done": "You joined the list. We will write to you if a spot opens up.",
     "error": "We could not add that email. Check it and try again.",
     "limit": "Too many attempts in a row. Wait a minute and try again."
   },
@@ -1258,8 +1258,9 @@
     "later": "Not now",
     "send": "Send",
     "thanks": "Thanks for answering.",
-    "dismissed": "Fine. We may ask you later.",
+    "dismissed": "OK, we'll leave it for now.",
     "eyebrow": "A quick question",
-    "error": "We could not save your answer. Please try again."
+    "error": "We could not save your answer. Please try again.",
+    "privacy": "Your answer is stored with your account and only the Meri team reads it."
   }
 }

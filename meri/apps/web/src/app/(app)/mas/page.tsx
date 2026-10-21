@@ -51,7 +51,10 @@ export default async function MasPage() {
         ))}
       </ul>
       {/* On mobile the rail is hidden: feedback is reached from «Más». */}
-      <FeedbackDialog triggerClassName="mt-4 flex w-full items-center gap-2 rounded-2xl border border-rule bg-raised px-4 py-3.5 font-semibold text-sea" />
+      <FeedbackDialog
+        iconSize={20}
+        triggerClassName="mt-4 flex w-full items-center gap-2 rounded-2xl border border-rule bg-raised px-4 py-3.5 font-semibold text-sea"
+      />
     </>
   );
 }
