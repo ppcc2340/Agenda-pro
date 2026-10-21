@@ -31,6 +31,7 @@ export function ConnectionsPanel({ fakeMode, timezone }: { fakeMode: boolean; ti
     const feature = params.get("feature");
     if (flag === "connected") toast(feature === "gmail" ? t("connectedGmail") : t("connected"));
     if (flag === "denied") toast(t("denied"));
+    if (flag === "error") toast(t("connectError"));
   }, [params, t, toast]);
 
   const connect = useApiMutation(

@@ -26,3 +26,6 @@ evals/reports/*.json
 *.log
 **/e2e/.results/
 backups/
+
+# Local Redis snapshot
+dump.rdb

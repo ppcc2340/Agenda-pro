@@ -619,6 +619,7 @@
     "neverSynced": "Todavía no sincronizado",
     "fakeNote": "Modo de pruebas: se conecta un calendario simulado con el mismo flujo que el real.",
     "connected": "Calendario conectado. Meri solo escribirá en el calendario «Meri».",
+    "connectError": "Google no completó la conexión. Inténtalo de nuevo en unos minutos.",
     "denied": "No se completó la conexión.",
     "disconnected": "Desconectado. Los eventos copiados se han borrado.",
     "confirmDisconnect": "¿Desconectar Google (Calendar y Gmail)? Se borran los eventos copiados, los hilos indexados y las propuestas pendientes. Los compromisos que confirmaste se conservan.",

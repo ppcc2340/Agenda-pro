@@ -202,6 +202,8 @@ export async function buildApp(deps: AppDeps) {
     appUrl: config.env.APP_URL,
     secureCookies: config.isProduction,
     calendarChannelToken: config.env.GOOGLE_CALENDAR_CHANNEL_TOKEN,
+    // Push channels are not created in `live` yet (ADR 0008): polling only, so the webhooks stay closed.
+    googlePush: config.modes.google === "fake",
     analytics: deps.integrations.analytics,
   };
   await app.register(integrationRoutes, integrationOptions);
@@ -263,6 +265,7 @@ export async function buildApp(deps: AppDeps) {
     now: deps.now,
     dispatcher: deps.dispatcher,
     channelToken: config.env.GOOGLE_CALENDAR_CHANNEL_TOKEN,
+    googlePush: config.modes.google === "fake",
   });
 
   await app.register(billingRoutes, {

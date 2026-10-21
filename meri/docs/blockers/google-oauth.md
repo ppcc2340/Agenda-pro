@@ -32,6 +32,7 @@
 ## Verificación de humo (`scripts/smoke/google-oauth.ts`)
 - Calendar: listar calendarios, crear y borrar un evento de prueba en el calendario «Meri».
 - Gmail: leer el perfil y listar 1 mensaje solo con metadatos. No debe crear ni enviar nada.
+- En `live` necesita una conexión de una cuenta de prueba: exporta en la shell (no en el repo) `SMOKE_GOOGLE_EMAIL` y `SMOKE_GOOGLE_REFRESH_TOKEN` (obtenido conectando esa cuenta en un entorno local con `GOOGLE_MODE=live`, o con el OAuth Playground usando tu propio cliente). El script lo cambia por un token de acceso y no lo imprime. Si la concesión trae un scope prohibido (`gmail.send`), falla.
 
 ## Paquete de verificación (Fase 5)
 Todo el paquete (justificación de cada scope, guion del vídeo, pantalla de consentimiento, uso limitado, CASA) está en [`docs/google-verification.md`](../google-verification.md).

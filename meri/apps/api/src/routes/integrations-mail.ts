@@ -15,6 +15,8 @@ export interface MailRoutesOptions {
   dispatcher: JobDispatcher;
   /** Shared Google push channel token (ADR 0004 §1: same secret as Calendar in the MVP). */
   channelToken: string;
+  /** False in `live` (ADR 0008): no watch channels exist, so the push webhook answers 404. */
+  googlePush: boolean;
 }
 
 const safeEqual = (a: string, b: string): boolean => {
@@ -67,6 +69,7 @@ export function mailRoutes(app: FastifyInstance, options: MailRoutesOptions, don
       schema: { tags: ["webhooks"], hide: true, response: { 204: z.null() } },
     },
     async (request, reply) => {
+      if (!options.googlePush) throw new ApiError("NOT_FOUND", "Not found.");
       const token = request.headers["x-goog-channel-token"];
       const channelId = request.headers["x-goog-channel-id"];
       if (typeof token !== "string" || !safeEqual(token, options.channelToken))

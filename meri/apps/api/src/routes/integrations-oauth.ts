@@ -3,7 +3,13 @@ import type { FastifyInstance } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import { z } from "zod";
 import { audit, setIntegrationStatus, upsertIntegrationAccount } from "@meri/db";
-import { hasCalendarScopes, hasGmailScopes, scopesFor } from "@meri/integrations";
+import {
+  hasCalendarScopes,
+  hasForbiddenScope,
+  hasGmailScopes,
+  IntegrationError,
+  scopesFor,
+} from "@meri/integrations";
 import { CalendarSyncJob, GmailSyncJob, encryptTokens, track } from "@meri/jobs";
 import { ApiError } from "../errors";
 import { newPkce, OAUTH_STATE_TTL_MS, openState, safeEqual, sealState } from "../plugins/oauth-state";
@@ -87,11 +93,28 @@ export function integrationOAuthRoutes(
         throw new ApiError("FORBIDDEN", "OAuth state mismatch.");
       if (request.query.error || !request.query.code)
         return reply.redirect(`${options.appUrl}/control?integration=denied`);
-      const tokens = await options.oauth.exchangeCode({
-        code: request.query.code,
-        redirectUri,
-        codeVerifier: expected.v,
-      });
+      const failed = `${options.appUrl}/control?integration=error`;
+      let tokens;
+      try {
+        tokens = await options.oauth.exchangeCode({
+          code: request.query.code,
+          redirectUri,
+          codeVerifier: expected.v,
+        });
+      } catch (err) {
+        // A used or expired code, a PKCE mismatch or Google being down: back to Control, never a 500 (ADR 0008).
+        if (!(err instanceof IntegrationError)) throw err;
+        request.log.warn({ kind: err.kind, provider: err.provider }, "google code exchange failed");
+        return reply.redirect(failed);
+      }
+      if (hasForbiddenScope(tokens.scopes)) {
+        // Meri never holds a scope it must not use (gmail.send in the MVP): revoke the grant, store nothing.
+        await options.oauth.revoke(tokens.refreshToken ?? tokens.accessToken).catch((err: unknown) => {
+          request.log.warn({ err }, "revoking a grant with a forbidden scope failed");
+        });
+        request.log.warn("google grant with a forbidden scope refused");
+        return reply.redirect(failed);
+      }
       const now = options.now();
       const account = await request.withWorkspace(async (tx) => {
         // Two steps: the row id is part of the encryption AAD, so insert first, then store the ciphertext.
@@ -154,7 +177,8 @@ export function integrationOAuthRoutes(
       }
       if (hasCalendarScopes(account.scopes))
         track(options.analytics, "calendar_connected", session.workspaceId, {});
-      if (hasGmailScopes(account.scopes)) track(options.analytics, "gmail_connected", session.workspaceId, {});
+      if (hasGmailScopes(account.scopes))
+        track(options.analytics, "gmail_connected", session.workspaceId, {});
       const feature = hasGmailScopes(account.scopes)
         ? hasCalendarScopes(account.scopes)
           ? "all"

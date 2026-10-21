@@ -619,6 +619,7 @@
     "neverSynced": "Not synced yet",
     "fakeNote": "Test mode: a simulated calendar connects through the same flow as the real one.",
     "connected": "Calendar connected. Meri will only write to the “Meri” calendar.",
+    "connectError": "Google did not complete the connection. Try again in a few minutes.",
     "denied": "The connection was not completed.",
     "disconnected": "Disconnected. Mirrored events were deleted.",
     "confirmDisconnect": "Disconnect Google (Calendar and Gmail)? Copied events, indexed threads and pending proposals are deleted. Commitments you confirmed are kept.",

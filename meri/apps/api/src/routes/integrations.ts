@@ -76,6 +76,8 @@ export interface IntegrationRoutesOptions {
   secureCookies: boolean;
   /** Token Google must send with calendar push notifications (X-Goog-Channel-Token). */
   calendarChannelToken: string;
+  /** False in `live` (ADR 0008): no watch channels exist, so the push webhook answers 404. */
+  googlePush: boolean;
   analytics: Analytics;
 }
 
@@ -284,6 +286,7 @@ export function integrationRoutes(
       schema: { hide: true, response: { 204: z.null() } },
     },
     async (request, reply) => {
+      if (!options.googlePush) throw new ApiError("NOT_FOUND", "Not found.");
       const token = request.headers["x-goog-channel-token"];
       const channelId = request.headers["x-goog-channel-id"];
       if (typeof token !== "string" || !safeEqual(token, options.calendarChannelToken))

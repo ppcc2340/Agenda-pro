@@ -91,7 +91,6 @@ const noBreaks = (value: string): string => value.replace(/[\r\n\u2028\u2029]+/g
 /** RFC 2047 encoded-word for non-ASCII subjects, split so each encoded line stays short. */
 export function encodeSubject(subject: string): string {
   const clean = noBreaks(subject).slice(0, 250);
-  // eslint-disable-next-line no-control-regex -- ASCII printable range check
   if (/^[\x20-\x7e]*$/.test(clean)) return clean;
   const chunks: string[] = [];
   let current = "";

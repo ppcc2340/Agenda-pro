@@ -63,21 +63,26 @@ describe("googleAccess", () => {
       email: "ana@acme.test",
     };
     const accountId = await withWorkspace(handle.db, ws, async (tx) => {
-      const row = await upsertIntegrationAccount(tx, ws, {
-        provider: "google",
-        externalAccountId: "sub-1",
-        email: "ana@acme.test",
-        scopes: tokens.scopes,
-        encryptedTokens: "pending",
-        keyId: "local",
-      });
+      const row = await upsertIntegrationAccount(
+        tx,
+        ws,
+        {
+          provider: "google",
+          externalAccountId: "sub-1",
+          email: "ana@acme.test",
+          scopes: tokens.scopes,
+          encryptedTokens: "pending",
+          keyId: "local",
+        },
+        NOW,
+      );
       return row.id;
     });
     const blob = await encryptTokens(deps, ws, accountId, tokens);
     await withWorkspace(handle.db, ws, (tx) =>
       setIntegrationStatus(tx, ws, accountId, { encryptedTokens: blob }),
     );
-    return { ws: ws as WorkspaceId, accountId, refreshToken };
+    return { ws, accountId, refreshToken };
   }
 
   const stored = (ws: WorkspaceId, accountId: string) =>

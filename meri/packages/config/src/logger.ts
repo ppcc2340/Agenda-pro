@@ -12,6 +12,13 @@ export const REDACTED_PATHS = [
   "*.access_token",
   "*.refresh_token",
   "*.encryptedTokens",
+  // OAuth exchange material (ADR 0008): authorization codes, PKCE verifiers, ID tokens and the client secret.
+  "*.codeVerifier",
+  "*.code_verifier",
+  "*.id_token",
+  "*.idToken",
+  "*.client_secret",
+  "*.GOOGLE_CLIENT_SECRET",
   "*.apiKey",
   "*.secret",
   "*.authorization",
@@ -30,6 +37,21 @@ export const REDACTED_PATHS = [
   "*.err.parameters",
 ] as const;
 
+interface LoggableRequest {
+  method?: string;
+  url?: string;
+  host?: string;
+  ip?: string;
+}
+
+/**
+ * Request serializer: the path without its query string. Query strings carry OAuth `code`/`state` on the Google
+ * callback (ADR 0008) and search terms elsewhere; none of that belongs in logs.
+ */
+export function serializeRequest(req: LoggableRequest): Record<string, unknown> {
+  return { method: req.method, url: req.url?.split("?")[0], host: req.host, remoteAddress: req.ip };
+}
+
 export interface LoggerConfig {
   name: string;
   level?: string;
@@ -45,6 +67,7 @@ export function createLogger(config: LoggerConfig): Logger {
     level: config.level ?? "info",
     base: { service: config.name, ...config.base },
     redact: { paths: [...REDACTED_PATHS], censor: "[redacted]" },
+    serializers: { req: serializeRequest },
     timestamp: pino.stdTimeFunctions.isoTime,
   };
   if (config.pretty) {

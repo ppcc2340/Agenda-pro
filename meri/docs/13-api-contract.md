@@ -78,7 +78,7 @@ Fuente para que backend y frontend se construyan en paralelo. El OpenAPI generad
 | `GET /v1/integrations` | Cuentas, estado, scopes |
 |---|---|
 | `POST /v1/integrations/:provider/connect` | Devuelve URL de autorización |
-| `GET /v1/integrations/:provider/callback` | Intercambia código y guarda tokens cifrados |
+| `GET /v1/integrations/:provider/callback` | Intercambia código y guarda tokens cifrados. Redirige a `/control?integration=connected&feature=…`, `=denied` (el usuario canceló) o `=error` (intercambio fallido o concesión con un scope prohibido, que se revoca sin guardar nada; ADR 0008) |
 | `POST /v1/integrations/:id/pause` · `DELETE /v1/integrations/:id` | Pausar (también detiene la lectura de correo) / desconectar y purgar: hilos indexados, compromisos `proposed` y propuestas pendientes del correo se borran; los compromisos confirmados se conservan sin hilo (D-036) |
 | `POST /v1/integrations/:id/mail/sync` | Sincronización manual de Gmail (202) |
 | `GET /v1/audit` · `POST /v1/audit/:id/undo` | Actividad (con `undoneAt` derivado) y deshacer append-only: inserta `<acción>.undone` con `undo_of_audit_id` y aplica la compensación. Deshacibles: `plan.generated`, `plan.accepted`, `task.created`, `task.completed`, `block.pinned`, `block.completed`, `commitment.autoconfirmed` (D-034: vuelve a `proposed` y reabre la propuesta), `time.approved` (vuelve a `suggested`). `CONFLICT` si ya se deshizo o existe un plan posterior |
@@ -97,9 +97,9 @@ Fuente para que backend y frontend se construyan en paralelo. El OpenAPI generad
 | `GET /v1/billing/fake/complete?session=` | Solo con `STRIPE_MODE=fake` y fuera de producción: completa el checkout simulado procesando el webhook firmado por el mismo handler |
 
 ### Webhooks (sin sesión, con verificación)
-| `POST /webhooks/google/gmail` | Push de Google: token de canal compartido con Calendar en el MVP (ADR 0004); el JWT de Pub/Sub llega con el bloqueo `gmail` en vivo |
+| `POST /webhooks/google/gmail` | Push de Google: token de canal compartido con Calendar en el MVP (ADR 0004); el JWT de Pub/Sub llega con el bloqueo `gmail` en vivo. Con `GOOGLE_MODE=live` responde 404: solo *polling* (ADR 0008) |
 |---|---|
-| `POST /webhooks/google/calendar` | Canal `watch`, verificar `X-Goog-Channel-Token` |
+| `POST /webhooks/google/calendar` | Canal `watch`, verificar `X-Goog-Channel-Token`. Con `GOOGLE_MODE=live` responde 404: solo *polling* (ADR 0008) |
 | `POST /webhooks/stripe` | Firma `t=…,v1=` HMAC-SHA256 (5 min de tolerancia) sobre el cuerpo crudo; idempotencia por `event.id` en `stripe_events` en la misma transacción que los efectos; para `customer.subscription.*` e `invoice.*` se relee la suscripción y el workspace sale de sus metadatos; para `checkout.session.*` se relee la sesión. Un evento más antiguo que `subscriptions.last_event_at` no mueve el espejo, pero conserva sus propios efectos de factura (aviso de pago fallido). Una suscripción viva de un workspace borrado o desconocido se cancela en el proveedor (clave `orphan-<id>`); una segunda suscripción del mismo workspace se cancela (`duplicate-<id>`) y se audita `billing.duplicate_cancelled`. 400 firma inválida; 200 sin efectos si el workspace falta, no existe, está borrado o el cliente de Stripe no coincide, o si el proveedor responde con un error permanente; 5xx error transitorio |
 | `GET /health` · `GET /ready` | Sondas |
 

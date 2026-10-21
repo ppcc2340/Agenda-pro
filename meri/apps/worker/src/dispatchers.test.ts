@@ -96,6 +96,21 @@ describe("dispatchers skip logically deleted workspaces (D-054)", () => {
     await ensureDevRoles(TEST_ADMIN_URL);
     handle = createDb(TEST_APP_URL, { max: 2 });
     adminSql = postgres(TEST_ADMIN_URL, { max: 1, connection: { "app.workspace_id": ADMIN_WORKSPACE_CONTEXT } });
+    // A long-lived local test database keeps never-synced connections from earlier runs; past the polling batch
+    // (500) they would crowd this run's accounts out. Mark leftovers older than an hour as synced, one workspace at a
+    // time (RLS: the admin context is read-only). A fresh CI database has none.
+    await adminSql.unsafe(`
+      do $$
+      declare ws uuid;
+      begin
+        for ws in select distinct workspace_id from integration_accounts
+                  where last_sync_at is null and created_at < now() - interval '1 hour' loop
+          perform set_config('app.workspace_id', ws::text, true);
+          update integration_accounts set last_sync_at = created_at
+            where workspace_id = ws and last_sync_at is null and created_at < now() - interval '1 hour';
+        end loop;
+        perform set_config('app.workspace_id', '*', true);
+      end $$;`);
     alive = await prepared("alive");
     deleted = await prepared("deleted");
     await softDeleteAccount(handle.db, { userId: deleted.userId, workspaceId: deleted.workspaceId, now: NOW });

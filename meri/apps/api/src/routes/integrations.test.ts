@@ -1,5 +1,5 @@
 import type { FakeGoogleOAuth } from "@meri/integrations";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { getEncryptedTokens, withWorkspace, type AccountIdentity } from "@meri/db";
 import type { FakeCalendar } from "@meri/integrations";
 import { syncCalendarAccount } from "@meri/jobs";
@@ -104,6 +104,58 @@ describe("Google Calendar connection (F-04, D-021)", () => {
       items: unknown[];
     }>().items.length;
     expect(after).toBe(before);
+  });
+
+  async function startFlow(cookie: string) {
+    const start = await t.app.inject({
+      method: "POST",
+      url: "/v1/integrations/google/connect",
+      headers: { cookie, ...csrf },
+    });
+    const sealed = start.cookies.find((c) => c.name === "meri.oauth.state")?.value ?? "";
+    const url = new URL(start.json<{ url: string }>().url);
+    return { sealed, url };
+  }
+  const countAccounts = async (cookie: string) =>
+    (await t.app.inject({ url: "/v1/integrations", headers: { cookie } })).json<{ items: unknown[] }>().items
+      .length;
+
+  it("a failed code exchange (reused code) goes back to Control with an error, never a 500 (ADR 0008)", async () => {
+    const { sealed, url } = await startFlow(cookieB);
+    const headers = { cookie: `${cookieB}; meri.oauth.state=${sealed}` };
+    const first = await t.app.inject({ url: `${url.pathname}${url.search}`, headers });
+    expect(first.headers.location).toContain("integration=connected");
+    const before = await countAccounts(cookieB);
+    // The same code again: Google refuses it; the user lands on Control, nothing new is stored.
+    const replay = await t.app.inject({ url: `${url.pathname}${url.search}`, headers });
+    expect(replay.statusCode).toBe(302);
+    expect(replay.headers.location).toMatch(/\/control\?integration=error$/);
+    expect(await countAccounts(cookieB)).toBe(before);
+  });
+
+  it("refuses and revokes a grant that carries a forbidden scope, storing nothing (SEC-M1)", async () => {
+    const other = await t.createAccount("oauth-forbidden");
+    const cookie = await t.cookieFor(other);
+    const { sealed, url } = await startFlow(cookie);
+    const oauth = t.integrations.oauth as FakeGoogleOAuth;
+    const exchange = oauth.exchangeCode.bind(oauth);
+    const spy = vi.spyOn(oauth, "exchangeCode").mockImplementationOnce(async (input) => {
+      const tokens = await exchange(input);
+      return { ...tokens, scopes: [...tokens.scopes, "https://www.googleapis.com/auth/gmail.send"] };
+    });
+    const cb = await t.app.inject({
+      url: `${url.pathname}${url.search}`,
+      headers: { cookie: `${cookie}; meri.oauth.state=${sealed}` },
+    });
+    spy.mockRestore();
+    expect(cb.headers.location).toMatch(/integration=error$/);
+    expect(await countAccounts(cookie)).toBe(0);
+    expect(oauth.revoked.length).toBeGreaterThan(0);
+    expect(
+      t.dispatcher.jobs.some(
+        (j) => (j.payload as { workspaceId?: string }).workspaceId === other.workspaceId,
+      ),
+    ).toBe(false);
   });
 
   it("binds the signed state to the workspace that started the flow and to its PKCE verifier (ADR 0007)", async () => {
@@ -272,6 +324,28 @@ describe("Google Calendar connection (F-04, D-021)", () => {
     });
     expect(ok.statusCode).toBe(204);
     expect(t.dispatcher.jobs.length).toBe(before + 1);
+  });
+
+  it("in live mode the Google push webhooks do not exist: polling only (ADR 0008)", async () => {
+    const live = await createTestApp({
+      env: { GOOGLE_MODE: "live", GOOGLE_CLIENT_ID: "test-client", GOOGLE_CLIENT_SECRET: "test-secret" },
+    });
+    try {
+      for (const url of ["/webhooks/google/calendar", "/webhooks/google/gmail"]) {
+        const res = await live.app.inject({
+          method: "POST",
+          url,
+          headers: {
+            "x-goog-channel-token": "test-channel-token",
+            "x-goog-channel-id": `${a.workspaceId}:0192aaaa-0000-7000-8000-000000000001`,
+          },
+        });
+        expect(res.statusCode).toBe(404);
+      }
+      expect(live.dispatcher.jobs).toEqual([]);
+    } finally {
+      await live.close();
+    }
   });
 
   it("adds Gmail scopes incrementally on the same Google account and enqueues the first mail sync (ADR 0004)", async () => {
