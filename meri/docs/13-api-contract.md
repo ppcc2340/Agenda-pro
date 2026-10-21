@@ -27,6 +27,8 @@ Fuente para que backend y frontend se construyan en paralelo. El OpenAPI generad
 |---|---|
 | `POST /v1/waitlist` `{ email, consent: true, locale?, website? }` | **Sin sesión** (`config.public`, única ruta así). Exige `x-requested-with: meri` y `Origin` exacto (APP_URL/API_URL); 5/min por IP y un tope global por proceso (300/h); `website` es un campo trampa (si llega relleno no se guarda nada). Siempre `202 { ok: true }`, exista o no el correo. El rol de la app solo puede insertar en `waitlist` |
 | `POST /v1/feedback` `{ kind: bug|idea|other, message ≤ 2000, pagePath? }` | Comentario en el workspace; `pagePath` sin query ni fragmento; 10/min y 20/día por workspace (`RATE_LIMITED`). Nunca va a analítica ni a la IA. 201 `{ id }` |
+| `GET /v1/surveys/next` | `{ survey: "sean_ellis" | null }`: la encuesta Sean Ellis toca a partir de 14 días tras el onboarding, una vez por cuenta; descartada, vuelve a los 30 días, como mucho dos veces (D-101, `seanEllisEligibility` en `@meri/core`) |
+| `POST /v1/surveys/sean_ellis` `{ answer: very|somewhat|not|na, comment? ≤ 500 } | { dismiss: true }` | Solo si toca (`CONFLICT` si no); 204 |
 
 ### Tareas y captura
 | `GET/POST /v1/tasks` · `GET/PATCH/DELETE /v1/tasks/:id` | CRUD con filtros `status`, `clientId`, `dueBefore` |

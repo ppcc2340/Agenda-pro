@@ -1232,5 +1232,19 @@
     "submit": "Join",
     "done": "Done. We will write when there is a seat.",
     "error": "We could not add you. Check the address and try again."
+  },
+  "survey": {
+    "question": "How would you feel if you could no longer use Meri?",
+    "answer": {
+      "very": "Very disappointed",
+      "somewhat": "Somewhat disappointed",
+      "not": "Not disappointed",
+      "na": "I no longer use Meri"
+    },
+    "commentLabel": "What do you value most? (optional)",
+    "later": "Not now",
+    "send": "Send",
+    "thanks": "Thanks for answering.",
+    "dismissed": "Fine, we will ask later."
   }
 }

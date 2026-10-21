@@ -29,6 +29,7 @@ import { accountExportRoutes } from "./routes/export/route";
 import { healthRoutes } from "./routes/health";
 import { internalRoutes } from "./routes/internal";
 import { betaRoutes } from "./routes/beta";
+import { surveyRoutes } from "./routes/surveys";
 import { taskRoutes } from "./routes/tasks";
 import { captureRoutes } from "./routes/capture";
 import { proposalRoutes } from "./routes/proposals";
@@ -183,6 +184,7 @@ export async function buildApp(deps: AppDeps) {
     betaInviteRequired: config.env.BETA_INVITE_REQUIRED,
   });
   await app.register(betaRoutes, { db: deps.db, now: deps.now });
+  await app.register(surveyRoutes, { now: deps.now });
   await app.register(accountSessionRoutes, { db: deps.db });
   await app.register(accountExportRoutes, { db: deps.db, now: deps.now });
   await app.register(accountRoutes, {

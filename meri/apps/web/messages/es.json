@@ -1232,5 +1232,19 @@
     "submit": "Apuntarme",
     "done": "Listo. Te escribiremos cuando haya plaza.",
     "error": "No pudimos apuntarte. Revisa el correo e inténtalo de nuevo."
+  },
+  "survey": {
+    "question": "¿Cómo te sentirías si ya no pudieras usar Meri?",
+    "answer": {
+      "very": "Muy decepcionado",
+      "somewhat": "Algo decepcionado",
+      "not": "Nada decepcionado",
+      "na": "Ya no uso Meri"
+    },
+    "commentLabel": "¿Qué es lo que más te aporta? (opcional)",
+    "later": "Ahora no",
+    "send": "Enviar",
+    "thanks": "Gracias por responder.",
+    "dismissed": "De acuerdo, te preguntaremos más adelante."
   }
 }

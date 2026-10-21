@@ -42,7 +42,17 @@ export const keys = {
   billing: ["billing"] as const,
   value: ["value-report"] as const,
   reviews: ["reviews"] as const,
+  surveys: ["surveys"] as const,
 };
+
+/** Whether an in-app survey is due (D-101). */
+export function useNextSurvey() {
+  return useQuery({
+    queryKey: keys.surveys,
+    queryFn: () => clientApi<{ survey: "sean_ellis" | null }>("/v1/surveys/next"),
+    staleTime: 60 * 60_000,
+  });
+}
 
 /** Current plan (persisted blocks + last run). Polled: the worker replans in the background after each change. */
 export function usePlan(range: { from: string; to: string }) {

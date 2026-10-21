@@ -281,5 +281,7 @@ export const AUTHZ_MATRIX: Record<string, AuthzRule> = {
     noControl: "insert-only into the global waitlist; same answer whatever the address (beta.test.ts)",
   },
   "POST /v1/feedback": { kind: "own", body: { kind: "idea", message: "authz matrix" } },
+  "GET /v1/surveys/next": { kind: "own" },
+  "POST /v1/surveys/sean_ellis": { kind: "own", body: { dismiss: true } },
   "GET /v1/reviews/weekly": { kind: "own" },
 };

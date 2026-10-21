@@ -175,3 +175,13 @@ export {
   type WeeklyDay,
   type WeeklyReview,
 } from "./reviews/reviews";
+export {
+  SURVEY_FIRST_AFTER_DAYS,
+  SURVEY_MAX_DISMISSALS,
+  SURVEY_RETRY_AFTER_DAYS,
+  seanEllisEligibility,
+  seanEllisScore,
+  type SeanEllisAnswer,
+  type SurveyEligibility,
+  type SurveyEvent,
+} from "./beta/survey";

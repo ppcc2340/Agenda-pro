@@ -1,4 +1,5 @@
 import { getFormatter, getLocale } from "next-intl/server";
+import { SeanEllisCard } from "@/components/beta/sean-ellis-card";
 import { HoyView } from "@/components/plan/hoy-view";
 import { DailyClose } from "@/components/plan/daily-close";
 import { CaptureButton, PageHeader } from "@/components/shell/app-shell";
@@ -42,6 +43,7 @@ export default async function HoyPage() {
         pendingTasks={pending}
         gmailConnected={gmailConnected}
       />
+      <SeanEllisCard />
       <DailyClose
         timezone={prefs.timezone}
         workEnd={prefs.workEnd}
