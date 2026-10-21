@@ -79,6 +79,33 @@ describe("Google Calendar connection (F-04, D-021)", () => {
     expect(cb.json()).toMatchObject({ code: "FORBIDDEN" });
   });
 
+  it("a validly signed state from another flow is refused: the state parameter itself is compared", async () => {
+    const connect = () =>
+      t.app.inject({
+        method: "POST",
+        url: "/v1/integrations/google/connect",
+        headers: { cookie: cookieA, ...csrf },
+      });
+    const first = await connect();
+    const second = await connect();
+    const firstCookie = first.cookies.find((c) => c.name === "meri.oauth.state")?.value ?? "";
+    const secondUrl = new URL(second.json<{ url: string }>().url);
+    const before = (await t.app.inject({ url: "/v1/integrations", headers: { cookie: cookieA } })).json<{
+      items: unknown[];
+    }>().items.length;
+    // Flow 1's cookie is genuinely signed for this workspace; only its state differs from flow 2's callback.
+    const cb = await t.app.inject({
+      url: `${secondUrl.pathname}${secondUrl.search}`,
+      headers: { cookie: `${cookieA}; meri.oauth.state=${firstCookie}` },
+    });
+    expect(cb.statusCode).toBe(403);
+    expect(cb.json<{ detail: string }>().detail).toMatch(/state/i);
+    const after = (await t.app.inject({ url: "/v1/integrations", headers: { cookie: cookieA } })).json<{
+      items: unknown[];
+    }>().items.length;
+    expect(after).toBe(before);
+  });
+
   it("binds the signed state to the workspace that started the flow and to its PKCE verifier (ADR 0007)", async () => {
     const start = await t.app.inject({
       method: "POST",
