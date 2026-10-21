@@ -3,13 +3,14 @@
  * analytics or to the AI; the waitlist answers the same whether or not the address was already there.
  */
 import type { FastifyInstance } from "fastify";
+import type { Redis } from "ioredis";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import { z } from "zod";
 import { countFeedbackSince, insertFeedback, joinWaitlist, type Db } from "@meri/db";
 import { ApiError } from "../errors";
 import { requireSession, sessionOf } from "../plugins/session";
 
-/** Process-wide cap on waitlist sign-ups (SEC-M4): on top of the per-IP limit, bounds a distributed flood. */
+/** Global cap on waitlist sign-ups per hour (SEC-M4), shared across replicas through Redis: bounds a distributed flood. */
 export const WAITLIST_GLOBAL_PER_HOUR = 300;
 /** Feedback per workspace and day (SEC-L). */
 export const FEEDBACK_PER_DAY = 20;
@@ -43,11 +44,30 @@ const FeedbackBody = z.object({
 
 export function betaRoutes(
   app: FastifyInstance,
-  options: { db: Db; now: () => Date },
+  options: { db: Db; now: () => Date; redis?: Redis },
   done: () => void,
 ): void {
   const r = app.withTypeProvider<ZodTypeProvider>();
   let window = { hour: -1, count: 0 };
+  /**
+   * Sign-ups taken this hour. Shared by every API replica through Redis; if Redis is unavailable, a per-process
+   * counter keeps the cap (availability over exactness, like the rate limiter's skipOnError).
+   */
+  const takeSlot = async (hour: number): Promise<number> => {
+    if (options.redis) {
+      try {
+        const key = `meri:waitlist:global:${String(hour)}`;
+        const n = await options.redis.incr(key);
+        if (n === 1) await options.redis.expire(key, 3_700);
+        return n;
+      } catch (err) {
+        app.log.warn({ err }, "waitlist cap: Redis unavailable, counting per process");
+      }
+    }
+    if (window.hour !== hour) window = { hour, count: 0 };
+    window.count += 1;
+    return window.count;
+  };
 
   r.post(
     "/v1/waitlist",
@@ -58,10 +78,8 @@ export function betaRoutes(
     async (request, reply) => {
       const now = options.now();
       const hour = Math.floor(now.getTime() / 3_600_000);
-      if (window.hour !== hour) window = { hour, count: 0 };
-      if (window.count >= WAITLIST_GLOBAL_PER_HOUR)
+      if ((await takeSlot(hour)) > WAITLIST_GLOBAL_PER_HOUR)
         throw new ApiError("RATE_LIMITED", "The waitlist is busy, try again later.");
-      window.count += 1;
       // A filled honeypot gets the same answer and stores nothing.
       if (!request.body.website)
         await joinWaitlist(options.db, { email: request.body.email, locale: request.body.locale, now });

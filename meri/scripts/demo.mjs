@@ -85,8 +85,11 @@ const run = (cmd, cmdArgs, extra = {}) => {
 };
 run("pnpm", ["db:migrate"]);
 if (!args.includes("--no-seed")) run("pnpm", ["demo:seed", ...(args.includes("--reset") ? ["--", "--reset"] : [])]);
+// `next build` must run with NODE_ENV=production: the `.env` value (development) makes Next prerender its error pages
+// with the dev runtime and fail with "<Html> should not be imported outside of pages/_document". The fakes stay
+// allowed by APP_ENV=development + ALLOW_FAKES_ON_PRODUCTION_BUILD=1 (D-029).
 if (!dev && (args.includes("--build") || !existsSync(resolve(root, "apps/web/.next/BUILD_ID"))))
-  run("pnpm", ["--filter", "@meri/web", "build"]);
+  run("pnpm", ["--filter", "@meri/web", "build"], { env: { ...env, NODE_ENV: "production" } });
 
 const children = [
   spawn("pnpm", ["--filter", "@meri/api", "exec", "tsx", "src/main.ts"], { cwd: root, stdio: "inherit", env }),

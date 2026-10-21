@@ -72,7 +72,7 @@ Worker BullMQ ─────────────(3)(4)(5)(6)        Operado
 ### 3.4b Beta cerrada, experimento de precio y revisión de IA (fase 6)
 | STRIDE | Amenaza | Mitigación (mecanismo · evidencia) | Residual |
 |---|---|---|---|
-| D/S | Abuso de la única ruta sin sesión (`POST /v1/waitlist`): inundación, CSRF, sondeo de direcciones | cabecera `x-requested-with` y `Origin` exacto obligatorios, 5/min por IP y tope global, campo trampa, consentimiento, misma respuesta siempre (`routes/beta.ts`, `plugins/csrf.ts` · `beta.test.ts`, matriz `public`) | Tope global por proceso (no compartido entre réplicas) |
+| D/S | Abuso de la ruta pública sin sesión (`POST /v1/waitlist`): inundación, CSRF, sondeo de direcciones | cabecera `x-requested-with` y `Origin` exacto obligatorios, 5/min por IP y tope global, campo trampa, consentimiento, misma respuesta siempre (`routes/beta.ts`, `plugins/csrf.ts` · `beta.test.ts`, matriz `public`) | Si Redis cae, el tope vuelve a contarse por proceso |
 | I | Lectura de la lista de espera o de las invitaciones desde la app | el rol `meri_app` solo puede insertar en `waitlist` y no ve `beta_invites`; el alta usa `consume_beta_email()` (`SECURITY DEFINER`, migración 0022 · `repos/beta.test.ts`) | — |
 | I | Datos de la beta que sobreviven a la supresión | clase `global_personal`; `purge_workspace()` borra por los correos de los miembros; caducidad de 180 días; `pnpm beta:forget` (`purge.ts` · `beta.test.ts`, `account-erasure.test.ts`) | — |
 | T | El cliente elige la cohorte de precio barata | la cohorte la decide y la fija el servidor (`subscriptions.price_cohort`); el webhook solo acepta ids de precio configurados (`routes/billing.ts`, `billing/stripe.ts` · `price-cohorts.test.ts`, `stripe.test.ts`) | — |

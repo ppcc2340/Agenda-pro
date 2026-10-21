@@ -188,7 +188,11 @@ export async function buildApp(deps: AppDeps) {
     analytics: deps.integrations.analytics,
     betaInviteRequired: config.env.BETA_INVITE_REQUIRED,
   });
-  await app.register(betaRoutes, { db: deps.db, now: deps.now });
+  await app.register(betaRoutes, {
+    db: deps.db,
+    now: deps.now,
+    ...(deps.rateLimitRedis ? { redis: deps.rateLimitRedis } : {}),
+  });
   await app.register(surveyRoutes, { now: deps.now });
   await app.register(emailRoutes, { db: deps.db, now: deps.now, authSecret: config.env.AUTH_SECRET });
   await app.register(accountSessionRoutes, { db: deps.db });

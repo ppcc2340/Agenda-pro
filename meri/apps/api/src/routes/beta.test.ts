@@ -1,7 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createDb, ADMIN_WORKSPACE_CONTEXT, type DbHandle } from "@meri/db";
 import { INTERNAL_HEADER } from "../plugins/internal";
-import { FEEDBACK_PER_DAY } from "./beta";
+import { FEEDBACK_PER_DAY, WAITLIST_GLOBAL_PER_HOUR } from "./beta";
+import { Redis } from "ioredis";
 import { createTestApp, csrf, INTERNAL_SECRET, NOW, type TestApp } from "../test/harness";
 
 const TEST_ADMIN_URL = process.env.DATABASE_ADMIN_URL_TEST ?? "postgres://meri:meri@localhost:5432/meri_test";
@@ -61,6 +62,33 @@ describe("closed beta (D-099)", () => {
     for (let i = 0; i < 6; i += 1)
       codes.push((await join({ email: unique("burst"), consent: true }, undefined, "10.9.9.9")).statusCode);
     expect(codes).toEqual([202, 202, 202, 202, 202, 429]);
+  });
+
+  it("the hourly waitlist cap is shared through Redis across API processes", async () => {
+    const redis = new Redis(process.env.REDIS_URL_TEST ?? "redis://localhost:6379", {
+      maxRetriesPerRequest: 1,
+    });
+    const other = await createTestApp({ rateLimitRedis: redis });
+    try {
+      const key = `meri:waitlist:global:${String(Math.floor(NOW.getTime() / 3_600_000))}`;
+      // Another replica already took every slot this hour.
+      await redis.set(key, String(WAITLIST_GLOBAL_PER_HOUR), "EX", 120);
+      const email = unique("capped");
+      const res = await other.app.inject({
+        method: "POST",
+        url: "/v1/waitlist",
+        headers: { ...csrf, origin: ORIGIN },
+        payload: { email, consent: true },
+        remoteAddress: `10.7.${String(Math.floor(Math.random() * 250))}.${String(Math.floor(Math.random() * 250))}`,
+      });
+      expect(res.statusCode).toBe(429);
+      expect(await inWaitlist(email)).toBe(0);
+      expect(Number(await redis.get(key))).toBe(WAITLIST_GLOBAL_PER_HOUR + 1);
+      await redis.del(key);
+    } finally {
+      await other.close();
+      redis.disconnect();
+    }
   });
 
   it("an invite-only beta refuses a new address with BETA_INVITE_REQUIRED and accepts an invited one", async () => {

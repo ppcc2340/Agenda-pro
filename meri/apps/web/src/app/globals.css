@@ -143,6 +143,10 @@ h3 {
   outline-offset: 2px;
   border-radius: 6px;
 }
+/* On the dark rail the sea ring is ≈ 2.7:1; the rail's own ink keeps the focus ring above 3:1 (WCAG 1.4.11). */
+.bg-rail :focus-visible {
+  outline-color: var(--rail-ink);
+}
 .num {
   font-variant-numeric: tabular-nums;
 }

@@ -221,8 +221,10 @@ export function PlanPanel() {
             title={t("choose.title")}
             description={s.status === "trialing" ? t("choose.descTrial") : t("choose.descNow")}
           >
-            {/* D-102: the prices shown are this account's own (its price cohort) and fixed for it. */}
-            <p className="mb-3 text-[13px] text-ink2">{tPricing("cohortNote")}</p>
+            {/* D-102: only cohort B sees prices that differ from /precios; say they are its own and fixed. */}
+            {s.priceCohort === "B" ? (
+              <p className="mb-3 text-[13px] text-ink2">{tPricing("cohortNote")}</p>
+            ) : null}
             <PlanComparator
               busy={checkout.isPending}
               current={paid && s.plan !== "trial" ? s.plan : null}
