@@ -20,6 +20,7 @@ import { enqueueTimeInfer, type JobDispatcher } from "@meri/jobs";
 import { createErrorHandler, problemFrom, sendProblem } from "./errors";
 import { contextPlugin } from "./plugins/context";
 import { csrfPlugin } from "./plugins/csrf";
+import { authGatePlugin } from "./plugins/auth-gate";
 import { sessionPlugin } from "./plugins/session";
 import { accountGuardPlugin } from "./plugins/account-guard";
 import { accountRoutes } from "./routes/account";
@@ -73,6 +74,12 @@ export interface AppDeps {
 
 export const BODY_LIMIT_BYTES = 256 * 1024;
 
+declare module "fastify" {
+  interface FastifyInstance {
+    routeTable: readonly { method: string; url: string }[];
+  }
+}
+
 export type App = Awaited<ReturnType<typeof buildApp>>;
 
 export async function buildApp(deps: AppDeps) {
@@ -93,6 +100,12 @@ export async function buildApp(deps: AppDeps) {
 
   app.setValidatorCompiler(validatorCompiler);
   app.setSerializerCompiler(serializerCompiler);
+  // Every registered route, for the authorization matrix (P5-06): a route missing from the matrix fails the test.
+  const routeTable: { method: string; url: string }[] = [];
+  app.addHook("onRoute", (route) => {
+    for (const method of [route.method].flat()) if (method !== "HEAD") routeTable.push({ method, url: route.url });
+  });
+  app.decorate("routeTable", routeTable);
   const observability =
     deps.observability ??
     createObservability({
@@ -155,6 +168,7 @@ export async function buildApp(deps: AppDeps) {
 
   await app.register(sessionPlugin, { secret: config.env.AUTH_SECRET, secure: config.isProduction });
   await app.register(accountGuardPlugin, { db: deps.db });
+  await app.register(authGatePlugin);
   await app.register(csrfPlugin, { allowedOrigins: [config.env.APP_URL, config.env.API_URL] });
   await app.register(contextPlugin, { db: deps.db });
   await app.register(idempotencyPlugin, { now: deps.now });

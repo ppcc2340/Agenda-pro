@@ -1,0 +1,30 @@
+import type { FastifyInstance } from "fastify";
+import fp from "fastify-plugin";
+import { ApiError } from "../errors";
+
+declare module "fastify" {
+  interface FastifyContextConfig {
+    /** A `/v1` route reachable without a session (none today; the gate fails closed by default). */
+    public?: boolean;
+  }
+}
+
+/**
+ * Fail-closed authentication (ADR 0007, P5-06): every `/v1` request needs a live session before parsing or
+ * validation (`preParsing`: after the per-route rate limit, so anonymous floods are still throttled), unless the
+ * route opts out with `config.public`. Unknown paths keep their 404. A new route can never ship unauthenticated by
+ * forgetting `preHandler: requireSession` (which stays on routes as documentation and a second check).
+ * Runs after the session plugin and the account guard, so a deleted or revoked session is already gone.
+ */
+export const authGatePlugin = fp((app: FastifyInstance, _options, done) => {
+  app.addHook("preParsing", (request, _reply, payload, next) => {
+    const isV1 = request.url.startsWith("/v1/");
+    const matched = request.routeOptions.url !== undefined;
+    if (isV1 && matched && !request.session && request.routeOptions.config.public !== true) {
+      next(new ApiError("UNAUTHENTICATED", "Sign in to continue."));
+      return;
+    }
+    next(null, payload);
+  });
+  done();
+});

@@ -29,11 +29,13 @@ const originOf = (url: string): string | null => {
  */
 export const csrfPlugin = fp<CsrfOptions>((app: FastifyInstance, options, done) => {
   const allowed = new Set(options.allowedOrigins.map(originOf).filter((o): o is string => o !== null));
-  app.addHook("preHandler", (request, _reply, next) => {
+  // preParsing (after the per-route rate limit, before body parsing and validation): a forged request is refused
+  // before any route logic runs.
+  app.addHook("preParsing", (request, _reply, payload, next) => {
     const needsCheck =
       MUTATING.has(request.method) && request.url.startsWith("/v1/") && request.session !== null;
     if (!needsCheck) {
-      next();
+      next(null, payload);
       return;
     }
     if (request.headers[CSRF_HEADER] !== CSRF_VALUE) {
@@ -50,7 +52,7 @@ export const csrfPlugin = fp<CsrfOptions>((app: FastifyInstance, options, done) 
       next(new ApiError("FORBIDDEN", "Request origin refused."));
       return;
     }
-    next();
+    next(null, payload);
   });
   done();
 });
