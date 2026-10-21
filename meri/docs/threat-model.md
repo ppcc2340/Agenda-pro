@@ -69,6 +69,17 @@ Worker BullMQ ─────────────(3)(4)(5)(6)        Operado
 | S | Notificaciones *push* falsificadas en `live` | en `live` los webhooks de Google responden 404 (solo *polling*) hasta crear canales con token por canal (`app.ts` `googlePush` · `integrations.test.ts`) | *Push* real queda para después de la beta (deuda) |
 | D | Fallo del intercambio del código (código reutilizado, PKCE, Google caído) | redirección a `/control?integration=error`, nunca 500 (`routes/integrations-oauth.ts` · `integrations.test.ts`) | — |
 
+### 3.4b Beta cerrada, experimento de precio y revisión de IA (fase 6)
+| STRIDE | Amenaza | Mitigación (mecanismo · evidencia) | Residual |
+|---|---|---|---|
+| D/S | Abuso de la única ruta sin sesión (`POST /v1/waitlist`): inundación, CSRF, sondeo de direcciones | cabecera `x-requested-with` y `Origin` exacto obligatorios, 5/min por IP y tope global, campo trampa, consentimiento, misma respuesta siempre (`routes/beta.ts`, `plugins/csrf.ts` · `beta.test.ts`, matriz `public`) | Tope global por proceso (no compartido entre réplicas) |
+| I | Lectura de la lista de espera o de las invitaciones desde la app | el rol `meri_app` solo puede insertar en `waitlist` y no ve `beta_invites`; el alta usa `consume_beta_email()` (`SECURITY DEFINER`, migración 0022 · `repos/beta.test.ts`) | — |
+| I | Datos de la beta que sobreviven a la supresión | clase `global_personal`; `purge_workspace()` borra por los correos de los miembros; caducidad de 180 días; `pnpm beta:forget` (`purge.ts` · `beta.test.ts`, `account-erasure.test.ts`) | — |
+| T | El cliente elige la cohorte de precio barata | la cohorte la decide y la fija el servidor (`subscriptions.price_cohort`); el webhook solo acepta ids de precio configurados (`routes/billing.ts`, `billing/stripe.ts` · `price-cohorts.test.ts`, `stripe.test.ts`) | — |
+| E | Activar flags sin control | la app solo lee `feature_flags`; cambiarlos exige la conexión propietaria (`pnpm flags:set` · `flags.test.ts`) | — |
+| I | La muestra de calidad de IA filtra correo o datos de clientes | solo cuentas con consentimiento, nunca propuestas de correo, censura de correos, enlaces, RUT, teléfonos, números y nombres; sin ids; fichero 0600 borrado a los 30 días; auditoría `ai.review_sampled` (`scripts/lib/review-sample.ts`, `packages/core/src/beta/review-sample.ts` · `review-sample.test.ts`) | Censura por patrones: un dato raro puede escapar; revisión humana antes de usar un caso |
+| R | El panel de decisión modifica datos | sesión de solo lectura con contexto administrador de lectura (`scripts/lib/beta-panel.ts` · `beta-panel.test.ts`) | — |
+
 ### 3.5 Ingesta de correo → IA → propuestas
 | STRIDE | Amenaza | Mitigación | Residual |
 |---|---|---|---|

@@ -31,6 +31,7 @@
     "flags:set": "tsx scripts/flags-set.ts",
     "beta:panel": "tsx scripts/beta-panel.ts panel",
     "beta:report": "tsx scripts/beta-panel.ts report",
+    "ai:review-sample": "tsx scripts/ai-review-sample.ts",
     "eval": "pnpm --filter @meri/ai eval",
     "blockers": "node scripts/check-blockers.mjs",
     "format": "prettier --write .",

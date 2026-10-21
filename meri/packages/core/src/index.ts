@@ -207,3 +207,4 @@ export {
   type IndicatorResult,
   type Verdict,
 } from "./beta/decision";
+export { isReviewEligible, redactForReview, redactValue } from "./beta/review-sample";

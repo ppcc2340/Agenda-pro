@@ -6,13 +6,18 @@ import { useToast } from "@/components/ui/toast";
 import { clientApi } from "@/lib/client-api";
 import { keys, useApiMutation } from "@/lib/hooks/use-api";
 
-/** Auto-confirmation flag (D-034) and briefing reminders (D-043); the AI budget lives in «Créditos de IA». */
+/**
+ * Auto-confirmation flag (D-034), briefing reminders (D-043) and consent to the AI quality review (D-103, off by
+ * default); the AI budget lives in «Créditos de IA».
+ */
 export function AiSettings({
   gmailAutoconfirm,
   briefingBeforeMeetings,
+  evalConsent,
 }: {
   gmailAutoconfirm: boolean;
   briefingBeforeMeetings: boolean;
+  evalConsent: boolean;
 }) {
   const t = useTranslations("control.ai");
   const { toast } = useToast();
@@ -35,6 +40,16 @@ export function AiSettings({
     {
       onSuccess: (_d, value) => toast(value ? t("briefingOn") : t("briefingOff")),
       onError: (_e, value) => setBriefOn(!value),
+    },
+  );
+  const [evalOn, setEvalOn] = useState(evalConsent);
+  useEffect(() => setEvalOn(evalConsent), [evalConsent]);
+  const toggleEval = useApiMutation(
+    (value: boolean) => clientApi("/v1/preferences", { method: "PUT", json: { evalConsent: value } }),
+    [keys.audit],
+    {
+      onSuccess: (_d, value) => toast(value ? t("evalConsentOn") : t("evalConsentOff")),
+      onError: (_e, value) => setEvalOn(!value),
     },
   );
   return (
@@ -72,6 +87,24 @@ export function AiSettings({
           <span>
             <b>{t("briefing")}</b>
             <span className="block text-[13.5px] text-ink2">{t("briefingBody")}</span>
+          </span>
+        </label>
+      </div>
+      <div>
+        <label className="flex cursor-pointer items-start gap-3">
+          <input
+            type="checkbox"
+            className="mt-1"
+            checked={evalOn}
+            disabled={toggleEval.isPending}
+            onChange={(e) => {
+              setEvalOn(e.target.checked);
+              toggleEval.mutate(e.target.checked);
+            }}
+          />
+          <span>
+            <b>{t("evalConsent")}</b>
+            <span className="block text-[13.5px] text-ink2">{t("evalConsentBody")}</span>
           </span>
         </label>
       </div>

@@ -29,6 +29,7 @@ interface Preferences {
   autonomy: "suggest_only" | "auto_low_risk";
   gmailAutoconfirm: boolean;
   briefingBeforeMeetings: boolean;
+  evalConsent: boolean;
   retentionDays: number;
   vertical: "legal" | "consulting" | "generic";
 }
@@ -90,6 +91,7 @@ export default async function ControlPage() {
         <AiSettings
           gmailAutoconfirm={prefs.gmailAutoconfirm}
           briefingBeforeMeetings={prefs.briefingBeforeMeetings}
+          evalConsent={prefs.evalConsent}
         />
       </Panel>
       <Panel id="plan" title={t("plan.title")} desc={t("plan.desc")}>

@@ -25,6 +25,7 @@ export default async function MasAjustesPage() {
       autonomy: Autonomy;
       gmailAutoconfirm: boolean;
       briefingBeforeMeetings: boolean;
+      evalConsent: boolean;
       retentionDays: number;
     }>("/v1/preferences"),
   ]);
@@ -47,6 +48,7 @@ export default async function MasAjustesPage() {
         <AiSettings
           gmailAutoconfirm={prefs.gmailAutoconfirm}
           briefingBeforeMeetings={prefs.briefingBeforeMeetings}
+          evalConsent={prefs.evalConsent}
         />
       </Panel>
       <Panel title={tc("mailPrivacy.title")} desc={tc("mailPrivacy.desc")}>

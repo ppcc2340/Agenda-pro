@@ -24,6 +24,7 @@ Responsable / encargado: _razón social, domicilio y contacto del delegado de pr
 | 9 | Copias de seguridad | responsable / encargado | todos los anteriores | volcado cifrado completo | interés legítimo (continuidad) | ≤ 30 días; la restauración reaplica supresiones | almacenamiento de copias (humano) |
 | 10 | Beta cerrada: lista de espera e invitaciones (fase 6, D-099) | responsable | personas que piden acceso | correo, idioma, fecha de consentimiento | consentimiento (casilla en `/login`) | lista de espera: 180 días o hasta crear la cuenta; invitación: hasta crear la cuenta; borrado a petición (`pnpm beta:forget`) | hosting |
 | 11 | Comentarios y encuestas en la app (fase 6, D-099, D-101) | responsable | usuarios | tipo y texto del comentario, ruta de la página (sin parámetros); respuesta Sean Ellis y comentario ≤ 500 | interés legítimo (mejorar el producto) | mientras la cuenta exista | hosting; nunca a analítica ni a la IA |
+| 12 | Revisión de calidad de la IA (fase 6, D-103) | responsable | usuarios que lo consienten | propuestas descartadas o editadas que **no** vienen del correo, censuradas (sin correos, enlaces, RUT, teléfonos, números largos ni nombres de clientes o contactos), sin ids de cuenta | consentimiento (casilla en Control, apagada por defecto) | fichero local 0600 borrado a los 30 días; nunca en el repositorio | nadie fuera del equipo; nunca al proveedor de IA para entrenamiento |
 
 ## Medidas técnicas y organizativas (art. 32)
 

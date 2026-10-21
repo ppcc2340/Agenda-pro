@@ -285,7 +285,11 @@
       "briefing": "Avisarme un día antes de cada reunión con un cliente",
       "briefingBody": "Meri te sugiere abrir el briefing del cliente. No llama a la IA hasta que lo abras.",
       "briefingOn": "Avisos de briefing activados.",
-      "briefingOff": "Avisos de briefing desactivados."
+      "briefingOff": "Avisos de briefing desactivados.",
+      "evalConsent": "Ayudar a mejorar la IA de Meri",
+      "evalConsentBody": "Si lo activas, el equipo puede revisar cada semana una muestra de las propuestas que descartaste o editaste, con nombres, correos, teléfonos, enlaces y números ocultos. Nunca incluye nada que venga de tu correo. Puedes desactivarlo cuando quieras.",
+      "evalConsentOn": "Gracias: tus propuestas descartadas o editadas podrán entrar en la revisión de calidad.",
+      "evalConsentOff": "Tus propuestas ya no entrarán en la revisión de calidad."
     },
     "mailPrivacy": {
       "title": "Correo y privacidad",

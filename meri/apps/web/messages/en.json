@@ -285,7 +285,11 @@
       "briefing": "Remind me one day before each client meeting",
       "briefingBody": "Meri suggests opening the client briefing. The AI is not called until you open it.",
       "briefingOn": "Briefing reminders on.",
-      "briefingOff": "Briefing reminders off."
+      "briefingOff": "Briefing reminders off.",
+      "evalConsent": "Help improve Meri's AI",
+      "evalConsentBody": "If you turn this on, the team may review a weekly sample of the proposals you discarded or edited, with names, emails, phones, links and numbers hidden. It never includes anything from your mailbox. You can turn it off at any time.",
+      "evalConsentOn": "Thanks: your discarded or edited proposals may enter the quality review.",
+      "evalConsentOff": "Your proposals will no longer enter the quality review."
     },
     "mailPrivacy": {
       "title": "Mail and privacy",

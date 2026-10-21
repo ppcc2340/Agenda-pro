@@ -27,6 +27,8 @@ export const PreferencesSchema = z.object({
   briefingBeforeMeetings: z.boolean(),
   /** D-045: vertical template (source of truth; `workspaces.vertical` is deprecated). */
   vertical: z.enum(["legal", "consulting", "generic"]),
+  /** D-103: include this account's discarded or edited proposals (never mail-derived) in the AI review sample. */
+  evalConsent: z.boolean(),
 });
 export type Preferences = z.infer<typeof PreferencesSchema>;
 export const PreferencesPatchSchema = PreferencesSchema.partial().refine(
