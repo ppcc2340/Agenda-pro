@@ -13,6 +13,7 @@ import { MasHeader } from "@/components/shell/mas-header";
 import { Panel } from "@/components/ui/section";
 import { apiFetch } from "@/server/api";
 import { getServerConfig } from "@/server/config";
+import { isDemoAccount } from "@/server/demo-account";
 
 export default async function MasAjustesPage() {
   const t = await getTranslations("mas");
@@ -54,7 +55,7 @@ export default async function MasAjustesPage() {
         </Suspense>
       </Panel>
       <Panel title={tc("privacy.title")} desc={tc("privacy.desc")}>
-        <PrivacyPanel demoMode={env.DEMO_MODE} />
+        <PrivacyPanel demoMode={await isDemoAccount()} />
       </Panel>
       {/* On mobile there is no rail: theme, language and sign-out live here (criterion 10, es/en in both formats). */}
       <Panel title={t("account")} desc={t("accountDesc")}>

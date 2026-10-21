@@ -15,6 +15,7 @@ import { MailPrivacy } from "@/components/control/mail-privacy";
 import { ConnectionsPanel } from "@/components/control/connections";
 import { NotificationsPanel } from "@/components/control/notifications-panel";
 import { getServerConfig } from "@/server/config";
+import { isDemoAccount } from "@/server/demo-account";
 import { Button } from "@/components/ui/button";
 import { Panel } from "@/components/ui/section";
 import type { Notification } from "@/lib/types";
@@ -51,7 +52,7 @@ export default async function ControlPage() {
     apiFetch<AuditPage>("/v1/audit?limit=12"),
     apiFetch<{ items: Notification[] }>("/v1/notifications?limit=20").catch(() => ({ items: [] })),
   ]);
-  const { modes, env } = getServerConfig();
+  const { modes } = getServerConfig();
   const fakeMode = modes.google === "fake";
   return (
     <>
@@ -112,7 +113,7 @@ export default async function ControlPage() {
         </Suspense>
       </Panel>
       <Panel title={t("privacy.title")} desc={t("privacy.desc")}>
-        <PrivacyPanel demoMode={env.DEMO_MODE} />
+        <PrivacyPanel demoMode={await isDemoAccount()} />
       </Panel>
     </>
   );

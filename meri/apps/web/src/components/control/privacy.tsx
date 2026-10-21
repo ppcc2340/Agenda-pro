@@ -12,7 +12,8 @@ import { useApiMutation } from "@/lib/hooks/use-api";
 
 /**
  * «Privacidad» (demo): export downloads the JSON through the API rewrite (D-050); delete asks for confirmation and
- * signs out after the logical deletion (D-054). In DEMO_MODE nothing is deleted (D-049). «Sign out on all
+ * signs out after the logical deletion (D-054). `demoMode` is true only for the shared demo account in DEMO_MODE:
+ * nothing is deleted and no one is signed out (D-049). «Sign out on all
  * devices» ends every session, this one included (ADR 0007).
  */
 export function PrivacyPanel({ demoMode }: { demoMode: boolean }) {
