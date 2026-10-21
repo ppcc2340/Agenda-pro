@@ -23,6 +23,7 @@ export default async function LoginPage({
   const tApp = await getTranslations("app");
   const tSecurity = await getTranslations("security");
   const { modes, env } = getServerConfig();
+  const invited = params.beta === "invite";
   // DEMO_MODE (PROTOTYPE.md, D-049/D-053): sign in as the demo user without a form, through the route handler
   // that may set cookies. `?manual=1` (sign-out, E2E of other accounts) and `?error` keep the form.
   if (env.DEMO_MODE && modes.google !== "live" && params.manual !== "1" && !params.error)
@@ -50,10 +51,17 @@ export default async function LoginPage({
         </div>
         <h1 className="text-2xl">{t("title")}</h1>
         <p className="mt-2 text-ink2">{t("body")}</p>
-        {params.beta === "invite" ? (
-          <p role="alert" className="mt-4 rounded-lg bg-risk-soft px-3 py-2 text-risk">
-            {t("betaRequired")}
-          </p>
+        {invited ? (
+          // Not an error: a sign-in without invitation lands here, and the next step is right below.
+          <section className="mt-4" aria-labelledby="beta-title">
+            <h2 id="beta-title" className="sr-only">
+              {t("betaTitle")}
+            </h2>
+            <p role="status" className="rounded-lg border border-rule bg-panel px-3 py-2">
+              {t("betaRequired")}
+            </p>
+            <WaitlistForm />
+          </section>
         ) : null}
         {params.error ? (
           <p role="alert" className="mt-4 rounded-lg bg-risk-soft px-3 py-2 text-risk">
@@ -95,7 +103,7 @@ export default async function LoginPage({
             </Button>
           </form>
         )}
-        {env.BETA_INVITE_REQUIRED || params.beta === "invite" ? (
+        {env.BETA_INVITE_REQUIRED && !invited ? (
           <section className="mt-6 border-t border-rule pt-5" aria-labelledby="beta-title">
             <h2 id="beta-title" className="text-base">
               {t("betaTitle")}

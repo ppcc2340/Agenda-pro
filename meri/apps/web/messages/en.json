@@ -195,7 +195,8 @@
         "account_deleted": "You deleted your account.",
         "account_sessions_revoked": "You signed out on all devices.",
         "security_keys_rotated": "Meri renewed the encryption keys of your connections.",
-        "mail_retention_applied": "Meri deleted indexed mail and dismissed proposals per the retention period you chose."
+        "mail_retention_applied": "Meri deleted indexed mail and dismissed proposals per the retention period you chose.",
+        "ai_review_sampled": "Proposals included in the AI quality review"
       },
       "undoneOf": "Undone: {text}",
       "undoDone": "Action undone.",
@@ -287,9 +288,9 @@
       "briefingOn": "Briefing reminders on.",
       "briefingOff": "Briefing reminders off.",
       "evalConsent": "Help improve Meri's AI",
-      "evalConsentBody": "If you turn this on, the team may review a weekly sample of the proposals you discarded or edited, with names, emails, phones, links and numbers hidden. It never includes anything from your mailbox. You can turn it off at any time.",
+      "evalConsentBody": "If you turn this on, the team may review a weekly sample of the proposals you discarded or edited (captures, calendar and planner), with names, emails, phones, links, numbers and identifiers hidden. It never includes anything from your mailbox. Each sample shows in your activity and is deleted after 30 days.",
       "evalConsentOn": "Thanks: your discarded or edited proposals may enter the quality review.",
-      "evalConsentOff": "Your proposals will no longer enter the quality review."
+      "evalConsentOff": "Your proposals will no longer enter new samples. Samples already taken are deleted after 30 days."
     },
     "mailPrivacy": {
       "title": "Mail and privacy",
@@ -386,7 +387,7 @@
     "error": "We could not sign you in. Please try again.",
     "betaTitle": "Meri is in closed beta",
     "betaBody": "Creating an account needs an invitation. Join the waitlist and we will write to you.",
-    "betaRequired": "Your address does not have a beta invitation yet."
+    "betaRequired": "Creating a Meri account needs an invitation, and this email does not have one yet. Join the waitlist and we will write to you when there is a seat."
   },
   "onboarding": {
     "title": "Before we start",
@@ -438,7 +439,10 @@
       "p4": "You can export and delete all your data from the Control centre. Connections can be revoked at any time.",
       "p5": "Contact: privacy@ on Meri's domain (domain pending).",
       "p6": "Meri's use and transfer to any other app of information received from Google APIs will adhere to the Google API Services User Data Policy, including the Limited Use requirements.",
-      "p6link": "Google API Services User Data Policy"
+      "p6link": "Google API Services User Data Policy",
+      "p7": "Closed beta: if you join the waitlist we keep your email, language and the date of your consent so we can write to you about the beta, for up to 180 days or until you create your account. You can ask us to delete it sooner through the privacy contact.",
+      "p8": "Feedback and surveys: what you send with “Send feedback” (type, text and the page, without parameters) and your survey answers are stored with your account, read by the Meri team and deleted with it. They are never sent to analytics or to the AI.",
+      "p9": "Improving the AI (optional, off by default): if you turn on “Help improve Meri's AI”, the team may review a weekly sample of the proposals you discarded or edited that do not come from your mailbox, with names, emails, phones, links, numbers and identifiers hidden. The sample is kept outside the application and deleted after 30 days; each time one is taken, it is noted in your activity."
     },
     "terms": {
       "p1": "Meri is an assistance tool. Legal dates and procedural deadlines must always be verified with your own professional judgement.",
@@ -1013,7 +1017,9 @@
     "choose": "Choose {plan}",
     "chooseShort": "Choose",
     "startTrial": "Start the trial",
-    "trialNote": "The trial lasts 14 days with {credits} AI credits and needs no card. Nothing is deleted if you stop."
+    "trialNote": "The trial lasts 14 days with {credits} AI credits and needs no card. Nothing is deleted if you stop.",
+    "cohortNote": "These are your account's prices during the beta, and they will not change for you.",
+    "publicNote": "During the beta some accounts see different prices as part of a test; the price you see when you choose your plan is yours and does not change."
   },
   "billing": {
     "loading": "Loading your plan…",
@@ -1226,16 +1232,19 @@
     "messageLabel": "Comment",
     "privacy": "Stored with your account together with the page you are on (without parameters). Never sent to analytics or to the AI.",
     "send": "Send",
-    "thanks": "Thanks. We got it."
+    "thanks": "Thanks. We got it.",
+    "error": "We could not send your feedback. Please try again.",
+    "limit": "You have sent a lot of feedback today. Try again tomorrow or write to us by email."
   },
   "waitlist": {
     "title": "Beta waitlist",
     "email": "Email",
     "website": "Leave empty",
     "consent": "I agree that Meri may write to me about the beta. We keep the address for up to 180 days (<privacy>privacy</privacy>).",
-    "submit": "Join",
-    "done": "Done. We will write when there is a seat.",
-    "error": "We could not add you. Check the address and try again."
+    "submit": "Join the list",
+    "done": "Done. We will write to you when a seat opens up.",
+    "error": "We could not add that email. Check it and try again.",
+    "limit": "Too many attempts in a row. Wait a minute and try again."
   },
   "survey": {
     "question": "How would you feel if you could no longer use Meri?",
@@ -1249,6 +1258,8 @@
     "later": "Not now",
     "send": "Send",
     "thanks": "Thanks for answering.",
-    "dismissed": "Fine, we will ask later."
+    "dismissed": "Fine. We may ask you later.",
+    "eyebrow": "A quick question",
+    "error": "We could not save your answer. Please try again."
   }
 }

@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Segmented } from "@/components/ui/segmented";
 import { useToast } from "@/components/ui/toast";
-import { clientApi } from "@/lib/client-api";
+import { ClientApiError, clientApi } from "@/lib/client-api";
 import { useApiMutation } from "@/lib/hooks/use-api";
 
 type Kind = "bug" | "idea" | "other";
@@ -24,6 +24,7 @@ export function FeedbackDialog({ triggerClassName }: { triggerClassName?: string
   const [open, setOpen] = useState(false);
   const [kind, setKind] = useState<Kind>("idea");
   const [message, setMessage] = useState("");
+  const [error, setError] = useState<"limit" | "error" | null>(null);
   const send = useApiMutation(
     (body: { kind: Kind; message: string; pagePath: string }) =>
       clientApi<{ id: string }>("/v1/feedback", { method: "POST", json: body }),
@@ -32,8 +33,12 @@ export function FeedbackDialog({ triggerClassName }: { triggerClassName?: string
       onSuccess: () => {
         toast(t("thanks"));
         setMessage("");
+        setError(null);
         setOpen(false);
       },
+      // Shown in the dialog, in the person's language: the text they wrote stays there to retry.
+      onError: (e) =>
+        setError(e instanceof ClientApiError && e.problem.code === "RATE_LIMITED" ? "limit" : "error"),
     },
   );
   return (
@@ -51,7 +56,10 @@ export function FeedbackDialog({ triggerClassName }: { triggerClassName?: string
           <Button
             variant="primary"
             disabled={message.trim().length === 0 || send.isPending}
-            onClick={() => send.mutate({ kind, message: message.trim(), pagePath: pathname })}
+            onClick={() => {
+              setError(null);
+              send.mutate({ kind, message: message.trim(), pagePath: pathname });
+            }}
           >
             {t("send")}
           </Button>
@@ -79,6 +87,11 @@ export function FeedbackDialog({ triggerClassName }: { triggerClassName?: string
             />
           </label>
           <p className="text-[12.5px] text-ink3">{t("privacy")}</p>
+          {error ? (
+            <p role="alert" className="rounded-lg bg-risk-soft px-3 py-2 text-risk">
+              {t(error)}
+            </p>
+          ) : null}
         </div>
       </DialogContent>
     </Dialog>

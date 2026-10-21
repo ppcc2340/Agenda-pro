@@ -54,6 +54,7 @@ function statusPill(sub: BillingSubscription, t: ReturnType<typeof useTranslatio
  */
 export function PlanPanel() {
   const t = useTranslations("billing");
+  const tPricing = useTranslations("pricing");
   const format = useFormatter();
   const { toast } = useToast();
   useReturnToast();
@@ -220,6 +221,8 @@ export function PlanPanel() {
             title={t("choose.title")}
             description={s.status === "trialing" ? t("choose.descTrial") : t("choose.descNow")}
           >
+            {/* D-102: the prices shown are this account's own (its price cohort) and fixed for it. */}
+            <p className="mb-3 text-[13px] text-ink2">{tPricing("cohortNote")}</p>
             <PlanComparator
               busy={checkout.isPending}
               current={paid && s.plan !== "trial" ? s.plan : null}

@@ -1,10 +1,11 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
-import { clientApi } from "@/lib/client-api";
+import { ClientApiError, clientApi } from "@/lib/client-api";
 import { keys, useApiMutation, useNextSurvey } from "@/lib/hooks/use-api";
 
 type Answer = "very" | "somewhat" | "not" | "na";
@@ -18,24 +19,43 @@ export function SeanEllisCard() {
   const t = useTranslations("survey");
   const { toast } = useToast();
   const next = useNextSurvey();
+  const qc = useQueryClient();
+  /** The card disappears after an answer: keep keyboard focus on the page instead of losing it to <body>. */
+  const keepFocus = () => document.querySelector<HTMLElement>("main h1")?.focus();
   const [answer, setAnswer] = useState<Answer | null>(null);
   const [comment, setComment] = useState("");
   const send = useApiMutation(
     (body: { answer: Answer; comment?: string } | { dismiss: true }) =>
       clientApi("/v1/surveys/sean_ellis", { method: "POST", json: body }),
     [keys.surveys],
-    { onSuccess: (_d, body) => toast("dismiss" in body ? t("dismissed") : t("thanks")) },
+    {
+      onSuccess: (_d, body) => {
+        toast("dismiss" in body ? t("dismissed") : t("thanks"));
+        keepFocus();
+      },
+      onError: (e) => {
+        // Already answered in another tab: just hide the card.
+        if (e instanceof ClientApiError && e.problem.code === "CONFLICT") {
+          void qc.invalidateQueries({ queryKey: keys.surveys });
+          keepFocus();
+        } else toast(t("error"));
+      },
+    },
   );
   if (next.data?.survey !== "sean_ellis") return null;
   return (
     <section aria-labelledby="sean-ellis-title" className="mt-6 rounded-2xl border border-rule bg-raised p-5">
-      <h2 id="sean-ellis-title" className="text-lg">
+      <p className="text-[12.5px] font-semibold uppercase tracking-wide text-ink3">{t("eyebrow")}</p>
+      <h2 id="sean-ellis-title" className="mt-1 text-lg">
         {t("question")}
       </h2>
       <fieldset className="mt-3 flex flex-col gap-2">
         <legend className="sr-only">{t("question")}</legend>
         {ANSWERS.map((a) => (
-          <label key={a} className="flex items-center gap-2.5 rounded-lg border border-rule px-3 py-2">
+          <label
+            key={a}
+            className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-rule px-3 py-2 has-[:checked]:border-sea has-[:checked]:bg-sea-soft has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-sea"
+          >
             <input
               type="radio"
               name="sean-ellis"

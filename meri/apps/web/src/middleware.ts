@@ -1,7 +1,21 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { buildCsp, newNonce } from "./server/csp";
 
-const PUBLIC = ["/login", "/privacy", "/terms", "/precios", "/seguridad", "/api/auth", "/api/demo", "/api/session", "/manifest.webmanifest", "/icon", "/mobile"];
+// `/api/v1/waitlist` is the one public API route (D-099): the API itself checks CSRF, Origin and rate limits.
+const PUBLIC = [
+  "/login",
+  "/privacy",
+  "/terms",
+  "/precios",
+  "/seguridad",
+  "/api/auth",
+  "/api/demo",
+  "/api/session",
+  "/api/v1/waitlist",
+  "/manifest.webmanifest",
+  "/icon",
+  "/mobile",
+];
 
 /**
  * Per-request CSP nonce (D-080): Next reads the policy from the request headers and stamps the nonce on its own

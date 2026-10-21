@@ -72,6 +72,7 @@ const ACTION_KEYS = [
   "account_sessions_revoked",
   "security_keys_rotated",
   "mail_retention_applied",
+  "ai_review_sampled",
 ] as const;
 type ActionKey = (typeof ACTION_KEYS)[number];
 const toKey = (action: string): ActionKey | null => {

@@ -144,7 +144,10 @@ export function PageHeader({
   return (
     <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-start md:justify-between md:gap-5">
       <div>
-        <h1 className="text-[28px] leading-[1.1] md:text-[34px]">{title}</h1>
+        {/* Focusable by script only: where focus goes when a card the person was using disappears. */}
+        <h1 tabIndex={-1} className="text-[28px] leading-[1.1] outline-none md:text-[34px]">
+          {title}
+        </h1>
         {subtitle ? <p className="mt-2 max-w-[60ch] text-[15.5px] text-ink2">{subtitle}</p> : null}
       </div>
       {action}

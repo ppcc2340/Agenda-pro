@@ -11,7 +11,7 @@ export async function LegalPage({ kind }: { kind: "privacy" | "terms" }) {
   const tSecurity = await getTranslations("security");
   const paragraphs =
     kind === "privacy"
-      ? (["p1", "p2", "p3", "p6", "p4", "p5"] as const)
+      ? (["p1", "p2", "p3", "p6", "p7", "p8", "p9", "p4", "p5"] as const)
       : (["p1", "p2", "p3", "p4"] as const);
   return (
     <main className="mx-auto max-w-[70ch] px-4 py-10">

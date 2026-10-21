@@ -195,7 +195,8 @@
         "account_deleted": "Eliminaste tu cuenta.",
         "account_sessions_revoked": "Cerraste la sesión en todos los dispositivos.",
         "security_keys_rotated": "Meri renovó las claves de cifrado de tus conexiones.",
-        "mail_retention_applied": "Meri borró correo indexado y propuestas descartadas según el plazo de conservación que elegiste."
+        "mail_retention_applied": "Meri borró correo indexado y propuestas descartadas según el plazo de conservación que elegiste.",
+        "ai_review_sampled": "Propuestas incluidas en la revisión de calidad de la IA"
       },
       "undoneOf": "Deshecho: {text}",
       "undoDone": "Acción deshecha.",
@@ -287,9 +288,9 @@
       "briefingOn": "Avisos de briefing activados.",
       "briefingOff": "Avisos de briefing desactivados.",
       "evalConsent": "Ayudar a mejorar la IA de Meri",
-      "evalConsentBody": "Si lo activas, el equipo puede revisar cada semana una muestra de las propuestas que descartaste o editaste, con nombres, correos, teléfonos, enlaces y números ocultos. Nunca incluye nada que venga de tu correo. Puedes desactivarlo cuando quieras.",
+      "evalConsentBody": "Si lo activas, el equipo puede revisar cada semana una muestra de las propuestas que descartaste o editaste (capturas, calendario y planificador), con nombres, correos, teléfonos, enlaces, números e identificadores ocultos. Nunca incluye nada que venga de tu correo. Cada muestra queda en tu actividad y se borra a los 30 días.",
       "evalConsentOn": "Gracias: tus propuestas descartadas o editadas podrán entrar en la revisión de calidad.",
-      "evalConsentOff": "Tus propuestas ya no entrarán en la revisión de calidad."
+      "evalConsentOff": "Tus propuestas ya no entrarán en nuevas muestras. Las muestras ya tomadas se borran a los 30 días."
     },
     "mailPrivacy": {
       "title": "Correo y privacidad",
@@ -386,7 +387,7 @@
     "error": "No pudimos iniciar sesión. Vuelve a intentarlo.",
     "betaTitle": "Meri está en beta cerrada",
     "betaBody": "Para crear una cuenta hace falta una invitación. Apúntate a la lista de espera y te escribiremos.",
-    "betaRequired": "Tu correo todavía no tiene invitación a la beta."
+    "betaRequired": "Para crear una cuenta en Meri hace falta una invitación, y este correo todavía no tiene una. Únete a la lista de espera y te escribiremos cuando haya plaza."
   },
   "onboarding": {
     "title": "Antes de empezar",
@@ -438,7 +439,10 @@
       "p4": "Puedes exportar y eliminar todos tus datos desde el Centro de control. Las conexiones se pueden revocar en cualquier momento.",
       "p5": "Contacto: privacidad@ en el dominio de Meri (pendiente de dominio).",
       "p6": "El uso y la transferencia a cualquier otra aplicación de la información recibida de las API de Google por parte de Meri se ajustará a la Política de datos de usuario de los servicios de API de Google, incluidos los requisitos de uso limitado.",
-      "p6link": "Política de datos de usuario de los servicios de API de Google"
+      "p6link": "Política de datos de usuario de los servicios de API de Google",
+      "p7": "Beta cerrada: si te apuntas a la lista de espera guardamos tu correo, el idioma y la fecha de tu consentimiento para escribirte sobre la beta, hasta 180 días o hasta que crees tu cuenta. Puedes pedir que lo borremos antes escribiendo al contacto de privacidad.",
+      "p8": "Comentarios y encuestas: lo que envías con «Enviar comentarios» (tipo, texto y la página, sin parámetros) y tus respuestas a la encuesta se guardan con tu cuenta, los lee el equipo de Meri y se borran con ella. No se envían a analítica ni a la IA.",
+      "p9": "Mejora de la IA (opcional, desactivada por defecto): si activas «Ayudar a mejorar la IA de Meri», el equipo puede revisar cada semana una muestra de las propuestas que descartaste o editaste y que no vienen de tu correo, con nombres, correos, teléfonos, enlaces, números e identificadores ocultos. La muestra se guarda fuera de la aplicación y se borra a los 30 días; cada vez que se toma una, queda anotado en tu actividad."
     },
     "terms": {
       "p1": "Meri es una herramienta de asistencia. Las fechas legales y los plazos procesales deben verificarse siempre con tu propio criterio profesional.",
@@ -1013,7 +1017,9 @@
     "choose": "Elegir {plan}",
     "chooseShort": "Elegir",
     "startTrial": "Empezar la prueba",
-    "trialNote": "La prueba dura 14 días con {credits} créditos de IA y no pide tarjeta. Nada se borra si no continúas."
+    "trialNote": "La prueba dura 14 días con {credits} créditos de IA y no pide tarjeta. Nada se borra si no continúas.",
+    "cohortNote": "Estos son los precios de tu cuenta durante la beta y no cambiarán para ti.",
+    "publicNote": "Durante la beta, algunas cuentas ven precios distintos como parte de una prueba; el precio que ves al elegir tu plan es el tuyo y no cambia."
   },
   "billing": {
     "loading": "Cargando el plan…",
@@ -1226,29 +1232,34 @@
     "messageLabel": "Comentario",
     "privacy": "Se guarda con tu cuenta junto a la página en la que estás (sin parámetros). No se envía a analítica ni a la IA.",
     "send": "Enviar",
-    "thanks": "Gracias. Lo hemos recibido."
+    "thanks": "Gracias. Lo hemos recibido.",
+    "error": "No pudimos enviar el comentario. Inténtalo de nuevo.",
+    "limit": "Has enviado muchos comentarios hoy. Inténtalo mañana o escríbenos por correo."
   },
   "waitlist": {
     "title": "Lista de espera de la beta",
     "email": "Correo",
     "website": "No rellenar",
     "consent": "Acepto que Meri me escriba sobre la beta. Guardamos el correo hasta 180 días (<privacy>privacidad</privacy>).",
-    "submit": "Apuntarme",
-    "done": "Listo. Te escribiremos cuando haya plaza.",
-    "error": "No pudimos apuntarte. Revisa el correo e inténtalo de nuevo."
+    "submit": "Unirme a la lista",
+    "done": "Listo. Te escribiremos cuando haya una plaza libre.",
+    "error": "No pudimos añadir el correo. Revísalo e inténtalo de nuevo.",
+    "limit": "Demasiados intentos seguidos. Espera un minuto e inténtalo de nuevo."
   },
   "survey": {
     "question": "¿Cómo te sentirías si ya no pudieras usar Meri?",
     "answer": {
-      "very": "Muy decepcionado",
-      "somewhat": "Algo decepcionado",
-      "not": "Nada decepcionado",
+      "very": "Me decepcionaría mucho",
+      "somewhat": "Me decepcionaría un poco",
+      "not": "No me decepcionaría",
       "na": "Ya no uso Meri"
     },
     "commentLabel": "¿Qué es lo que más te aporta? (opcional)",
     "later": "Ahora no",
     "send": "Enviar",
     "thanks": "Gracias por responder.",
-    "dismissed": "De acuerdo, te preguntaremos más adelante."
+    "dismissed": "De acuerdo. Quizá te lo preguntemos más adelante.",
+    "eyebrow": "Una pregunta rápida",
+    "error": "No pudimos guardar la respuesta. Inténtalo de nuevo."
   }
 }
