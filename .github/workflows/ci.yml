@@ -67,8 +67,11 @@ jobs:
         run: pnpm db:migrate
       - name: "No email-sending code path (CLAUDE.md: only drafts in the MVP)"
         run: |
-          if grep -rnE "gmail\.send|messages\.send\(|users\.messages\.send|sendMail\(|nodemailer|createTransport\(" apps packages scripts --include=*.ts --include=*.tsx -l; then
-            echo "Forbidden email send path found"; exit 1; fi
+          # Per line: tests may name send routes to prove they 404, and the forbidden-scope list names gmail.send;
+          # any other mention is a failure unless the line carries the explicit marker "meri:send-guard".
+          hits=$(grep -rnE "gmail\.send|messages\.send\(|users\.messages\.send|sendMail\(|nodemailer|createTransport\(|messages/send|drafts/send|/send[\"'\`?]" apps packages scripts --include=*.ts --include=*.tsx \
+            | grep -vE "\.(test|spec)\.tsx?:" | grep -v "meri:send-guard" || true)
+          if [ -n "$hits" ]; then echo "$hits"; echo "Forbidden email send path found"; exit 1; fi
       - name: Verify (lint, typecheck, test, build, dependency rules)
         run: pnpm verify
       - name: Coverage thresholds (api ≥ 80 %, core ≥ 90 %)

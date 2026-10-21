@@ -35,7 +35,8 @@ export class GoogleUnauthorized extends IntegrationError {}
 export interface GoogleRequest {
   method?: "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
   url: string;
-  query?: Record<string, string | number | boolean | undefined | null>;
+  /** Arrays become repeated parameters (`metadataHeaders=From&metadataHeaders=To`). */
+  query?: Record<string, string | number | boolean | readonly string[] | undefined | null>;
   token?: TokenSupplier;
   json?: unknown;
   form?: Record<string, string>;
@@ -127,8 +128,11 @@ export class GoogleHttp {
         this.provider,
         `refusing to call ${url.protocol}//${url.hostname}`,
       );
-    for (const [k, v] of Object.entries(req.query ?? {}))
-      if (v !== undefined && v !== null) url.searchParams.set(k, String(v));
+    for (const [k, v] of Object.entries(req.query ?? {})) {
+      if (v === undefined || v === null) continue;
+      if (Array.isArray(v)) for (const item of v as readonly string[]) url.searchParams.append(k, item);
+      else url.searchParams.set(k, String(v));
+    }
     const headers: Record<string, string> = { accept: "application/json", ...req.headers };
     if (req.token)
       headers.authorization = `Bearer ${await req.token(forceRefresh ? { forceRefresh } : undefined)}`;

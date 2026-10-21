@@ -77,6 +77,11 @@ export class FakeGmail implements MailProvider {
   }
 
   createDraft(input: DraftInput): Promise<DraftRef> {
+    // A follow-up replies to one counterpart (same rule as the live adapter, ADR 0008).
+    if (input.to.length !== 1)
+      return Promise.reject(
+        new IntegrationError("Permanent", "gmail", "a follow-up draft has exactly one recipient"),
+      );
     if (!this.messages.has(input.inReplyToMessageId))
       return Promise.reject(this.notFound(input.inReplyToMessageId));
     const ref: DraftRef = { draftId: `fake-draft-${String(++this.draftCounter)}`, threadId: input.threadId };

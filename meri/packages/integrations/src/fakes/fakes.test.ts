@@ -3,6 +3,7 @@ import { z } from "zod";
 import { parseEnv, resolveModes } from "@meri/config";
 import { FakeCalendar } from "./calendar";
 import { calendarContract } from "../calendar/contract";
+import { mailContract } from "../mail/contract";
 import { FakeGmail } from "./mail";
 import { FakeAiClient } from "./ai";
 import { NoopAnalytics } from "./analytics";
@@ -30,6 +31,32 @@ describe("FakeCalendar contract (docs/07: Meri only touches its own events)", ()
 });
 
 describe("FakeGmail contract (readonly + drafts, no send)", () => {
+  mailContract(() => {
+    const mail = new FakeGmail({ email: "yo@acme.test" });
+    let n = 0;
+    return Promise.resolve({
+      mail,
+      deliver: (m) => {
+        n += 1;
+        const id = `m${String(n)}`;
+        const threadId = `t${String(n)}`;
+        mail.addMessage({
+          id,
+          threadId,
+          from: m.from,
+          to: [m.to],
+          subject: m.subject,
+          date: m.date,
+          headers: {},
+          labels: ["INBOX"],
+          snippet: m.body.slice(0, 200),
+          bodyText: m.body,
+        });
+        return Promise.resolve({ id, threadId });
+      },
+    });
+  });
+
   const msg = {
     id: "m1",
     threadId: "t1",
