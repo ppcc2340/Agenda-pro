@@ -9,7 +9,7 @@
 - [x] P5-04 **Privacidad F-16:** exportación completa (JSON+CSV), eliminación de cuenta (job `data.delete_account`) con verificación, revocación de conexiones desde UI, retención configurable.
 - [x] P5-05 **Auditoría visible** al usuario: pantalla de actividad y permisos.
 - [x] P5-06 **Pruebas de seguridad:** gitleaks, CodeQL, `pnpm audit`, SBOM, test de autorización (IDOR) por endpoint, fuzzing de parsers de correo/calendario.
-- [ ] P5-07 **Verificación de Google:** preparar paquete (política de privacidad, términos, justificación de scopes, vídeo de demo, dominio verificado, uso limitado de datos) y checklist para la evaluación CASA. Documentar en `docs/google-verification.md`.
+- [x] P5-07 **Verificación de Google:** preparar paquete (política de privacidad, términos, justificación de scopes, vídeo de demo, dominio verificado, uso limitado de datos) y checklist para la evaluación CASA. Documentar en `docs/google-verification.md`.
 - [ ] P5-08 **Documentación de cumplimiento:** registro de tratamiento, lista de subencargados, DPA plantilla, página "Cómo protegemos tus datos".
 - [ ] P5-09 **Runbooks completos:** incidentes, rotación de claves, caída de proveedor, restauración de backups.
 - [ ] P5-10 **Pruebas de recuperación ante desastres** (RPO/RTO documentados).

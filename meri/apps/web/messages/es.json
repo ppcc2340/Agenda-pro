@@ -421,7 +421,8 @@
       "p2": "Meri nunca envía correos en tu nombre: solo crea borradores. No modifica reuniones con terceros sin tu confirmación explícita.",
       "p3": "Los datos obtenidos de Google se usan únicamente para las funciones que ves en la aplicación, conforme a la política de uso limitado de datos de usuario de Google. No se usan para publicidad ni para entrenar modelos generales.",
       "p4": "Puedes exportar y eliminar todos tus datos desde el Centro de control. Las conexiones se pueden revocar en cualquier momento.",
-      "p5": "Contacto: privacidad@ en el dominio de Meri (pendiente de dominio)."
+      "p5": "Contacto: privacidad@ en el dominio de Meri (pendiente de dominio).",
+      "p6": "El uso y la transferencia a cualquier otra aplicación de la información recibida de las API de Google por parte de Meri se ajustará a la Política de datos de usuario de los servicios de API de Google, incluidos los requisitos de uso limitado."
     },
     "terms": {
       "p1": "Meri es una herramienta de asistencia. Las fechas legales y los plazos procesales deben verificarse siempre con tu propio criterio profesional.",

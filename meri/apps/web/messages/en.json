@@ -421,7 +421,8 @@
       "p2": "Meri never sends email on your behalf: it only creates drafts. It does not modify meetings with third parties without your explicit confirmation.",
       "p3": "Data obtained from Google is used solely for the features you see in the app, in line with Google's Limited Use policy. It is never used for advertising or to train general models.",
       "p4": "You can export and delete all your data from the Control centre. Connections can be revoked at any time.",
-      "p5": "Contact: privacy@ on Meri's domain (domain pending)."
+      "p5": "Contact: privacy@ on Meri's domain (domain pending).",
+      "p6": "Meri's use and transfer to any other app of information received from Google APIs will adhere to the Google API Services User Data Policy, including the Limited Use requirements."
     },
     "terms": {
       "p1": "Meri is an assistance tool. Legal dates and procedural deadlines must always be verified with your own professional judgement.",

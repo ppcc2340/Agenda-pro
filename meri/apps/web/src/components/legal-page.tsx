@@ -7,7 +7,7 @@ export async function LegalPage({ kind }: { kind: "privacy" | "terms" }) {
   const t = await getTranslations("legal");
   const tApp = await getTranslations("app");
   const paragraphs =
-    kind === "privacy" ? (["p1", "p2", "p3", "p4", "p5"] as const) : (["p1", "p2", "p3", "p4"] as const);
+    kind === "privacy" ? (["p1", "p2", "p3", "p6", "p4", "p5"] as const) : (["p1", "p2", "p3", "p4"] as const);
   return (
     <main className="mx-auto max-w-[70ch] px-4 py-10">
       <Link href="/" className="mb-6 flex items-center gap-2.5 font-head text-2xl font-bold tracking-tight">
