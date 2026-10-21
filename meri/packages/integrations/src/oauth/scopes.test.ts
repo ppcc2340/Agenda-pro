@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { CALENDAR_SCOPES, FORBIDDEN_SCOPES, GMAIL_SCOPES, hasCalendarScopes, scopesFor } from "./scopes";
+import {
+  CALENDAR_SCOPES,
+  FORBIDDEN_SCOPES,
+  GMAIL_SCOPES,
+  hasCalendarScopes,
+  hasForbiddenScope,
+  hasGmailScopes,
+  scopesFor,
+} from "./scopes";
 
 describe("Google scopes (docs/06 §1, D-093)", () => {
   it("never requests a forbidden scope for any feature", () => {
@@ -26,5 +34,14 @@ describe("Google scopes (docs/06 §1, D-093)", () => {
       ]),
     ).toBe(true);
     expect(hasCalendarScopes(["https://www.googleapis.com/auth/gmail.readonly"])).toBe(false);
+  });
+
+  it("every connection asks for the identity scopes; Gmail needs both read and drafts", () => {
+    for (const feature of ["calendar", "gmail", "all"] as const)
+      expect(scopesFor(feature).slice(0, 2)).toEqual(["openid", "email"]);
+    expect(hasGmailScopes([...GMAIL_SCOPES])).toBe(true);
+    expect(hasGmailScopes(["https://www.googleapis.com/auth/gmail.readonly"])).toBe(false);
+    expect(hasForbiddenScope(["openid", "https://www.googleapis.com/auth/gmail.send"])).toBe(true);
+    expect(hasForbiddenScope(scopesFor("all"))).toBe(false);
   });
 });

@@ -12,7 +12,19 @@ export interface GoogleHttpOptions {
   fetch?: typeof fetch;
   /** Per-request timeout (default 10 s, docs/12 §3). */
   timeoutMs?: number;
+  /** Hosts this client may call (default: Google's). Anything else is refused before a request is made. */
+  allowedHosts?: readonly string[];
+  /** Largest response body accepted (default 15 MB: a full Gmail message is bounded by Google at 25 MB raw). */
+  maxResponseBytes?: number;
 }
+
+export const GOOGLE_HOSTS = [
+  "accounts.google.com",
+  "oauth2.googleapis.com",
+  "openidconnect.googleapis.com",
+  "www.googleapis.com",
+  "gmail.googleapis.com",
+] as const;
 
 export type TokenSupplier = () => Promise<string>;
 
@@ -37,23 +49,18 @@ export interface GoogleResponse<T> {
 const RATE_LIMIT_REASONS = new Set(["rateLimitExceeded", "userRateLimitExceeded", "backendError"]);
 
 interface GoogleErrorBody {
-  message: string;
   reasons: string[];
 }
 
-function readError(json: unknown, status: number): GoogleErrorBody {
-  const fallback = { message: `HTTP ${String(status)}`, reasons: [] };
+function readError(json: unknown): GoogleErrorBody {
+  const fallback: GoogleErrorBody = { reasons: [] };
   if (typeof json !== "object" || json === null) return fallback;
   const record = json as Record<string, unknown>;
   // OAuth endpoints: { error: "invalid_grant", error_description: "…" }
-  if (typeof record.error === "string")
-    return {
-      message: typeof record.error_description === "string" ? record.error_description : record.error,
-      reasons: [record.error],
-    };
+  if (typeof record.error === "string") return { reasons: [record.error] };
   // REST APIs: { error: { code, message, errors: [{ reason }] , status } }
   if (typeof record.error === "object" && record.error !== null) {
-    const err = record.error as { message?: unknown; errors?: unknown; status?: unknown };
+    const err = record.error as { errors?: unknown; status?: unknown };
     const reasons = Array.isArray(err.errors)
       ? err.errors.flatMap((e) =>
           typeof e === "object" && e !== null && typeof (e as { reason?: unknown }).reason === "string"
@@ -62,7 +69,7 @@ function readError(json: unknown, status: number): GoogleErrorBody {
         )
       : [];
     if (typeof err.status === "string") reasons.push(err.status);
-    return { message: typeof err.message === "string" ? err.message : fallback.message, reasons };
+    return { reasons };
   }
   return fallback;
 }
@@ -75,6 +82,8 @@ const retryAfterMs = (header: string | null): number => {
 export class GoogleHttp {
   private readonly fetchImpl: typeof fetch;
   private readonly timeoutMs: number;
+  private readonly allowedHosts: ReadonlySet<string>;
+  private readonly maxResponseBytes: number;
 
   constructor(
     private readonly provider: string,
@@ -82,6 +91,8 @@ export class GoogleHttp {
   ) {
     this.fetchImpl = options.fetch ?? fetch;
     this.timeoutMs = options.timeoutMs ?? 10_000;
+    this.allowedHosts = new Set(options.allowedHosts ?? GOOGLE_HOSTS);
+    this.maxResponseBytes = options.maxResponseBytes ?? 15 * 1024 * 1024;
   }
 
   async request<T>(
@@ -89,6 +100,12 @@ export class GoogleHttp {
     req: GoogleRequest,
   ): Promise<GoogleResponse<T>> {
     const url = new URL(req.url);
+    if (url.protocol !== "https:" || !this.allowedHosts.has(url.hostname))
+      throw new IntegrationError(
+        "Permanent",
+        this.provider,
+        `refusing to call ${url.protocol}//${url.hostname}`,
+      );
     for (const [k, v] of Object.entries(req.query ?? {}))
       if (v !== undefined && v !== null) url.searchParams.set(k, String(v));
     const headers: Record<string, string> = { accept: "application/json", ...req.headers };
@@ -108,13 +125,20 @@ export class GoogleHttp {
         headers,
         body,
         signal: AbortSignal.timeout(this.timeoutMs),
+        // A redirect would carry the bearer token elsewhere: Google's APIs never need one.
+        redirect: "error",
       });
     } catch (cause) {
       throw new IntegrationError("Transient", this.provider, `network error talking to ${this.provider}`, {
         cause,
       });
     }
+    const declared = Number(res.headers.get("content-length") ?? 0);
+    if (declared > this.maxResponseBytes)
+      throw new IntegrationError("Permanent", this.provider, `${this.provider} response too large`);
     const text = await res.text().catch(() => "");
+    if (text.length > this.maxResponseBytes)
+      throw new IntegrationError("Permanent", this.provider, `${this.provider} response too large`);
     let json: unknown = null;
     if (text) {
       try {
@@ -133,8 +157,10 @@ export class GoogleHttp {
       return { status: res.status, body: parsed.data };
     }
     if (req.allow?.includes(res.status)) return { status: res.status, body: null };
-    const err = readError(json, res.status);
-    const message = `${this.provider} ${String(res.status)}: ${err.message.slice(0, 200)}`;
+    const err = readError(json);
+    // Status and Google's reason codes only: response texts may echo request data and end up in audit rows.
+    const reasons = err.reasons.filter((r) => /^[A-Za-z_]{1,64}$/.test(r)).slice(0, 3);
+    const message = `${this.provider} ${String(res.status)}${reasons.length ? ` ${reasons.join(",")}` : ""}`;
     if (res.status === 401 || err.reasons.includes("invalid_grant"))
       throw new IntegrationError("AuthExpired", this.provider, message);
     if (res.status === 429 || (res.status === 403 && err.reasons.some((r) => RATE_LIMIT_REASONS.has(r))))

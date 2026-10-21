@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { IntegrationError } from "../errors";
 import type { GoogleOAuth, OAuthTokens, RefreshedTokens } from "../oauth/types";
+import { IDENTITY_SCOPES } from "../oauth/scopes";
 import { GoogleHttp, type GoogleHttpOptions } from "./http";
 
 /** Google endpoints (overridable for tests against a simulated server). */
@@ -17,9 +18,6 @@ export const GOOGLE_OAUTH_ENDPOINTS: GoogleOAuthEndpoints = {
   userinfo: "https://openidconnect.googleapis.com/v1/userinfo",
   revoke: "https://oauth2.googleapis.com/revoke",
 };
-
-/** Identity is read from userinfo, which needs these on top of the feature scopes (incremental authorization). */
-const IDENTITY_SCOPES = ["openid", "email"] as const;
 
 const TokenResponse = z.object({
   access_token: z.string().min(1),
@@ -66,6 +64,7 @@ export class LiveGoogleOAuth implements GoogleOAuth {
     loginHint?: string;
     codeChallenge: string;
   }): string {
+    // Identity is read from userinfo: guaranteed here even if a caller passes only feature scopes.
     const scopes = [...new Set([...IDENTITY_SCOPES, ...input.scopes])];
     const url = new URL(this.endpoints.authorize);
     url.searchParams.set("client_id", this.options.clientId);

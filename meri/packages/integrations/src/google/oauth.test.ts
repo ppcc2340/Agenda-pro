@@ -52,6 +52,7 @@ function server() {
     clientId: "client-1",
     clientSecret: "secret",
     fetch: google.fetch,
+    allowedHosts: ["accounts.test", "oauth.test"],
     now: () => NOW,
     endpoints: {
       authorize: "https://accounts.test/auth",
@@ -164,7 +165,7 @@ describe("LiveGoogleOAuth (against a simulated Google)", () => {
 describe("GoogleHttp error mapping", () => {
   const call = async (reply: { status: number; json?: unknown; headers?: Record<string, string> }) => {
     const google = new SimulatedGoogle().on("GET", "/x", () => reply);
-    const http = new GoogleHttp("google-test", { fetch: google.fetch });
+    const http = new GoogleHttp("google-test", { fetch: google.fetch, allowedHosts: ["api.test"] });
     return http.request(z.object({ ok: z.boolean() }), { url: "https://api.test/x", allow: [410] });
   };
   const kindOf = async (reply: Parameters<typeof call>[0]) =>
@@ -213,11 +214,62 @@ describe("GoogleHttp error mapping", () => {
     const http = new GoogleHttp("google-test", {
       fetch: () => Promise.reject(new TypeError("fetch failed")),
       timeoutMs: 5,
+      allowedHosts: ["api.test"],
     });
     const err = await http
       .request(z.unknown(), { url: "https://api.test/x", token: () => Promise.resolve("secret-token") })
       .catch((e: unknown) => e);
     expect(err).toMatchObject({ kind: "Transient" });
     expect((err as Error).message).not.toContain("secret-token");
+  });
+
+  it("never calls a host outside the allowlist, follows no redirect and caps the response size", async () => {
+    const google = new SimulatedGoogle().on("GET", "/x", () => ({ json: { ok: true } }));
+    const http = new GoogleHttp("google-test", {
+      fetch: google.fetch,
+      allowedHosts: ["api.test"],
+      maxResponseBytes: 20,
+    });
+    await expect(http.request(z.unknown(), { url: "https://evil.test/x" })).rejects.toMatchObject({
+      kind: "Permanent",
+    });
+    await expect(http.request(z.unknown(), { url: "http://api.test/x" })).rejects.toMatchObject({
+      kind: "Permanent",
+    });
+    expect(google.requests).toHaveLength(0);
+    const big = new SimulatedGoogle().on("GET", "/x", () => ({ json: { ok: true, pad: "x".repeat(100) } }));
+    const capped = new GoogleHttp("google-test", {
+      fetch: big.fetch,
+      allowedHosts: ["api.test"],
+      maxResponseBytes: 20,
+    });
+    await expect(capped.request(z.unknown(), { url: "https://api.test/x" })).rejects.toThrow(/too large/);
+    // Production defaults allow only Google's hosts.
+    const prod = new GoogleHttp("google-test", { fetch: google.fetch });
+    await expect(prod.request(z.unknown(), { url: "https://api.test/x" })).rejects.toThrow(/refusing/);
+    let redirect: RequestRedirect | undefined;
+    const spy = new GoogleHttp("google-test", {
+      allowedHosts: ["api.test"],
+      fetch: (_u, init) => {
+        redirect = init?.redirect;
+        return Promise.resolve(new Response("{}", { status: 200 }));
+      },
+    });
+    await spy.request(z.unknown(), { url: "https://api.test/x" });
+    expect(redirect).toBe("error");
+  });
+
+  it("error messages carry the status and Google's reason codes, never response text", async () => {
+    const err = await call({
+      status: 400,
+      json: {
+        error: {
+          code: 400,
+          message: "Invalid value for to: ana@acme.com secret-payload",
+          errors: [{ reason: "invalid" }],
+        },
+      },
+    }).catch((e: unknown) => e);
+    expect((err as Error).message).toBe("google-test 400 invalid");
   });
 });

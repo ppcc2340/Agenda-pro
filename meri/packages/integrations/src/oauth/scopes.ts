@@ -25,11 +25,24 @@ export const GMAIL_SCOPES = [
 
 export type GoogleFeature = "calendar" | "gmail" | "all";
 
+/** Every connection also asks for the identity (userinfo `sub` + verified email, ADR 0008). */
+export const IDENTITY_SCOPES = ["openid", "email"] as const;
+
 export function scopesFor(feature: GoogleFeature): string[] {
-  if (feature === "calendar") return [...CALENDAR_SCOPES];
-  if (feature === "gmail") return [...GMAIL_SCOPES];
-  return [...CALENDAR_SCOPES, ...GMAIL_SCOPES];
+  const featureScopes =
+    feature === "calendar"
+      ? CALENDAR_SCOPES
+      : feature === "gmail"
+        ? GMAIL_SCOPES
+        : [...CALENDAR_SCOPES, ...GMAIL_SCOPES];
+  return [...IDENTITY_SCOPES, ...featureScopes];
 }
 
-export const hasGmailScopes = (scopes: readonly string[]): boolean => scopes.includes(GMAIL_SCOPES[0]);
+/** Gmail is usable only with both scopes: granular consent lets a user untick drafts (ADR 0008). */
+export const hasGmailScopes = (scopes: readonly string[]): boolean =>
+  GMAIL_SCOPES.every((s) => scopes.includes(s));
+
+/** True when a grant includes a scope Meri must never hold (refused at connection time). */
+export const hasForbiddenScope = (scopes: readonly string[]): boolean =>
+  scopes.some((s) => (FORBIDDEN_SCOPES as readonly string[]).includes(s));
 export const hasCalendarScopes = (scopes: readonly string[]): boolean => scopes.includes(CALENDAR_SCOPES[0]);

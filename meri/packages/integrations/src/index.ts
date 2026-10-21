@@ -26,6 +26,8 @@ export { FakeNotifier, type Notifier, type OutboundNotification } from "./notify
 export {
   GMAIL_SCOPES,
   FORBIDDEN_SCOPES,
+  IDENTITY_SCOPES,
+  hasForbiddenScope,
   scopesFor,
   hasGmailScopes,
   hasCalendarScopes,
