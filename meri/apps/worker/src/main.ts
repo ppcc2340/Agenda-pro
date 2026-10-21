@@ -44,7 +44,11 @@ loadDotenv("../../.env");
 
 async function main(): Promise<void> {
   const config = loadConfig(process.env);
-  const logger = createLogger({ name: "worker", level: config.env.LOG_LEVEL, pretty: !config.isProduction });
+  const logger = createLogger({
+    name: "worker",
+    level: config.env.LOG_LEVEL,
+    pretty: !config.isProduction && process.stdout.isTTY,
+  });
   if (config.fakesOnProductionBuild)
     logger.warn(
       "fake adapters on a production build (ALLOW_FAKES_ON_PRODUCTION_BUILD=1): never use this in a deployment",

@@ -1,3 +1,4 @@
+import { join } from "node:path";
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
 import { loadDotenv } from "@meri/config";
@@ -14,6 +15,10 @@ const nextConfig: NextConfig = {
   // `pnpm dev` writes to .next-dev so a concurrent `next build` (pnpm verify) never clobbers the running dev server.
   distDir: process.env.NEXT_DIST_DIR ?? ".next",
   transpilePackages: ["@meri/config", "@meri/core"],
+  // Container images (Dockerfile, D-098) ship the self-contained server; local runs keep `next start`.
+  ...(process.env.NEXT_OUTPUT === "standalone"
+    ? { output: "standalone" as const, outputFileTracingRoot: join(process.cwd(), "..", "..") }
+    : {}),
   poweredByHeader: false,
   // `pnpm lint` runs the repo-wide flat config (incl. react/jsx-no-literals); Next's own pass would be redundant.
   eslint: { ignoreDuringBuilds: true },

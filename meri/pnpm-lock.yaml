@@ -373,6 +373,9 @@ importers:
       drizzle-kit:
         specifier: ^0.31.0
         version: 0.31.11
+      tsup:
+        specifier: ^8.3.0
+        version: 8.5.1(@swc/core@1.16.18)(jiti@2.7.0)(postcss@8.5.31)(tsx@4.23.15)(typescript@5.9.3)(yaml@2.9.1)
       tsx:
         specifier: ^4.19.0
         version: 4.23.15

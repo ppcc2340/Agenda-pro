@@ -19,8 +19,10 @@ const docs = [
 const REPO_PATH = /^(apps|packages|scripts|docs|evals|phases|\.github)\/[\w./@[\]()-]+$/;
 /** A shortened citation such as `plugins/csrf.ts` or `logger.test.ts`: must be the tail of some tracked file. */
 const FILE_LIKE = /^[\w./@[\]()-]+\.(ts|tsx|mjs|sql|md|yml|json)$/;
+/** `.github/` lives at the git root, one level above the app folder: paths are listed from there. */
+const gitRoot = resolve(root, "..");
 const tracked = execFileSync("git", ["ls-files", "--cached", "--others", "--exclude-standard"], {
-  cwd: root,
+  cwd: gitRoot,
   encoding: "utf8",
 })
   .split("\n")
@@ -50,7 +52,7 @@ describe("paths cited in the security and compliance docs exist", () => {
   it.each(docs)("%s", (doc) => {
     const text = readFileSync(join(root, doc), "utf8");
     const missing = [
-      ...citedPaths(text).filter((p) => !existsSync(join(root, p))),
+      ...citedPaths(text).filter((p) => !existsSync(join(root, p)) && !existsSync(join(gitRoot, p))),
       ...citedFiles(text).filter((p) => !isTrackedTail(p)),
       ...relativeLinks(text).filter((href) => !existsSync(resolve(root, dirname(doc), href))),
     ];

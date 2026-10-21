@@ -1,0 +1,90 @@
+name: Images
+
+# Builds the four container images and boots them against throwaway Postgres/Redis (D-098). Nothing is pushed or
+# deployed: publishing to a registry and deploying are human steps (docs/runbooks/deploy.md).
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - meri/Dockerfile
+      - meri/.dockerignore
+      - meri/apps/**
+      - meri/packages/**
+      - meri/pnpm-lock.yaml
+      - .github/workflows/images.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: images-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: build and boot (api, worker, web, migrate)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: meri
+          POSTGRES_PASSWORD: meri
+          POSTGRES_DB: meri
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U meri" --health-interval 5s --health-timeout 5s --health-retries 10
+      redis:
+        image: redis:7
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DOCKER_BUILDKIT: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build images
+        working-directory: meri
+        run: |
+          for target in api worker web migrate; do
+            docker build --target "$target" --build-arg API_URL=http://127.0.0.1:4000 -t "meri-$target:ci" .
+          done
+      - name: Images run as an unprivileged user and carry no secrets
+        run: |
+          for target in api worker web migrate; do
+            uid=$(docker run --rm --entrypoint id "meri-$target:ci" -u)
+            if [ "$uid" = "0" ]; then echo "meri-$target runs as root"; exit 1; fi
+            if docker run --rm --entrypoint sh "meri-$target:ci" -c 'ls -a /app' | grep -E '^\.env'; then
+              echo "meri-$target contains an .env file"; exit 1
+            fi
+            if docker image inspect "meri-$target:ci" --format '{{json .Config.Env}}' | grep -iE 'SECRET|API_KEY|PASSWORD|MASTER_KEY'; then
+              echo "meri-$target bakes a secret into its environment"; exit 1
+            fi
+          done
+      - name: Boot the stack from the images (fake adapters, throwaway values)
+        run: |
+          common=(--network host -e NODE_ENV=production -e APP_ENV=development -e ALLOW_FAKES_ON_PRODUCTION_BUILD=1
+            -e DATABASE_URL=postgres://meri_app:meri_app@127.0.0.1:5432/meri
+            -e DATABASE_ADMIN_URL=postgres://meri:meri@127.0.0.1:5432/meri
+            -e REDIS_URL=redis://127.0.0.1:6379
+            -e AUTH_SECRET=ci-only-auth-secret-0123456789abcdef0123
+            -e INTERNAL_API_SECRET=ci-only-internal-0123456789
+            -e LOCAL_MASTER_KEY=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+            -e API_URL=http://127.0.0.1:4000 -e APP_URL=http://127.0.0.1:3000)
+          docker run --rm "${common[@]}" meri-migrate:ci
+          # Roles are provisioned by a human in a real environment; here the dev script gives meri_app its login.
+          PGPASSWORD=meri psql -h 127.0.0.1 -U meri -d meri -v ON_ERROR_STOP=1 -f meri/scripts/sql/db-roles.sql
+          docker run -d --name api "${common[@]}" -e LISTEN_HOST=127.0.0.1 meri-api:ci
+          docker run -d --name worker "${common[@]}" -e LISTEN_HOST=127.0.0.1 meri-worker:ci
+          docker run -d --name web "${common[@]}" -e HOSTNAME=127.0.0.1 meri-web:ci
+          for i in $(seq 1 45); do
+            curl -sf 127.0.0.1:4000/health > /dev/null && curl -sf 127.0.0.1:4100/ready > /dev/null \
+              && curl -sf 127.0.0.1:3000/privacy > /dev/null && break
+            sleep 2
+          done
+          curl -sf 127.0.0.1:4000/health && curl -sf 127.0.0.1:4100/ready && curl -sf -o /dev/null 127.0.0.1:3000/privacy
+      - name: Container logs
+        if: always()
+        run: for c in api worker web; do echo "== $c"; docker logs "$c" 2>&1 | tail -n 80 || true; done

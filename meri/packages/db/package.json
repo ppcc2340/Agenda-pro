@@ -8,12 +8,13 @@
   "types": "./src/index.ts",
   "scripts": {
     "generate": "drizzle-kit generate",
-    "migrate": "tsx src/migrate.ts",
+    "migrate": "tsx src/migrate-cli.ts",
     "seed": "tsx src/seed/dev.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",
     "test": "vitest run",
-    "build": "echo \"no build: consumed from src\""
+    "build": "echo \"no build: consumed from src\"",
+    "build:migrate": "tsup src/migrate-cli.ts --format esm --platform node --target node22 --out-dir dist --clean"
   },
   "dependencies": {
     "@meri/config": "workspace:*",
@@ -25,6 +26,7 @@
   },
   "devDependencies": {
     "drizzle-kit": "^0.31.0",
+    "tsup": "^8.3.0",
     "tsx": "^4.19.0",
     "typescript": "^5.6.0",
     "vitest": "^3.2.6"

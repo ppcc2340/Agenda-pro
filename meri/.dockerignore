@@ -1,0 +1,37 @@
+# Build context for the Dockerfile (D-098, SEC-M7): source and lockfile only. Nothing personal, secret or built.
+.git
+**/node_modules
+**/.pnpm-store
+**/dist
+**/.next
+**/.next-dev
+**/out
+**/coverage
+**/.turbo
+**/*.tsbuildinfo
+
+# Secrets and configuration: runtime values come from the environment, never from the image.
+.env
+.env.*
+!.env.example
+**/*.pem
+**/*.key
+
+# Backups (encrypted or not), dumps and local snapshots
+backups
+**/*.mbk
+**/*.sql.gz
+dump.rdb
+
+# Personal data that may exist on an operator's machine: AI review samples and beta reports (phase 6)
+evals/candidates
+evals/reports
+docs/beta
+
+# Test and tooling artefacts
+**/playwright-report
+**/test-results
+**/e2e/.results
+*.log
+.claude
+.DS_Store

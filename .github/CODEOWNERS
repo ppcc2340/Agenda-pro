@@ -1,0 +1,8 @@
+# Reviews required on these paths once branch protection enables "Require review from Code Owners" (human step,
+# docs/runbooks/deploy.md). Migrations decide what the database allows: a destructive or security-sensitive one
+# needs the `-- meri:destructive-approved <reason>` marker AND a code-owner review (D-098, SEC-M7).
+/meri/packages/db/drizzle/        @ppcc2340
+/meri/scripts/sql/                @ppcc2340
+/meri/scripts/lib/migration-check.ts @ppcc2340
+/meri/Dockerfile                  @ppcc2340
+/.github/                         @ppcc2340
