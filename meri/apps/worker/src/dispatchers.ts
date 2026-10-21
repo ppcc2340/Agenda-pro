@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { Logger } from "@meri/config";
+import { PURGE_AFTER_DAYS } from "@meri/db";
 import {
   BillingUsageRollupJob,
   BriefingsPrepareJob,
@@ -224,7 +225,8 @@ export async function dispatchRetention(deps: DispatcherDeps): Promise<number> {
 
 /** data.delete_account (F-16, ADR 0007): once a day per workspace logically deleted more than 30 days ago. */
 export async function dispatchAccountPurge(deps: DispatcherDeps): Promise<number> {
-  const cutoff = new Date(deps.now().getTime() - 30 * 86_400_000);
+  // Same window as purge_workspace() and the handler (one constant, so they cannot drift).
+  const cutoff = new Date(deps.now().getTime() - PURGE_AFTER_DAYS * 86_400_000);
   const rows = await deps.adminSql<{ workspaceId: string }[]>`
     select id as "workspaceId" from workspaces
     where deleted_at is not null and deleted_at < ${cutoff}
