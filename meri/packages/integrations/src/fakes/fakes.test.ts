@@ -180,14 +180,17 @@ describe("createIntegrations factory", () => {
     expect(integrations.analytics.mode).toBe("live");
   });
 
-  it("live Google without its adapter still fails loudly instead of silently using fakes", () => {
+  it("live Google builds the live adapters from env and refuses a bare email (switching is configuration only)", () => {
     const env = parseEnv({ ...base, GOOGLE_MODE: "live", GOOGLE_CLIENT_ID: "id", GOOGLE_CLIENT_SECRET: "s" });
-    expect(() =>
-      createIntegrations(
-        { env, modes: resolveModes(env), isProduction: false, isTest: true, fakesOnProductionBuild: false },
-        { now },
-      ),
-    ).toThrow(/google-oauth live adapter/);
+    const integrations = createIntegrations(
+      { env, modes: resolveModes(env), isProduction: false, isTest: true, fakesOnProductionBuild: false },
+      { now },
+    );
+    expect(integrations.oauth.mode).toBe("live");
+    const ref = { email: "ana@acme.test", accessToken: () => Promise.resolve("t") };
+    expect(integrations.calendarFor(ref).constructor.name).toBe("LiveGoogleCalendar");
+    expect(integrations.mailFor(ref).constructor.name).toBe("LiveGmail");
+    expect(() => integrations.calendarFor("ana@acme.test")).toThrow(/account reference/);
   });
 
   it("AI live mode builds the Anthropic client from env (models and prices are configuration)", () => {

@@ -16,7 +16,10 @@ import { FakeGmail } from "./fakes/mail";
 import { AnthropicAiClient } from "./anthropic/client";
 import { parsePrices } from "./anthropic/prices";
 import { FakeGoogleOAuth } from "./fakes/oauth";
-import type { GoogleOAuth } from "./oauth/types";
+import type { GoogleAccountRef, GoogleOAuth } from "./oauth/types";
+import { LiveGoogleOAuth } from "./google/oauth";
+import { LiveGoogleCalendar } from "./google/calendar";
+import { LiveGmail } from "./google/gmail";
 import { FakeNotifier, type Notifier } from "./notify/types";
 import { AwsKms, LocalKms, type KmsAdapter } from "./kms";
 
@@ -33,9 +36,12 @@ export interface Integrations {
   billing: BillingProvider;
   analytics: Analytics;
   kms: KmsAdapter;
-  /** Per-account connectors are created lazily once an integration account exists (phase 1/2). */
-  calendarFor(accountEmail: string): CalendarProvider;
-  mailFor(accountEmail: string): MailProvider;
+  /**
+   * Per-account connectors (ADR 0008). Live adapters need the account reference (token supplier); fakes are
+   * memoised by address, so tests may pass a plain email in fake mode.
+   */
+  calendarFor(account: GoogleAccountRef | string): CalendarProvider;
+  mailFor(account: GoogleAccountRef | string): MailProvider;
 }
 
 const notYet = (name: string) =>
@@ -62,12 +68,17 @@ export function createIntegrations(config: AppConfig, deps: IntegrationsDeps): I
           models: { fast: env.AI_MODEL_FAST, smart: env.AI_MODEL_SMART },
           prices: parsePrices(env.AI_PRICES_JSON),
         });
+  // resolveModes guarantees GOOGLE_CLIENT_ID/SECRET in live mode (blockers.json).
   const oauth: GoogleOAuth =
     modes.google === "fake"
       ? new FakeGoogleOAuth(deps.now)
-      : (() => {
-          throw notYet("google-oauth");
-        })();
+      : new LiveGoogleOAuth({ clientId: env.GOOGLE_CLIENT_ID ?? "", clientSecret: env.GOOGLE_CLIENT_SECRET ?? "" });
+  const liveRef = (account: GoogleAccountRef | string, name: string): GoogleAccountRef => {
+    if (typeof account === "string")
+      throw new IntegrationError("Permanent", name, "a live Google adapter needs the account reference, not an email");
+    return account;
+  };
+  const emailOf = (account: GoogleAccountRef | string) => (typeof account === "string" ? account : account.email);
   // resolveModes guarantees every STRIPE_* variable is present in live mode (blockers.json).
   const billing: BillingProvider =
     modes.stripe === "fake"
@@ -123,8 +134,9 @@ export function createIntegrations(config: AppConfig, deps: IntegrationsDeps): I
     billing,
     analytics,
     kms,
-    calendarFor(accountEmail) {
-      if (modes.google !== "fake") throw notYet("google-calendar");
+    calendarFor(account) {
+      if (modes.google !== "fake") return new LiveGoogleCalendar(liveRef(account, "google-calendar"));
+      const accountEmail = emailOf(account);
       let c = fakeCalendars.get(accountEmail);
       if (!c) {
         c = new FakeCalendar({ now: deps.now });
@@ -135,8 +147,9 @@ export function createIntegrations(config: AppConfig, deps: IntegrationsDeps): I
       }
       return c;
     },
-    mailFor(accountEmail) {
-      if (modes.google !== "fake") throw notYet("gmail");
+    mailFor(account) {
+      if (modes.google !== "fake") return new LiveGmail(liveRef(account, "gmail"));
+      const accountEmail = emailOf(account);
       let m = fakeMail.get(accountEmail);
       if (!m) {
         m = new FakeGmail({ email: accountEmail });

@@ -13,7 +13,7 @@ import {
   type WorkspaceId,
 } from "@meri/db";
 import { IntegrationError, type CalendarProvider } from "@meri/integrations";
-import { readTokens } from "./calendar-sync";
+import { googleAccess, markNeedsReauth } from "../google-access";
 import type { HandlerDeps } from "./context";
 
 /** Never log provider error objects whole: a live client may attach request headers (docs/06). */
@@ -38,9 +38,9 @@ async function healthyCalendar(
   );
   const account = accounts.find((a) => a.provider === "google" && a.status === "healthy");
   if (!account) return null;
-  const tokens = await readTokens(deps, workspaceId, account.id);
-  if (!tokens) return null;
-  return { accountId: account.id, calendar: deps.integrations.calendarFor(tokens.email) };
+  const access = await googleAccess(deps, workspaceId, account.id);
+  if (!access) return null;
+  return { accountId: account.id, calendar: deps.integrations.calendarFor(access) };
 }
 
 /**
@@ -63,6 +63,11 @@ export async function writeBlocksToCalendar(
     calendarId = await target.calendar.ensureMeriCalendar();
   } catch (err) {
     deps.logger.warn({ err: describe(err), workspaceId }, "meri calendar unavailable; blocks kept locally");
+    // An expired grant is flagged here too, not only by the next sync (ADR 0008).
+    if (err instanceof IntegrationError && err.kind === "AuthExpired")
+      await withWorkspace(deps.db, workspaceId, (tx) =>
+        markNeedsReauth(tx, workspaceId, target.accountId, err),
+      );
     return result;
   }
   for (const block of changes.remove) {

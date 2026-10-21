@@ -2,6 +2,7 @@ export { JobEnvelope, withEnvelope, QUEUE_NAMES, DEAD_LETTER_QUEUE, type QueueNa
 export { createDispatcher, InMemoryDispatcher, DEFAULT_JOB_OPTIONS, type JobDispatcher } from "./dispatcher";
 export * from "./definitions";
 export type { HandlerDeps } from "./handlers/context";
+export { googleAccess, markNeedsReauth, TokenRevokedError, StoredTokens } from "./google-access";
 export {
   syncCalendarAccount,
   encryptTokens,

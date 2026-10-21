@@ -16,6 +16,8 @@ export interface IntegrationAccountView {
   keyId: string;
   lastSyncAt: Date | null;
   lastError: string | null;
+  /** The dedicated «Meri» calendar of this connection, once created (ADR 0008). */
+  meriCalendarId: string | null;
   createdAt: Date;
 }
 
@@ -27,6 +29,7 @@ const toAccount = (r: AccountRow): IntegrationAccountView => ({
   email: r.email,
   scopes: r.scopes,
   status: r.status,
+  meriCalendarId: r.meriCalendarId,
   keyId: r.keyId,
   lastSyncAt: r.lastSyncAt,
   lastError: r.lastError,
@@ -160,6 +163,30 @@ export async function setIntegrationStatus(
     .where(and(eq(integrationAccounts.workspaceId, workspaceId), eq(integrationAccounts.id, id)))
     .returning();
   return row ? toAccount(row) : null;
+}
+
+/**
+ * Marks a connection `needs_reauth` only while it still holds the tokens that failed (ADR 0008): a user who
+ * reconnected in the meantime is never flagged by a stale refresh failure. `expectedTokens` null = unconditional.
+ */
+export async function markIntegrationNeedsReauth(
+  tx: WorkspaceTx,
+  workspaceId: WorkspaceId,
+  id: string,
+  expectedTokens: string | null,
+): Promise<boolean> {
+  const rows = await tx
+    .update(integrationAccounts)
+    .set({ status: "needs_reauth", lastError: "AuthExpired" })
+    .where(
+      and(
+        eq(integrationAccounts.workspaceId, workspaceId),
+        eq(integrationAccounts.id, id),
+        expectedTokens === null ? undefined : eq(integrationAccounts.encryptedTokens, expectedTokens),
+      ),
+    )
+    .returning({ id: integrationAccounts.id });
+  return rows.length === 1;
 }
 
 /** Disconnect: purge the account, its sync cursors and mirrored events; Meri blocks lose their calendar link. */

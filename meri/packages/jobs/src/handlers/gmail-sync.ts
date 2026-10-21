@@ -10,7 +10,6 @@ import {
   type Exclusion,
 } from "@meri/core";
 import {
-  audit,
   getIntegrationAccount,
   getSyncCursor,
   listClientRefs,
@@ -28,7 +27,7 @@ import {
   type MailMessageMeta,
   type MailProvider,
 } from "@meri/integrations";
-import { readTokens } from "./calendar-sync";
+import { googleAccess, markNeedsReauth } from "../google-access";
 import type { HandlerDeps } from "./context";
 import { track } from "../analytics";
 
@@ -108,10 +107,19 @@ export async function syncMailAccount(
   if (!account) return skipped("skipped");
   if (account.status === "paused" || account.status === "revoked") return skipped("paused");
   if (!hasGmailScopes(account.scopes)) return skipped("skipped");
-  const tokens = await readTokens(deps, workspaceId, accountId);
-  if (!tokens) return skipped("skipped");
-  const me = emailAddress(account.email ?? tokens.email);
-  const mail = deps.integrations.mailFor(tokens.email);
+  let access;
+  try {
+    access = await googleAccess(deps, workspaceId, accountId);
+  } catch (err) {
+    if (err instanceof IntegrationError && err.kind === "AuthExpired") {
+      await withWorkspace(deps.db, workspaceId, (tx) => markNeedsReauth(tx, workspaceId, accountId, err));
+      return skipped("needs_reauth");
+    }
+    throw err;
+  }
+  if (!access) return skipped("skipped");
+  const me = emailAddress(account.email ?? access.email);
+  const mail = deps.integrations.mailFor(access);
 
   try {
     const cursor = await withWorkspace(deps.db, workspaceId, (tx) =>
@@ -185,24 +193,12 @@ export async function syncMailAccount(
     };
   } catch (err) {
     if (err instanceof IntegrationError)
-      track(deps.integrations.analytics, "integration_error", workspaceId, { provider: "google", kind: err.kind });
-    if (err instanceof IntegrationError && err.kind === "AuthExpired") {
-      await withWorkspace(deps.db, workspaceId, async (tx) => {
-        await setIntegrationStatus(tx, workspaceId, accountId, {
-          status: "needs_reauth",
-          lastError: "AuthExpired",
-        });
-        await audit(
-          tx,
-          { workspaceId, actor: "system" },
-          {
-            action: "integration.needs_reauth",
-            entityType: "integration_account",
-            entityId: accountId,
-            reason: `${err.kind}: ${err.message.slice(0, 200)}`,
-          },
-        );
+      track(deps.integrations.analytics, "integration_error", workspaceId, {
+        provider: "google",
+        kind: err.kind,
       });
+    if (err instanceof IntegrationError && err.kind === "AuthExpired") {
+      await withWorkspace(deps.db, workspaceId, (tx) => markNeedsReauth(tx, workspaceId, accountId, err));
       return skipped("needs_reauth");
     }
     if (err instanceof IntegrationError && err.retryable) {

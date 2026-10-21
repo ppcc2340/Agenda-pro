@@ -24,7 +24,7 @@ import {
   type WorkspaceId,
   type WorkspaceTx,
 } from "@meri/db";
-import { aiBudget, aiStatus, chargeAiUsage, forgetCommitmentSaved, notifyAiPaused, readTokens, recordCommitmentSaved, track, type HandlerDeps } from "@meri/jobs";
+import { aiBudget, aiStatus, chargeAiUsage, forgetCommitmentSaved, googleAccess, markNeedsReauth, notifyAiPaused, recordCommitmentSaved, track, type HandlerDeps } from "@meri/jobs";
 import { hasGmailScopes, IntegrationError, type AiClient } from "@meri/integrations";
 import { ApiError } from "../errors";
 import { requireSession, sessionOf } from "../plugins/session";
@@ -396,18 +396,28 @@ export function commitmentRoutes(
       );
       if (!account || !hasGmailScopes(account.scopes))
         throw new ApiError("INTEGRATION_NEEDS_REAUTH", "Gmail is not connected with draft permissions.");
-      const tokens = await readTokens(options.deps, session.workspaceId, account.id);
-      if (!tokens) throw new ApiError("INTEGRATION_NEEDS_REAUTH", "Gmail needs to be reconnected.");
       const inReplyTo = ctx.commitment.externalMessageId ?? ctx.thread.lastExternalMessageId;
       if (!inReplyTo) throw new ApiError("CONFLICT", "The thread has no message to reply to.");
-      const mail = options.deps.integrations.mailFor(tokens.email);
-      const ref = await mail.createDraft({
-        threadId: ctx.thread.externalThreadId,
-        inReplyToMessageId: inReplyTo,
-        to: [ctx.to], // fixed by code from the thread, never from the model or the client
-        subject: b.subject ?? ctx.subject,
-        bodyText: b.body,
-      });
+      // An expired grant or a missing scope is a reconnect, never a 500 (docs/13, ADR 0008).
+      const needsReauth = async (err: unknown): Promise<never> => {
+        if (err instanceof IntegrationError && err.kind === "AuthExpired") {
+          await request.withWorkspace((tx) => markNeedsReauth(tx, session.workspaceId, account.id, err));
+          throw new ApiError("INTEGRATION_NEEDS_REAUTH", "Gmail needs to be reconnected.");
+        }
+        throw err;
+      };
+      const access = await googleAccess(options.deps, session.workspaceId, account.id).catch(needsReauth);
+      if (!access) throw new ApiError("INTEGRATION_NEEDS_REAUTH", "Gmail needs to be reconnected.");
+      const mail = options.deps.integrations.mailFor(access);
+      const ref = await mail
+        .createDraft({
+          threadId: ctx.thread.externalThreadId,
+          inReplyToMessageId: inReplyTo,
+          to: [ctx.to], // fixed by code from the thread, never from the model or the client
+          subject: b.subject ?? ctx.subject,
+          bodyText: b.body,
+        })
+        .catch(needsReauth);
       await request.withWorkspace(async (tx) => {
         await audit(
           tx,

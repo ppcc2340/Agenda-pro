@@ -1,9 +1,6 @@
-import { decryptEnvelopeToString, encryptEnvelope } from "@meri/config/crypto";
 import {
-  audit,
   deleteCalendarEventByExternalId,
   findCalendarEventEtags,
-  getEncryptedTokens,
   getIntegrationAccount,
   getSyncCursor,
   purgeCalendarEvents,
@@ -15,14 +12,10 @@ import {
   type WorkspaceTx,
   listClientRefs,
 } from "@meri/db";
-import {
-  IntegrationError,
-  type CalendarEvent,
-  type CalendarProvider,
-  type OAuthTokens,
-} from "@meri/integrations";
+import { IntegrationError, type CalendarEvent, type CalendarProvider } from "@meri/integrations";
 import { resolveClient } from "@meri/core";
 import type { HandlerDeps } from "./context";
+import { googleAccess, markNeedsReauth } from "../google-access";
 import { track } from "../analytics";
 
 /** One cursor per calendar, like Google's per-calendar syncToken. */
@@ -38,35 +31,8 @@ export interface CalendarSyncResult {
   fullResync: boolean;
 }
 
-/** AAD binds the token blob to its row so ciphertexts cannot be swapped between accounts (docs/06 §2). */
-export const tokenAad = (workspaceId: string, accountId: string) =>
-  `integration_account:${workspaceId}:${accountId}`;
-
-export async function encryptTokens(
-  deps: Pick<HandlerDeps, "keys">,
-  workspaceId: string,
-  accountId: string,
-  tokens: OAuthTokens,
-): Promise<string> {
-  return encryptEnvelope(deps.keys, JSON.stringify(tokens), tokenAad(workspaceId, accountId));
-}
-
-export async function readTokens(
-  deps: Pick<HandlerDeps, "db" | "keys">,
-  workspaceId: WorkspaceId,
-  accountId: string,
-): Promise<OAuthTokens | null> {
-  const row = await withWorkspace(deps.db, workspaceId, (tx) =>
-    getEncryptedTokens(tx, workspaceId, accountId),
-  );
-  if (!row) return null;
-  const json = await decryptEnvelopeToString(
-    deps.keys,
-    row.encryptedTokens,
-    tokenAad(workspaceId, accountId),
-  );
-  return JSON.parse(json) as OAuthTokens;
-}
+// Token helpers live in ../tokens (shared with google-access without an import cycle); re-exported for callers.
+export { encryptTokens, readTokens, tokenAad } from "../tokens";
 
 async function applyPage(
   tx: WorkspaceTx,
@@ -161,6 +127,17 @@ async function syncOneCalendar(
  * Incremental calendar sync (docs/07): per-calendar cursors, idempotent by external_id + etag, full resync on 410,
  * AuthExpired -> needs_reauth without touching stored data (F-04 AC3).
  */
+async function failAccess(
+  deps: HandlerDeps,
+  workspaceId: WorkspaceId,
+  accountId: string,
+  err: IntegrationError,
+): Promise<CalendarSyncResult> {
+  if (err.kind !== "AuthExpired") throw err;
+  await withWorkspace(deps.db, workspaceId, (tx) => markNeedsReauth(tx, workspaceId, accountId, err));
+  return { status: "needs_reauth", upserted: 0, removed: 0, fullResync: false };
+}
+
 export async function syncCalendarAccount(
   deps: HandlerDeps,
   workspaceId: WorkspaceId,
@@ -173,10 +150,17 @@ export async function syncCalendarAccount(
   if (!account) return { status: "skipped", upserted: 0, removed: 0, fullResync: false };
   if (account.status === "paused" || account.status === "revoked")
     return { status: "paused", upserted: 0, removed: 0, fullResync: false };
-  const tokens = await readTokens(deps, workspaceId, accountId);
-  if (!tokens) return { status: "skipped", upserted: 0, removed: 0, fullResync: false };
+  let access;
+  try {
+    access = await googleAccess(deps, workspaceId, accountId);
+  } catch (err) {
+    // Unreadable tokens (key no longer configured): same as an expired grant, the user reconnects.
+    if (err instanceof IntegrationError) return failAccess(deps, workspaceId, accountId, err);
+    throw err;
+  }
+  if (!access) return { status: "skipped", upserted: 0, removed: 0, fullResync: false };
 
-  const calendar = deps.integrations.calendarFor(tokens.email);
+  const calendar = deps.integrations.calendarFor(access);
   const range = {
     from: new Date(now.getTime() - SYNC_PAST_DAYS * 86_400_000).toISOString(),
     to: new Date(now.getTime() + SYNC_FUTURE_DAYS * 86_400_000).toISOString(),
@@ -184,7 +168,7 @@ export async function syncCalendarAccount(
   const result: CalendarSyncResult = { status: "synced", upserted: 0, removed: 0, fullResync: false };
   try {
     for (const cal of await calendar.listCalendars()) {
-      const r = await syncOneCalendar(deps, workspaceId, accountId, calendar, cal.id, range, tokens.email);
+      const r = await syncOneCalendar(deps, workspaceId, accountId, calendar, cal.id, range, access.email);
       result.upserted += r.upserted;
       result.removed += r.removed;
       result.fullResync = result.fullResync || r.fullResync;
@@ -204,22 +188,7 @@ export async function syncCalendarAccount(
         kind: err.kind,
       });
     if (err instanceof IntegrationError && err.kind === "AuthExpired") {
-      await withWorkspace(deps.db, workspaceId, async (tx) => {
-        await setIntegrationStatus(tx, workspaceId, accountId, {
-          status: "needs_reauth",
-          lastError: "AuthExpired",
-        });
-        await audit(
-          tx,
-          { workspaceId, actor: "system" },
-          {
-            action: "integration.needs_reauth",
-            entityType: "integration_account",
-            entityId: accountId,
-            reason: `${err.kind}: ${err.message.slice(0, 200)}`,
-          },
-        );
-      });
+      await withWorkspace(deps.db, workspaceId, (tx) => markNeedsReauth(tx, workspaceId, accountId, err));
       return { ...result, status: "needs_reauth" };
     }
     if (err instanceof IntegrationError && err.retryable) {

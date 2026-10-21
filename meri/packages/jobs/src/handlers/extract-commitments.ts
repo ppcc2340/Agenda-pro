@@ -30,7 +30,7 @@ import {
   type WorkspaceId,
 } from "@meri/db";
 import { aiBudget, chargeAiUsage, notifyAiPaused } from "../budget";
-import { readTokens } from "./calendar-sync";
+import { googleAccess } from "../google-access";
 import type { HandlerDeps } from "./context";
 
 export interface ExtractResult {
@@ -81,10 +81,10 @@ export async function extractThreadCommitments(
     return { thread, account, prefs, client, contacts, budget };
   });
   if (!snap) return skipped;
-  const tokens = await readTokens(deps, workspaceId, snap.account.id);
-  if (!tokens) return skipped;
-  const me = (snap.account.email ?? tokens.email).toLowerCase();
-  const mail = deps.integrations.mailFor(tokens.email);
+  const access = await googleAccess(deps, workspaceId, snap.account.id);
+  if (!access) return skipped;
+  const me = (snap.account.email ?? access.email).toLowerCase();
+  const mail = deps.integrations.mailFor(access);
 
   // Bodies are fetched on demand, sanitised in memory and never written anywhere (docs/06 §5).
   const messages: MailMessageInput[] = [];
