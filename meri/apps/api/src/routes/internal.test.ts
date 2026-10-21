@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { createTestApp, INTERNAL_SECRET, type TestApp } from "../test/harness";
+import { createTestApp, csrf, INTERNAL_SECRET, type TestApp } from "../test/harness";
 import { INTERNAL_HEADER } from "../plugins/internal";
 
 describe("POST /internal/auth/bootstrap (ADR 0001)", () => {
@@ -52,7 +52,12 @@ describe("POST /internal/auth/bootstrap (ADR 0001)", () => {
     });
     expect(invalid.statusCode).toBe(400);
     expect(invalid.json()).toMatchObject({ code: "VALIDATION_FAILED" });
-    const noSubject = await t.app.inject({ method: "POST", url: "/internal/auth/bootstrap", headers, payload: { email } });
+    const noSubject = await t.app.inject({
+      method: "POST",
+      url: "/internal/auth/bootstrap",
+      headers,
+      payload: { email },
+    });
     expect(noSubject.statusCode).toBe(400);
   });
 
@@ -87,6 +92,29 @@ describe("POST /internal/auth/bootstrap (ADR 0001)", () => {
       email: `new-${run}@test.local`,
       userId: first.json<{ userId: string }>().userId,
     });
+  });
+
+  it("a deleted account is never renamed back to life by its subject", async () => {
+    const run = Date.now().toString(36);
+    const headers = { [INTERNAL_HEADER]: INTERNAL_SECRET };
+    const boot = (email: string) =>
+      t.app.inject({
+        method: "POST",
+        url: "/internal/auth/bootstrap",
+        headers,
+        payload: { email, subject: `google:deleted-${run}` },
+      });
+    const first = await boot(`gone-${run}@test.local`);
+    const account = first.json<{ userId: string; workspaceId: string; email: string }>();
+    const cookie = await t.cookieFor(account);
+    expect(
+      (await t.app.inject({ method: "DELETE", url: "/v1/account", headers: { cookie, ...csrf } })).statusCode,
+    ).toBe(204);
+    const renamed = await boot(`back-${run}@test.local`);
+    expect(renamed.statusCode).toBe(409);
+    // The deleted user keeps its address until the purge; no account exists under the new one.
+    const again = await boot(`gone-${run}@test.local`);
+    expect(again.statusCode).toBe(409);
   });
 
   it("limits bootstrap calls per email after the body is read, not per web-server IP", async () => {
@@ -127,7 +155,10 @@ describe("internal routes and the IP rate limit", () => {
           method: "POST",
           url: "/internal/auth/bootstrap",
           headers,
-          payload: { email: `rl-${String(i)}-${Date.now().toString(36)}@test.local`, subject: `dev:rl-${String(i)}-${Date.now().toString(36)}` },
+          payload: {
+            email: `rl-${String(i)}-${Date.now().toString(36)}@test.local`,
+            subject: `dev:rl-${String(i)}-${Date.now().toString(36)}`,
+          },
         });
         expect(res.statusCode).toBe(200);
       }

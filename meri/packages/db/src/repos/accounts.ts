@@ -112,17 +112,34 @@ export async function bootstrapAccount(db: Db, input: BootstrapInput): Promise<A
 async function followEmailChange(db: Db, subject: string, email: string): Promise<void> {
   const bySubject = await db.query.users.findFirst({ where: eq(users.authSubject, subject) });
   if (!bySubject || bySubject.email === email) return;
+  // A deleted account keeps its address until the purge: it is never renamed back to life.
+  if (bySubject.deletedAt) throw new AccountDeletedError(bySubject.email);
   const taken = await db.query.users.findFirst({ where: eq(users.email, email) });
   if (taken) throw new IdentityMismatchError();
-  await db.update(users).set({ email }).where(eq(users.id, bySubject.id));
+  try {
+    await db
+      .update(users)
+      .set({ email })
+      .where(and(eq(users.id, bySubject.id), isNull(users.deletedAt)));
+  } catch (e) {
+    // A concurrent first login took the address between the check and the update: same answer as the check.
+    if (isUniqueViolation(e)) throw new IdentityMismatchError();
+    throw e;
+  }
 }
+
+const isUniqueViolation = (e: unknown): boolean => {
+  const err = e as { code?: string; cause?: { code?: string } };
+  return err.code === "23505" || err.cause?.code === "23505";
+};
 
 async function findExisting(db: Db, email: string, input: BootstrapInput): Promise<AccountIdentity | null> {
   const existing = await db.query.users.findFirst({ where: eq(users.email, email) });
   if (existing) {
     if (existing.deletedAt) throw new AccountDeletedError(email);
     if (input.subject) {
-      if (existing.authSubject !== null && existing.authSubject !== input.subject) throw new IdentityMismatchError();
+      if (existing.authSubject !== null && existing.authSubject !== input.subject)
+        throw new IdentityMismatchError();
       // Accounts created before the identity was recorded bind to the first subject that signs in (ADR 0007).
       if (existing.authSubject === null)
         await db.update(users).set({ authSubject: input.subject }).where(eq(users.id, existing.id));
@@ -214,7 +231,10 @@ export async function getEntitlementMaxClients(tx: WorkspaceTx, workspaceId: Wor
 export async function hardDeleteAccountByEmail(db: Db, email: string): Promise<number> {
   const found = await db.query.users.findFirst({ where: eq(users.email, email.trim().toLowerCase()) });
   if (!found) return 0;
-  const owned = await db.delete(workspaces).where(eq(workspaces.ownerId, found.id)).returning({ id: workspaces.id });
+  const owned = await db
+    .delete(workspaces)
+    .where(eq(workspaces.ownerId, found.id))
+    .returning({ id: workspaces.id });
   await db.delete(users).where(eq(users.id, found.id));
   return owned.length;
 }
@@ -295,7 +315,12 @@ export async function softDeleteAccount(
       await audit(
         tx,
         { workspaceId: input.workspaceId, actor: "user", actorUserId: input.userId },
-        { action: "account.deleted", entityType: "user", entityId: input.userId, after: { workspaceKept: true } },
+        {
+          action: "account.deleted",
+          entityType: "user",
+          entityId: input.userId,
+          after: { workspaceKept: true },
+        },
       );
       return { deleted: true, revokedAccounts: 0 };
     }
