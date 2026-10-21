@@ -268,6 +268,8 @@ export const calendarEvents = pgTable(
     id: id(),
     workspaceId: workspaceId(),
     integrationAccountId: uuid("integration_account_id"),
+    // Google event ids are unique per calendar, not per account (ADR 0008).
+    calendarId: text("calendar_id").notNull().default("primary"),
     externalId: text("external_id").notNull(),
     etag: text("etag"),
     title: text("title"),
@@ -281,7 +283,7 @@ export const calendarEvents = pgTable(
     updatedAt: updatedAt(),
   },
   (t) => [
-    uniqueIndex("cal_events_ext_uq").on(t.workspaceId, t.integrationAccountId, t.externalId),
+    uniqueIndex("cal_events_ext_uq").on(t.workspaceId, t.integrationAccountId, t.calendarId, t.externalId),
     index("cal_events_ws_start_idx").on(t.workspaceId, t.startsAt),
     index("cal_events_ws_client_start_idx").on(t.workspaceId, t.clientId, t.startsAt),
   ],
@@ -469,6 +471,8 @@ export const integrationAccounts = pgTable(
     keyId: text("key_id").notNull(),
     lastSyncAt: timestamp("last_sync_at", { withTimezone: true }),
     lastError: text("last_error"),
+    /** The dedicated «Meri» calendar, created once and the only one Meri writes to (ADR 0008). */
+    meriCalendarId: text("meri_calendar_id"),
     createdAt: createdAt(),
   },
   (t) => [uniqueIndex("integ_ws_provider_acct_uq").on(t.workspaceId, t.provider, t.externalAccountId)],

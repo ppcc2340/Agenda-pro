@@ -6,7 +6,7 @@ import {
   getEncryptedTokens,
   getIntegrationAccount,
   getSyncCursor,
-  purgeAccountEvents,
+  purgeCalendarEvents,
   setIntegrationStatus,
   setSyncCursor,
   upsertCalendarEvent,
@@ -72,6 +72,7 @@ async function applyPage(
   tx: WorkspaceTx,
   workspaceId: WorkspaceId,
   accountId: string,
+  calendarId: string,
   me: string,
   events: CalendarEvent[],
   now: Date,
@@ -85,10 +86,11 @@ async function applyPage(
     workspaceId,
     accountId,
     events.map((e) => e.externalId),
+    calendarId,
   );
   for (const ev of events) {
     if (ev.status === "cancelled") {
-      await deleteCalendarEventByExternalId(tx, workspaceId, accountId, ev.externalId);
+      await deleteCalendarEventByExternalId(tx, workspaceId, accountId, ev.externalId, calendarId);
       removed++;
       continue;
     }
@@ -97,6 +99,7 @@ async function applyPage(
       workspaceId,
       {
         integrationAccountId: accountId,
+        calendarId,
         externalId: ev.externalId,
         etag: ev.etag,
         title: ev.title,
@@ -135,17 +138,17 @@ async function syncOneCalendar(
   for (let attempt = 0; attempt < 2; attempt++) {
     const page = await calendar.sync({ calendarId, cursor, ...range });
     if (page.fullResyncRequired) {
-      // 410 Gone: drop cursor and mirror for this account, replay once from scratch (idempotent upserts).
+      // 410 Gone: drop cursor and mirror of THIS calendar (ADR 0008), replay once from scratch (idempotent upserts).
       fullResync = true;
       cursor = null;
       await withWorkspace(deps.db, workspaceId, async (tx) => {
-        await purgeAccountEvents(tx, workspaceId, accountId);
+        await purgeCalendarEvents(tx, workspaceId, accountId, calendarId);
         await setSyncCursor(tx, workspaceId, accountId, resource, null, now);
       });
       continue;
     }
     const counts = await withWorkspace(deps.db, workspaceId, async (tx) => {
-      const c = await applyPage(tx, workspaceId, accountId, me, page.events, now);
+      const c = await applyPage(tx, workspaceId, accountId, calendarId, me, page.events, now);
       await setSyncCursor(tx, workspaceId, accountId, resource, page.nextCursor, now);
       return c;
     });
@@ -196,7 +199,10 @@ export async function syncCalendarAccount(
     return result;
   } catch (err) {
     if (err instanceof IntegrationError)
-      track(deps.integrations.analytics, "integration_error", workspaceId, { provider: "google", kind: err.kind });
+      track(deps.integrations.analytics, "integration_error", workspaceId, {
+        provider: "google",
+        kind: err.kind,
+      });
     if (err instanceof IntegrationError && err.kind === "AuthExpired") {
       await withWorkspace(deps.db, workspaceId, async (tx) => {
         await setIntegrationStatus(tx, workspaceId, accountId, {

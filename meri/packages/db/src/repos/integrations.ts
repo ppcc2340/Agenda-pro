@@ -251,6 +251,8 @@ const toEvent = (r: EventRow): CalendarEventView => {
 
 export interface UpsertEventInput {
   integrationAccountId: string;
+  /** Provider calendar id (default "primary"); part of the identity of an event (ADR 0008). */
+  calendarId?: string;
   externalId: string;
   etag: string | null;
   title: string | null;
@@ -264,7 +266,7 @@ export interface UpsertEventInput {
   clientId?: string | null;
 }
 
-/** Idempotent by (workspace, account, external_id); a stale etag never overwrites a newer row (docs/07). */
+/** Idempotent by (workspace, account, calendar, external_id); a stale etag never overwrites a newer row (docs/07). */
 export async function upsertCalendarEvent(
   tx: WorkspaceTx,
   workspaceId: WorkspaceId,
@@ -275,7 +277,12 @@ export async function upsertCalendarEvent(
     .insert(calendarEvents)
     .values({ id: newId(), workspaceId, ...input, updatedAt: now })
     .onConflictDoUpdate({
-      target: [calendarEvents.workspaceId, calendarEvents.integrationAccountId, calendarEvents.externalId],
+      target: [
+        calendarEvents.workspaceId,
+        calendarEvents.integrationAccountId,
+        calendarEvents.calendarId,
+        calendarEvents.externalId,
+      ],
       set: {
         etag: input.etag,
         title: input.title,
@@ -299,6 +306,7 @@ export async function findCalendarEventEtags(
   workspaceId: WorkspaceId,
   accountId: string,
   externalIds: string[],
+  calendarId = "primary",
 ): Promise<Map<string, string | null>> {
   const map = new Map<string, string | null>();
   if (externalIds.length === 0) return map;
@@ -309,6 +317,7 @@ export async function findCalendarEventEtags(
       and(
         eq(calendarEvents.workspaceId, workspaceId),
         eq(calendarEvents.integrationAccountId, accountId),
+        eq(calendarEvents.calendarId, calendarId),
         inArray(calendarEvents.externalId, externalIds),
       ),
     );
@@ -331,6 +340,7 @@ export async function deleteCalendarEventByExternalId(
   workspaceId: WorkspaceId,
   accountId: string,
   externalId: string,
+  calendarId = "primary",
 ): Promise<void> {
   await tx
     .delete(calendarEvents)
@@ -338,21 +348,41 @@ export async function deleteCalendarEventByExternalId(
       and(
         eq(calendarEvents.workspaceId, workspaceId),
         eq(calendarEvents.integrationAccountId, accountId),
+        eq(calendarEvents.calendarId, calendarId),
         eq(calendarEvents.externalId, externalId),
       ),
     );
 }
 
-export async function purgeAccountEvents(
+/** Full resync of one calendar (410 Gone): only that calendar's mirror is dropped, never the account's others. */
+export async function purgeCalendarEvents(
   tx: WorkspaceTx,
   workspaceId: WorkspaceId,
   accountId: string,
+  calendarId: string,
 ): Promise<void> {
   await tx
     .delete(calendarEvents)
     .where(
-      and(eq(calendarEvents.workspaceId, workspaceId), eq(calendarEvents.integrationAccountId, accountId)),
+      and(
+        eq(calendarEvents.workspaceId, workspaceId),
+        eq(calendarEvents.integrationAccountId, accountId),
+        eq(calendarEvents.calendarId, calendarId),
+      ),
     );
+}
+
+/** Remembers the dedicated «Meri» calendar of a connection (ADR 0008). */
+export async function setMeriCalendarId(
+  tx: WorkspaceTx,
+  workspaceId: WorkspaceId,
+  accountId: string,
+  calendarId: string,
+): Promise<void> {
+  await tx
+    .update(integrationAccounts)
+    .set({ meriCalendarId: calendarId })
+    .where(and(eq(integrationAccounts.workspaceId, workspaceId), eq(integrationAccounts.id, accountId)));
 }
 
 export async function listCalendarEvents(

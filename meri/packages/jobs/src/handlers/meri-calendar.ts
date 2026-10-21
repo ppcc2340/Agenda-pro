@@ -92,6 +92,7 @@ export async function writeBlocksToCalendar(
           workspaceId,
           {
             integrationAccountId: target.accountId,
+            calendarId,
             externalId: created.externalId,
             etag: created.etag,
             title: created.title,
