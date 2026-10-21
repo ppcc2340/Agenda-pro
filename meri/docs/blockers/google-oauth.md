@@ -10,11 +10,11 @@
 3. Pantalla de consentimiento OAuth: tipo **Externo**, nombre «Meri», correo de soporte, enlaces a política de privacidad y términos (`/privacy` y `/terms`), dominio autorizado.
 4. Scopes que debes declarar (mínimos):
    - `openid`, `email`, `profile`
-   - `https://www.googleapis.com/auth/calendar.events`
    - `https://www.googleapis.com/auth/calendar.readonly`
+   - `https://www.googleapis.com/auth/calendar.app.created` (crea el calendario «Meri» y solo escribe en él)
    - `https://www.googleapis.com/auth/gmail.readonly`
    - `https://www.googleapis.com/auth/gmail.compose`
-   - **No** pidas `gmail.send`.
+   - **No** pidas `gmail.send`, `calendar` ni `calendar.events` (lista en `FORBIDDEN_SCOPES`, `packages/integrations/src/oauth/scopes.ts`).
 5. Mientras la app esté en estado **Testing**, añade a los usuarios de prueba (hasta 100).
 6. Credenciales, crear ID de cliente OAuth tipo **Aplicación web**. URIs de redirección:
    - `http://localhost:3000/api/auth/callback/google`
@@ -34,4 +34,4 @@
 - Gmail: leer el perfil y listar 1 mensaje solo con metadatos. No debe crear ni enviar nada.
 
 ## Paquete de verificación (Fase 5)
-Política de privacidad, términos, justificación de cada scope, vídeo de demostración, dominio verificado. Detalle en `docs/06-security-privacy.md` §8.
+Todo el paquete (justificación de cada scope, guion del vídeo, pantalla de consentimiento, uso limitado, CASA) está en [`docs/google-verification.md`](../google-verification.md).

@@ -30,3 +30,8 @@ La fase 5 (docs/06, F-16) endurece la sesión, la conexión OAuth y la API, inte
 - Las sesiones emitidas antes de 0017 no llevan `authTime`: dejan de valer y piden volver a entrar una vez.
 - Nuevas variables: `KMS_PREVIOUS_KEY_IDS`, `LOCAL_PREVIOUS_MASTER_KEYS`, `AWS_REGION` (y las credenciales estándar de AWS solo si no hay rol).
 - Bloqueos humanos que no ejecuta el código: crear la clave KMS y su política, programar la copia diaria, el almacenamiento con bloqueo de objetos para las copias, staging, GitHub Advanced Security si el repositorio es privado.
+
+## Adenda (D-093): scopes de Calendar
+- **Contexto:** `calendars.insert` (crear el calendario «Meri») no es posible con `calendar.events` + `calendar.readonly`; además `calendar.events` permite editar cualquier evento de cualquier calendario del usuario, más de lo que el producto necesita.
+- **Decisión:** `CALENDAR_SCOPES = [calendar.readonly, calendar.app.created]`. Lectura de todos los calendarios para planificar; escritura solo en los calendarios que Meri creó. `FORBIDDEN_SCOPES` (`gmail.send`, `https://mail.google.com/`, `gmail.modify`, `calendar`, `calendar.events`) con test.
+- **Consecuencias:** `docs/06` §1 y `docs/blockers/google-oauth.md` actualizados; la pantalla de consentimiento declara los dos scopes nuevos; las conexiones previas siguen leyendo y el panel de permisos invita a reconectar para estrechar la escritura. Ningún cambio de API ni de esquema.

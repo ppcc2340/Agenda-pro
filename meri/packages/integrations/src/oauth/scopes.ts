@@ -1,7 +1,21 @@
 /** Google scopes per feature (docs/06 §1). Gmail: read-only + compose, never `gmail.send` (CLAUDE.md). */
+/**
+ * Calendar (ADR 0007 addendum, D-093): read every calendar to plan around it, write only to calendars Meri created.
+ * `calendar.app.created` is what `calendars.insert` needs for the dedicated «Meri» calendar and limits writes to it, so
+ * third-party meetings are out of reach by permission, not only by code. Never `calendar` or `calendar.events`.
+ */
 export const CALENDAR_SCOPES = [
-  "https://www.googleapis.com/auth/calendar.events",
   "https://www.googleapis.com/auth/calendar.readonly",
+  "https://www.googleapis.com/auth/calendar.app.created",
+] as const;
+
+/** Scopes Meri must never request (CLAUDE.md, docs/06 §1). */
+export const FORBIDDEN_SCOPES = [
+  "https://www.googleapis.com/auth/gmail.send",
+  "https://mail.google.com/",
+  "https://www.googleapis.com/auth/gmail.modify",
+  "https://www.googleapis.com/auth/calendar",
+  "https://www.googleapis.com/auth/calendar.events",
 ] as const;
 
 export const GMAIL_SCOPES = [

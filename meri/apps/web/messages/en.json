@@ -349,7 +349,8 @@
         "gmailRead": "Read your mail: Meri keeps only metadata and a quote of up to 200 characters.",
         "gmailDrafts": "Create drafts in your Gmail. It never sends them.",
         "calendarRead": "See your calendars to plan around your meetings.",
-        "calendarWrite": "Create and move its own blocks in the «Meri» calendar."
+        "calendarWrite": "Create and move its own blocks in the «Meri» calendar.",
+        "calendarWriteLegacy": "Edit events in any of your calendars (an older, wider permission: reconnect Google to limit it to the «Meri» calendar). Meri only touches its own blocks."
       },
       "neverTitle": "Meri never, whatever the permission:",
       "never": {

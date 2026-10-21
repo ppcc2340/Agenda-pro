@@ -25,6 +25,7 @@ export { FakeGoogleOAuth } from "./fakes/oauth";
 export { FakeNotifier, type Notifier, type OutboundNotification } from "./notify/types";
 export {
   GMAIL_SCOPES,
+  FORBIDDEN_SCOPES,
   scopesFor,
   hasGmailScopes,
   hasCalendarScopes,

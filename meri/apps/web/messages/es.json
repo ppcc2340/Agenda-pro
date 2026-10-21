@@ -349,7 +349,8 @@
         "gmailRead": "Leer tus correos: Meri guarda solo metadatos y una cita de hasta 200 caracteres.",
         "gmailDrafts": "Crear borradores en tu Gmail. Nunca los envía.",
         "calendarRead": "Ver tus calendarios para planificar alrededor de tus reuniones.",
-        "calendarWrite": "Crear y mover sus propios bloques en el calendario «Meri»."
+        "calendarWrite": "Crear y mover sus propios bloques en el calendario «Meri».",
+        "calendarWriteLegacy": "Editar eventos en cualquiera de tus calendarios (permiso anterior, más amplio de lo necesario: reconecta Google para limitarlo al calendario «Meri»). Meri solo toca sus propios bloques."
       },
       "neverTitle": "Meri nunca, con ningún permiso:",
       "never": {

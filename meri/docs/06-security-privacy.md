@@ -5,7 +5,7 @@ La confianza es condición de adopción: acceso a correo y calendario profesiona
 ## 1. Autorización y permisos
 - Consentimiento explícito por servicio; scopes mínimos.
 - Gmail MVP: `gmail.readonly` + `gmail.compose` (borradores). **Sin `gmail.send`.**
-- Calendar: `calendar.events` + `calendar.readonly` (preferible un calendario dedicado "Meri").
+- Calendar: `calendar.readonly` (leer para planificar) + `calendar.app.created` (crear el calendario dedicado «Meri» y escribir solo en él). Nunca `calendar` ni `calendar.events`: las reuniones de terceros quedan fuera de alcance por permiso, no solo por código (D-093, ADR 0007).
 - Permisos de lectura y escritura diferenciados y visibles en UI.
 - Nivel de autonomía configurable (`suggest_only` por defecto → `auto_low_risk`).
 

@@ -10,7 +10,9 @@ const SCOPE_KEYS: Record<string, string> = {
   "https://www.googleapis.com/auth/gmail.readonly": "gmailRead",
   "https://www.googleapis.com/auth/gmail.compose": "gmailDrafts",
   "https://www.googleapis.com/auth/calendar.readonly": "calendarRead",
-  "https://www.googleapis.com/auth/calendar.events": "calendarWrite",
+  "https://www.googleapis.com/auth/calendar.app.created": "calendarWrite",
+  // Grants made before D-093: wider than Meri needs; the text says so and invites a reconnect.
+  "https://www.googleapis.com/auth/calendar.events": "calendarWriteLegacy",
 };
 
 /**
