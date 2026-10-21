@@ -24,8 +24,8 @@ Cierre: 2026-10-21. Cada criterio con su evidencia; los que dependen de una pers
 
 | Comprobación | Resultado |
 |---|---|
-| `pnpm verify` (lint, typecheck, test, build, dependency-cruiser, scripts) | PENDIENTE |
-| `pnpm e2e` (desktop + móvil, axe AA) | PENDIENTE |
+| `pnpm verify` (lint, typecheck, test, build, dependency-cruiser, scripts) | ✅ 36/36 tareas de Turbo + 39 tests de scripts (core 116, api 146, db 33, integrations 61, config 25, jobs 58, ai 20, worker 16, web 26), sobre `c0d5007`; el último cambio (`98e5685`, web) pasó lint, typecheck, tests de la web y dependency-cruiser |
+| `pnpm e2e` (desktop + móvil, axe AA) | ✅ 41 passed, 4 skipped (casos «solo desktop» en el proyecto móvil), 5,7 min, sobre build de `98e5685`. La primera pasada encontró un fallo real (las no-op de la demo bloqueaban a toda cuenta en un servidor de demo, no solo a la cuenta de demo), corregido en `98e5685` |
 | `pnpm eval` | 100 % en los cinco conjuntos (captura, prefiltro, compromisos, inyección, briefings) |
 
 ## Revisores al cierre
