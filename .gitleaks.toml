@@ -11,4 +11,7 @@ regexes = [
   '''change-me-dev-only''',
   '''meri_app:meri_app@localhost''',
   '''meri:meri@localhost''',
+  # Fake fixtures in tests committed before they were rewritten (kept in history; never real credentials).
+  '''sk_test_SECRETVALUE''',
+  '''internal-secret-1234567890''',
 ]

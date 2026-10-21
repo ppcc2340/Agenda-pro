@@ -8,7 +8,7 @@ vi.mock("next-auth", () => ({
 const BASE_ENV = {
   DATABASE_URL: "postgres://x",
   AUTH_SECRET: "a".repeat(40),
-  INTERNAL_API_SECRET: "internal-secret-1234567890",
+  INTERNAL_API_SECRET: "i".repeat(24),
   API_URL: "http://api.test",
   LOCAL_MASTER_KEY: Buffer.alloc(32, 9).toString("base64"),
   GOOGLE_MODE: "fake",
