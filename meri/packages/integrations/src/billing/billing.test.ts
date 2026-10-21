@@ -146,6 +146,7 @@ describe("FakeBilling lifecycle (never charges, Stripe-shaped signed events)", (
     const cs = await billing.createCheckoutSession({
       ...checkoutBase,
       plan: "pro",
+      cohort: "A",
       interval: "month",
       trialEnd,
     });
@@ -209,6 +210,7 @@ describe("FakeBilling lifecycle (never charges, Stripe-shaped signed events)", (
     const cs = await billing.createCheckoutSession({
       ...checkoutBase,
       plan: "pro_plus",
+      cohort: "A",
       interval: "year",
       trialEnd: null,
     });

@@ -185,3 +185,12 @@ export {
   type SurveyEligibility,
   type SurveyEvent,
 } from "./beta/survey";
+export {
+  DEFAULT_ANCHOR_B,
+  PRICE_EXPERIMENT,
+  cohortPrices,
+  priceCohortOf,
+  resolvePriceCohort,
+  type CohortPrices,
+  type PriceCohort,
+} from "./billing/cohorts";

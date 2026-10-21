@@ -130,7 +130,7 @@ describe("billing lifecycle (D-058..D-061, D-066, [H1], [M4], [M5])", () => {
     const replay = await hook(paid);
     expect(replay.json<{ status: string }>().status).toBe("duplicate");
     expect(analytics.events.filter((e) => e.event === "subscription_started")).toEqual([
-      { event: "subscription_started", distinctId: a.workspaceId, props: { plan: "pro", interval: "month" } },
+      { event: "subscription_started", distinctId: a.workspaceId, props: { plan: "pro", interval: "month", cohort: "A" } },
     ]);
     // A renewal is not a new subscription.
     await hook(fake.simulate("invoice_paid", subscriptionId));
@@ -231,6 +231,7 @@ describe("billing lifecycle (D-058..D-061, D-066, [H1], [M4], [M5])", () => {
       cancelAtPeriodEnd: false,
       hasPaymentMethod: true,
       workspaceId: c.workspaceId,
+      cohort: "A",
     });
     const res = await hook(fake.simulate("updated", "sub_foreign"));
     expect(res.statusCode).toBe(200);

@@ -6,9 +6,11 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import { z } from "zod";
+import { cohortPrices, resolvePriceCohort, type PriceCohort } from "@meri/core";
 import {
   CANCELLATION_REASONS,
   applySubscriptionSnapshot,
+  assignPriceCohort,
   audit,
   getAccess,
   getCreditBalance,
@@ -26,7 +28,7 @@ import {
   type SubscriptionSnapshot,
 } from "@meri/integrations";
 import { processBillingEvent, track } from "@meri/jobs";
-import type { Logger } from "@meri/config";
+import type { FeatureFlagStore, Logger } from "@meri/config";
 import { ApiError } from "../errors";
 import { requireSession, sessionOf } from "../plugins/session";
 
@@ -43,6 +45,10 @@ export interface BillingRoutesOptions {
   appUrl: string;
   /** The simulated completion route exists only with fake billing outside production ([M4]). */
   allowFakeCompletion: boolean;
+  /** `price_experiment` (D-102) is read here; global only. */
+  flags: FeatureFlagStore;
+  /** Anchor B monthly prices in US cents (PRICE_ANCHOR_B_*), hypothesis defaults otherwise. */
+  anchorB: { pro?: number; pro_plus?: number };
 }
 
 const SubscriptionView = z.object({
@@ -75,6 +81,12 @@ const SubscriptionView = z.object({
   }),
   credits: z.object({ allowance: z.number(), used: z.number(), remaining: z.number() }),
   mode: z.enum(["fake", "live"]),
+  /** D-102: the workspace's price cohort and the prices it sees (US cents per month). */
+  priceCohort: z.enum(["A", "B"]),
+  prices: z.object({
+    pro: z.object({ month: z.number().int(), year: z.number().int() }),
+    pro_plus: z.object({ month: z.number().int(), year: z.number().int() }),
+  }),
 });
 const UrlView = z.object({ url: z.string() });
 const iso = (d: Date | null) => (d ? d.toISOString() : null);
@@ -127,6 +139,22 @@ export function billingRoutes(app: FastifyInstance, options: BillingRoutesOption
       await request.withWorkspace((tx) => linkStripeCustomer(tx, session.workspaceId, customerId));
     return customerId;
   };
+  /**
+   * The workspace's price cohort (D-102), read on the server and fixed the first time it is resolved while the
+   * experiment is on; never taken from the client.
+   */
+  const cohortOf = async (
+    tx: Parameters<typeof getSubscription>[0],
+    workspaceId: Parameters<typeof getSubscription>[1],
+  ): Promise<PriceCohort> => {
+    const sub = await getSubscription(tx, workspaceId);
+    const resolved = resolvePriceCohort({
+      workspaceId,
+      stored: sub?.priceCohort ?? null,
+      experimentOn: await options.flags.isEnabled("price_experiment"),
+    });
+    return resolved.assign ? assignPriceCohort(tx, workspaceId, resolved.cohort) : resolved.cohort;
+  };
   /** After a write, mirror what the provider now says, not the write's response (review H1). */
   const reread = async (
     request: FastifyRequest,
@@ -147,6 +175,7 @@ export function billingRoutes(app: FastifyInstance, options: BillingRoutesOption
         if (!sub) throw new ApiError("NOT_FOUND", "Subscription not found.");
         const ent = await getEntitlements(tx, session.workspaceId);
         const credits = await getCreditBalance(tx, session.workspaceId, now);
+        const cohort = await cohortOf(tx, session.workspaceId);
         return {
           plan: sub.plan,
           status: sub.status,
@@ -165,6 +194,8 @@ export function billingRoutes(app: FastifyInstance, options: BillingRoutesOption
           },
           credits: { allowance: credits.allowance, used: credits.used, remaining: credits.remaining },
           mode: options.billing.mode,
+          priceCohort: cohort,
+          prices: cohortPrices(cohort, options.anchorB),
         };
       });
     },
@@ -197,6 +228,7 @@ export function billingRoutes(app: FastifyInstance, options: BillingRoutesOption
       const trialEnd =
         trialLeft >= MIN_TRIAL_CARRYOVER_MS && sub.trialEndsAt ? sub.trialEndsAt.toISOString() : null;
       const customerId = await customerFor(request, sub.stripeCustomerId);
+      const cohort = await request.withWorkspace((tx) => cohortOf(tx, session.workspaceId));
       const checkout = await provider(request.log, () =>
         options.billing.createCheckoutSession({
           workspaceId: session.workspaceId,
@@ -208,6 +240,7 @@ export function billingRoutes(app: FastifyInstance, options: BillingRoutesOption
           plan: request.body.plan,
           interval: request.body.interval,
           trialEnd,
+          cohort,
         }),
       );
       await request.withWorkspace((tx) =>
@@ -222,6 +255,7 @@ export function billingRoutes(app: FastifyInstance, options: BillingRoutesOption
               plan: request.body.plan,
               interval: request.body.interval,
               trialCarriedOver: trialEnd !== null,
+              cohort,
             },
           },
         ),
@@ -400,7 +434,8 @@ export function billingRoutes(app: FastifyInstance, options: BillingRoutesOption
         });
         return { status: "resumed" as const, url: null };
       }
-      // The period is over: a new subscription of the same plan, charged now.
+      // The period is over: a new subscription of the same plan, charged now, at the workspace's cohort price.
+      const cohort = await request.withWorkspace((tx) => cohortOf(tx, session.workspaceId));
       const checkout = await provider(request.log, () =>
         options.billing.createCheckoutSession({
           workspaceId: session.workspaceId,
@@ -412,6 +447,7 @@ export function billingRoutes(app: FastifyInstance, options: BillingRoutesOption
           plan: sub.plan === "trial" ? "pro" : sub.plan,
           interval: sub.priceInterval ?? "month",
           trialEnd: null,
+          cohort,
         }),
       );
       return { status: "checkout" as const, url: checkout.url };

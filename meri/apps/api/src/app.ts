@@ -281,6 +281,11 @@ export async function buildApp(deps: AppDeps) {
     now: deps.now,
     appUrl: config.env.APP_URL,
     allowFakeCompletion: deps.integrations.billing.mode === "fake" && !config.isProduction,
+    flags: deps.flags ?? new InMemoryFlagStore(),
+    anchorB: {
+      ...(config.env.PRICE_ANCHOR_B_PRO_CENTS ? { pro: config.env.PRICE_ANCHOR_B_PRO_CENTS } : {}),
+      ...(config.env.PRICE_ANCHOR_B_PRO_PLUS_CENTS ? { pro_plus: config.env.PRICE_ANCHOR_B_PRO_PLUS_CENTS } : {}),
+    },
   });
   await app.register(valueReportRoutes, { now: deps.now, analytics: deps.integrations.analytics });
   await app.register(reviewRoutes, { now: deps.now });

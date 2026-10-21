@@ -28,6 +28,7 @@
     "check:migrations": "tsx scripts/check-migrations.ts",
     "beta:invite": "tsx scripts/beta-admin.ts invite",
     "beta:forget": "tsx scripts/beta-admin.ts forget",
+    "flags:set": "tsx scripts/flags-set.ts",
     "eval": "pnpm --filter @meri/ai eval",
     "blockers": "node scripts/check-blockers.mjs",
     "format": "prettier --write .",

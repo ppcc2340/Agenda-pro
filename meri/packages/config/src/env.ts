@@ -65,6 +65,14 @@ export const EnvSchema = z.object({
   STRIPE_PRICE_PRO_PLUS_ANNUAL: optionalString(),
   STRIPE_PRICE_CREDITS_500: optionalString(),
   STRIPE_PRICE_CREDITS_2000: optionalString(),
+  /** D-102: anchor B price ids (optional until the price experiment is turned on). */
+  STRIPE_PRICE_PRO_B: optionalString(),
+  STRIPE_PRICE_PRO_ANNUAL_B: optionalString(),
+  STRIPE_PRICE_PRO_PLUS_B: optionalString(),
+  STRIPE_PRICE_PRO_PLUS_ANNUAL_B: optionalString(),
+  /** D-102: displayed monthly price of anchor B in US cents (hypothesis: 3900 and 5900). */
+  PRICE_ANCHOR_B_PRO_CENTS: z.preprocess(emptyToUndefined, z.coerce.number().int().min(100).max(100_000).optional()),
+  PRICE_ANCHOR_B_PRO_PLUS_CENTS: z.preprocess(emptyToUndefined, z.coerce.number().int().min(100).max(100_000).optional()),
   /** Estimated infrastructure cost per user and month for the margin rollup (D-062). */
   INFRA_COST_USD_PER_USER: z.preprocess(emptyToUndefined, z.coerce.number().nonnegative().default(3)),
 

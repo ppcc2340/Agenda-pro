@@ -1,5 +1,12 @@
 /** Feature flags (docs/02 "Feature flags"). The DB-backed store lives in @meri/db; this is the contract + memory impl. */
-export const FEATURE_FLAGS = ["gmail_autoconfirm", "ai_briefings", "time_inference", "ai_capture"] as const;
+export const FEATURE_FLAGS = [
+  "gmail_autoconfirm",
+  "ai_briefings",
+  "time_inference",
+  "ai_capture",
+  /** D-102: price anchor experiment (cohorts A/B). Global only. */
+  "price_experiment",
+] as const;
 export type FeatureFlag = (typeof FEATURE_FLAGS)[number];
 
 export interface FeatureFlagStore {

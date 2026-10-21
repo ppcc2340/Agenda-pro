@@ -11,7 +11,9 @@ import type {
   CheckoutSnapshot,
   CreditPackCode,
   PaidPlanCode,
+  PriceCohort,
   ProviderSubscriptionStatus,
+  SubscriptionCheckoutInput,
   SubscriptionSnapshot,
 } from "./types";
 
@@ -20,6 +22,8 @@ export interface StripePrices {
   pro: Record<BillingInterval, string>;
   pro_plus: Record<BillingInterval, string>;
   credits: Record<CreditPackCode, string>;
+  /** Price ids of anchor B (D-102); absent until a person creates them in Stripe and turns the experiment on. */
+  b?: { pro: Record<BillingInterval, string>; pro_plus: Record<BillingInterval, string> };
 }
 
 export interface StripeBillingOptions {
@@ -99,16 +103,23 @@ export class StripeBilling implements BillingProvider {
   private readonly fetchImpl: typeof fetch;
   private readonly baseUrl: string;
   private readonly timeoutMs: number;
-  private readonly planOfPrice: Map<string, { plan: PaidPlanCode; interval: BillingInterval }>;
+  private readonly planOfPrice: Map<
+    string,
+    { plan: PaidPlanCode; interval: BillingInterval; cohort: PriceCohort }
+  >;
 
   constructor(private readonly options: StripeBillingOptions) {
     this.fetchImpl = options.fetch ?? fetch;
     this.baseUrl = options.baseUrl ?? "https://api.stripe.com";
     this.timeoutMs = options.timeoutMs ?? 10_000;
     this.planOfPrice = new Map();
+    // Only configured ids are known: a subscription on any other price is refused (CR-H3).
     for (const plan of ["pro", "pro_plus"] as const)
-      for (const interval of ["month", "year"] as const)
-        this.planOfPrice.set(options.prices[plan][interval], { plan, interval });
+      for (const interval of ["month", "year"] as const) {
+        this.planOfPrice.set(options.prices[plan][interval], { plan, interval, cohort: "A" });
+        const b = options.prices.b?.[plan][interval];
+        if (b) this.planOfPrice.set(b, { plan, interval, cohort: "B" });
+      }
   }
 
   private async call<T>(
@@ -178,16 +189,24 @@ export class StripeBilling implements BillingProvider {
       : { customer_email: input.email };
   }
 
-  async createCheckoutSession(
-    input: CheckoutInput & { plan: PaidPlanCode; interval: BillingInterval; trialEnd: string | null },
-  ): Promise<CheckoutSession> {
+  async createCheckoutSession(input: SubscriptionCheckoutInput): Promise<CheckoutSession> {
+    const price =
+      input.cohort === "B"
+        ? this.options.prices.b?.[input.plan][input.interval]
+        : this.options.prices[input.plan][input.interval];
+    if (!price)
+      throw new IntegrationError(
+        "Permanent",
+        "stripe",
+        `no price configured for ${input.plan}/${input.interval} cohort ${input.cohort}`,
+      );
     const trialEnd = input.trialEnd ? Math.floor(new Date(input.trialEnd).getTime() / 1000) : null;
     const session = await this.call<{ id: string; url: string }>(
       "POST",
       "/v1/checkout/sessions",
       {
         mode: "subscription",
-        "line_items[0][price]": this.options.prices[input.plan][input.interval],
+        "line_items[0][price]": price,
         "line_items[0][quantity]": 1,
         ...this.customerParams(input),
         client_reference_id: input.workspaceId,
@@ -259,6 +278,7 @@ export class StripeBilling implements BillingProvider {
       cancelAtPeriodEnd: s.data.cancel_at_period_end,
       hasPaymentMethod: s.data.default_payment_method !== null,
       workspaceId: workspaceId && z.string().uuid().safeParse(workspaceId).success ? workspaceId : null,
+      cohort: known.cohort,
     };
   }
 
@@ -321,10 +341,20 @@ export class StripeBilling implements BillingProvider {
 
   async deleteCustomer(customerId: string): Promise<void> {
     try {
-      await this.call("DELETE", `/v1/customers/${encodeURIComponent(customerId)}`, {}, `delete-customer-${customerId}`);
+      await this.call(
+        "DELETE",
+        `/v1/customers/${encodeURIComponent(customerId)}`,
+        {},
+        `delete-customer-${customerId}`,
+      );
     } catch (err) {
       // Already gone (a retry, or deleted from the dashboard): erasure is complete.
-      if (err instanceof IntegrationError && err.kind === "Permanent" && /No such customer/i.test(err.message)) return;
+      if (
+        err instanceof IntegrationError &&
+        err.kind === "Permanent" &&
+        /No such customer/i.test(err.message)
+      )
+        return;
       throw err;
     }
   }

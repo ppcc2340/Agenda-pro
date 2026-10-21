@@ -286,6 +286,8 @@ export interface BillingSubscription {
   entitlements: { maxClients: number; aiCreditsMonthly: number; retentionDays: number; features: string[] };
   credits: CreditsView;
   mode: "fake" | "live";
+  priceCohort: "A" | "B";
+  prices: Record<"pro" | "pro_plus", Record<BillingInterval, number>>;
 }
 
 export type ValueMethod =

@@ -80,6 +80,7 @@ describe("StripeBilling (live adapter, fetch stubbed)", () => {
       cancelUrl: "https://app/cancel",
       idempotencyKey: "idem-1",
       plan: "pro",
+      cohort: "A",
       interval: "year",
       trialEnd: "2027-01-01T00:00:00.000Z",
     });
@@ -113,6 +114,7 @@ describe("StripeBilling (live adapter, fetch stubbed)", () => {
       cancelUrl: "c",
       idempotencyKey: "k",
       plan: "pro_plus",
+      cohort: "A",
       interval: "month",
       trialEnd: null,
     });
@@ -155,7 +157,62 @@ describe("StripeBilling (live adapter, fetch stubbed)", () => {
       cancelAtPeriodEnd: false,
       hasPaymentMethod: true,
       workspaceId: WS,
+      cohort: "A",
     });
+  });
+
+  it("price cohort B (D-102): checkout uses the B price id, snapshots say B, and unconfigured ids are refused", async () => {
+    const withB = (fetchImpl: typeof fetch) =>
+      new StripeBilling({
+        secretKey: "sk_test_x",
+        webhookSecret: "whsec_live",
+        prices: {
+          ...prices,
+          b: {
+            pro: { month: "price_pro_m_b", year: "price_pro_y_b" },
+            pro_plus: { month: "price_plus_m_b", year: "price_plus_y_b" },
+          },
+        },
+        fetch: fetchImpl,
+      });
+    const base = {
+      workspaceId: WS,
+      email: "a@b.c",
+      customerId: "cus_1",
+      successUrl: "s",
+      cancelUrl: "c",
+      idempotencyKey: "k",
+      plan: "pro" as const,
+      interval: "month" as const,
+      trialEnd: null,
+    };
+    const { calls, fetchImpl } = stub([{ status: 200, json: { id: "cs_b", url: "u" } }]);
+    await withB(fetchImpl).createCheckoutSession({ ...base, cohort: "B" });
+    expect(calls[0]?.body).toContainEqual(["line_items[0][price]", "price_pro_m_b"]);
+    // Without B prices configured the checkout refuses instead of charging the A price silently.
+    await expect(
+      make(stub([]).fetchImpl).createCheckoutSession({ ...base, cohort: "B" }),
+    ).rejects.toMatchObject({
+      kind: "Permanent",
+    });
+    const adapter = withB(stub([]).fetchImpl);
+    const raw = (price: string) => ({
+      id: "sub_b",
+      customer: "cus_1",
+      status: "active",
+      cancel_at_period_end: false,
+      default_payment_method: "pm_1",
+      trial_end: null,
+      current_period_end: 1_800_000_000,
+      metadata: { workspaceId: WS },
+      items: { data: [{ price: { id: price }, current_period_end: 1_800_000_000 }] },
+    });
+    expect(adapter.toSnapshot(raw("price_plus_y_b"))).toMatchObject({
+      plan: "pro_plus",
+      interval: "year",
+      cohort: "B",
+    });
+    expect(() => adapter.toSnapshot(raw("price_someone_else"))).toThrow(/no known Meri price/);
   });
 
   it("drops a non-uuid workspace from metadata and maps unknown statuses conservatively", () => {

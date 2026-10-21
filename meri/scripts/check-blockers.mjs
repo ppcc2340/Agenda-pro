@@ -51,6 +51,8 @@ for (const b of list) {
   console.log(`   ${note}`);
   if (missing.length && status !== "❌ error") console.log(`   faltan: ${missing.join(", ")}`);
   if (status.startsWith("⏳")) console.log(`   guía: ${b.guide}  (${b.leadTime})`);
+  const optionalMissing = (b.optionalEnv ?? []).filter((k) => !isSet(env[k]));
+  if (optionalMissing.length) console.log(`   opcional: ${optionalMissing.join(", ")} — ${b.optionalNote ?? ""}`);
   console.log("");
 }
 const pending = list.filter((b) => b.env.some((k) => !isSet(env[k]))).length;

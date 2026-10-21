@@ -51,6 +51,13 @@
         "STRIPE_PRICE_CREDITS_500",
         "STRIPE_PRICE_CREDITS_2000"
       ],
+      "optionalEnv": [
+        "STRIPE_PRICE_PRO_B",
+        "STRIPE_PRICE_PRO_ANNUAL_B",
+        "STRIPE_PRICE_PRO_PLUS_B",
+        "STRIPE_PRICE_PRO_PLUS_ANNUAL_B"
+      ],
+      "optionalNote": "Solo para el experimento de precio (D-102): precios del ancla B; sin ellos el checkout de la cohorte B se rechaza",
       "fallback": "Facturación simulada: planes y créditos gestionados localmente sin cobrar",
       "unlocks": [
         "Fase 4: cobros, créditos y portal de cliente"

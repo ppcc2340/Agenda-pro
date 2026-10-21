@@ -137,6 +137,23 @@ describe("billing.usage_rollup (D-062, [M10], [L12])", () => {
     );
   });
 
+  it("a workspace in price cohort B is counted at anchor B (D-102), configurable", async () => {
+    const ws = await fresh();
+    await withWorkspace(handle.db, ws, (tx) =>
+      tx
+        .update(subscriptions)
+        .set({ plan: "pro", status: "active", priceInterval: "month", hasPaymentMethod: true, priceCohort: "B" }),
+    );
+    await runUsageRollup(deps, ws, "2026-10");
+    expect((await withWorkspace(handle.db, ws, (tx) => getRollup(tx, ws, "2026-10")))?.revenueMicroUsd).toBe(
+      39_000_000,
+    );
+    await runUsageRollup({ ...deps, anchorB: { pro: 4500 } }, ws, "2026-10");
+    expect((await withWorkspace(handle.db, ws, (tx) => getRollup(tx, ws, "2026-10")))?.revenueMicroUsd).toBe(
+      45_000_000,
+    );
+  });
+
   it("trial.ending: once, only within 3 days of the end and only without a card ([M10])", async () => {
     const ws = await fresh();
     const notes = async () =>

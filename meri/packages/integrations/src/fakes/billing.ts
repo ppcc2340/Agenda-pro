@@ -11,6 +11,8 @@ import type {
   CheckoutSnapshot,
   CreditPackCode,
   PaidPlanCode,
+  PriceCohort,
+  SubscriptionCheckoutInput,
   SubscriptionSnapshot,
 } from "../billing/types";
 
@@ -21,6 +23,7 @@ interface FakeSession {
   mode: "subscription" | "payment";
   plan: PaidPlanCode | null;
   interval: BillingInterval | null;
+  cohort: PriceCohort;
   pack: CreditPackCode | null;
   trialEnd: string | null;
   completed: boolean;
@@ -38,9 +41,10 @@ export interface SignedWebhook {
 export type FakeLifecycleStep = "invoice_paid" | "payment_failed" | "updated" | "deleted";
 
 const PERIOD_DAYS: Record<BillingInterval, number> = { month: 30, year: 365 };
-const PRICE_CENTS: Record<PaidPlanCode, Record<BillingInterval, number>> = {
-  pro: { month: 2900, year: 28800 },
-  pro_plus: { month: 4900, year: 49200 },
+/** Amount charged per period, by cohort (B mirrors DEFAULT_ANCHOR_B in @meri/core, D-102). */
+const PRICE_CENTS: Record<PriceCohort, Record<PaidPlanCode, Record<BillingInterval, number>>> = {
+  A: { pro: { month: 2900, year: 28800 }, pro_plus: { month: 4900, year: 49200 } },
+  B: { pro: { month: 3900, year: 38400 }, pro_plus: { month: 5900, year: 58800 } },
 };
 
 /**
@@ -79,7 +83,7 @@ export class FakeBilling implements BillingProvider {
 
   private session(
     input: CheckoutInput,
-    extra: Pick<FakeSession, "mode" | "plan" | "interval" | "pack" | "trialEnd">,
+    extra: Pick<FakeSession, "mode" | "plan" | "interval" | "cohort" | "pack" | "trialEnd">,
   ): CheckoutSession {
     const id = this.next("cs");
     this.sessions.set(id, {
@@ -93,14 +97,13 @@ export class FakeBilling implements BillingProvider {
     return { id, url: `${base}${base.includes("?") ? "&" : "?"}session=${id}` };
   }
 
-  createCheckoutSession(
-    input: CheckoutInput & { plan: PaidPlanCode; interval: BillingInterval; trialEnd: string | null },
-  ): Promise<CheckoutSession> {
+  createCheckoutSession(input: SubscriptionCheckoutInput): Promise<CheckoutSession> {
     return Promise.resolve(
       this.session(input, {
         mode: "subscription",
         plan: input.plan,
         interval: input.interval,
+        cohort: input.cohort,
         pack: null,
         trialEnd: input.trialEnd,
       }),
@@ -109,7 +112,14 @@ export class FakeBilling implements BillingProvider {
 
   createCreditPackCheckout(input: CheckoutInput & { pack: CreditPackCode }): Promise<CheckoutSession> {
     return Promise.resolve(
-      this.session(input, { mode: "payment", plan: null, interval: null, pack: input.pack, trialEnd: null }),
+      this.session(input, {
+        mode: "payment",
+        plan: null,
+        interval: null,
+        cohort: "A",
+        pack: input.pack,
+        trialEnd: null,
+      }),
     );
   }
 
@@ -236,6 +246,7 @@ export class FakeBilling implements BillingProvider {
         cancelAtPeriodEnd: false,
         hasPaymentMethod: true,
         workspaceId: s.workspaceId,
+        cohort: s.cohort,
       });
     }
     s.completed = true;
@@ -301,7 +312,7 @@ export class FakeBilling implements BillingProvider {
         object: "invoice",
         customer: s.customerId,
         subscription: s.subscriptionId,
-        amount_paid: PRICE_CENTS[s.plan][s.interval],
+        amount_paid: PRICE_CENTS[s.cohort][s.plan][s.interval],
       });
     }
     if (step === "payment_failed") {

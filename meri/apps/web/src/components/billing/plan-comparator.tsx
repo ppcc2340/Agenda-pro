@@ -21,11 +21,14 @@ export function PlanComparator({
   ctaHref,
   current,
   busy,
+  prices,
 }: {
   onChoose?: (plan: PaidPlan, interval: BillingInterval) => void;
   ctaHref?: string;
   current?: PaidPlan | null;
   busy?: boolean;
+  /** The signed-in workspace's prices (price cohort, D-102); the public page shows the catalogue (cohort A). */
+  prices?: Record<PaidPlan, Record<BillingInterval, number>>;
 }) {
   const t = useTranslations("pricing");
   const format = useFormatter();
@@ -44,6 +47,7 @@ export function PlanComparator({
       <ul className="grid gap-3 md:grid-cols-2">
         {PAID.map((code) => {
           const plan = PLANS[code];
+          const price = prices?.[code] ?? plan.priceCents;
           const name = t(`plans.${code}.name`);
           return (
             <li key={code} className="flex flex-col rounded-2xl border border-rule bg-raised p-4">
@@ -53,12 +57,12 @@ export function PlanComparator({
               </div>
               <p className="mt-1 text-ink2">{t(`plans.${code}.tagline`)}</p>
               <p className="mt-3">
-                <b className="num font-head text-[28px] font-semibold">{usd(plan.priceCents[interval])}</b>{" "}
+                <b className="num font-head text-[28px] font-semibold">{usd(price[interval])}</b>{" "}
                 <span className="text-ink2">{t("perMonth")}</span>
               </p>
               {interval === "year" ? (
                 <p className="text-[12.5px] text-ink3">
-                  {t("billedYearly", { total: usd(plan.priceCents.year * 12) })}
+                  {t("billedYearly", { total: usd(price.year * 12) })}
                 </p>
               ) : null}
               <ul className="mt-3 flex-1 space-y-1.5 text-[13.5px]">

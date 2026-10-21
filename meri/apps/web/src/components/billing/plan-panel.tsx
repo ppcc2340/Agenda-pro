@@ -223,6 +223,7 @@ export function PlanPanel() {
             <PlanComparator
               busy={checkout.isPending}
               current={paid && s.plan !== "trial" ? s.plan : null}
+              prices={s.prices}
               onChoose={(plan, interval) => checkout.mutate({ plan, interval })}
             />
           </DialogContent>

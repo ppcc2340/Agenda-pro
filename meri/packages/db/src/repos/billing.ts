@@ -2,7 +2,7 @@
  * Phase 4 billing state (D-058..D-061, ADR 0006): the local subscription mirror, entitlements derived from the plan
  * catalogue, webhook idempotency, credit packs, credit usage and the cancellation survey.
  */
-import { and, count, desc, eq, sql } from "drizzle-orm";
+import { and, count, desc, eq, isNull, sql } from "drizzle-orm";
 import {
   accessFor,
   creditBalance,
@@ -48,6 +48,8 @@ export interface SubscriptionView extends SubscriptionState {
   stripeSubscriptionId: string | null;
   priceInterval: "month" | "year" | null;
   lastEventAt: Date | null;
+  /** D-102: price experiment cohort, null until assigned. */
+  priceCohort: "A" | "B" | null;
 }
 
 export interface EntitlementsView {
@@ -71,6 +73,7 @@ const toSubscription = (r: SubRow): SubscriptionView => ({
   stripeSubscriptionId: r.stripeSubscriptionId,
   priceInterval: r.priceInterval === "month" || r.priceInterval === "year" ? r.priceInterval : null,
   lastEventAt: r.lastEventAt,
+  priceCohort: r.priceCohort === "A" || r.priceCohort === "B" ? r.priceCohort : null,
 });
 
 export async function getSubscription(
@@ -79,6 +82,23 @@ export async function getSubscription(
 ): Promise<SubscriptionView | null> {
   const row = await tx.query.subscriptions.findFirst({ where: eq(subscriptions.workspaceId, workspaceId) });
   return row ? toSubscription(row) : null;
+}
+
+/**
+ * Fixes the workspace's price cohort (D-102) if it has none yet; returns the stored one either way (a concurrent
+ * request that stored first wins, so the cohort can never change).
+ */
+export async function assignPriceCohort(
+  tx: WorkspaceTx,
+  workspaceId: WorkspaceId,
+  cohort: "A" | "B",
+): Promise<"A" | "B"> {
+  await tx
+    .update(subscriptions)
+    .set({ priceCohort: cohort })
+    .where(and(eq(subscriptions.workspaceId, workspaceId), isNull(subscriptions.priceCohort)));
+  const row = await tx.query.subscriptions.findFirst({ where: eq(subscriptions.workspaceId, workspaceId) });
+  return row?.priceCohort === "B" ? "B" : "A";
 }
 
 export async function getEntitlements(tx: WorkspaceTx, workspaceId: WorkspaceId): Promise<EntitlementsView> {

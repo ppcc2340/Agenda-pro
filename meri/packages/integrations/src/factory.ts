@@ -99,6 +99,17 @@ export function createIntegrations(config: AppConfig, deps: IntegrationsDeps): I
               "500": env.STRIPE_PRICE_CREDITS_500 ?? "",
               "2000": env.STRIPE_PRICE_CREDITS_2000 ?? "",
             },
+            ...(env.STRIPE_PRICE_PRO_B &&
+            env.STRIPE_PRICE_PRO_ANNUAL_B &&
+            env.STRIPE_PRICE_PRO_PLUS_B &&
+            env.STRIPE_PRICE_PRO_PLUS_ANNUAL_B
+              ? {
+                  b: {
+                    pro: { month: env.STRIPE_PRICE_PRO_B, year: env.STRIPE_PRICE_PRO_ANNUAL_B },
+                    pro_plus: { month: env.STRIPE_PRICE_PRO_PLUS_B, year: env.STRIPE_PRICE_PRO_PLUS_ANNUAL_B },
+                  },
+                }
+              : {}),
           },
         });
   const analytics: Analytics =

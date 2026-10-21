@@ -6,6 +6,7 @@
 import { CREDIT_PACKS, localDateKey } from "@meri/core";
 import {
   applySubscriptionSnapshot,
+  assignPriceCohort,
   audit,
   auditActionExists,
   getPreferences,
@@ -142,6 +143,8 @@ export async function processBillingEvent(
     const analytics: (() => void)[] = [];
     let staleMirror = false;
     if (snapshot) {
+      // The cohort the provider bills at fills a missing one (D-102); a stored cohort never changes.
+      await assignPriceCohort(tx, workspaceId, snapshot.cohort);
       const applied = await applySubscriptionSnapshot(tx, workspaceId, snapshot, {
         eventAt: new Date(event.createdAt),
         now,
@@ -206,6 +209,7 @@ export async function processBillingEvent(
           track(deps.analytics, "subscription_started", workspaceId, {
             plan: snap.plan,
             interval: snap.interval,
+            cohort: snap.cohort,
           });
         });
     }

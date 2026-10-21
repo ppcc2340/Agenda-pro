@@ -3,7 +3,7 @@ import type { WorkspaceId } from "@meri/db";
 import type { JobDefinition } from "../registry";
 
 export function billingUsageRollupJob(
-  deps: Omit<HandlerDeps, "logger"> & { infraCostUsdPerUser: number },
+  deps: Omit<HandlerDeps, "logger"> & { infraCostUsdPerUser: number; anchorB?: { pro?: number; pro_plus?: number } },
 ): JobDefinition<typeof BillingUsageRollupJob.schema> {
   return {
     name: BillingUsageRollupJob.name,

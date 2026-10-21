@@ -4,6 +4,8 @@ export type PlanCode = "trial" | "pro" | "pro_plus";
 export type PaidPlanCode = Exclude<PlanCode, "trial">;
 export type BillingInterval = "month" | "year";
 export type CreditPackCode = "500" | "2000";
+/** Price experiment cohort (D-102): A = published prices, B = the alternative anchor. */
+export type PriceCohort = "A" | "B";
 export type ProviderSubscriptionStatus =
   "trialing" | "active" | "past_due" | "canceled" | "unpaid" | "incomplete";
 
@@ -25,6 +27,8 @@ export interface SubscriptionSnapshot {
   hasPaymentMethod: boolean;
   /** From the subscription's own metadata, set by Meri when the checkout session was created. */
   workspaceId: string | null;
+  /** Which cohort's price the subscription is billed at (read from its price id, never from the client). */
+  cohort: PriceCohort;
 }
 
 export type BillingEventType =
@@ -70,13 +74,19 @@ export interface CheckoutInput {
   idempotencyKey: string;
 }
 
+/** Subscription checkout: the cohort comes from `subscriptions.price_cohort` on the server, never from the client. */
+export interface SubscriptionCheckoutInput extends CheckoutInput {
+  plan: PaidPlanCode;
+  interval: BillingInterval;
+  trialEnd: string | null;
+  cohort: PriceCohort;
+}
+
 /** Billing connector (docs/08, ADR 0006). Live = Stripe; fake keeps everything local and never charges. */
 export interface BillingProvider {
   readonly mode: "fake" | "live";
   healthCheck(): Promise<HealthReport>;
-  createCheckoutSession(
-    input: CheckoutInput & { plan: PaidPlanCode; interval: BillingInterval; trialEnd: string | null },
-  ): Promise<CheckoutSession>;
+  createCheckoutSession(input: SubscriptionCheckoutInput): Promise<CheckoutSession>;
   createCreditPackCheckout(input: CheckoutInput & { pack: CreditPackCode }): Promise<CheckoutSession>;
   createPortalSession(input: { customerId: string; returnUrl: string }): Promise<{ url: string }>;
   /** The workspace's provider customer, created once (idempotent per workspace) so every checkout shares it. */

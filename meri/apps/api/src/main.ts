@@ -1,5 +1,5 @@
 import { createLogger, loadConfig, loadDotenv } from "@meri/config";
-import { assertAppRole, createDb } from "@meri/db";
+import { DbFlagStore, assertAppRole, createDb } from "@meri/db";
 import { createIntegrations, FakeAiClient } from "@meri/integrations";
 import { registerFakeAiHandlers } from "@meri/ai";
 import { Redis } from "ioredis";
@@ -47,6 +47,8 @@ async function main(): Promise<void> {
     dispatcher,
     rateLimitMax: config.env.RATE_LIMIT_PER_MINUTE,
     rateLimitRedis,
+    // Flags live in `feature_flags` (read-only for the app role; `pnpm flags:set` changes them).
+    flags: new DbFlagStore(handle.db),
     onTasksChanged: async (workspaceId, traceId) => {
       await enqueueReplan(dispatcher, now, { workspaceId, traceId, reason: "tasks_changed" });
       // Completed blocks are a time source (D-042); the job is idempotent and debounced.

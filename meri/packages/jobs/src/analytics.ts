@@ -31,7 +31,9 @@ export const ANALYTICS_SCHEMAS = {
   time_export: z.object({ scope: z.enum(["week", "month"]), entries: count }).strict(),
   value_report_viewed: z.object({ period: z.enum(["week", "month"]) }).strict(),
   trial_started: z.object({ trialDays: count }).strict(),
-  subscription_started: z.object({ plan: paidPlan, interval: z.enum(["month", "year"]) }).strict(),
+  subscription_started: z
+    .object({ plan: paidPlan, interval: z.enum(["month", "year"]), cohort: z.enum(["A", "B"]) })
+    .strict(),
   subscription_cancelled: z
     .object({
       reason: z.enum(["price", "not_using", "missing_feature", "switched_tool", "privacy", "other"]),

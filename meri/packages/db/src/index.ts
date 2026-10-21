@@ -108,4 +108,5 @@ export * from "./repos/billing";
 export * from "./repos/value-events";
 export * from "./repos/rollups";
 export * from "./repos/beta";
+export { DbFlagStore, listGlobalFlags, setFlag } from "./flags";
 export { TABLE_CLASSIFICATION, PURGE_AFTER_DAYS, deletionSubjectHash, listPurgeCandidates, purgeWorkspace, workspaceDeletedAt, remainingPersonalRows, type TableName } from "./purge";

@@ -83,7 +83,14 @@ async function main(): Promise<void> {
     extractCommitmentsJob({ ...handlerDeps, costCapUsd: config.env.AI_MONTHLY_COST_CAP_USD_PER_USER }),
   );
   registry.register(
-    billingUsageRollupJob({ ...handlerDeps, infraCostUsdPerUser: config.env.INFRA_COST_USD_PER_USER }),
+    billingUsageRollupJob({
+      ...handlerDeps,
+      infraCostUsdPerUser: config.env.INFRA_COST_USD_PER_USER,
+      anchorB: {
+        ...(config.env.PRICE_ANCHOR_B_PRO_CENTS ? { pro: config.env.PRICE_ANCHOR_B_PRO_CENTS } : {}),
+        ...(config.env.PRICE_ANCHOR_B_PRO_PLUS_CENTS ? { pro_plus: config.env.PRICE_ANCHOR_B_PRO_PLUS_CENTS } : {}),
+      },
+    }),
   );
 
   // Cross-tenant dispatchers (D-025) use the owner connection only to enumerate accounts.

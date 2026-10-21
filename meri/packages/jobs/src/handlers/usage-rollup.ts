@@ -4,7 +4,7 @@
  * payment fees, gross margin and the < 70 % alarm (paying users only). Also leaves the `trial.ending` notice once,
  * 3 days before a trial without a card ends.
  */
-import { PLANS, grossMargin, periodRevenueMicroUsd } from "@meri/core";
+import { cohortPrices, grossMargin, periodRevenueMicroUsd } from "@meri/core";
 import { getSubscription, periodAiTotals, upsertRollup, withWorkspace, type WorkspaceId } from "@meri/db";
 import { notifyBillingOnce } from "../budget";
 import type { HandlerDeps } from "./context";
@@ -20,7 +20,7 @@ export interface UsageRollupResult {
 }
 
 export async function runUsageRollup(
-  deps: HandlerDeps & { infraCostUsdPerUser: number },
+  deps: HandlerDeps & { infraCostUsdPerUser: number; anchorB?: { pro?: number; pro_plus?: number } },
   workspaceId: WorkspaceId,
   period: string,
 ): Promise<UsageRollupResult> {
@@ -30,7 +30,10 @@ export async function runUsageRollup(
     const plan = sub?.plan ?? "trial";
     // Revenue only while the plan is billed (a trial or an ended subscription brings nothing in).
     const paying = sub !== null && plan !== "trial" && (sub.status === "active" || sub.status === "past_due");
-    const priceCents = paying ? PLANS[plan].priceCents[sub.priceInterval ?? "month"] : 0;
+    // The catalogue of the workspace's price cohort (D-102): B is billed at anchor B.
+    const priceCents = paying
+      ? cohortPrices(sub.priceCohort ?? "A", deps.anchorB)[plan][sub.priceInterval ?? "month"]
+      : 0;
     const ai = await periodAiTotals(tx, workspaceId, period);
     const margin = grossMargin({
       revenueMicroUsd: periodRevenueMicroUsd(priceCents),
