@@ -9,9 +9,18 @@ import { decryptBackupFile, encryptBackupFile, type BackupManifest } from "./bac
 /**
  * Logical backups (ADR 0007, docs/runbooks/backup-restore.md). The dump runs as the admin owner with the admin read
  * context (`app.workspace_id = '*'`, D-037) and `--enable-row-security`, so FORCE RLS is honoured and every tenant
- * row is included without a BYPASSRLS role. Connection strings are passed to pg tools as arguments, never logged.
+ * row is included without a BYPASSRLS role. pg tools get the connection URL without its password, which travels in
+ * `PGPASSWORD` (process arguments are visible to every local user through `ps`); nothing is logged.
  */
 const ADMIN_READ = "-c app.workspace_id=*";
+
+/** Splits a postgres URL for pg tools: the password goes to the child's environment, never to its arguments. */
+export function pgToolConnection(url: string): { dbname: string; env: Record<string, string> } {
+  const parsed = new URL(url);
+  const password = decodeURIComponent(parsed.password);
+  parsed.password = "";
+  return { dbname: parsed.toString(), env: password ? { PGPASSWORD: password } : {} };
+}
 
 function run(cmd: string, args: string[], env: Record<string, string> = {}): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -24,9 +33,12 @@ function run(cmd: string, args: string[], env: Record<string, string> = {}): Pro
       reject(new Error(`${cmd} could not start (${err.message}); install postgresql-client-16`));
     });
     child.on("close", (code) => {
-      // stderr from pg tools never contains the password (passed in the URL argument, not echoed).
+      // stderr from pg tools never contains the password (it is only in PGPASSWORD).
       if (code === 0) resolve();
-      else reject(new Error(`${cmd} exited with ${String(code)}: ${stderr.trim().split("\n").slice(-3).join(" | ")}`));
+      else
+        reject(
+          new Error(`${cmd} exited with ${String(code)}: ${stderr.trim().split("\n").slice(-3).join(" | ")}`),
+        );
     });
   });
 }
@@ -46,7 +58,9 @@ async function countTables(sql: Sql): Promise<{ migrations: number; tables: Reco
 }
 
 /** Row count per public table plus the number of applied migrations, read under the admin read context. */
-export async function tableCounts(url: string): Promise<{ migrations: number; tables: Record<string, number> }> {
+export async function tableCounts(
+  url: string,
+): Promise<{ migrations: number; tables: Record<string, number> }> {
   const handle = createDb(url, { max: 1, connection: { "app.workspace_id": ADMIN_WORKSPACE_CONTEXT } });
   try {
     return await countTables(handle.sql);
@@ -76,23 +90,27 @@ export async function createBackup(options: {
     const t0 = Date.now();
     // The manifest and the dump read the same exported snapshot: concurrent writes can never make the
     // verification of a restore disagree with what was actually dumped.
-    const handle = createDb(options.adminUrl, { max: 1, connection: { "app.workspace_id": ADMIN_WORKSPACE_CONTEXT } });
+    const handle = createDb(options.adminUrl, {
+      max: 1,
+      connection: { "app.workspace_id": ADMIN_WORKSPACE_CONTEXT },
+    });
     let counts: Awaited<ReturnType<typeof countTables>>;
     try {
       counts = await handle.sql.begin("isolation level repeatable read read only", async (tx) => {
         const [snap] = await tx<{ id: string }[]>`select pg_export_snapshot() as id`;
         // TransactionSql has the same tagged-template and identifier API that countTables uses.
         const inSnapshot = await countTables(tx as unknown as Sql);
+        const conn = pgToolConnection(options.adminUrl);
         await run(
           "pg_dump",
           [
             "--format=custom",
             "--enable-row-security",
             `--snapshot=${snap?.id ?? ""}`,
-            `--dbname=${options.adminUrl}`,
+            `--dbname=${conn.dbname}`,
             `--file=${dump}`,
           ],
-          { PGOPTIONS: ADMIN_READ },
+          { PGOPTIONS: ADMIN_READ, ...conn.env },
         );
         return inSnapshot;
       });
@@ -103,7 +121,14 @@ export async function createBackup(options: {
     const manifest: BackupManifest = { createdAt: options.now.toISOString(), ...counts };
     const t1 = Date.now();
     const sealed = await encryptBackupFile(options.keys, dump, options.out, manifest);
-    return { path: options.out, manifest, dumpMs, encryptMs: Date.now() - t1, bytes: sealed.bytes, keyId: sealed.keyId };
+    return {
+      path: options.out,
+      manifest,
+      dumpMs,
+      encryptMs: Date.now() - t1,
+      bytes: sealed.bytes,
+      keyId: sealed.keyId,
+    };
   } finally {
     await rm(work, { recursive: true, force: true });
   }
@@ -120,14 +145,17 @@ export async function reapplyDeletions(targetUrl: string, receiptsFromUrl?: stri
   try {
     const receipts = new Set<string>();
     for (const source of sources)
-      for (const r of await source.sql<{ h: string }[]>`select subject_hash as h from deletion_receipts`) receipts.add(r.h);
+      for (const r of await source.sql<{ h: string }[]>`select subject_hash as h from deletion_receipts`)
+        receipts.add(r.h);
     const restored = await target.sql<{ id: string }[]>`select id from workspaces`;
     let reapplied = 0;
     for (const { id } of restored) {
       if (!receipts.has(deletionSubjectHash(id))) continue;
       await target.sql.begin(async (tx) => {
         await tx`select set_config('app.workspace_id', ${id}, true)`;
-        const members = await tx<{ userId: string }[]>`select user_id as "userId" from memberships where workspace_id = ${id}`;
+        const members = await tx<
+          { userId: string }[]
+        >`select user_id as "userId" from memberships where workspace_id = ${id}`;
         await tx`delete from feature_flags where workspace_id = ${id}`;
         await tx`delete from workspaces where id = ${id}`;
         await tx`select set_config('app.workspace_id', '*', true)`;
@@ -160,7 +188,8 @@ export async function assertEmptyTarget(targetUrl: string): Promise<void> {
   try {
     const [row] = await handle.sql<{ n: string }[]>`
       select count(*)::text as n from pg_tables where schemaname not in ('pg_catalog', 'information_schema')`;
-    if (Number(row?.n ?? 0) > 0) throw new Error("restore target is not empty: refusing to overwrite a database");
+    if (Number(row?.n ?? 0) > 0)
+      throw new Error("restore target is not empty: refusing to overwrite a database");
   } finally {
     await handle.close();
   }
@@ -182,7 +211,8 @@ export async function restoreBackup(options: {
     const manifest = await decryptBackupFile(options.keys, options.file, dump);
     const decryptMs = Date.now() - t0;
     const t1 = Date.now();
-    await run("pg_restore", ["--no-owner", "--exit-on-error", `--dbname=${options.targetUrl}`, dump]);
+    const conn = pgToolConnection(options.targetUrl);
+    await run("pg_restore", ["--no-owner", "--exit-on-error", `--dbname=${conn.dbname}`, dump], conn.env);
     const restoreMs = Date.now() - t1;
     // Counts are verified against the manifest before any erasure is re-applied (which legitimately removes rows).
     const restored = await tableCounts(options.targetUrl);
