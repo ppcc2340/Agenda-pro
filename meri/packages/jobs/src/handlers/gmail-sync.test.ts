@@ -16,6 +16,7 @@ import {
   createIntegrations,
   GMAIL_SCOPES,
   IntegrationError,
+  MessageGoneError,
   type FakeGmail,
   type Integrations,
 } from "@meri/integrations";
@@ -233,5 +234,34 @@ describe("gmail.sync (F-07 AC3, AC4; ADR 0004)", () => {
     const [account] = await withWorkspace(handle.db, ws, (tx) => listIntegrationAccounts(tx, ws));
     expect(account?.status).toBe("needs_reauth");
     expect((await withWorkspace(handle.db, ws, (tx) => listThreads(tx, ws, { limit: 10 }))).length).toBe(1);
+  });
+
+  it("a message deleted between listing and reading is skipped and the cursor still advances (CR-9)", async () => {
+    const mail = integrations.mailFor(email) as FakeGmail;
+    for (const id of ["m-gone", "m-kept"])
+      mail.addMessage({
+        id,
+        threadId: "t-gone",
+        from: "ana@acme.com",
+        to: [email],
+        headers: {},
+        labels: ["INBOX"],
+        subject: "Plazos",
+        date: "2026-10-16T09:00:00Z",
+        snippet: "Plazos",
+        bodyText: "Plazos.",
+      });
+    const original = mail.getMessageMeta.bind(mail);
+    mail.getMessageMeta = (id) =>
+      id === "m-gone" ? Promise.reject(new MessageGoneError("gmail", id)) : original(id);
+    try {
+      const res = await syncMailAccount(deps, ws, accountId);
+      expect(res.status).toBe("synced");
+      expect(res.changed.flatMap((c) => c.messageIds)).toEqual(["m-kept"]);
+      // The next run does not replay the range: nothing new.
+      expect((await syncMailAccount(deps, ws, accountId)).seen).toBe(0);
+    } finally {
+      mail.getMessageMeta = original;
+    }
   });
 });

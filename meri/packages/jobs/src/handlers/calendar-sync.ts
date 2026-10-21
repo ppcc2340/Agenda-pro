@@ -4,6 +4,7 @@ import {
   getIntegrationAccount,
   getSyncCursor,
   purgeCalendarEvents,
+  purgeCalendarsExcept,
   setIntegrationStatus,
   setSyncCursor,
   upsertCalendarEvent,
@@ -12,7 +13,12 @@ import {
   type WorkspaceTx,
   listClientRefs,
 } from "@meri/db";
-import { IntegrationError, type CalendarEvent, type CalendarProvider } from "@meri/integrations";
+import {
+  IntegrationError,
+  hasCalendarScopes,
+  type CalendarEvent,
+  type CalendarProvider,
+} from "@meri/integrations";
 import { resolveClient } from "@meri/core";
 import type { HandlerDeps } from "./context";
 import { googleAccess, markNeedsReauth } from "../google-access";
@@ -150,6 +156,9 @@ export async function syncCalendarAccount(
   if (!account) return { status: "skipped", upserted: 0, removed: 0, fullResync: false };
   if (account.status === "paused" || account.status === "revoked")
     return { status: "paused", upserted: 0, removed: 0, fullResync: false };
+  // Gmail-only connection: nothing to mirror (calling Calendar would be a 403 read as an expired grant).
+  if (!hasCalendarScopes(account.scopes))
+    return { status: "skipped", upserted: 0, removed: 0, fullResync: false };
   let access;
   try {
     access = await googleAccess(deps, workspaceId, accountId);
@@ -167,12 +176,18 @@ export async function syncCalendarAccount(
   };
   const result: CalendarSyncResult = { status: "synced", upserted: 0, removed: 0, fullResync: false };
   try {
-    for (const cal of await calendar.listCalendars()) {
+    const calendars = await calendar.listCalendars();
+    for (const cal of calendars) {
       const r = await syncOneCalendar(deps, workspaceId, accountId, calendar, cal.id, range, access.email);
       result.upserted += r.upserted;
       result.removed += r.removed;
       result.fullResync = result.fullResync || r.fullResync;
     }
+    // Calendars that left the list take their events (and their cursor) with them (review L9).
+    await withWorkspace(deps.db, workspaceId, async (tx) => {
+      const gone = await purgeCalendarsExcept(tx, workspaceId, accountId, calendars.map((c) => c.id));
+      for (const id of gone) await setSyncCursor(tx, workspaceId, accountId, calendarResource(id), null, now);
+    });
     await withWorkspace(deps.db, workspaceId, (tx) =>
       setIntegrationStatus(tx, workspaceId, accountId, {
         status: "healthy",

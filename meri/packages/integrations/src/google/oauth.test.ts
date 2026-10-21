@@ -306,3 +306,29 @@ describe("GoogleHttp error mapping", () => {
     });
   });
 });
+
+describe("token endpoint errors (review: invalid_client is configuration, not an expired grant)", () => {
+  it("a wrong client secret is Permanent, a revoked refresh token is AuthExpired", async () => {
+    const google = new SimulatedGoogle();
+    google.on("POST", "/token", (req) =>
+      formOf(req).client_secret !== "secret"
+        ? { status: 401, json: { error: "invalid_client" } }
+        : { status: 400, json: { error: "invalid_grant" } },
+    );
+    const make = (clientSecret: string) =>
+      new LiveGoogleOAuth({
+        clientId: "id",
+        clientSecret,
+        fetch: google.fetch,
+        endpoints: {
+          authorize: "https://accounts.test/auth",
+          token: "https://oauth.test/token",
+          revoke: "https://oauth.test/revoke",
+          userinfo: "https://oauth.test/userinfo",
+        },
+        allowedHosts: ["accounts.test", "oauth.test"],
+      });
+    await expect(make("wrong").refresh("rt")).rejects.toMatchObject({ kind: "Permanent" });
+    await expect(make("secret").refresh("rt")).rejects.toMatchObject({ kind: "AuthExpired" });
+  });
+});

@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { createLogger, parseEnv, resolveModes } from "@meri/config";
 import {
   bootstrapAccount,
@@ -195,5 +195,54 @@ describe("googleAccess", () => {
     expect((await googleAccess(deps, ws, accountId))?.meriCalendarId).toBe(
       "meri-cal@group.calendar.google.com",
     );
+  });
+
+  it("stores a rotated refresh token and new scopes when Google returns them (D-097)", async () => {
+    const { ws, accountId } = await connect(new Date(NOW.getTime() - 1000));
+    const spy = vi.spyOn(oauth, "refresh").mockResolvedValueOnce({
+      accessToken: "rotated-access",
+      refreshToken: "rt-rotated",
+      expiresAt: new Date(NOW.getTime() + 3600_000).toISOString(),
+      scopes: [
+        "openid",
+        "email",
+        "https://www.googleapis.com/auth/calendar.readonly",
+        "https://www.googleapis.com/auth/calendar.app.created",
+      ],
+    });
+    try {
+      const ref = await googleAccess(deps, ws, accountId);
+      expect(await ref?.accessToken()).toBe("rotated-access");
+    } finally {
+      spy.mockRestore();
+    }
+    expect(await readTokens(deps, ws, accountId)).toMatchObject({
+      accessToken: "rotated-access",
+      refreshToken: "rt-rotated",
+      scopes: expect.arrayContaining(["https://www.googleapis.com/auth/calendar.app.created"]) as unknown,
+    });
+  });
+
+  it("two separate refs of one connection share a single refresh; a failed refresh frees the slot", async () => {
+    const { ws, accountId } = await connect(new Date(NOW.getTime() - 1000));
+    const [a, b] = await Promise.all([googleAccess(deps, ws, accountId), googleAccess(deps, ws, accountId)]);
+    const before = oauth.refreshes;
+    const [ta, tb] = await Promise.all([a?.accessToken(), b?.accessToken()]);
+    expect(ta).toBe(tb);
+    expect(oauth.refreshes).toBe(before + 1);
+    // A transient failure rejects both callers and the next call tries again.
+    const second = await connect(new Date(NOW.getTime() - 1000));
+    const spy = vi.spyOn(oauth, "refresh").mockRejectedValueOnce(new Error("network down"));
+    try {
+      const [x, y] = await Promise.all([
+        googleAccess(deps, second.ws, second.accountId),
+        googleAccess(deps, second.ws, second.accountId),
+      ]);
+      const results = await Promise.allSettled([x?.accessToken(), y?.accessToken()]);
+      expect(results.map((r) => r.status)).toEqual(["rejected", "rejected"]);
+    } finally {
+      spy.mockRestore();
+    }
+    expect(await (await googleAccess(deps, second.ws, second.accountId))?.accessToken()).toBeTruthy();
   });
 });

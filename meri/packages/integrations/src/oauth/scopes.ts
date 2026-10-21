@@ -46,3 +46,6 @@ export const hasGmailScopes = (scopes: readonly string[]): boolean =>
 export const hasForbiddenScope = (scopes: readonly string[]): boolean =>
   scopes.some((s) => (FORBIDDEN_SCOPES as readonly string[]).includes(s));
 export const hasCalendarScopes = (scopes: readonly string[]): boolean => scopes.includes(CALENDAR_SCOPES[0]);
+/** Writing blocks needs the «Meri» calendar scope too (a read-only calendar grant can only be mirrored). */
+export const canWriteMeriCalendar = (scopes: readonly string[]): boolean =>
+  CALENDAR_SCOPES.every((s) => scopes.includes(s));

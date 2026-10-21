@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { IntegrationError, type HealthReport } from "../errors";
+import { IntegrationError, MessageGoneError, type HealthReport } from "../errors";
 import type {
   DraftInput,
   DraftRef,
@@ -158,6 +158,7 @@ export class LiveGmail implements MailProvider {
     const max = input.maxResults ?? 100;
     const ids: string[] = [];
     let pageToken: string | undefined;
+    let lastRecord: string | undefined;
     for (let page = 0; page < MAX_PAGES; page++) {
       const res = await this.call(History, {
         url: `${BASE}/history`,
@@ -167,6 +168,7 @@ export class LiveGmail implements MailProvider {
       if (res.status === 404 || !res.body)
         return { messageIds: [], nextCursor: null, fullResyncRequired: true };
       for (const record of res.body.history ?? []) {
+        lastRecord = record.id;
         for (const added of record.messagesAdded ?? []) {
           if (added.message.labelIds?.includes("DRAFT")) continue;
           if (!ids.includes(added.message.id)) ids.push(added.message.id);
@@ -177,7 +179,9 @@ export class LiveGmail implements MailProvider {
         return { messageIds: ids, nextCursor: res.body.historyId, fullResyncRequired: false };
       pageToken = res.body.nextPageToken;
     }
-    throw new IntegrationError("Permanent", "gmail", "too many history pages");
+    // A very long history (draft-heavy mailboxes): stop here and resume from the last record on the next run, never
+    // a permanent failure that would block the sync for good.
+    return { messageIds: ids, nextCursor: lastRecord ?? input.cursor, fullResyncRequired: false };
   }
 
   async listMessages(input: { after: string; maxResults?: number }): Promise<{ messageIds: string[] }> {
@@ -206,7 +210,9 @@ export class LiveGmail implements MailProvider {
     const res = await this.call(Message, {
       url: `${BASE}/messages/${encodeURIComponent(id)}`,
       query: { format: "metadata", metadataHeaders: METADATA_HEADERS },
+      allow: [404],
     });
+    if (res.status === 404) throw new MessageGoneError("gmail", id);
     return this.meta(res.body, id);
   }
 
@@ -214,7 +220,9 @@ export class LiveGmail implements MailProvider {
     const res = await this.call(Message, {
       url: `${BASE}/messages/${encodeURIComponent(id)}`,
       query: { format: "full" },
+      allow: [404],
     });
+    if (res.status === 404) throw new MessageGoneError("gmail", id);
     const meta = this.meta(res.body, id);
     return { ...meta, bodyText: res.body?.payload ? extractBody(res.body.payload) : "" };
   }

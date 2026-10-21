@@ -21,7 +21,10 @@ interface SimEvent {
 export class SimulatedGoogleCalendar extends SimulatedGoogle {
   private version = 0;
   private counter = 0;
-  readonly calendars = new Map<string, { summary: string; primary: boolean; accessRole: string }>([
+  readonly calendars = new Map<
+    string,
+    { summary: string; primary: boolean; accessRole: string; description?: string; selected?: boolean }
+  >([
     ["ana@acme.test", { summary: "ana@acme.test", primary: true, accessRole: "owner" }],
     [
       "es.spain#holiday@group.v.calendar.google.com",
@@ -38,19 +41,27 @@ export class SimulatedGoogleCalendar extends SimulatedGoogle {
       const minRole = req.url.searchParams.get("minAccessRole");
       const items = [...this.calendars.entries()]
         .filter(([, c]) => minRole !== "writer" || c.accessRole === "owner" || c.accessRole === "writer")
+        .filter(([, c]) => minRole !== "owner" || c.accessRole === "owner")
         .map(([id, c]) => ({
           id,
           summary: c.summary,
           primary: c.primary,
           accessRole: c.accessRole,
-          selected: true,
+          ...(c.description ? { description: c.description } : {}),
+          // Like Google: `selected` is omitted when the calendar is hidden.
+          ...(c.selected === false ? {} : { selected: true }),
         }));
       return { json: { items } };
     });
     this.on("POST", `${base}/calendars`, (req) => {
-      const body = JSON.parse(req.body) as { summary: string };
+      const body = JSON.parse(req.body) as { summary: string; description?: string };
       const id = `meri-${String(++this.counter)}@group.calendar.google.com`;
-      this.calendars.set(id, { summary: body.summary, primary: false, accessRole: "owner" });
+      this.calendars.set(id, {
+        summary: body.summary,
+        primary: false,
+        accessRole: "owner",
+        ...(body.description ? { description: body.description } : {}),
+      });
       return { json: { id, summary: body.summary } };
     });
     this.on("GET", new RegExp(`^${base}/calendars/[^/]+$`), (req) => {

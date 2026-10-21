@@ -382,6 +382,25 @@ export async function deleteCalendarEventByExternalId(
 }
 
 /** Full resync of one calendar (410 Gone): only that calendar's mirror is dropped, never the account's others. */
+/**
+ * Calendars of this connection that are no longer listed (hidden, unsubscribed, access removed): their mirrored
+ * events would block the planner forever. Returns the ids whose events were removed.
+ */
+export async function purgeCalendarsExcept(
+  tx: WorkspaceTx,
+  workspaceId: WorkspaceId,
+  accountId: string,
+  keep: readonly string[],
+): Promise<string[]> {
+  const rows = await tx
+    .selectDistinct({ calendarId: calendarEvents.calendarId })
+    .from(calendarEvents)
+    .where(and(eq(calendarEvents.workspaceId, workspaceId), eq(calendarEvents.integrationAccountId, accountId)));
+  const gone = rows.map((r) => r.calendarId).filter((id) => !keep.includes(id));
+  for (const id of gone) await purgeCalendarEvents(tx, workspaceId, accountId, id);
+  return gone;
+}
+
 export async function purgeCalendarEvents(
   tx: WorkspaceTx,
   workspaceId: WorkspaceId,

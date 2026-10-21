@@ -140,11 +140,30 @@ export class LiveGoogleOAuth implements GoogleOAuth {
   }
 
   private async tokenCall(params: Record<string, string>): Promise<z.infer<typeof TokenResponse>> {
-    const res = await this.http.request(TokenResponse, {
-      method: "POST",
-      url: this.endpoints.token,
-      form: { ...params, client_id: this.options.clientId, client_secret: this.options.clientSecret },
-    });
+    const res = await this.http
+      .request(TokenResponse, {
+        method: "POST",
+        url: this.endpoints.token,
+        form: { ...params, client_id: this.options.clientId, client_secret: this.options.clientSecret },
+      })
+      .catch((err: unknown) => {
+        // At the token endpoint only `invalid_grant` means the user's grant is gone. A 401 `invalid_client` (wrong or
+        // rotated GOOGLE_CLIENT_SECRET) is our configuration: flagging every connection needs_reauth would be wrong.
+        if (
+          err instanceof IntegrationError &&
+          err.kind === "AuthExpired" &&
+          !err.message.includes("invalid_grant")
+        )
+          throw new IntegrationError(
+            "Permanent",
+            "google-oauth",
+            `client configuration rejected (${err.message})`,
+            {
+              cause: err,
+            },
+          );
+        throw err;
+      });
     if (!res.body) throw new IntegrationError("Permanent", "google-oauth", "empty token response");
     return res.body;
   }

@@ -4,6 +4,7 @@ import { mailContract } from "../mail/contract";
 import type { GoogleAccountRef } from "../oauth/types";
 import { LiveGmail } from "./gmail";
 import { SimulatedGmail } from "./gmail-simulator";
+import { SimulatedGoogle } from "./test-server";
 import { buildDraftRaw, extractBody, isPlainAddress, parseAddresses, type GmailPart } from "./mime";
 
 const ref: GoogleAccountRef = { email: "yo@acme.test", accessToken: () => Promise.resolve("token-1") };
@@ -96,6 +97,33 @@ describe("LiveGmail specifics", () => {
       await expect(
         mail.createDraft({ threadId, inReplyToMessageId: id, to: [bad], subject: "Re", bodyText: "x" }),
       ).rejects.toMatchObject({ kind: "Permanent" });
+  });
+});
+
+describe("LiveGmail long histories (review L12)", () => {
+  it("stops at the page cap with a resumable cursor instead of failing for good", async () => {
+    const google = new SimulatedGoogle();
+    let n = 0;
+    google.on("GET", "/gmail/v1/users/me/history", () => {
+      n += 1;
+      // Endless pages of drafts only: nothing to index, always another page.
+      return {
+        json: {
+          history: [
+            {
+              id: String(2000 + n),
+              messagesAdded: [{ message: { id: `d${String(n)}`, labelIds: ["DRAFT"] } }],
+            },
+          ],
+          historyId: "9999",
+          nextPageToken: `p${String(n)}`,
+        },
+      };
+    });
+    const mail = new LiveGmail(ref, { fetch: google.fetch });
+    const page = await mail.listHistory({ cursor: "2000" });
+    expect(page).toMatchObject({ messageIds: [], fullResyncRequired: false });
+    expect(Number(page.nextCursor)).toBeGreaterThan(2000);
   });
 });
 

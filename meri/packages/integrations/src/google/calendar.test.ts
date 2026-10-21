@@ -29,6 +29,56 @@ describe("LiveGoogleCalendar contract (simulated Google)", () => {
 });
 
 describe("LiveGoogleCalendar specifics", () => {
+  it("reuses its own «Meri» calendar after a reconnect instead of creating another one (review L7)", async () => {
+    const sim = new SimulatedGoogleCalendar();
+    const first = live(sim);
+    const id = await first.calendar.ensureMeriCalendar();
+    // A new connection that lost the stored id (disconnect + reconnect).
+    const again = live(sim, { meriCalendarId: null });
+    expect(await again.calendar.ensureMeriCalendar()).toBe(id);
+    expect(again.remembered).toEqual([id]);
+    expect(
+      sim.requests.filter((r) => r.method === "POST" && r.url.pathname.endsWith("/calendars")),
+    ).toHaveLength(1);
+  });
+
+  it("skips hidden calendars, and a marker outside the Meri calendar is not Meri's (review L8, SEC-M8)", async () => {
+    const sim = new SimulatedGoogleCalendar();
+    sim.calendars.set("hidden@group.calendar.google.com", {
+      summary: "Oculto",
+      primary: false,
+      accessRole: "owner",
+      selected: false,
+    });
+    const { calendar } = live(sim);
+    const meriId = await calendar.ensureMeriCalendar();
+    expect((await calendar.listCalendars()).map((c) => c.id)).toEqual([sim.primaryId, meriId]);
+    // A co-writer sets the Meri marker on a real meeting in the primary calendar.
+    const forged = sim.addExternal({
+      title: "Reunión real",
+      startsAt: "2026-10-21T10:00:00.000Z",
+      endsAt: "2026-10-21T11:00:00.000Z",
+    });
+    const ev = sim.events.get(forged.externalId);
+    if (ev) ev.extendedProperties = { private: { meri: "1" } };
+    const page = await calendar.sync({
+      calendarId: sim.primaryId,
+      cursor: null,
+      from: "2026-10-01T00:00:00Z",
+      to: "2026-11-01T00:00:00Z",
+    });
+    expect(page.events.find((e) => e.externalId === forged.externalId)?.meri).toBe(false);
+    // And nothing can be written before the Meri calendar is known.
+    const fresh = live(sim, { meriCalendarId: null }).calendar;
+    await expect(
+      fresh.createMeriEvent(sim.primaryId, {
+        title: "x",
+        startsAt: "2026-10-21T10:00:00.000Z",
+        endsAt: "2026-10-21T11:00:00.000Z",
+      }),
+    ).rejects.toMatchObject({ kind: "Permanent" });
+  });
+
   it("creates the Meri calendar once, remembers it, and recreates it only if it disappeared", async () => {
     const { sim, calendar, remembered } = live();
     const id = await calendar.ensureMeriCalendar();

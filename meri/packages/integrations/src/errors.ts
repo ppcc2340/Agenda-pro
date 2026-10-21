@@ -17,6 +17,16 @@ export class IntegrationError extends Error {
   }
 }
 
+/**
+ * A mail message that no longer exists (deleted or spam-purged between listing and reading it). Callers skip it:
+ * one vanished message must never block a whole sync (plan review CR-9).
+ */
+export class MessageGoneError extends IntegrationError {
+  constructor(provider: string, id: string) {
+    super("Permanent", provider, `message ${id} not found`);
+  }
+}
+
 export type ConnectionStatus = "healthy" | "needs_reauth" | "degraded" | "paused" | "revoked";
 
 export interface HealthReport {

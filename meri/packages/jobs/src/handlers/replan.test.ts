@@ -27,6 +27,7 @@ import {
   listValueEvents,
 } from "@meri/db";
 import { createIntegrations, type FakeCalendar, type Integrations } from "@meri/integrations";
+import { CALENDAR_SCOPES } from "@meri/integrations";
 import { encryptTokens } from "./calendar-sync";
 import type { HandlerDeps } from "./context";
 import { acceptProposal, PlanApplyError, undoAuditEntry } from "./plan-apply";
@@ -81,7 +82,7 @@ describe("planner.replan, accept and undo (ADR 0003)", () => {
       accessToken: "a",
       refreshToken: "r",
       expiresAt: NOW.toISOString(),
-      scopes: [],
+      scopes: [...CALENDAR_SCOPES],
       externalAccountId: "sub",
       email,
     };
@@ -93,7 +94,7 @@ describe("planner.replan, accept and undo (ADR 0003)", () => {
           provider: "google",
           externalAccountId: "sub",
           email,
-          scopes: [],
+          scopes: [...CALENDAR_SCOPES],
           encryptedTokens: "pending",
           keyId: "local",
         },
@@ -107,7 +108,7 @@ describe("planner.replan, accept and undo (ADR 0003)", () => {
           provider: "google",
           externalAccountId: "sub",
           email,
-          scopes: [],
+          scopes: [...CALENDAR_SCOPES],
           encryptedTokens: blob,
           keyId: "local",
         },

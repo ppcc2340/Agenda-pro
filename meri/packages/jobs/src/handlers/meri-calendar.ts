@@ -12,7 +12,7 @@ import {
   type ScheduleBlockView,
   type WorkspaceId,
 } from "@meri/db";
-import { IntegrationError, type CalendarProvider } from "@meri/integrations";
+import { IntegrationError, canWriteMeriCalendar, type CalendarProvider } from "@meri/integrations";
 import { googleAccess, markNeedsReauth } from "../google-access";
 import type { HandlerDeps } from "./context";
 
@@ -36,7 +36,10 @@ async function healthyCalendar(
   const accounts = await withWorkspace(deps.db, workspaceId, (tx) =>
     listIntegrationAccounts(tx, workspaceId),
   );
-  const account = accounts.find((a) => a.provider === "google" && a.status === "healthy");
+  // Only a connection that can write the «Meri» calendar (a Gmail-only one would fail with 403).
+  const account = accounts.find(
+    (a) => a.provider === "google" && a.status === "healthy" && canWriteMeriCalendar(a.scopes),
+  );
   if (!account) return null;
   const access = await googleAccess(deps, workspaceId, account.id);
   if (!access) return null;

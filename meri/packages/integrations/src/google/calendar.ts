@@ -18,6 +18,7 @@ const CalendarListEntry = z.object({
   primary: z.boolean().optional(),
   selected: z.boolean().optional(),
   accessRole: z.string().optional(),
+  description: z.string().optional(),
 });
 const CalendarList = z.object({
   items: z.array(CalendarListEntry).default([]),
@@ -85,7 +86,8 @@ export class LiveGoogleCalendar implements CalendarProvider {
       });
       for (const c of res.body?.items ?? []) {
         const meri = c.id === this.meriCalendarId;
-        if (!meri && (NOT_OWN_TIME.test(c.id) || c.selected === false)) continue;
+        // Google omits `selected` when it is false: only calendars shown in the user's Google Calendar count.
+        if (!meri && (NOT_OWN_TIME.test(c.id) || (c.selected !== true && c.primary !== true))) continue;
         out.push({ id: c.id, name: c.summaryOverride ?? c.summary ?? c.id, primary: c.primary === true });
       }
       pageToken = res.body?.nextPageToken;
@@ -103,6 +105,14 @@ export class LiveGoogleCalendar implements CalendarProvider {
       });
       if (existing.body) return existing.body.id;
     }
+    // No remembered id (first write, or a reconnect that lost it): reuse Meri's own calendar if it already exists,
+    // so reconnecting never piles up «Meri» calendars in the user's account.
+    const found = await this.findMeriCalendar();
+    if (found) {
+      this.meriCalendarId = found;
+      await this.account.rememberMeriCalendar?.(found);
+      return found;
+    }
     const created = await this.http.request(CalendarResource, {
       method: "POST",
       url: `${BASE}/calendars`,
@@ -114,6 +124,24 @@ export class LiveGoogleCalendar implements CalendarProvider {
     this.meriCalendarId = created.body.id;
     await this.account.rememberMeriCalendar?.(created.body.id);
     return created.body.id;
+  }
+
+  private async findMeriCalendar(): Promise<string | null> {
+    let pageToken: string | undefined;
+    for (let page = 0; page < MAX_PAGES; page++) {
+      const res = await this.http.request(CalendarList, {
+        url: `${BASE}/users/me/calendarList`,
+        query: { maxResults: 250, minAccessRole: "owner", pageToken },
+        token: this.token,
+      });
+      const mine = (res.body?.items ?? []).find(
+        (c) => c.summary === MERI_CALENDAR.summary && c.description === MERI_CALENDAR.description,
+      );
+      if (mine) return mine.id;
+      pageToken = res.body?.nextPageToken;
+      if (!pageToken) return null;
+    }
+    return null;
   }
 
   async sync(input: {
@@ -141,7 +169,9 @@ export class LiveGoogleCalendar implements CalendarProvider {
       const zone = body.timeZone ?? "UTC";
       for (const raw of body.items) {
         const mapped = mapGoogleEvent(raw, input.calendarId, zone);
-        if (mapped) events.push(mapped);
+        // Meri's only if it carries the marker AND lives in Meri's calendar: a co-writer of a shared calendar
+        // could set the marker on a real meeting (SEC-M8).
+        if (mapped) events.push({ ...mapped, meri: mapped.meri && input.calendarId === this.meriCalendarId });
       }
       if (body.nextPageToken) {
         pageToken = body.nextPageToken;
@@ -209,7 +239,8 @@ export class LiveGoogleCalendar implements CalendarProvider {
 
   /** Writes only ever target the connection's own «Meri» calendar. */
   private assertMeriCalendar(calendarId: string): void {
-    if (this.meriCalendarId && calendarId !== this.meriCalendarId)
+    // Without a known Meri calendar nothing may be written (ensureMeriCalendar first).
+    if (!this.meriCalendarId || calendarId !== this.meriCalendarId)
       throw new IntegrationError(
         "Permanent",
         "google-calendar",

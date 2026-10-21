@@ -1,4 +1,5 @@
 import { expect, it } from "vitest";
+import { MessageGoneError } from "../errors";
 import type { MailProvider } from "./types";
 
 /**
@@ -67,6 +68,12 @@ export function mailContract(make: () => Promise<MailContractSetup>): void {
     expect("bodyText" in meta).toBe(false);
     const full = await mail.getMessageFull(id);
     expect(full.bodyText).toContain("te envío el contrato el viernes");
+  });
+
+  it("a message that no longer exists is reported as gone, so a sync can skip it (CR-9)", async () => {
+    const { mail } = await make();
+    await expect(mail.getMessageMeta("gone-123")).rejects.toBeInstanceOf(MessageGoneError);
+    await expect(mail.getMessageFull("gone-123")).rejects.toBeInstanceOf(MessageGoneError);
   });
 
   it("creates an in-thread draft to exactly one recipient", async () => {

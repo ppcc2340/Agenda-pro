@@ -16,6 +16,7 @@ import {
   type FakeCalendar,
   type Integrations,
 } from "@meri/integrations";
+import { CALENDAR_SCOPES, GMAIL_SCOPES } from "@meri/integrations";
 import { encryptTokens, syncCalendarAccount } from "./calendar-sync";
 import type { HandlerDeps } from "./context";
 
@@ -58,7 +59,7 @@ describe("calendar.sync (F-04)", () => {
       accessToken: "a",
       refreshToken: "r",
       expiresAt: NOW.toISOString(),
-      scopes: [],
+      scopes: [...CALENDAR_SCOPES],
       externalAccountId: "sub",
       email,
     };
@@ -70,7 +71,7 @@ describe("calendar.sync (F-04)", () => {
           provider: "google",
           externalAccountId: "sub",
           email,
-          scopes: [],
+          scopes: [...CALENDAR_SCOPES],
           encryptedTokens: "pending",
           keyId: "local",
         },
@@ -87,7 +88,7 @@ describe("calendar.sync (F-04)", () => {
           provider: "google",
           externalAccountId: "sub",
           email,
-          scopes: [],
+          scopes: [...CALENDAR_SCOPES],
           encryptedTokens: blob,
           keyId: "local",
         },
@@ -181,5 +182,79 @@ describe("calendar.sync (F-04)", () => {
     expect(healed.status).toBe("synced");
     accounts = await withWorkspace(handle.db, ws, (tx) => listIntegrationAccounts(tx, ws));
     expect(accounts[0]).toMatchObject({ status: "healthy", lastError: null });
+  });
+
+  it("a Gmail-only connection is never read as a calendar, so it is never flagged needs_reauth (review H1)", async () => {
+    const acc = await bootstrapAccount(handle.db, {
+      email: `gmail-only-${Date.now().toString(36)}@test.local`,
+      now: NOW,
+    });
+    const gws = acc.workspaceId;
+    const id = await withWorkspace(
+      handle.db,
+      gws,
+      async (tx) =>
+        (
+          await upsertIntegrationAccount(
+            tx,
+            gws,
+            {
+              provider: "google",
+              externalAccountId: "sub-gmail",
+              email,
+              scopes: ["openid", "email", ...GMAIL_SCOPES],
+              encryptedTokens: "pending",
+              keyId: "local",
+            },
+            NOW,
+          )
+        ).id,
+    );
+    const cal = integrations.calendarFor(email) as FakeCalendar;
+    const original = cal.listCalendars.bind(cal);
+    // What Google answers a token without calendar scopes (mapped to AuthExpired): must never be reached.
+    cal.listCalendars = () =>
+      Promise.reject(new IntegrationError("AuthExpired", "google-calendar", "insufficientPermissions"));
+    try {
+      expect((await syncCalendarAccount(deps, gws, id)).status).toBe("skipped");
+    } finally {
+      cal.listCalendars = original;
+    }
+    const [account] = await withWorkspace(handle.db, gws, (tx) => listIntegrationAccounts(tx, gws));
+    expect(account?.status).toBe("healthy");
+  });
+
+  it("mirrors per calendar: a calendar that leaves the list takes only its own events away (CR-H2, review L9)", async () => {
+    const cal = integrations.calendarFor(email) as FakeCalendar;
+    const original = cal.listCalendars.bind(cal);
+    const team = "equipo@group.calendar.google.com";
+    const withTeam = () => original().then((list) => [...list, { id: team, name: "Equipo", primary: false }]);
+    cal.listCalendars = withTeam;
+    try {
+      const own = cal.addExternalEvent({
+        title: "Propia",
+        startsAt: "2026-10-21T08:00:00.000Z",
+        endsAt: "2026-10-21T09:00:00.000Z",
+      });
+      const shared = cal.addExternalEvent({
+        title: "Del equipo",
+        startsAt: "2026-10-21T10:00:00.000Z",
+        endsAt: "2026-10-21T11:00:00.000Z",
+        calendarId: team,
+      });
+      await syncCalendarAccount(deps, ws, accountId);
+      const range = { from: new Date("2026-10-01T00:00:00Z"), to: new Date("2026-11-01T00:00:00Z") };
+      const before = await withWorkspace(handle.db, ws, (tx) => listCalendarEvents(tx, ws, range));
+      const ownRow = before.find((e) => e.externalId === own.externalId);
+      expect(before.find((e) => e.externalId === shared.externalId)).toBeDefined();
+      // The team calendar is hidden in Google: its events go, the primary ones stay untouched.
+      cal.listCalendars = original;
+      await syncCalendarAccount(deps, ws, accountId);
+      const after = await withWorkspace(handle.db, ws, (tx) => listCalendarEvents(tx, ws, range));
+      expect(after.find((e) => e.externalId === shared.externalId)).toBeUndefined();
+      expect(after.find((e) => e.externalId === own.externalId)?.id).toBe(ownRow?.id);
+    } finally {
+      cal.listCalendars = original;
+    }
   });
 });

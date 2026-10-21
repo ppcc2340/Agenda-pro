@@ -3,7 +3,7 @@
  * (`proposed`) + deduplicated proposals in one transaction, optional auto-confirmation (D-034), AI budget cap,
  * usage accounting and a grouped notification. Bodies are read on demand and never stored.
  */
-import { FakeAiClient, hasGmailScopes, type AiClient } from "@meri/integrations";
+import { FakeAiClient, MessageGoneError, hasGmailScopes, type AiClient } from "@meri/integrations";
 import { extractCommitments, registerFakeAiHandlers, type ExtractedCommitment } from "@meri/ai";
 import {
   gmailThreadUrl,
@@ -89,7 +89,13 @@ export async function extractThreadCommitments(
   // Bodies are fetched on demand, sanitised in memory and never written anywhere (docs/06 §5).
   const messages: MailMessageInput[] = [];
   for (const id of input.messageIds) {
-    const full = await mail.getMessageFull(id);
+    let full;
+    try {
+      full = await mail.getMessageFull(id);
+    } catch (err) {
+      if (err instanceof MessageGoneError) continue; // deleted meanwhile: nothing to extract
+      throw err;
+    }
     messages.push({
       id: full.id,
       from: full.from,

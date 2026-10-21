@@ -1,4 +1,4 @@
-import { IntegrationError, type HealthReport } from "../errors";
+import { IntegrationError, MessageGoneError, type HealthReport } from "../errors";
 import type {
   DraftInput,
   DraftRef,
@@ -90,6 +90,6 @@ export class FakeGmail implements MailProvider {
   }
 
   private notFound(id: string): IntegrationError {
-    return new IntegrationError("Permanent", "gmail", `message ${id} not found`);
+    return new MessageGoneError("gmail", id);
   }
 }

@@ -24,6 +24,7 @@ import {
 import {
   hasGmailScopes,
   IntegrationError,
+  MessageGoneError,
   type MailMessageMeta,
   type MailProvider,
 } from "@meri/integrations";
@@ -137,7 +138,14 @@ export async function syncMailAccount(
     const metas: MailMessageMeta[] = [];
     let discarded = 0;
     for (const id of ids) {
-      const meta = await mail.getMessageMeta(id);
+      let meta: MailMessageMeta;
+      try {
+        meta = await mail.getMessageMeta(id);
+      } catch (err) {
+        // Deleted since it was listed: skip it, the rest of the page and the cursor still move on (CR-9).
+        if (err instanceof MessageGoneError) continue;
+        throw err;
+      }
       const verdict = prefilterMessage(
         { from: meta.from, to: meta.to, subject: meta.subject, headers: meta.headers, labels: meta.labels },
         exclusions,

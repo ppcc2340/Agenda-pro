@@ -1,5 +1,6 @@
 export {
   IntegrationError,
+  MessageGoneError,
   type IntegrationErrorKind,
   type ConnectionStatus,
   type HealthReport,
@@ -28,6 +29,7 @@ export {
   FORBIDDEN_SCOPES,
   IDENTITY_SCOPES,
   hasForbiddenScope,
+  canWriteMeriCalendar,
   scopesFor,
   hasGmailScopes,
   hasCalendarScopes,
@@ -45,3 +47,6 @@ export {
   seedDemoMail,
   type DemoMailThread,
 } from "./fakes/demo-mail";
+// Live Google adapters and their simulated Google (test support for job-level tests of the live path, ADR 0008).
+export { LiveGoogleCalendar } from "./google/calendar";
+export { SimulatedGoogleCalendar } from "./google/calendar-simulator";
