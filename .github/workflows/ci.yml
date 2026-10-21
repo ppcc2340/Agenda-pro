@@ -5,6 +5,11 @@ on:
     branches: [main]
   pull_request:
 
+# Least privilege for every job (security review, phase 5): read the code, nothing else.
+permissions:
+  contents: read
+  pull-requests: read
+
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
@@ -41,7 +46,7 @@ jobs:
       REDIS_URL: redis://localhost:6379
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
         with:
           version: 9.12.0
       - uses: actions/setup-node@v4
@@ -114,7 +119,7 @@ jobs:
       ALLOW_FAKES_ON_PRODUCTION_BUILD: "1"
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
         with:
           version: 9.12.0
       - uses: actions/setup-node@v4
@@ -158,10 +163,10 @@ jobs:
         with:
           fetch-depth: 0
       - name: gitleaks
-        uses: gitleaks/gitleaks-action@v2
+        uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2.3.9
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
         with:
           version: 9.12.0
       - uses: actions/setup-node@v4
@@ -176,7 +181,7 @@ jobs:
         run: pnpm audit --audit-level=high
         continue-on-error: true
       - name: SBOM (CycloneDX) of the monorepo, kept as a build artifact (ADR 0007)
-        uses: anchore/sbom-action@v0
+        uses: anchore/sbom-action@66cbf4bc1f1c0d2edc94016e65bc221b6bb0ad6c # v0.24.3
         with:
           path: meri
           format: cyclonedx-json

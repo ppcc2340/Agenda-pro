@@ -15,9 +15,11 @@ interface Step {
   name?: string;
   uses?: string;
   run?: string;
+  "continue-on-error"?: boolean;
 }
 interface Workflow {
   on: unknown;
+  permissions?: Record<string, string>;
   jobs: Record<string, { steps: Step[] }>;
 }
 const load = (file: string): Workflow => parse(readFileSync(resolve(workflowsDir, file), "utf8")) as Workflow;
@@ -38,6 +40,17 @@ describe("GitHub workflows", () => {
     expect(ci.some((s) => s.uses?.startsWith("gitleaks/gitleaks-action"))).toBe(true);
     expect(ci.some((s) => s.run?.startsWith("pnpm audit --prod"))).toBe(true);
     expect(ci.some((s) => s.uses?.startsWith("anchore/sbom-action"))).toBe(true);
+    // Least-privilege token, and third-party actions pinned to a commit (first-party actions/* and github/* by tag).
+    expect(load("ci.yml").permissions).toMatchObject({
+      contents: "read",
+    });
+    for (const file of files)
+      for (const step of allSteps(load(file)))
+        if (step.uses && !/^(actions|github)\//.test(step.uses)) expect(step.uses).toMatch(/@[0-9a-f]{40}$/);
+    // The blocking checks stay blocking.
+    const audit = ci.find((s) => s.run?.startsWith("pnpm audit --prod"));
+    expect(audit?.run).toContain("--audit-level=high");
+    expect(audit?.["continue-on-error"]).toBeUndefined();
     expect(allSteps(load("codeql.yml")).some((s) => s.uses?.startsWith("github/codeql-action/analyze"))).toBe(
       true,
     );
