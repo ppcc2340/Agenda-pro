@@ -29,6 +29,8 @@ export const PreferencesSchema = z.object({
   vertical: z.enum(["legal", "consulting", "generic"]),
   /** D-103: include this account's discarded or edited proposals (never mail-derived) in the AI review sample. */
   evalConsent: z.boolean(),
+  /** D-114: which notifications also go out by email. */
+  emailNotifications: z.enum(["off", "digest", "all"]),
 });
 export type Preferences = z.infer<typeof PreferencesSchema>;
 export const PreferencesPatchSchema = PreferencesSchema.partial().refine(

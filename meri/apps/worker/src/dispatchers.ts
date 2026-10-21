@@ -13,6 +13,7 @@ import {
   DataDeleteAccountJob,
   FollowupsScanJob,
   GmailSyncJob,
+  NotifyEmailJob,
   TimeInferJob,
   dueForClose,
   dueForDigest,
@@ -322,6 +323,32 @@ export async function dispatchUsageRollup(deps: DispatcherDeps): Promise<number>
       );
   if (rows.length > 0) deps.logger.info({ workspaces: rows.length, periods }, "usage rollup dispatched");
   return rows.length * periods.length;
+}
+
+/** D-115: notifications this recent may still get their email copy. */
+export const EMAIL_WINDOW_MS = 2 * 3_600_000;
+
+/**
+ * notify.email (D-115): recent notifications without an email outcome whose workspace preference allows email. The
+ * SQL mirrors `emailAllowed` (@meri/core) only to keep the queue small; the handler decides again with the core rule.
+ */
+export async function dispatchNotifyEmail(deps: DispatcherDeps): Promise<number> {
+  const since = new Date(deps.now().getTime() - EMAIL_WINDOW_MS).toISOString();
+  const rows = await deps.adminSql<{ id: string; workspaceId: string }[]>`
+    select n.id, n.workspace_id as "workspaceId" from notifications n
+    join preferences p on p.workspace_id = n.workspace_id
+    where n.email_state is null and n.created_at > ${since}::timestamptz and ${activeWorkspace(deps.adminSql, "n")}
+      and p.email_notifications <> 'off'
+      and (p.email_notifications = 'all' or n.kind in ('billing', 'integration') or n.template = 'daily.digest')
+    order by n.created_at limit ${deps.pollBatch ?? POLL_BATCH}`;
+  for (const row of rows)
+    await deps.dispatcher.enqueue(
+      NotifyEmailJob,
+      { workspaceId: row.workspaceId, traceId: randomUUID(), notificationId: row.id },
+      { jobId: `notify.email_${row.id}` },
+    );
+  if (rows.length > 0) deps.logger.info({ notifications: rows.length }, "email copies dispatched");
+  return rows.length;
 }
 
 /** Runs `fn` every `everyMs`, never overlapping, with errors logged (not thrown). Returns a stop function. */

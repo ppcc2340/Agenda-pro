@@ -14,6 +14,7 @@ import { VerticalSettings } from "@/components/control/vertical-settings";
 import { MailPrivacy } from "@/components/control/mail-privacy";
 import { ConnectionsPanel } from "@/components/control/connections";
 import { NotificationsPanel } from "@/components/control/notifications-panel";
+import { EmailSettings } from "@/components/control/email-settings";
 import { getServerConfig } from "@/server/config";
 import { isDemoAccount } from "@/server/demo-account";
 import { Button } from "@/components/ui/button";
@@ -30,6 +31,7 @@ interface Preferences {
   gmailAutoconfirm: boolean;
   briefingBeforeMeetings: boolean;
   evalConsent: boolean;
+  emailNotifications: "off" | "digest" | "all";
   retentionDays: number;
   vertical: "legal" | "consulting" | "generic";
 }
@@ -99,6 +101,9 @@ export default async function ControlPage() {
       </Panel>
       <Panel title={t("notifications.title")} desc={t("notifications.desc")}>
         <NotificationsPanel initial={notifications.items} />
+      </Panel>
+      <Panel id="correo" title={t("email.title")} desc={t("email.desc")}>
+        <EmailSettings value={prefs.emailNotifications} />
       </Panel>
       <Panel title={t("activity.title")} desc={t("activity.desc")}>
         <ActivityList items={audit.items} nextCursor={audit.nextCursor} />

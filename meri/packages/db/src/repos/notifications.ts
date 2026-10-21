@@ -20,7 +20,8 @@ export interface NotificationView {
 
 type Row = typeof notifications.$inferSelect;
 const toView = (r: Row): NotificationView => {
-  const { workspaceId: _ws, ...rest } = r;
+  // The email outcome (D-115) is internal: the inbox never shows it.
+  const { workspaceId: _ws, emailState: _state, emailedAt: _at, ...rest } = r;
   return rest;
 };
 

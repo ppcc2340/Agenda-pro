@@ -16,12 +16,15 @@ describe("middleware", () => {
     expect(middleware(req("/hoy", "__Secure-authjs.session-token=x")).headers.get("location")).toBeNull();
   });
 
-  it("lets only the waitlist through to the API without a session (D-099)", () => {
+  it("lets only the waitlist and the signed unsubscribe through without a session (D-099, D-116)", () => {
     expect(middleware(req("/api/v1/waitlist")).headers.get("location")).toBeNull();
     expect(middleware(req("/api/v1/feedback")).headers.get("location")).toBe(
       "http://localhost:3000/login?next=%2Fapi%2Fv1%2Ffeedback",
     );
     expect(middleware(req("/api/v1/waitlisted")).headers.get("location")).not.toBeNull();
+    expect(middleware(req("/api/v1/email/unsubscribe")).headers.get("location")).toBeNull();
+    expect(middleware(req("/correo/baja")).headers.get("location")).toBeNull();
+    expect(middleware(req("/api/v1/email/other")).headers.get("location")).not.toBeNull();
   });
 
   it("sets a strict CSP with a fresh nonce on every page response and passes the nonce to the app", () => {

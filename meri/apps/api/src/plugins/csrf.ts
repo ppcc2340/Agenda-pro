@@ -35,6 +35,11 @@ export const csrfPlugin = fp<CsrfOptions>((app: FastifyInstance, options, done) 
   app.addHook("preParsing", (request, _reply, payload, next) => {
     // Public routes (no session, e.g. the waitlist) get the same checks, and their Origin is mandatory (SEC-M4).
     const isPublic = request.routeOptions.config.public === true;
+    // A signed link carries its own authorization and no cookie: nothing for CSRF to protect (D-116).
+    if (isPublic && request.routeOptions.config.signedToken === true) {
+      next(null, payload);
+      return;
+    }
     const needsCheck =
       MUTATING.has(request.method) && isV1Route(request) && (request.session !== null || isPublic);
     if (!needsCheck) {

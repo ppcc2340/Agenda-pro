@@ -34,7 +34,11 @@ export function calendarSyncJob(
           reason: "calendar_changed",
         });
         // Ended client meetings become suggested time entries (D-042).
-        await enqueueTimeInfer(dispatcher, { workspaceId: ctx.workspaceId, traceId: ctx.traceId, reason: "calendar_changed" });
+        await enqueueTimeInfer(dispatcher, {
+          workspaceId: ctx.workspaceId,
+          traceId: ctx.traceId,
+          reason: "calendar_changed",
+        });
       }
     },
   };

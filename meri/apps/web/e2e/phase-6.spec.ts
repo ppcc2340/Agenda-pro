@@ -76,4 +76,33 @@ test.describe("phase 6: closed beta, feedback and AI review consent", () => {
     await page.getByRole("checkbox", { name: /Ayudar a mejorar la IA de Meri/ }).uncheck();
     await expect(page.getByText(/ya no entrarán en nuevas muestras/)).toBeVisible();
   });
+
+  test("email preference: «Solo lo esencial» by default, changed in Control and kept", async ({ page }) => {
+    await signUp(page);
+    await goto(page, "/control#correo");
+    const group = page.getByRole("group", { name: "Recibir por correo" });
+    await expect(group.getByRole("radio", { name: /Solo lo esencial/ })).toBeChecked();
+    await expectAccessible(page, "control-email");
+    await group.getByRole("radio", { name: /^Todo/ }).check();
+    await expect(page.getByText("Preferencia de correo guardada.")).toBeVisible();
+    await page.reload();
+    await hydrated(page);
+    await expect(
+      page.getByRole("group", { name: "Recibir por correo" }).getByRole("radio", { name: /^Todo/ }),
+    ).toBeChecked();
+  });
+
+  test("the public unsubscribe page never acts on open and refuses an invalid link", async ({ browser }) => {
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    await page.goto("/correo/baja?t=not-a-token");
+    await hydrated(page);
+    await expect(page.getByRole("heading", { name: "Dejar de recibir correos" })).toBeVisible();
+    await expectAccessible(page, "unsubscribe");
+    await page.getByRole("button", { name: "Dejar de recibir correos" }).click();
+    await expect(page.getByRole("main").getByRole("alert")).toContainText("Este enlace no es válido");
+    await page.goto("/correo/baja");
+    await expect(page.getByRole("main").getByRole("alert")).toContainText("Este enlace no es válido");
+    await context.close();
+  });
 });

@@ -2,7 +2,9 @@ import { ClientsScanJob, scanClients, type HandlerDeps } from "@meri/jobs";
 import type { WorkspaceId } from "@meri/db";
 import type { JobDefinition } from "../registry";
 
-export function clientsScanJob(deps: Omit<HandlerDeps, "logger">): JobDefinition<typeof ClientsScanJob.schema> {
+export function clientsScanJob(
+  deps: Omit<HandlerDeps, "logger">,
+): JobDefinition<typeof ClientsScanJob.schema> {
   return {
     name: ClientsScanJob.name,
     schema: ClientsScanJob.schema,

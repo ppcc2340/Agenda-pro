@@ -20,9 +20,9 @@ describe("signed OAuth state (ADR 0007)", () => {
   it("rejects tampering, another key and garbage", () => {
     const sealed = sealState(key, state, 0);
     const [body, tag] = sealed.split(".") as [string, string];
-    const forged = Buffer.from(JSON.stringify({ ...state, w: "0192aaaa-0000-7000-8000-000000000003", e: 9e15 })).toString(
-      "base64url",
-    );
+    const forged = Buffer.from(
+      JSON.stringify({ ...state, w: "0192aaaa-0000-7000-8000-000000000003", e: 9e15 }),
+    ).toString("base64url");
     expect(openState(key, `${forged}.${tag}`, 0)).toBeNull();
     expect(openState(deriveStateKey("another-secret-of-at-least-32-characters"), sealed, 0)).toBeNull();
     expect(openState(key, `${body}.${tag}.x`, 0)).toBeNull();

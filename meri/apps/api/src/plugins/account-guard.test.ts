@@ -25,7 +25,8 @@ describe("account guard (D-054)", () => {
   afterAll(() => t.close());
 
   const who = async (app: Awaited<ReturnType<typeof guardApp>>, cookieHeader: string) =>
-    (await app.inject({ url: "/who", headers: { cookie: cookieHeader } })).json<{ signedIn: boolean }>().signedIn;
+    (await app.inject({ url: "/who", headers: { cookie: cookieHeader } })).json<{ signedIn: boolean }>()
+      .signedIn;
 
   it("with ttl 0 a deletion made elsewhere is seen on the very next request", async () => {
     const app = await guardApp(t, { ttlMs: 0 });

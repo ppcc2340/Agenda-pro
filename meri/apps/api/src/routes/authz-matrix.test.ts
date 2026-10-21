@@ -54,7 +54,9 @@ describe("authorization matrix over every registered route", () => {
 
   it("every /v1 route answers 401 without a session and with a deleted account's session", async () => {
     const failures: string[] = [];
-    for (const r of routes().filter((x) => x.url.startsWith("/v1/") && ruleOf(x.key).kind !== "public")) {
+    for (const r of routes().filter(
+      (x) => x.url.startsWith("/v1/") && ruleOf(x.key).kind !== "public" && ruleOf(x.key).kind !== "signed",
+    )) {
       // The router percent-decodes paths: the encoded spelling must be refused too.
       for (const url of [fill(r.url, a.task), fill(r.url, a.task).replace(/^\/v1\//, "/%761/")]) {
         for (const cookie of [undefined, deletedCookie]) {
@@ -76,6 +78,17 @@ describe("authorization matrix over every registered route", () => {
   it("every mutating /v1 route refuses a request without the CSRF header, or from another site", async () => {
     const failures: string[] = [];
     for (const r of routes().filter((x) => x.url.startsWith("/v1/") && MUTATING.has(x.method))) {
+      // A signed link has no cookie to protect: without a valid token it must refuse, cookie or not (D-116).
+      if (ruleOf(r.key).kind === "signed") {
+        const res = await t.app.inject({
+          method: r.method,
+          url: r.url,
+          headers: { cookie: b.cookie, "sec-fetch-site": "cross-site" },
+        });
+        if (res.statusCode !== 400)
+          failures.push(`${r.url} ${r.method} (signed) → ${String(res.statusCode)}`);
+        continue;
+      }
       for (const url of [fill(r.url, b.task), fill(r.url, b.task).replace(/^\/v1\//, "/%761/")]) {
         const bare = await t.app.inject({ method: r.method, url, headers: { cookie: b.cookie } });
         const cross = await t.app.inject({
@@ -98,7 +111,12 @@ describe("authorization matrix over every registered route", () => {
     let n = 0;
     for (const r of routes().filter((x) => x.url.startsWith("/v1/"))) {
       const rule = ruleOf(r.key);
-      if (rule.kind === "outside" || rule.kind === "public" || (rule.kind === "own" && rule.destructive))
+      if (
+        rule.kind === "outside" ||
+        rule.kind === "public" ||
+        rule.kind === "signed" ||
+        (rule.kind === "own" && rule.destructive)
+      )
         continue;
       const cases: (AuthzCase & { label: string })[] =
         rule.kind === "own"

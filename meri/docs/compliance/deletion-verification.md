@@ -43,6 +43,7 @@ Evidencia automática: `apps/api/src/routes/account-erasure.test.ts` crea una cu
 | PostHog | Id de workspace y eventos enumerados | Sin datos personales (D-065); borrado de la persona por API si se pide | Humano, cuando esté en vivo |
 | Sentry | Trazas técnicas | Sin contenido ni tokens; retención del proveedor | Humano |
 | Proveedor de IA | Fragmentos enviados por petición | Retención cero configurada en el proveedor | Humano ([`anthropic.md`](../blockers/anthropic.md)) |
+| Proveedor de correo (D-113) | Dirección del propietario y registros de entrega de cada correo (recuentos, sin contenido) | Al borrar la cuenta deja de haber destinatario (`workspaceEmailRecipient` exige usuario y workspace vivos); los registros caducan según el proveedor | Humano: pedir la supresión de la dirección en el proveedor si la solicitud lo exige ([`email.md`](../blockers/email.md)) |
 
 ## 4. Respuesta a una solicitud de supresión
 

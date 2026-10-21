@@ -1,7 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { buildCsp, newNonce } from "./server/csp";
 
-// `/api/v1/waitlist` is the one public API route (D-099): the API itself checks CSRF, Origin and rate limits.
+// Public API paths: the waitlist (D-099; the API checks CSRF, Origin and limits) and the signed one-click
+// unsubscribe (D-116; the token is the authorization). `/correo` holds the page behind every email's link.
 const PUBLIC = [
   "/login",
   "/privacy",
@@ -12,6 +13,8 @@ const PUBLIC = [
   "/api/demo",
   "/api/session",
   "/api/v1/waitlist",
+  "/api/v1/email/unsubscribe",
+  "/correo",
   "/manifest.webmanifest",
   "/icon",
   "/mobile",

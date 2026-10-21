@@ -11,6 +11,7 @@ import {
   dispatchClientsScan,
   dispatchDailyClose,
   dispatchDailyReview,
+  dispatchNotifyEmail,
   dispatchFollowupsScan,
   dispatchMailPolling,
   dispatchAccountPurge,
@@ -28,6 +29,7 @@ import { briefingsPrepareJob } from "./queues/briefings-prepare";
 import { clientsScanJob } from "./queues/clients-scan";
 import { timeInferJob } from "./queues/time-infer";
 import { dailyReviewJob } from "./queues/daily-review";
+import { notifyEmailJob } from "./queues/notify-email";
 import { gmailSyncJob } from "./queues/gmail-sync";
 import { extractCommitmentsJob } from "./queues/extract-commitments";
 import { followupsScanJob } from "./queues/followups-scan";
@@ -71,6 +73,9 @@ async function main(): Promise<void> {
   registry.register(calendarSyncJob(handlerDeps, dispatcher));
   registry.register(plannerReplanJob(handlerDeps));
   registry.register(dailyReviewJob(handlerDeps));
+  registry.register(
+    notifyEmailJob({ ...handlerDeps, appUrl: config.env.APP_URL, authSecret: config.env.AUTH_SECRET }),
+  );
   registry.register(dailyCloseJob(handlerDeps));
   registry.register(gmailSyncJob(handlerDeps, dispatcher));
   registry.register(followupsScanJob(handlerDeps));
@@ -88,7 +93,9 @@ async function main(): Promise<void> {
       infraCostUsdPerUser: config.env.INFRA_COST_USD_PER_USER,
       anchorB: {
         ...(config.env.PRICE_ANCHOR_B_PRO_CENTS ? { pro: config.env.PRICE_ANCHOR_B_PRO_CENTS } : {}),
-        ...(config.env.PRICE_ANCHOR_B_PRO_PLUS_CENTS ? { pro_plus: config.env.PRICE_ANCHOR_B_PRO_PLUS_CENTS } : {}),
+        ...(config.env.PRICE_ANCHOR_B_PRO_PLUS_CENTS
+          ? { pro_plus: config.env.PRICE_ANCHOR_B_PRO_PLUS_CENTS }
+          : {}),
       },
     }),
   );
@@ -169,6 +176,12 @@ async function main(): Promise<void> {
     () => dispatchDailyClose({ adminSql, dispatcher, logger, now }),
     logger,
   );
+  const stopEmail = schedule(
+    "notify.email",
+    60_000,
+    () => dispatchNotifyEmail({ adminSql, dispatcher, logger, now }),
+    logger,
+  );
   const stopDigest = schedule(
     "daily.review",
     15 * 60_000,
@@ -197,6 +210,7 @@ async function main(): Promise<void> {
         "data.delete_account",
         "billing.usage_rollup",
         "daily.close",
+        "notify.email",
       ],
     },
     "worker started",
@@ -206,6 +220,7 @@ async function main(): Promise<void> {
     logger.info({ signal }, "worker shutting down");
     stopPolling();
     stopDigest();
+    stopEmail();
     stopRollup();
     stopPurge();
     stopClose();

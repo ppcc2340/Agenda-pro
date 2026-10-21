@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { Suspense } from "react";
 import { signOutAction } from "@/app/actions";
 import { AiSettings } from "@/components/control/ai-settings";
+import { EmailSettings } from "@/components/control/email-settings";
 import { AutonomySelector, type Autonomy } from "@/components/control/autonomy";
 import { MailPrivacy } from "@/components/control/mail-privacy";
 import { LocaleSwitch } from "@/components/shell/locale-switch";
@@ -26,6 +27,7 @@ export default async function MasAjustesPage() {
       gmailAutoconfirm: boolean;
       briefingBeforeMeetings: boolean;
       evalConsent: boolean;
+      emailNotifications: "off" | "digest" | "all";
       retentionDays: number;
     }>("/v1/preferences"),
   ]);
@@ -50,6 +52,9 @@ export default async function MasAjustesPage() {
           briefingBeforeMeetings={prefs.briefingBeforeMeetings}
           evalConsent={prefs.evalConsent}
         />
+      </Panel>
+      <Panel title={tc("email.title")} desc={tc("email.desc")}>
+        <EmailSettings value={prefs.emailNotifications} />
       </Panel>
       <Panel title={tc("mailPrivacy.title")} desc={tc("mailPrivacy.desc")}>
         <Suspense fallback={null}>

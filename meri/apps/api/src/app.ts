@@ -30,6 +30,7 @@ import { healthRoutes } from "./routes/health";
 import { internalRoutes } from "./routes/internal";
 import { betaRoutes } from "./routes/beta";
 import { surveyRoutes } from "./routes/surveys";
+import { emailRoutes } from "./routes/email";
 import { taskRoutes } from "./routes/tasks";
 import { captureRoutes } from "./routes/capture";
 import { proposalRoutes } from "./routes/proposals";
@@ -105,7 +106,8 @@ export async function buildApp(deps: AppDeps) {
   // Every registered route, for the authorization matrix (P5-06): a route missing from the matrix fails the test.
   const routeTable: { method: string; url: string }[] = [];
   app.addHook("onRoute", (route) => {
-    for (const method of [route.method].flat()) if (method !== "HEAD") routeTable.push({ method, url: route.url });
+    for (const method of [route.method].flat())
+      if (method !== "HEAD") routeTable.push({ method, url: route.url });
   });
   app.decorate("routeTable", routeTable);
   const observability =
@@ -132,7 +134,10 @@ export async function buildApp(deps: AppDeps) {
 
   await app.register(helmet, {
     // The API only serves JSON (and CSV/ZIP downloads): nothing may execute or frame it (D-081).
-    contentSecurityPolicy: { useDefaults: false, directives: { defaultSrc: ["'none'"], frameAncestors: ["'none'"] } },
+    contentSecurityPolicy: {
+      useDefaults: false,
+      directives: { defaultSrc: ["'none'"], frameAncestors: ["'none'"] },
+    },
     crossOriginResourcePolicy: { policy: "same-site" },
   });
   await app.register(cookie);
@@ -185,6 +190,7 @@ export async function buildApp(deps: AppDeps) {
   });
   await app.register(betaRoutes, { db: deps.db, now: deps.now });
   await app.register(surveyRoutes, { now: deps.now });
+  await app.register(emailRoutes, { db: deps.db, now: deps.now, authSecret: config.env.AUTH_SECRET });
   await app.register(accountSessionRoutes, { db: deps.db });
   await app.register(accountExportRoutes, { db: deps.db, now: deps.now });
   await app.register(accountRoutes, {
@@ -284,7 +290,9 @@ export async function buildApp(deps: AppDeps) {
     flags: deps.flags ?? new InMemoryFlagStore(),
     anchorB: {
       ...(config.env.PRICE_ANCHOR_B_PRO_CENTS ? { pro: config.env.PRICE_ANCHOR_B_PRO_CENTS } : {}),
-      ...(config.env.PRICE_ANCHOR_B_PRO_PLUS_CENTS ? { pro_plus: config.env.PRICE_ANCHOR_B_PRO_PLUS_CENTS } : {}),
+      ...(config.env.PRICE_ANCHOR_B_PRO_PLUS_CENTS
+        ? { pro_plus: config.env.PRICE_ANCHOR_B_PRO_PLUS_CENTS }
+        : {}),
     },
   });
   await app.register(valueReportRoutes, { now: deps.now, analytics: deps.integrations.analytics });

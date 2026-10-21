@@ -34,7 +34,11 @@ export const BriefingsPrepareJob = {
 };
 export const TimeInferJob = {
   name: "time.infer" as const,
-  schema: withEnvelope({ reason: z.enum(["daily", "calendar_changed", "block_completed", "event_assigned", "manual"]).default("manual") }),
+  schema: withEnvelope({
+    reason: z
+      .enum(["daily", "calendar_changed", "block_completed", "event_assigned", "manual"])
+      .default("manual"),
+  }),
 };
 export const DataRetentionJob = {
   name: "data.retention" as const,
@@ -70,6 +74,13 @@ export const ExamplePingJob = {
   schema: withEnvelope({ message: z.string().max(200), failTimes: z.number().int().min(0).default(0) }),
 };
 
+/** D-115: email copy of one in-app notification (one job per notification id). */
+export const NotifyEmailJob = {
+  name: "notify.email" as const,
+  schema: withEnvelope({ notificationId: z.string().uuid() }),
+};
+
+export type NotifyEmailPayload = z.infer<typeof NotifyEmailJob.schema>;
 export type CalendarSyncPayload = z.infer<typeof CalendarSyncJob.schema>;
 export type GmailSyncPayload = z.infer<typeof GmailSyncJob.schema>;
 export type ExtractCommitmentsPayload = z.infer<typeof ExtractCommitmentsJob.schema>;

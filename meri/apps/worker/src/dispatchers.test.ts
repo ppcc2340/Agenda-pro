@@ -6,6 +6,7 @@ import {
   createCommitment,
   createDb,
   ensureDevRoles,
+  insertNotification,
   runMigrations,
   softDeleteAccount,
   updatePreferences,
@@ -14,6 +15,7 @@ import {
   upsertIntegrationAccount,
   withWorkspace,
   type AccountIdentity,
+  type WorkspaceId,
   type DbHandle,
 } from "@meri/db";
 import { CALENDAR_SCOPES, GMAIL_SCOPES } from "@meri/integrations";
@@ -29,6 +31,7 @@ import {
   dispatchDailyReview,
   dispatchFollowupsScan,
   dispatchMailPolling,
+  dispatchNotifyEmail,
   dispatchTimeInfer,
   dispatchUsageRollup,
   type DispatcherDeps,
@@ -197,6 +200,44 @@ describe("dispatchers skip logically deleted workspaces (D-054)", () => {
     };
     expect(await at("2026-11-01T06:00:00Z")).toEqual(["2026-10", "2026-11"]);
     expect(await at("2026-11-15T06:00:00Z")).toEqual(["2026-11"]);
+  });
+
+  it("dispatchNotifyEmail picks recent notifications the preference allows, in live workspaces only (D-115)", async () => {
+    const note = (ws: WorkspaceId, template: string, kind: "digest" | "risk", at: Date) =>
+      withWorkspace(handle.db, ws, (tx) =>
+        insertNotification(
+          tx,
+          ws,
+          { kind, template, title: "t", body: "b", params: {}, refs: [], day: "2026-10-20" },
+          at,
+        ),
+      );
+    const digest = await note(alive.workspaceId, "daily.digest", "digest", NOW);
+    const risk = await note(alive.workspaceId, "risk.grouped", "risk", NOW);
+    const old = await note(
+      alive.workspaceId,
+      "daily.digest",
+      "digest",
+      new Date(NOW.getTime() - 3 * 3_600_000),
+    );
+    const dead = await note(deleted.workspaceId, "daily.digest", "digest", NOW);
+    const dispatcher = new InMemoryDispatcher();
+    await dispatchNotifyEmail({
+      adminSql,
+      dispatcher,
+      logger: createLogger({ name: "worker-test", level: "silent" }),
+      now: () => NOW,
+      pollBatch: 1_000_000,
+    });
+    const ids = dispatcher.jobs.map((j) => (j.payload as { notificationId: string }).notificationId);
+    expect(ids).toContain(digest.id);
+    expect(ids).not.toContain(risk.id); // default preference «digest»
+    expect(ids).not.toContain(old.id); // outside the 2 h window
+    expect(ids).not.toContain(dead.id);
+    expect(
+      dispatcher.jobs.find((j) => (j.payload as { notificationId: string }).notificationId === digest.id)
+        ?.options,
+    ).toMatchObject({ jobId: `notify.email_${digest.id}` });
   });
 
   it("dispatchDailyClose fires after the local work end only, for live workspaces", async () => {

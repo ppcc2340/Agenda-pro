@@ -2,7 +2,9 @@ import { BriefingsPrepareJob, prepareBriefings, type HandlerDeps } from "@meri/j
 import type { WorkspaceId } from "@meri/db";
 import type { JobDefinition } from "../registry";
 
-export function briefingsPrepareJob(deps: Omit<HandlerDeps, "logger">): JobDefinition<typeof BriefingsPrepareJob.schema> {
+export function briefingsPrepareJob(
+  deps: Omit<HandlerDeps, "logger">,
+): JobDefinition<typeof BriefingsPrepareJob.schema> {
   return {
     name: BriefingsPrepareJob.name,
     schema: BriefingsPrepareJob.schema,

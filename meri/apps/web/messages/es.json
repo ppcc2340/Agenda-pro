@@ -196,7 +196,8 @@
         "account_sessions_revoked": "Cerraste la sesión en todos los dispositivos.",
         "security_keys_rotated": "Meri renovó las claves de cifrado de tus conexiones.",
         "mail_retention_applied": "Meri borró correo indexado y propuestas descartadas según el plazo de conservación que elegiste.",
-        "ai_review_sampled": "Propuestas incluidas en la revisión de calidad de la IA"
+        "ai_review_sampled": "Propuestas incluidas en la revisión de calidad de la IA",
+        "notifications_email_unsubscribed": "Baja de los correos de Meri desde un enlace"
       },
       "undoneOf": "Deshecho: {text}",
       "undoDone": "Acción deshecha.",
@@ -372,6 +373,25 @@
         "train": "Usar tus datos para entrenar modelos de IA.",
         "attachments": "Descargar adjuntos."
       }
+    },
+    "email": {
+      "title": "Correos de Meri",
+      "desc": "Qué avisos te llegan también por correo.",
+      "legend": "Recibir por correo",
+      "off": {
+        "title": "Ninguno",
+        "desc": "Los avisos se quedan dentro de Meri."
+      },
+      "digest": {
+        "title": "Solo lo esencial",
+        "desc": "El resumen de la mañana y los avisos de tu cuenta (pago, créditos, conexión con Google)."
+      },
+      "all": {
+        "title": "Todo",
+        "desc": "Además, riesgos, propuestas nuevas, cambios del plan y el cierre del día."
+      },
+      "privacy": "Los correos solo llevan recuentos y un enlace: nunca el contenido de tus tareas, clientes ni correos. Cada correo tiene un enlace para darte de baja.",
+      "saved": "Preferencia de correo guardada."
     }
   },
   "login": {
@@ -442,7 +462,8 @@
       "p6link": "Política de datos de usuario de los servicios de API de Google",
       "p7": "Beta cerrada: si te apuntas a la lista de espera guardamos tu correo, el idioma y la fecha de tu consentimiento para escribirte sobre la beta, hasta 180 días o hasta que crees tu cuenta. Puedes pedir que lo borremos antes escribiendo al contacto de privacidad.",
       "p8": "Comentarios y encuestas: lo que envías con «Enviar comentarios» (tipo, texto y la página, sin parámetros) y tus respuestas a la encuesta se guardan con tu cuenta, los lee el equipo de Meri y se borran con ella. No se envían a analítica ni a la IA.",
-      "p9": "Mejora de la IA (opcional, desactivada por defecto): si activas «Ayudar a mejorar la IA de Meri», el equipo puede revisar cada semana una muestra de las propuestas que descartaste o editaste y que no vienen de tu correo, con nombres, correos, teléfonos, enlaces, números e identificadores ocultos. La muestra se guarda fuera de la aplicación y se borra a los 30 días; cada vez que se toma una, queda anotado en tu actividad."
+      "p9": "Mejora de la IA (opcional, desactivada por defecto): si activas «Ayudar a mejorar la IA de Meri», el equipo puede revisar cada semana una muestra de las propuestas que descartaste o editaste y que no vienen de tu correo, con nombres, correos, teléfonos, enlaces, números e identificadores ocultos. La muestra se guarda fuera de la aplicación y se borra a los 30 días; cada vez que se toma una, queda anotado en tu actividad.",
+      "p10": "Correos de Meri: con tu cuenta te enviamos por defecto el resumen de la mañana y los avisos de tu cuenta (pago, créditos, conexión). Solo llevan recuentos y un enlace, nunca el contenido de tus tareas, clientes ni correos, y salen desde el dominio de Meri a través de un proveedor de correo (subencargado), nunca desde tu Gmail. Puedes elegir qué recibir en Control o darte de baja con el enlace de cualquier correo."
     },
     "terms": {
       "p1": "Meri es una herramienta de asistencia. Las fechas legales y los plazos procesales deben verificarse siempre con tu propio criterio profesional.",
@@ -1262,5 +1283,14 @@
     "eyebrow": "Una pregunta rápida",
     "error": "No pudimos guardar la respuesta. Inténtalo de nuevo.",
     "privacy": "Tu respuesta se guarda con tu cuenta y solo la lee el equipo de Meri."
+  },
+  "unsubscribe": {
+    "title": "Dejar de recibir correos",
+    "body": "Meri dejará de enviarte correos. Los avisos seguirán dentro de la aplicación.",
+    "confirm": "Dejar de recibir correos",
+    "done": "Listo. Ya no te enviaremos correos. Puedes volver a activarlos en Control → Correos de Meri.",
+    "invalid": "Este enlace no es válido. Cambia la preferencia desde Control → Correos de Meri.",
+    "error": "No pudimos completar la baja. Inténtalo de nuevo.",
+    "manage": "¿Prefieres elegir qué correos recibir? <link>Abrir Control</link>."
   }
 }

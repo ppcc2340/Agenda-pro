@@ -31,7 +31,12 @@ export type AuthzRule =
    * Reachable without a session (`config.public`): reads nothing and writes no tenant data. Still CSRF-checked
    * (header and exact Origin); `noControl` says why there is no tenant case.
    */
-  | { kind: "public"; noControl: string };
+  | { kind: "public"; noControl: string }
+  /**
+   * Authorized by a signed token in the URL instead of a session (`config.signedToken`, D-116): no cookie, so no
+   * CSRF; it can only turn email off for the token's own workspace. Covered by `routes/email.test.ts`.
+   */
+  | { kind: "signed"; noControl: string };
 
 const denied = (body?: AuthzCase["body"]): AuthzCase => ({ expect: "denied", ...(body ? { body } : {}) });
 
@@ -279,6 +284,10 @@ export const AUTHZ_MATRIX: Record<string, AuthzRule> = {
   "POST /v1/waitlist": {
     kind: "public",
     noControl: "insert-only into the global waitlist; same answer whatever the address (beta.test.ts)",
+  },
+  "POST /v1/email/unsubscribe": {
+    kind: "signed",
+    noControl: "the token names its workspace; forged or foreign tokens change nothing (email.test.ts)",
   },
   "POST /v1/feedback": { kind: "own", body: { kind: "idea", message: "authz matrix" } },
   "GET /v1/surveys/next": { kind: "own" },

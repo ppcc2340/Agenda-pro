@@ -79,13 +79,18 @@ export const accountGuardPlugin = fp<AccountGuardOptions>((app: FastifyInstance,
     if (fresh) answer = hit;
     else {
       const live = await accountLiveness(options.db, session.userId, session.workspaceId);
-      answer = { active: live.active, validAfter: live.sessionsValidAfter?.getTime() ?? 0, checkedAt: Date.now() };
+      answer = {
+        active: live.active,
+        validAfter: live.sessionsValidAfter?.getTime() ?? 0,
+        checkedAt: Date.now(),
+      };
     }
     // A deletion or revocation recorded while this lookup was in flight wins over the database answer.
     const current = liveness.get(key);
     const deletedMeanwhile = current?.checkedAt === DELETED;
     if (!fresh && !deletedMeanwhile) {
-      if (current && current.validAfter > answer.validAfter) answer = { ...answer, validAfter: current.validAfter };
+      if (current && current.validAfter > answer.validAfter)
+        answer = { ...answer, validAfter: current.validAfter };
       remember(key, answer);
     }
     const revoked = session.authTime < answer.validAfter;

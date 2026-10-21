@@ -157,6 +157,8 @@ export const preferences = pgTable("preferences", {
   briefingBeforeMeetings: boolean("briefing_before_meetings").notNull().default(true),
   /** D-103: consent to include this account's discarded or edited (non-mail) proposals in the AI review sample. */
   evalConsent: boolean("eval_consent").notNull().default(false),
+  /** D-114: which notifications also go out by email (off | digest | all). */
+  emailNotifications: text("email_notifications").$type<"off" | "digest" | "all">().notNull().default("digest"),
   updatedAt: updatedAt(),
 });
 
@@ -618,9 +620,15 @@ export const notifications = pgTable(
     /** YYYY-MM-DD in the user's time zone; used for the daily cap. */
     day: text("day").notNull(),
     readAt: timestamp("read_at", { withTimezone: true }),
+    /** D-115: outcome of the email copy (null = not decided yet) and when it was sent. */
+    emailState: text("email_state").$type<"sent" | "skipped" | "failed">(),
+    emailedAt: timestamp("emailed_at", { withTimezone: true }),
     createdAt: createdAt(),
   },
-  (t) => [index("notifications_ws_day_idx").on(t.workspaceId, t.day, t.createdAt)],
+  (t) => [
+    index("notifications_ws_day_idx").on(t.workspaceId, t.day, t.createdAt),
+    index("notifications_email_pending_idx").on(t.createdAt).where(sql`${t.emailState} is null`),
+  ],
 );
 
 export const aiUsage = pgTable(

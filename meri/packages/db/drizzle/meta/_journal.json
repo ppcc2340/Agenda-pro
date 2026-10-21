@@ -169,6 +169,13 @@
       "when": 1792597165084,
       "tag": "0023_phase6_review",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1792602427571,
+      "tag": "0024_mvp_email",
+      "breakpoints": true
     }
   ]
 }

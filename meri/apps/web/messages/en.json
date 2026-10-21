@@ -196,7 +196,8 @@
         "account_sessions_revoked": "You signed out on all devices.",
         "security_keys_rotated": "Meri renewed the encryption keys of your connections.",
         "mail_retention_applied": "Meri deleted indexed mail and dismissed proposals per the retention period you chose.",
-        "ai_review_sampled": "Proposals included in the AI quality review"
+        "ai_review_sampled": "Proposals included in the AI quality review",
+        "notifications_email_unsubscribed": "Unsubscribed from Meri emails through a link"
       },
       "undoneOf": "Undone: {text}",
       "undoDone": "Action undone.",
@@ -372,6 +373,25 @@
         "train": "Use your data to train AI models.",
         "attachments": "Download attachments."
       }
+    },
+    "email": {
+      "title": "Emails from Meri",
+      "desc": "Which notices also reach you by email.",
+      "legend": "Get by email",
+      "off": {
+        "title": "None",
+        "desc": "Notices stay inside Meri."
+      },
+      "digest": {
+        "title": "Just the essentials",
+        "desc": "The morning summary and notices about your account (payment, credits, Google connection)."
+      },
+      "all": {
+        "title": "Everything",
+        "desc": "Also risks, new proposals, plan changes and the end-of-day close."
+      },
+      "privacy": "Emails only carry counts and a link: never the content of your tasks, clients or mail. Every email has an unsubscribe link.",
+      "saved": "Email preference saved."
     }
   },
   "login": {
@@ -442,7 +462,8 @@
       "p6link": "Google API Services User Data Policy",
       "p7": "Closed beta: if you join the waitlist we keep your email, language and the date of your consent so we can write to you about the beta, for up to 180 days or until you create your account. You can ask us to delete it sooner through the privacy contact.",
       "p8": "Feedback and surveys: what you send with “Send feedback” (type, text and the page, without parameters) and your survey answers are stored with your account, read by the Meri team and deleted with it. They are never sent to analytics or to the AI.",
-      "p9": "Improving the AI (optional, off by default): if you turn on “Help improve Meri's AI”, the team may review a weekly sample of the proposals you discarded or edited that do not come from your mailbox, with names, emails, phones, links, numbers and identifiers hidden. The sample is kept outside the application and deleted after 30 days; each time one is taken, it is noted in your activity."
+      "p9": "Improving the AI (optional, off by default): if you turn on “Help improve Meri's AI”, the team may review a weekly sample of the proposals you discarded or edited that do not come from your mailbox, with names, emails, phones, links, numbers and identifiers hidden. The sample is kept outside the application and deleted after 30 days; each time one is taken, it is noted in your activity.",
+      "p10": "Emails from Meri: by default we send you the morning summary and notices about your account (payment, credits, connection). They only carry counts and a link, never the content of your tasks, clients or mail, and they come from Meri's domain through an email provider (a subprocessor), never from your Gmail. Choose what you get in Control or unsubscribe with the link in any email."
     },
     "terms": {
       "p1": "Meri is an assistance tool. Legal dates and procedural deadlines must always be verified with your own professional judgement.",
@@ -1262,5 +1283,14 @@
     "eyebrow": "A quick question",
     "error": "We could not save your answer. Please try again.",
     "privacy": "Your answer is stored with your account and only the Meri team reads it."
+  },
+  "unsubscribe": {
+    "title": "Stop getting emails",
+    "body": "Meri will stop sending you emails. Notices stay inside the app.",
+    "confirm": "Stop getting emails",
+    "done": "Done. We will not email you any more. You can turn emails back on in Control → Emails from Meri.",
+    "invalid": "This link is not valid. Change the preference in Control → Emails from Meri.",
+    "error": "We could not complete the request. Please try again.",
+    "manage": "Rather choose which emails you get? <link>Open Control</link>."
   }
 }

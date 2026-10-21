@@ -254,7 +254,7 @@ export function renderNotificationEmail(input: EmailRenderInput): RenderedEmail 
   const footer = FOOTER[input.locale];
   const base = input.appUrl.replace(/\/+$/, "");
   const link = `${base}${copy.path}`;
-  const manage = `${base}/control`;
+  const manage = `${base}/control#correo`;
   const text = [
     ...copy.lines,
     "",

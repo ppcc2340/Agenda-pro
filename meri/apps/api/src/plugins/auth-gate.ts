@@ -5,8 +5,13 @@ import { isV1Route } from "./route-scope";
 
 declare module "fastify" {
   interface FastifyContextConfig {
-    /** A `/v1` route reachable without a session (only `POST /v1/waitlist`; the gate fails closed by default). */
+    /** A `/v1` route reachable without a session (`POST /v1/waitlist`, `POST /v1/email/unsubscribe`; fails closed). */
     public?: boolean;
+    /**
+     * A public route authorized by a signed token in the URL instead of a cookie (D-116: one-click email
+     * unsubscribe, called by mail servers without Origin or our header). It skips CSRF, which protects cookies.
+     */
+    signedToken?: boolean;
   }
 }
 

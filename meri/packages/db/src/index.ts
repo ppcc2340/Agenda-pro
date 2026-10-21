@@ -95,6 +95,7 @@ export * from "./repos/clients";
 export * from "./repos/integrations";
 export * from "./repos/schedule";
 export * from "./repos/notifications";
+export * from "./repos/notification-email";
 export * from "./repos/plan-runs";
 export * from "./repos/threads";
 export * from "./repos/commitments";
