@@ -9,6 +9,17 @@ export interface OAuthTokens {
   email: string;
 }
 
+/**
+ * A refresh only renews the access token: the identity and the stored refresh token are the caller's (Google rotates
+ * the refresh token rarely, `null` = keep the stored one; `scopes` null = unchanged).
+ */
+export interface RefreshedTokens {
+  accessToken: string;
+  refreshToken: string | null;
+  expiresAt: string; // ISO
+  scopes: string[] | null;
+}
+
 export interface GoogleOAuth {
   readonly mode: "fake" | "live";
   /**
@@ -24,7 +35,8 @@ export interface GoogleOAuth {
   }): string;
   /** Exchanges the authorization code with its PKCE verifier. Throws IntegrationError(Permanent) on invalid code. */
   exchangeCode(input: { code: string; redirectUri: string; codeVerifier: string }): Promise<OAuthTokens>;
-  refresh(refreshToken: string): Promise<OAuthTokens>;
+  /** Throws IntegrationError(AuthExpired) when the grant was revoked or expired (`invalid_grant`). */
+  refresh(refreshToken: string): Promise<RefreshedTokens>;
   revoke(token: string): Promise<void>;
 }
 

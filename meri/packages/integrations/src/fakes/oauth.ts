@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { IntegrationError } from "../errors";
-import type { GoogleOAuth, OAuthTokens } from "../oauth/types";
+import type { GoogleOAuth, OAuthTokens, RefreshedTokens } from "../oauth/types";
 
 /**
  * Fake Google OAuth: the "consent screen" is the callback itself. Codes are minted by `authorizationUrl` and are
@@ -51,12 +51,21 @@ export class FakeGoogleOAuth implements GoogleOAuth {
     return Promise.resolve(this.tokens(entry.email, entry.scopes));
   }
 
-  refresh(refreshToken: string): Promise<OAuthTokens> {
+  /** Number of refreshes served (tests assert that concurrent refreshes are not duplicated). */
+  refreshes = 0;
+
+  refresh(refreshToken: string): Promise<RefreshedTokens> {
     if (this.revoked.includes(refreshToken)) {
       return Promise.reject(new IntegrationError("AuthExpired", "google-oauth", "refresh token revoked"));
     }
-    const email = refreshToken.split("|")[1] ?? this.defaultEmail;
-    return Promise.resolve(this.tokens(email, []));
+    this.refreshes += 1;
+    // Like Google: a new access token, the refresh token is not rotated, scopes unchanged.
+    return Promise.resolve({
+      accessToken: `fake-access-${String(++this.counter)}`,
+      refreshToken: null,
+      expiresAt: new Date(this.now().getTime() + 3600_000).toISOString(),
+      scopes: null,
+    });
   }
 
   revoke(token: string): Promise<void> {

@@ -29,7 +29,9 @@ describe("FakeGoogleOAuth", () => {
     });
     await expect(oauth.exchangeCode({ code, redirectUri: "x", codeVerifier: "verifier-1" })).rejects.toMatchObject({ kind: "Permanent" });
     const refreshed = await oauth.refresh(tokens.refreshToken ?? "");
-    expect(refreshed.email).toBe("ana@acme.com");
+    // A refresh renews only the access token: identity and refresh token stay with the caller.
+    expect(refreshed).toMatchObject({ refreshToken: null, scopes: null });
+    expect(refreshed.accessToken).not.toBe(tokens.accessToken);
     await oauth.revoke(tokens.refreshToken ?? "");
     await expect(oauth.refresh(tokens.refreshToken ?? "")).rejects.toMatchObject({ kind: "AuthExpired" });
   });
