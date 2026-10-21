@@ -53,7 +53,7 @@ Worker BullMQ ─────────────(3)(4)(5)(6)        Operado
 | STRIDE | Amenaza | Mitigación | Residual |
 |---|---|---|---|
 | I | Un workspace lee datos de otro (IDOR) | RLS FORCE por `workspace_id` (`drizzle/0001_rls_roles_grants.sql`), `withWorkspace`, filtros en repos · `rls-coverage.test.ts`, `workspace.test.ts`, pruebas cruzadas por ruta y matriz de autorización (fase 5 · paso 9) | Error humano en una ruta nueva: la matriz falla si una ruta no está cubierta |
-| I | Información de un cliente en el contexto de IA de otro | `ContextBuilder` único (`core/clients/context.ts`) · `context.properties.test.ts` (1 000 casos) y canario en `briefings.test.ts` / `evals/briefings` | — |
+| I | Información de un cliente en el contexto de IA de otro | `ContextBuilder` único (`packages/core/src/clients/context.ts`) · `context.properties.test.ts` (1 000 casos) y canario en `briefings.test.ts` / `evals/briefings` | — |
 | E | Un job opera sin fijar el workspace | dispatchers con contexto de lectura admin y luego `withWorkspace` (D-025) | — |
 
 ### 3.4 Conexión OAuth con Google
@@ -61,13 +61,13 @@ Worker BullMQ ─────────────(3)(4)(5)(6)        Operado
 |---|---|---|---|
 | S | CSRF de login OAuth / inyección de código de autorización | `state` aleatorio en cookie HttpOnly (`routes/integrations.ts`) · `integrations.test.ts`; PKCE S256 y comparación en tiempo constante (fase 5 · paso 4) | — |
 | E | Scopes excesivos (envío de correo) | scopes incrementales por función, nunca `gmail.send` (`oauth/scopes.ts`); paso de CI que prohíbe código de envío | — |
-| I | Fuga de tokens | cifrado de sobre (`config/crypto/envelope.ts`), AAD por cuenta, nunca en logs (lista de censura del logger · `logger.test.ts`); revocación en el proveedor al desconectar y al borrar la cuenta | Clave local en desarrollo: prohibida en producción (`modes.ts`) |
+| I | Fuga de tokens | cifrado de sobre (`packages/config/src/crypto/envelope.ts`), AAD por cuenta, nunca en logs (lista de censura del logger · `logger.test.ts`); revocación en el proveedor al desconectar y al borrar la cuenta | Clave local en desarrollo: prohibida en producción (`modes.ts`) |
 
 ### 3.5 Ingesta de correo → IA → propuestas
 | STRIDE | Amenaza | Mitigación | Residual |
 |---|---|---|---|
 | T/E | Inyección de instrucciones en el correo que hace actuar a la IA | La IA solo escribe `proposals`; la política decide; el usuario confirma; contenido marcado como no confiable (docs/05 §6) · `evals/injection` (100 %), `extract.test.ts` | Ofuscaciones no cubiertas por la suite (deuda de la fase 2) |
-| I | Guardar cuerpos de correo | solo metadatos y cita ≤ 200 (`core/mail/sanitize.ts`) · `no-mail-bodies.test.ts`; propiedades de los analizadores (fase 5 · paso 9) | — |
+| I | Guardar cuerpos de correo | solo metadatos y cita ≤ 200 (`packages/core/src/mail/sanitize.ts`) · `no-mail-bodies.test.ts`; propiedades de los analizadores (fase 5 · paso 9) | — |
 | D | Correo malicioso que rompe el analizador | validación Zod, propiedades `fast-check` «nunca lanza» (fase 5 · paso 9) | — |
 | I | Datos de clientes enviados al proveedor de IA más allá de lo necesario | contexto mínimo por cliente; uso limitado de Google (sin entrenamiento) en el contrato con el proveedor (`docs/compliance/subprocessors.md`) | Depende del contrato del proveedor (humano) |
 
