@@ -19,6 +19,7 @@ export {
   PreferencesPatchSchema,
   getPreferences,
   updatePreferences,
+  turnOffEmailNotifications,
   PreferencesValidationError,
   type Preferences,
   type PreferencesPatch,

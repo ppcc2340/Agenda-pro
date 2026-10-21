@@ -117,19 +117,61 @@ describe("SmtpNotifier (D-113)", () => {
     );
   });
 
-  it("rejected credentials are Permanent; an unreachable server is Transient", async () => {
+  it("rejected credentials, a refused sender and an unreachable server are retried, never final (review M2)", async () => {
     const { server, port } = await startServer();
     cleanups.push(() => {
       server.close();
     });
     await expect(notifier(port, "meri:wrong@").send(email())).rejects.toSatisfy(
       (e: unknown) =>
-        e instanceof IntegrationError && e.kind === "Permanent" && /authentication/.test(e.message),
+        e instanceof IntegrationError && e.kind === "Transient" && /authentication/.test(e.message),
+    );
+    const senderRefused = await startServer({
+      onMailFrom(_address, _session, cb) {
+        cb(Object.assign(new Error("Email address is not verified"), { responseCode: 554 }));
+      },
+    });
+    cleanups.push(() => {
+      senderRefused.server.close();
+    });
+    await expect(notifier(senderRefused.port).send(email())).rejects.toSatisfy(
+      (e: unknown) => e instanceof IntegrationError && e.kind === "Transient",
     );
     server.close();
     await expect(notifier(port).send(email())).rejects.toSatisfy(
       (e: unknown) => e instanceof IntegrationError && e.kind === "Transient",
     );
+  });
+
+  it("requires TLS towards any host other than localhost", async () => {
+    // 127.0.0.2 is loopback but not «local» for the adapter: a server without STARTTLS must be refused.
+    const received: string[] = [];
+    const plain = new SMTPServer({
+      disabledCommands: ["STARTTLS", "AUTH"],
+      logger: false,
+      onData(stream, _session, cb) {
+        received.push("message");
+        stream.resume();
+        stream.on("end", () => {
+          cb();
+        });
+      },
+    });
+    await new Promise<void>((resolve) => plain.listen(0, "127.0.0.2", resolve));
+    cleanups.push(() => {
+      plain.close();
+    });
+    const port = (plain.server.address() as AddressInfo).port;
+    const n = new SmtpNotifier({
+      url: `smtp://127.0.0.2:${String(port)}`,
+      from: "x@example.com",
+      timeoutMs: 2_000,
+    });
+    cleanups.push(() => {
+      n.close();
+    });
+    await expect(n.send(email())).rejects.toBeInstanceOf(IntegrationError);
+    expect(received).toHaveLength(0);
   });
 
   it("refuses an invalid recipient and a non-SMTP URL before connecting", async () => {

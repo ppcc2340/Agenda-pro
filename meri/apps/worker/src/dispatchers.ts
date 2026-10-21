@@ -328,6 +328,7 @@ export async function dispatchUsageRollup(deps: DispatcherDeps): Promise<number>
 /** D-115: notifications this recent may still get their email copy. */
 export const EMAIL_WINDOW_MS = 2 * 3_600_000;
 
+
 /**
  * notify.email (D-115): recent notifications without an email outcome whose workspace preference allows email. The
  * SQL mirrors `emailAllowed` (@meri/core) only to keep the queue small; the handler decides again with the core rule.
@@ -338,6 +339,8 @@ export async function dispatchNotifyEmail(deps: DispatcherDeps): Promise<number>
     select n.id, n.workspace_id as "workspaceId" from notifications n
     join preferences p on p.workspace_id = n.workspace_id
     where n.email_state is null and n.created_at > ${since}::timestamptz and ${activeWorkspace(deps.adminSql, "n")}
+      -- Only notices created under the current preference: switching to «all» never mails a backlog (review L4).
+      and n.created_at >= p.updated_at
       and p.email_notifications <> 'off'
       and (p.email_notifications = 'all' or n.kind in ('billing', 'integration') or n.template = 'daily.digest')
     order by n.created_at limit ${deps.pollBatch ?? POLL_BATCH}`;
@@ -345,7 +348,9 @@ export async function dispatchNotifyEmail(deps: DispatcherDeps): Promise<number>
     await deps.dispatcher.enqueue(
       NotifyEmailJob,
       { workspaceId: row.workspaceId, traceId: randomUUID(), notificationId: row.id },
-      { jobId: `notify.email_${row.id}` },
+      // Bucketed per 10 minutes (wall clock): a copy whose retries ran out during an SMTP outage is tried again in
+      // the next bucket while the notice is in the window; the handler gives up before the window closes.
+      { jobId: `notify.email_${row.id}_${String(Math.floor(Date.now() / 600_000))}` },
     );
   if (rows.length > 0) deps.logger.info({ notifications: rows.length }, "email copies dispatched");
   return rows.length;

@@ -57,8 +57,10 @@ export function betaRoutes(
     if (options.redis) {
       try {
         const key = `meri:waitlist:global:${String(hour)}`;
-        const n = await options.redis.incr(key);
-        if (n === 1) await options.redis.expire(key, 3_700);
+        // One round trip, atomic: the counter can never be left without its expiry.
+        const result = await options.redis.multi().incr(key).expire(key, 3_700).exec();
+        const n = result?.[0]?.[1];
+        if (typeof n !== "number") throw new Error("waitlist cap: unexpected Redis reply");
         return n;
       } catch (err) {
         app.log.warn({ err }, "waitlist cap: Redis unavailable, counting per process");

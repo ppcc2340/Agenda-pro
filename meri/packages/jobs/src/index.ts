@@ -37,6 +37,7 @@ export { runDailyReview, dueForDigest, renderDigest, type DailyReviewResult } fr
 export {
   runNotifyEmail,
   EMAIL_MAX_AGE_MS,
+  EMAIL_GIVE_UP_MS,
   type NotifyEmailDeps,
   type NotifyEmailResult,
 } from "./handlers/notify-email";

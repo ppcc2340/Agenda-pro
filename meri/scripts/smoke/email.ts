@@ -6,7 +6,8 @@ import { ok, run } from "./_shared";
  * it. Never prints SMTP_URL. Check SPF/DKIM/DMARC on the received message (docs/blockers/email.md).
  */
 await run("email", async ({ config, integrations }) => {
-  const to = process.env.SMOKE_EMAIL_TO ?? "smoke@meri.local";
+  const to = process.env.SMOKE_EMAIL_TO ?? (integrations.notifier.mode === "live" ? "" : "smoke@meri.local");
+  if (!to) throw new Error("SMOKE_EMAIL_TO is required in live mode (the address that receives the sample).");
   const appUrl = config.env.APP_URL;
   const rendered = renderNotificationEmail({
     kind: "digest",
@@ -23,5 +24,7 @@ await run("email", async ({ config, integrations }) => {
     unsubscribeUrl: `${appUrl}/api/v1/email/unsubscribe?t=smoke`,
     reference: "smoke",
   });
-  ok(`${integrations.notifier.mode === "live" ? "sent through SMTP" : "recorded by FakeNotifier (fake mode)"} to ${to}`);
+  ok(
+    `${integrations.notifier.mode === "live" ? "sent through SMTP" : "recorded by FakeNotifier (fake mode)"} to ${to}`,
+  );
 });

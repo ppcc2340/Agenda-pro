@@ -2,7 +2,7 @@
 
 import { EMAIL_PREFERENCES, type EmailPreference } from "@meri/core";
 import { useTranslations } from "next-intl";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useToast } from "@/components/ui/toast";
 import { clientApi } from "@/lib/client-api";
 import { keys, useApiMutation } from "@/lib/hooks/use-api";
@@ -15,14 +15,28 @@ export function EmailSettings({ value }: { value: EmailPreference }) {
   const t = useTranslations("control.email");
   const { toast } = useToast();
   const [current, setCurrent] = useState<EmailPreference>(value);
-  useEffect(() => setCurrent(value), [value]);
+  // The last value the server confirmed: a failed save goes back to it, not to the page-load value.
+  const saved = useRef<EmailPreference>(value);
+  useEffect(() => {
+    saved.current = value;
+    setCurrent(value);
+  }, [value]);
   const save = useApiMutation(
     (v: EmailPreference) => clientApi("/v1/preferences", { method: "PUT", json: { emailNotifications: v } }),
     [keys.audit],
-    { onSuccess: () => toast(t("saved")), onError: () => setCurrent(value) },
+    {
+      onSuccess: (_d, v) => {
+        saved.current = v;
+        toast(t("saved"));
+      },
+      onError: () => {
+        setCurrent(saved.current);
+        toast(t("error"));
+      },
+    },
   );
   return (
-    <fieldset>
+    <fieldset aria-busy={save.isPending}>
       <legend className="font-semibold">{t("legend")}</legend>
       <div className="mt-2 grid gap-2">
         {EMAIL_PREFERENCES.map((id) => (
@@ -35,7 +49,6 @@ export function EmailSettings({ value }: { value: EmailPreference }) {
               name="email-notifications"
               value={id}
               checked={current === id}
-              disabled={save.isPending}
               onChange={() => {
                 setCurrent(id);
                 save.mutate(id);
@@ -49,7 +62,7 @@ export function EmailSettings({ value }: { value: EmailPreference }) {
           </label>
         ))}
       </div>
-      <p className="mt-3 text-[12.5px] text-ink3">{t("privacy")}</p>
+      <p className="mt-3 text-[12.5px] text-ink2">{t("privacy")}</p>
     </fieldset>
   );
 }

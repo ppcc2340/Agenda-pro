@@ -56,17 +56,29 @@ describe("email preference and one-click unsubscribe (D-114, D-116)", () => {
     expect(first.json()).toEqual({ ok: true });
     expect(await prefOf(acc.workspaceId)).toBe("off");
     expect((await oneClick(token)).json()).toEqual({ ok: true });
-    const audits = await owner.sql<{ actor: string; actor_user_id: string | null }[]>`
-      select actor, actor_user_id from audit_log
+    const audits = await owner.sql<
+      { actor: string; actor_user_id: string | null; before: unknown; after: unknown }[]
+    >`
+      select actor, actor_user_id, before, after from audit_log
       where workspace_id = ${acc.workspaceId} and action = 'notifications.email_unsubscribed'`;
-    expect(audits).toEqual([{ actor: "user", actor_user_id: acc.userId }]);
+    // Whoever holds the link may act (a mail server, a forwarded email): attributed to the system, not the owner.
+    expect(audits).toEqual([
+      {
+        actor: "system",
+        actor_user_id: null,
+        before: { emailNotifications: "digest" },
+        after: { emailNotifications: "off", via: "signed_link" },
+      },
+    ]);
   });
 
   it("the web page's JSON call works too, and a GET never unsubscribes", async () => {
     const acc = await t.createAccount("mail-page");
     const token = signUnsubscribeToken(AUTH_SECRET, acc.workspaceId);
     const get = await t.app.inject({ url: `/v1/email/unsubscribe?t=${encodeURIComponent(token)}` });
-    expect(get.statusCode).not.toBe(200);
+    // Mail clients without one-click open the header URL: they land on the confirmation page.
+    expect(get.statusCode).toBe(303);
+    expect(get.headers.location).toBe(`http://localhost:3000/correo/baja?t=${encodeURIComponent(token)}`);
     expect(await prefOf(acc.workspaceId)).toBe("digest");
     const res = await t.app.inject({
       method: "POST",
@@ -76,6 +88,35 @@ describe("email preference and one-click unsubscribe (D-114, D-116)", () => {
     });
     expect(res.statusCode).toBe(200);
     expect(await prefOf(acc.workspaceId)).toBe("off");
+  });
+
+  it("accepts a multipart one-click body, records the previous preference, ignores unknown workspaces", async () => {
+    const acc = await t.createAccount("mail-multi");
+    const cookie = await t.cookieFor(acc);
+    await t.app.inject({
+      method: "PUT",
+      url: "/v1/preferences",
+      headers: { cookie, ...csrf },
+      payload: { emailNotifications: "all" },
+    });
+    const boundary = "----meri";
+    const res = await t.app.inject({
+      method: "POST",
+      url: `/v1/email/unsubscribe?t=${encodeURIComponent(signUnsubscribeToken(AUTH_SECRET, acc.workspaceId))}`,
+      headers: { "content-type": `multipart/form-data; boundary=${boundary}` },
+      payload: `--${boundary}\r\nContent-Disposition: form-data; name="List-Unsubscribe"\r\n\r\nOne-Click\r\n--${boundary}--\r\n`,
+      remoteAddress: "10.8.0.4",
+    });
+    expect(res.statusCode).toBe(200);
+    expect(await prefOf(acc.workspaceId)).toBe("off");
+    const [row] = await owner.sql<{ before: unknown }[]>`
+      select before from audit_log where workspace_id = ${acc.workspaceId} and action = 'notifications.email_unsubscribed'`;
+    expect(row?.before).toEqual({ emailNotifications: "all" });
+    // A valid signature for a workspace that does not exist: same answer, nothing written.
+    const ghost = "0192aaaa-0000-7000-8000-00000000dead";
+    expect((await oneClick(signUnsubscribeToken(AUTH_SECRET, ghost), "10.8.0.5")).json()).toEqual({
+      ok: true,
+    });
   });
 
   it("a forged, foreign-secret or tampered token changes nothing", async () => {

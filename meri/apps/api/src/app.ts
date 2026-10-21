@@ -79,7 +79,7 @@ export const BODY_LIMIT_BYTES = 256 * 1024;
 
 declare module "fastify" {
   interface FastifyInstance {
-    routeTable: readonly { method: string; url: string }[];
+    routeTable: readonly { method: string; url: string; isPublic: boolean; signedToken: boolean }[];
   }
 }
 
@@ -104,10 +104,17 @@ export async function buildApp(deps: AppDeps) {
   app.setValidatorCompiler(validatorCompiler);
   app.setSerializerCompiler(serializerCompiler);
   // Every registered route, for the authorization matrix (P5-06): a route missing from the matrix fails the test.
-  const routeTable: { method: string; url: string }[] = [];
+  const routeTable: { method: string; url: string; isPublic: boolean; signedToken: boolean }[] = [];
   app.addHook("onRoute", (route) => {
+    const config = route.config;
     for (const method of [route.method].flat())
-      if (method !== "HEAD") routeTable.push({ method, url: route.url });
+      if (method !== "HEAD")
+        routeTable.push({
+          method,
+          url: route.url,
+          isPublic: config?.public === true,
+          signedToken: config?.signedToken === true,
+        });
   });
   app.decorate("routeTable", routeTable);
   const observability =
@@ -194,7 +201,12 @@ export async function buildApp(deps: AppDeps) {
     ...(deps.rateLimitRedis ? { redis: deps.rateLimitRedis } : {}),
   });
   await app.register(surveyRoutes, { now: deps.now });
-  await app.register(emailRoutes, { db: deps.db, now: deps.now, authSecret: config.env.AUTH_SECRET });
+  await app.register(emailRoutes, {
+    db: deps.db,
+    now: deps.now,
+    authSecret: config.env.AUTH_SECRET,
+    appUrl: config.env.APP_URL,
+  });
   await app.register(accountSessionRoutes, { db: deps.db });
   await app.register(accountExportRoutes, { db: deps.db, now: deps.now });
   await app.register(accountRoutes, {

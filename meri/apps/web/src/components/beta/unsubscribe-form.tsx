@@ -10,8 +10,11 @@ export function UnsubscribeForm({ token }: { token: string }) {
   const t = useTranslations("unsubscribe");
   const [state, setState] = useState<"idle" | "sending" | "done" | "invalid" | "error">("idle");
   const doneRef = useRef<HTMLParagraphElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     if (state === "done") doneRef.current?.focus();
+    // The button was disabled while sending: give focus back so a retry is one key away.
+    if (state === "invalid" || state === "error") buttonRef.current?.focus();
   }, [state]);
   async function submit(): Promise<void> {
     setState("sending");
@@ -41,7 +44,13 @@ export function UnsubscribeForm({ token }: { token: string }) {
           {t(state)}
         </p>
       ) : null}
-      <Button variant="primary" size="block" disabled={state === "sending"} onClick={() => void submit()}>
+      <Button
+        ref={buttonRef}
+        variant="primary"
+        size="block"
+        disabled={state === "sending"}
+        onClick={() => void submit()}
+      >
         {t("confirm")}
       </Button>
     </div>

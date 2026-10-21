@@ -285,6 +285,10 @@ export const AUTHZ_MATRIX: Record<string, AuthzRule> = {
     kind: "public",
     noControl: "insert-only into the global waitlist; same answer whatever the address (beta.test.ts)",
   },
+  "GET /v1/email/unsubscribe": {
+    kind: "signed",
+    noControl: "redirects to the confirmation page and changes nothing (email.test.ts)",
+  },
   "POST /v1/email/unsubscribe": {
     kind: "signed",
     noControl: "the token names its workspace; forged or foreign tokens change nothing (email.test.ts)",

@@ -29,11 +29,20 @@ interface Copy {
 const num = (v: unknown): number =>
   typeof v === "number" && Number.isFinite(v) && v >= 0 ? Math.floor(v) : 0;
 
+const blocksEs = (b: number) =>
+  b === 0
+    ? "sin bloques planificados"
+    : b === 1
+      ? "1 bloque planificado"
+      : `${String(b)} bloques planificados`;
+const blocksEn = (b: number) =>
+  b === 0 ? "no blocks planned" : b === 1 ? "1 block planned" : `${String(b)} blocks planned`;
+
 type CopyFn = (p: Record<string, unknown>) => Copy;
 
 const ES: Record<string, CopyFn> = {
   "daily.digest": (p) => ({
-    subject: `Tu día en Meri: ${String(num(p.blocks))} bloques planificados`,
+    subject: `Tu día en Meri: ${blocksEs(num(p.blocks))}`,
     lines: [
       `Bloques planificados para hoy: ${String(num(p.blocks))}.`,
       `Riesgos y conflictos: ${String(num(p.risks))}.`,
@@ -62,7 +71,9 @@ const ES: Record<string, CopyFn> = {
   }),
   "plan.applied": () => ({
     subject: "Meri ajustó tu plan",
-    lines: ["Se aplicaron cambios seguros a tu plan. Puedes deshacerlos desde la actividad."],
+    lines: [
+      "Se aplicaron cambios seguros a tu plan. Puedes deshacerlos desde Actividad, en el Centro de control.",
+    ],
     cta: "Ver el plan",
     path: "/hoy",
   }),
@@ -79,7 +90,7 @@ const ES: Record<string, CopyFn> = {
     path: "/control#plan",
   }),
   "credits.warning": () => ({
-    subject: "Has usado la mayor parte de tus créditos de IA",
+    subject: "Usaste la mayor parte de tus créditos de IA",
     lines: ["Cuando se agoten, Meri seguirá funcionando con reglas hasta el próximo ciclo."],
     cta: "Ver créditos",
     path: "/control#plan",
@@ -89,6 +100,29 @@ const ES: Record<string, CopyFn> = {
     lines: ["Meri sigue funcionando con reglas. Puedes comprar créditos o esperar al próximo ciclo."],
     cta: "Ver créditos",
     path: "/control#plan",
+  }),
+  "proposals.new": () => ({
+    subject: "Tienes propuestas nuevas por revisar",
+    lines: ["Revísalas en Entrada. Nada se confirma sin ti."],
+    cta: "Abrir Entrada",
+    path: "/entrada",
+  }),
+  "followups.due": () => ({
+    subject: "Hay seguimientos sugeridos",
+    lines: [
+      "Meri preparó seguimientos para compromisos sin respuesta. Revísalos en Entrada: nada se envía solo.",
+    ],
+    cta: "Abrir Entrada",
+    path: "/entrada",
+  }),
+  "integration.needs_reauth": () => ({
+    subject: "Vuelve a conectar Google en Meri",
+    lines: [
+      "Google dejó de dar acceso a Meri, así que no podemos leer tu calendario ni tu correo.",
+      "Vuelve a conectarlo desde el Centro de control; tarda un minuto.",
+    ],
+    cta: "Revisar conexiones",
+    path: "/control",
   }),
   "trial.ending": () => ({
     subject: "Tu prueba de Meri termina pronto",
@@ -100,7 +134,7 @@ const ES: Record<string, CopyFn> = {
 
 const EN: Record<string, CopyFn> = {
   "daily.digest": (p) => ({
-    subject: `Your day in Meri: ${String(num(p.blocks))} blocks planned`,
+    subject: `Your day in Meri: ${blocksEn(num(p.blocks))}`,
     lines: [
       `Blocks planned for today: ${String(num(p.blocks))}.`,
       `Risks and conflicts: ${String(num(p.risks))}.`,
@@ -129,7 +163,7 @@ const EN: Record<string, CopyFn> = {
   }),
   "plan.applied": () => ({
     subject: "Meri adjusted your plan",
-    lines: ["Safe changes were applied to your plan. You can undo them from the activity log."],
+    lines: ["Safe changes were applied to your plan. You can undo them from Activity in the Control centre."],
     cta: "See the plan",
     path: "/hoy",
   }),
@@ -157,6 +191,29 @@ const EN: Record<string, CopyFn> = {
     cta: "See credits",
     path: "/control#plan",
   }),
+  "proposals.new": () => ({
+    subject: "You have new proposals to review",
+    lines: ["Review them in Inbox. Nothing is confirmed without you."],
+    cta: "Open Inbox",
+    path: "/entrada",
+  }),
+  "followups.due": () => ({
+    subject: "There are suggested follow-ups",
+    lines: [
+      "Meri prepared follow-ups for commitments without a reply. Review them in Inbox: nothing is sent on its own.",
+    ],
+    cta: "Open Inbox",
+    path: "/entrada",
+  }),
+  "integration.needs_reauth": () => ({
+    subject: "Reconnect Google in Meri",
+    lines: [
+      "Google stopped giving Meri access, so we cannot read your calendar or mail.",
+      "Reconnect it from the Control centre; it takes a minute.",
+    ],
+    cta: "Review connections",
+    path: "/control",
+  }),
   "trial.ending": () => ({
     subject: "Your Meri trial ends soon",
     lines: ["Choose a plan to keep every feature. If you do not, nothing is deleted."],
@@ -172,7 +229,7 @@ const FALLBACK: Record<EmailLocale, Record<NotificationKind, Copy>> = {
     risk: { subject: "Meri detectó un riesgo en tu plan", lines: [], cta: "Ver riesgos", path: "/hoy" },
     proposals: {
       subject: "Tienes propuestas nuevas por revisar",
-      lines: [],
+      lines: ["Revísalas en Entrada. Nada se confirma sin ti."],
       cta: "Abrir Entrada",
       path: "/entrada",
     },
@@ -190,7 +247,7 @@ const FALLBACK: Record<EmailLocale, Record<NotificationKind, Copy>> = {
     risk: { subject: "Meri found a risk in your plan", lines: [], cta: "See risks", path: "/hoy" },
     proposals: {
       subject: "You have new proposals to review",
-      lines: [],
+      lines: ["Review them in Inbox. Nothing is confirmed without you."],
       cta: "Open Inbox",
       path: "/entrada",
     },

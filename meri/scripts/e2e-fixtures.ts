@@ -2,9 +2,10 @@
  * E2E fixtures that the UI cannot reach in reasonable time: a workspace with its AI credits used up (phase 4), an
  * account onboarded weeks ago so the Sean Ellis survey is due (phase 6). Test tooling only: refuses a production
  * configuration and any account outside the `@meri.local` test domain.
- * Usage: pnpm e2e:fixture --exhaust-credits=<email> | --onboarded-days-ago=<email>:<days>
+ * Usage: pnpm e2e:fixture --exhaust-credits=<email> | --onboarded-days-ago=<email>:<days> | --unsubscribe-token=<email>
  */
 import { isProductionEnv, loadDotenv, parseEnv } from "@meri/config";
+import { signUnsubscribeToken } from "@meri/config/crypto";
 import {
   createDb,
   getCreditBalance,
@@ -47,6 +48,20 @@ export async function backdateOnboarding(
   }
 }
 
+/** The signed one-click unsubscribe token of a test account (the link every email carries, D-116). */
+export async function unsubscribeToken(
+  databaseUrl: string,
+  authSecret: string,
+  email: string,
+): Promise<string> {
+  const handle = createDb(databaseUrl, { max: 1 });
+  try {
+    return signUnsubscribeToken(authSecret, await workspaceOf(handle, email));
+  } finally {
+    await handle.close();
+  }
+}
+
 export async function exhaustCredits(
   databaseUrl: string,
   email: string,
@@ -84,6 +99,14 @@ async function main(): Promise<void> {
   const env = parseEnv(process.env);
   if (isProductionEnv(env)) throw new Error("e2e fixtures are never run against a production configuration");
   const now = env.DEMO_NOW ? new Date(env.DEMO_NOW) : new Date();
+  const unsubscribe = process.argv
+    .find((a) => a.startsWith("--unsubscribe-token="))
+    ?.slice("--unsubscribe-token=".length);
+  if (unsubscribe) {
+    // stdout carries only the token so the E2E can read it.
+    process.stdout.write(`${await unsubscribeToken(env.DATABASE_URL, env.AUTH_SECRET, unsubscribe)}\n`);
+    return;
+  }
   const onboarded = process.argv
     .find((a) => a.startsWith("--onboarded-days-ago="))
     ?.slice("--onboarded-days-ago=".length);

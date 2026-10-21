@@ -7,6 +7,7 @@ import {
   createDb,
   ensureDevRoles,
   insertNotification,
+  markNotificationEmail,
   runMigrations,
   softDeleteAccount,
   updatePreferences,
@@ -18,6 +19,7 @@ import {
   type WorkspaceId,
   type DbHandle,
 } from "@meri/db";
+import { EMAIL_PREFERENCES, emailAllowed } from "@meri/core";
 import { CALENDAR_SCOPES, GMAIL_SCOPES } from "@meri/integrations";
 import { InMemoryDispatcher } from "@meri/jobs";
 import postgres from "postgres";
@@ -234,10 +236,99 @@ describe("dispatchers skip logically deleted workspaces (D-054)", () => {
     expect(ids).not.toContain(risk.id); // default preference «digest»
     expect(ids).not.toContain(old.id); // outside the 2 h window
     expect(ids).not.toContain(dead.id);
-    expect(
-      dispatcher.jobs.find((j) => (j.payload as { notificationId: string }).notificationId === digest.id)
-        ?.options,
-    ).toMatchObject({ jobId: `notify.email_${digest.id}` });
+    const jobId = dispatcher.jobs.find(
+      (j) => (j.payload as { notificationId: string }).notificationId === digest.id,
+    )?.options.jobId;
+    // One job per notice and 10-minute bucket: a copy whose retries ran out is tried again in the next bucket.
+    expect(jobId).toMatch(new RegExp(`^notify\\.email_${digest.id}_\\d+$`));
+  });
+
+  it("dispatchNotifyEmail selects exactly what emailAllowed allows, per preference (SQL and core agree)", async () => {
+    const cases: {
+      kind: "digest" | "risk" | "proposals" | "plan" | "integration" | "billing";
+      template: string;
+    }[] = [
+      { kind: "digest", template: "daily.digest" },
+      { kind: "digest", template: "daily.close" },
+      { kind: "risk", template: "risk.grouped" },
+      { kind: "billing", template: "billing.payment_failed" },
+      { kind: "integration", template: "integration.needs_reauth" },
+      { kind: "plan", template: "plan.applied" },
+      { kind: "proposals", template: "proposals.new" },
+    ];
+    const expected = new Set<string>();
+    const all = new Set<string>();
+    for (const pref of EMAIL_PREFERENCES) {
+      const acc = await bootstrapAccount(handle.db, {
+        email: `mail-${pref}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}@test.local`,
+        now: new Date(NOW.getTime() - 3 * 3_600_000),
+      });
+      const ws = acc.workspaceId;
+      await withWorkspace(handle.db, ws, async (tx) => {
+        // Created before the preference changed: never mailed (review L4).
+        const before = await insertNotification(
+          tx,
+          ws,
+          {
+            kind: "digest",
+            template: "daily.digest",
+            title: "t",
+            body: "b",
+            params: {},
+            refs: [],
+            day: "2026-10-20",
+          },
+          new Date(NOW.getTime() - 90 * 60_000),
+        );
+        all.add(before.id);
+        await updatePreferences(
+          tx,
+          ws,
+          { emailNotifications: pref },
+          { now: new Date(NOW.getTime() - 3_600_000) },
+        );
+        for (const c of cases) {
+          const n = await insertNotification(
+            tx,
+            ws,
+            { ...c, title: "t", body: "b", params: {}, refs: [], day: "2026-10-20" },
+            NOW,
+          );
+          all.add(n.id);
+          if (emailAllowed(pref, c.kind, c.template)) expected.add(n.id);
+        }
+        // Already decided: never picked again.
+        const decided = await insertNotification(
+          tx,
+          ws,
+          {
+            kind: "billing",
+            template: "billing.payment_failed",
+            title: "t",
+            body: "b",
+            params: {},
+            refs: [],
+            day: "2026-10-20",
+          },
+          NOW,
+        );
+        await markNotificationEmail(tx, ws, decided.id, "sent", NOW);
+        all.add(decided.id);
+      });
+    }
+    const dispatcher = new InMemoryDispatcher();
+    await dispatchNotifyEmail({
+      adminSql,
+      dispatcher,
+      logger: createLogger({ name: "worker-test", level: "silent" }),
+      now: () => NOW,
+      pollBatch: 1_000_000,
+    });
+    const picked = dispatcher.jobs
+      .map((j) => (j.payload as { notificationId: string }).notificationId)
+      .filter((id) => all.has(id));
+    expect(new Set(picked)).toEqual(expected);
+    expect(picked).toHaveLength(expected.size);
   });
 
   it("dispatchDailyClose fires after the local work end only, for live workspaces", async () => {

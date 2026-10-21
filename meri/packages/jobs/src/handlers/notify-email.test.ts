@@ -72,7 +72,7 @@ describe("notify.email (D-113..D-116)", () => {
   }
   async function notify(
     ws: WorkspaceId,
-    over: Partial<{ kind: "digest" | "risk" | "billing"; template: string; at: Date }> = {},
+    over: Partial<{ kind: "digest" | "risk" | "billing" | "integration"; template: string; at: Date }> = {},
   ) {
     return withWorkspace(handle.db, ws, (tx) =>
       insertNotification(
@@ -139,9 +139,21 @@ describe("notify.email (D-113..D-116)", () => {
       updatePreferences(tx, ws, { emailNotifications: "off" }, { now: NOW }),
     );
     const billing = await notify(ws, { kind: "billing", template: "billing.payment_failed" });
-    expect(await runNotifyEmail(deps, ws, { notificationId: billing.id })).toMatchObject({
+    expect(await runNotifyEmail(deps, ws, { notificationId: billing.id })).toEqual({
       status: "skipped",
+      reason: "preference",
     });
+  });
+
+  it("under the default preference, account notices (payment, Google connection) are sent", async () => {
+    const acc = await account();
+    const ws = acc.workspaceId;
+    const billing = await notify(ws, { kind: "billing", template: "billing.payment_failed" });
+    expect(await runNotifyEmail(deps, ws, { notificationId: billing.id })).toEqual({ status: "sent" });
+    expect(fake().sent.at(-1)?.subject).toBe("No pudimos cobrar tu suscripción de Meri");
+    const reauth = await notify(ws, { kind: "integration", template: "integration.needs_reauth" });
+    expect(await runNotifyEmail(deps, ws, { notificationId: reauth.id })).toEqual({ status: "sent" });
+    expect(fake().sent.at(-1)?.text).toContain("https://app.example.com/control");
   });
 
   it("writes in the owner's language", async () => {
@@ -152,6 +164,7 @@ describe("notify.email (D-113..D-116)", () => {
   });
 
   it("never emails a stale notification, the demo account or a deleted account", async () => {
+    const sentBefore = fake().sent.length;
     const acc = await account();
     const old = await notify(acc.workspaceId, { at: new Date(NOW.getTime() - 25 * 3_600_000) });
     expect(await runNotifyEmail(deps, acc.workspaceId, { notificationId: old.id })).toEqual({
@@ -159,6 +172,10 @@ describe("notify.email (D-113..D-116)", () => {
       reason: "stale",
     });
     const demo = await bootstrapAccount(handle.db, { email: DEMO_USER.email, now: NOW });
+    // The demo row is shared with other suites: pin the preference so only the demo rule can skip it.
+    await withWorkspace(handle.db, demo.workspaceId, (tx) =>
+      updatePreferences(tx, demo.workspaceId, { emailNotifications: "digest" }, { now: NOW }),
+    );
     const d = await notify(demo.workspaceId);
     expect(await runNotifyEmail(deps, demo.workspaceId, { notificationId: d.id })).toEqual({
       status: "skipped",
@@ -171,6 +188,7 @@ describe("notify.email (D-113..D-116)", () => {
       status: "skipped",
       reason: "no_recipient",
     });
+    expect(fake().sent.length).toBe(sentBefore);
   });
 
   it("another workspace's notification id does nothing", async () => {
@@ -202,5 +220,11 @@ describe("notify.email (D-113..D-116)", () => {
     );
     expect((await stateOf(t.id))?.email_state).toBeNull();
     expect(await runNotifyEmail(deps, acc.workspaceId, { notificationId: t.id })).toEqual({ status: "sent" });
+    // Still failing just before the dispatcher's window closes: recorded as failed, never picked again.
+    const late = await notify(acc.workspaceId, { at: new Date(NOW.getTime() - 101 * 60_000) });
+    expect(await runNotifyEmail(transient, acc.workspaceId, { notificationId: late.id })).toEqual({
+      status: "failed",
+    });
+    expect((await stateOf(late.id))?.email_state).toBe("failed");
   });
 });

@@ -197,7 +197,7 @@
         "security_keys_rotated": "Meri renewed the encryption keys of your connections.",
         "mail_retention_applied": "Meri deleted indexed mail and dismissed proposals per the retention period you chose.",
         "ai_review_sampled": "Proposals included in the AI quality review",
-        "notifications_email_unsubscribed": "Unsubscribed from Meri emails through a link"
+        "notifications_email_unsubscribed": "Meri emails were turned off from the unsubscribe link."
       },
       "undoneOf": "Undone: {text}",
       "undoDone": "Action undone.",
@@ -266,7 +266,8 @@
         "credits_exhausted": "AI credits used up. AI is paused; the plan and the calendar keep working.",
         "trial_ending": "Your trial ends in {days, plural, one {one day} other {# days}}. Choose a plan in Control → Plan to keep the AI.",
         "billing_payment_failed": "We could not charge your subscription. Update the payment method; your access stays active while we retry.",
-        "daily_close": "Day close: {done} done, {toReschedule} to reschedule, {tomorrow} priorities for tomorrow."
+        "daily_close": "Day close: {done} done, {toReschedule} to reschedule, {tomorrow} priorities for tomorrow.",
+        "integration_needs_reauth": "Google stopped giving Meri access. Reconnect it in Connections so Meri keeps reading your calendar and mail."
       },
       "seeInHoy": "See in Today",
       "seeClients": "See clients",
@@ -388,10 +389,11 @@
       },
       "all": {
         "title": "Everything",
-        "desc": "Also risks, new proposals, plan changes and the end-of-day close."
+        "desc": "Also risks, new proposals, follow-ups, plan changes and the end-of-day close."
       },
       "privacy": "Emails only carry counts and a link: never the content of your tasks, clients or mail. Every email has an unsubscribe link.",
-      "saved": "Email preference saved."
+      "saved": "Email preference saved.",
+      "error": "We could not save your email preference. Please try again."
     }
   },
   "login": {
@@ -463,7 +465,7 @@
       "p7": "Closed beta: if you join the waitlist we keep your email, language and the date of your consent so we can write to you about the beta, for up to 180 days or until you create your account. You can ask us to delete it sooner through the privacy contact.",
       "p8": "Feedback and surveys: what you send with “Send feedback” (type, text and the page, without parameters) and your survey answers are stored with your account, read by the Meri team and deleted with it. They are never sent to analytics or to the AI.",
       "p9": "Improving the AI (optional, off by default): if you turn on “Help improve Meri's AI”, the team may review a weekly sample of the proposals you discarded or edited that do not come from your mailbox, with names, emails, phones, links, numbers and identifiers hidden. The sample is kept outside the application and deleted after 30 days; each time one is taken, it is noted in your activity.",
-      "p10": "Emails from Meri: by default we send you the morning summary and notices about your account (payment, credits, connection). They only carry counts and a link, never the content of your tasks, clients or mail, and they come from Meri's domain through an email provider (a subprocessor), never from your Gmail. Choose what you get in Control or unsubscribe with the link in any email."
+      "p10": "Emails from Meri: by default we send you the morning summary and notices about your account (payment, credits, connection). They only carry counts and a link, never the content of your tasks, clients or mail, and they come from Meri's domain through an email provider that sends them on our behalf, never from your Gmail. Choose what you get in Control or unsubscribe with the link in any email."
     },
     "terms": {
       "p1": "Meri is an assistance tool. Legal dates and procedural deadlines must always be verified with your own professional judgement.",
@@ -1286,11 +1288,11 @@
   },
   "unsubscribe": {
     "title": "Stop getting emails",
-    "body": "Meri will stop sending you emails. Notices stay inside the app.",
+    "body": "Meri will stop sending you all emails, including payment and connection notices. You will still see them inside the app.",
     "confirm": "Stop getting emails",
-    "done": "Done. We will not email you any more. You can turn emails back on in Control → Emails from Meri.",
-    "invalid": "This link is not valid. Change the preference in Control → Emails from Meri.",
+    "done": "Done. We will not email you any more. You can turn emails back on in Control centre → Emails from Meri.",
+    "invalid": "This link is not valid. Change the preference in Control centre → Emails from Meri.",
     "error": "We could not complete the request. Please try again.",
-    "manage": "Rather choose which emails you get? <link>Open Control</link>."
+    "manage": "Rather choose which emails you get? <link>Open the Control centre</link>."
   }
 }

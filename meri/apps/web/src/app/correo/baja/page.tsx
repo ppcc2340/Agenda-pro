@@ -34,7 +34,7 @@ export default async function UnsubscribePage({ searchParams }: { searchParams: 
         <p className="mt-5 text-[13px] text-ink2">
           {t.rich("manage", {
             link: (chunks) => (
-              <Link href="/control" className="underline">
+              <Link href="/control#correo" className="underline">
                 {chunks}
               </Link>
             ),

@@ -99,3 +99,25 @@ export async function updatePreferences(
   if (!row) throw new Error("preferences row missing for workspace");
   return toView(row);
 }
+
+/**
+ * One-click unsubscribe (D-116): turns email off under a row lock and returns the previous preference, or null when
+ * it was already off. Two simultaneous requests (the mail server and the person) audit once.
+ */
+export async function turnOffEmailNotifications(
+  tx: WorkspaceTx,
+  workspaceId: WorkspaceId,
+  now: Date,
+): Promise<"digest" | "all" | null> {
+  const [row] = await tx
+    .select({ value: preferences.emailNotifications })
+    .from(preferences)
+    .where(eq(preferences.workspaceId, workspaceId))
+    .for("update");
+  if (!row || row.value === "off") return null;
+  await tx
+    .update(preferences)
+    .set({ emailNotifications: "off", updatedAt: now })
+    .where(eq(preferences.workspaceId, workspaceId));
+  return row.value;
+}

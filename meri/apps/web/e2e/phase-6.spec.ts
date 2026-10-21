@@ -99,6 +99,42 @@ test.describe("phase 6: closed beta, feedback and AI review consent", () => {
     ).toBeChecked();
   });
 
+  test("a valid unsubscribe link changes nothing on open, works with the button and from a mail server", async ({
+    page,
+  }) => {
+    const address = await signUp(page);
+    const token =
+      execSync(`pnpm -s e2e:fixture --unsubscribe-token=${address}`, { cwd: root })
+        .toString()
+        .trim()
+        .split("\n")
+        .at(-1) ?? "";
+    const radio = (name: RegExp) =>
+      page.getByRole("group", { name: "Recibir por correo" }).getByRole("radio", { name });
+    // A mail client without one-click opens the header URL: it is sent to the confirmation page.
+    const header = await page.request.get(`/api/v1/email/unsubscribe?t=${encodeURIComponent(token)}`, {
+      maxRedirects: 0,
+    });
+    expect(header.status()).toBe(303);
+    expect(header.headers().location).toContain(`/correo/baja?t=${encodeURIComponent(token)}`);
+    await page.goto(`/correo/baja?t=${encodeURIComponent(token)}`);
+    await hydrated(page);
+    await goto(page, "/control#correo");
+    await expect(radio(/Solo lo esencial/)).toBeChecked();
+    await page.goto(`/correo/baja?t=${encodeURIComponent(token)}`);
+    await hydrated(page);
+    await page.getByRole("button", { name: "Dejar de recibir correos" }).click();
+    await expect(page.getByRole("status")).toContainText("Ya no te enviaremos correos");
+    await goto(page, "/control#correo");
+    await expect(radio(/^Ninguno/)).toBeChecked();
+    // RFC 8058 one-click as a mail server sends it: form body, no cookie, no Origin, through the web origin.
+    const oneClick = await page.request.post(`/api/v1/email/unsubscribe?t=${encodeURIComponent(token)}`, {
+      headers: { "content-type": "application/x-www-form-urlencoded", cookie: "" },
+      data: "List-Unsubscribe=One-Click",
+    });
+    expect(oneClick.status()).toBe(200);
+  });
+
   test("the public unsubscribe page never acts on open and refuses an invalid link", async ({ browser }) => {
     const context = await browser.newContext();
     const page = await context.newPage();

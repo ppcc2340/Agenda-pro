@@ -5,6 +5,7 @@ import {
   createDb,
   getEncryptedTokens,
   getIntegrationAccount,
+  listNotifications,
   setIntegrationStatus,
   upsertIntegrationAccount,
   withWorkspace,
@@ -179,6 +180,31 @@ describe("googleAccess", () => {
         )
       )?.status,
     ).toBe("needs_reauth");
+  });
+
+  it("losing access creates one connection notice per transition, never while already flagged (D-114)", async () => {
+    const { ws, accountId, refreshToken } = await connect(new Date(NOW.getTime() - 1000));
+    await oauth.revoke(refreshToken ?? "");
+    const ref = await googleAccess(deps, ws, accountId);
+    const err = (await ref?.accessToken().catch((e: unknown) => e)) as TokenRevokedError;
+    const notices = async () =>
+      (await withWorkspace(handle.db, ws, (tx) => listNotifications(tx, ws, { limit: 20 }))).items.filter(
+        (n) => n.template === "integration.needs_reauth",
+      );
+    await withWorkspace(handle.db, ws, (tx) => markNeedsReauth(tx, ws, accountId, err, NOW));
+    await withWorkspace(handle.db, ws, (tx) => markNeedsReauth(tx, ws, accountId, err, NOW));
+    const once = await notices();
+    expect(once).toHaveLength(1);
+    expect(once[0]).toMatchObject({
+      kind: "integration",
+      refs: [{ type: "integration_account", id: accountId }],
+    });
+    // Reconnected, then lost again: a new notice.
+    await withWorkspace(handle.db, ws, (tx) =>
+      setIntegrationStatus(tx, ws, accountId, { status: "healthy" }),
+    );
+    await withWorkspace(handle.db, ws, (tx) => markNeedsReauth(tx, ws, accountId, err, NOW));
+    expect(await notices()).toHaveLength(2);
   });
 
   it("a connection without refresh token cannot be refreshed: it needs a reconnect", async () => {

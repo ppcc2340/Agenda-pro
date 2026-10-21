@@ -84,10 +84,41 @@ describe("closed beta (D-099)", () => {
       expect(res.statusCode).toBe(429);
       expect(await inWaitlist(email)).toBe(0);
       expect(Number(await redis.get(key))).toBe(WAITLIST_GLOBAL_PER_HOUR + 1);
+      // The counter always carries its expiry (set with the increment, in one transaction).
+      const ttl = await redis.ttl(key);
+      expect(ttl).toBeGreaterThan(0);
+      expect(ttl).toBeLessThanOrEqual(3_700);
       await redis.del(key);
     } finally {
       await other.close();
       redis.disconnect();
+    }
+  });
+
+  it("with Redis down, sign-ups still work and the cap falls back to a per-process counter", async () => {
+    // A closed port: every command fails at once (the rate limiter skips on error too).
+    const down = new Redis("redis://127.0.0.1:1", {
+      maxRetriesPerRequest: 0,
+      enableOfflineQueue: false,
+      lazyConnect: true,
+      retryStrategy: () => null,
+    });
+    down.on("error", () => undefined);
+    const other = await createTestApp({ rateLimitRedis: down });
+    try {
+      const email = unique("noredis");
+      const res = await other.app.inject({
+        method: "POST",
+        url: "/v1/waitlist",
+        headers: { ...csrf, origin: ORIGIN },
+        payload: { email, consent: true },
+        remoteAddress: "10.6.0.1",
+      });
+      expect(res.statusCode).toBe(202);
+      expect(await inWaitlist(email)).toBe(1);
+    } finally {
+      await other.close();
+      down.disconnect();
     }
   });
 

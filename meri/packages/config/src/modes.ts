@@ -93,7 +93,9 @@ export function resolveModes(env: Env, blockers: readonly BlockerDefinition[] = 
   }
   // DEMO_MODE signs in without credentials (PROTOTYPE.md, D-049): never on a production configuration.
   if (env.DEMO_MODE && isProductionEnv(env))
-    errors.push("DEMO_MODE=1 is forbidden in production: the demo signs in as demo@meri.local without credentials.");
+    errors.push(
+      "DEMO_MODE=1 is forbidden in production: the demo signs in as demo@meri.local without credentials.",
+    );
   if (isProductionEnv(env)) {
     const placeholders = (["AUTH_SECRET", "INTERNAL_API_SECRET"] as const).filter((k) =>
       /^change-me/i.test(env[k]),
@@ -107,6 +109,20 @@ export function resolveModes(env: Env, blockers: readonly BlockerDefinition[] = 
     if (!env.AUTH_URL)
       errors.push(
         "AUTH_URL is required in production (Auth.js must not derive callbacks from the Host header).",
+      );
+    // Emails carry a permanent unsubscribe token in links to APP_URL (D-116): never over plain HTTP.
+    if (!env.APP_URL.startsWith("https://")) errors.push("APP_URL must use https:// in production.");
+  }
+  if (modes.notify === "live" && env.SMTP_URL) {
+    let protocol = "";
+    try {
+      protocol = new URL(env.SMTP_URL).protocol;
+    } catch {
+      // The value is a secret: never echo it.
+    }
+    if (protocol !== "smtp:" && protocol !== "smtps:")
+      errors.push(
+        "SMTP_URL must be smtp://user:pass@host:587 or smtps://user:pass@host:465 (URL-encode special characters in the password). See docs/blockers/email.md.",
       );
   }
 

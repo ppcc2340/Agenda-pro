@@ -25,6 +25,8 @@ describe("middleware", () => {
     expect(middleware(req("/api/v1/email/unsubscribe")).headers.get("location")).toBeNull();
     expect(middleware(req("/correo/baja")).headers.get("location")).toBeNull();
     expect(middleware(req("/api/v1/email/other")).headers.get("location")).not.toBeNull();
+    expect(middleware(req("/correos")).headers.get("location")).not.toBeNull();
+    expect(middleware(req("/correo/otra")).headers.get("location")).not.toBeNull();
   });
 
   it("sets a strict CSP with a fresh nonce on every page response and passes the nonce to the app", () => {

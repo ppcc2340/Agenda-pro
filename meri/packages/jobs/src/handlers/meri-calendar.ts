@@ -69,7 +69,7 @@ export async function writeBlocksToCalendar(
     // An expired grant is flagged here too, not only by the next sync (ADR 0008).
     if (err instanceof IntegrationError && err.kind === "AuthExpired")
       await withWorkspace(deps.db, workspaceId, (tx) =>
-        markNeedsReauth(tx, workspaceId, target.accountId, err),
+        markNeedsReauth(tx, workspaceId, target.accountId, err, deps.now()),
       );
     return result;
   }

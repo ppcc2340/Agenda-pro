@@ -12,7 +12,13 @@ const BASE = {
 
 describe("parseEnv", () => {
   it("applies defaults and treats empty strings as absent", () => {
-    const env = parseEnv({ ...BASE, GOOGLE_CLIENT_ID: "", DEMO_MODE: "", PORT: "", RATE_LIMIT_PER_MINUTE: "" });
+    const env = parseEnv({
+      ...BASE,
+      GOOGLE_CLIENT_ID: "",
+      DEMO_MODE: "",
+      PORT: "",
+      RATE_LIMIT_PER_MINUTE: "",
+    });
     expect(env.NODE_ENV).toBe("development");
     expect(env.GOOGLE_MODE).toBe("fake");
     expect(env.GOOGLE_CLIENT_ID).toBeUndefined();
@@ -67,15 +73,27 @@ describe("resolveModes", () => {
       /NOTIFY_MODE=live requires MAIL_FROM\. See docs\/blockers\/email\.md/,
     );
     expect(
-      resolveModes(parseEnv({ ...BASE, NOTIFY_MODE: "live", SMTP_URL: "smtp://h", MAIL_FROM: "Meri <a@b.c>" })).notify,
+      resolveModes(
+        parseEnv({ ...BASE, NOTIFY_MODE: "live", SMTP_URL: "smtp://h", MAIL_FROM: "Meri <a@b.c>" }),
+      ).notify,
     ).toBe("live");
+    // A malformed SMTP_URL fails at startup with the guide, never echoing the (secret) value.
+    expect(() =>
+      resolveModes(
+        parseEnv({ ...BASE, NOTIFY_MODE: "live", SMTP_URL: "smtps://u:p/ss@h", MAIL_FROM: "a@b.c" }),
+      ),
+    ).toThrow(/SMTP_URL must be smtp:\/\/.*docs\/blockers\/email\.md/);
+    expect(() =>
+      resolveModes(parseEnv({ ...BASE, NOTIFY_MODE: "live", SMTP_URL: "https://h", MAIL_FROM: "a@b.c" })),
+    ).toThrow(/SMTP_URL must be/);
     // ADR 0007 chose AWS KMS: GCP is refused with a pointer, never a half-working adapter.
     expect(() => resolveModes(parseEnv({ ...BASE, KMS_PROVIDER: "gcp", KMS_KEY_ID: "k" }))).toThrow(
       /KMS_PROVIDER=gcp is not available yet \(ADR 0007/,
     );
-    expect(resolveModes(parseEnv({ ...BASE, KMS_PROVIDER: "aws", KMS_KEY_ID: "arn", AWS_REGION: "eu-west-1" })).kms).toBe(
-      "live",
-    );
+    expect(
+      resolveModes(parseEnv({ ...BASE, KMS_PROVIDER: "aws", KMS_KEY_ID: "arn", AWS_REGION: "eu-west-1" }))
+        .kms,
+    ).toBe("live");
   });
 
   it("live with credentials resolves to live", () => {
@@ -96,9 +114,19 @@ describe("resolveModes", () => {
   });
 
   it("DEMO_MODE=1 is forbidden on a production configuration (PROTOTYPE.md, D-049)", () => {
-    expect(() => loadConfig({ ...BASE, NODE_ENV: "production", DEMO_MODE: "1" })).toThrow(/DEMO_MODE=1 is forbidden/);
+    expect(() => loadConfig({ ...BASE, NODE_ENV: "production", DEMO_MODE: "1" })).toThrow(
+      /DEMO_MODE=1 is forbidden/,
+    );
     expect(loadConfig({ ...BASE, NODE_ENV: "development", DEMO_MODE: "1" }).env.DEMO_MODE).toBe(true);
-    expect(loadConfig({ ...BASE, NODE_ENV: "production", APP_ENV: "development", ALLOW_FAKES_ON_PRODUCTION_BUILD: "1", DEMO_MODE: "1" }).env.DEMO_MODE).toBe(true);
+    expect(
+      loadConfig({
+        ...BASE,
+        NODE_ENV: "production",
+        APP_ENV: "development",
+        ALLOW_FAKES_ON_PRODUCTION_BUILD: "1",
+        DEMO_MODE: "1",
+      }).env.DEMO_MODE,
+    ).toBe(true);
   });
 
   it("APP_ENV=development lets an optimized build (NODE_ENV=production) run against fakes (D-029)", () => {
@@ -155,10 +183,12 @@ describe("production secrets", () => {
       NOTIFY_MODE: "live",
       SMTP_URL: "smtps://u:p@smtp.example.com:465",
       MAIL_FROM: "Meri <avisos@example.com>",
+      APP_URL: "https://app.meri.test",
       AUTH_SECRET: "change-me-dev-only-secret-32-bytes-minimum",
     };
     expect(() => loadConfig(prod)).toThrow(/AUTH_SECRET still hold the \.env\.example placeholder/);
     expect(() => loadConfig(prod)).toThrow(/AUTH_URL is required in production/);
+    expect(() => loadConfig({ ...prod, APP_URL: "http://app.meri.test" })).toThrow(/APP_URL must use https/);
     expect(() =>
       loadConfig({ ...prod, AUTH_SECRET: "r".repeat(40), AUTH_URL: "https://app.meri.test" }),
     ).toThrow(/GOOGLE_CALENDAR_CHANNEL_TOKEN/);

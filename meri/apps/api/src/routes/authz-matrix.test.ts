@@ -17,7 +17,13 @@ describe("authorization matrix over every registered route", () => {
   let b: Fixtures;
   let deletedCookie: string;
   const routes = () =>
-    t.app.routeTable.map((r) => ({ key: `${r.method} ${r.url}`, method: r.method as Method, url: r.url }));
+    t.app.routeTable.map((r) => ({
+      key: `${r.method} ${r.url}`,
+      method: r.method as Method,
+      url: r.url,
+      isPublic: r.isPublic,
+      signedToken: r.signedToken,
+    }));
   const fill = (url: string, id: string) => url.replace(":provider", "google").replace(":id", id);
   const ruleOf = (key: string): AuthzRule => {
     const rule = AUTHZ_MATRIX[key];
@@ -73,6 +79,17 @@ describe("authorization matrix over every registered route", () => {
       }
     }
     expect(failures).toEqual([]);
+  });
+
+  it("only the routes classified `signed` skip CSRF, and they are all public (D-116)", () => {
+    const flagged = routes()
+      .filter((r) => r.signedToken)
+      .map((r) => r.key);
+    const classified = routes()
+      .filter((r) => ruleOf(r.key).kind === "signed")
+      .map((r) => r.key);
+    expect(flagged.sort()).toEqual(classified.sort());
+    expect(routes().filter((r) => r.signedToken && !r.isPublic)).toEqual([]);
   });
 
   it("every mutating /v1 route refuses a request without the CSRF header, or from another site", async () => {

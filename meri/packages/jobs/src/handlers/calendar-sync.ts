@@ -140,7 +140,7 @@ async function failAccess(
   err: IntegrationError,
 ): Promise<CalendarSyncResult> {
   if (err.kind !== "AuthExpired") throw err;
-  await withWorkspace(deps.db, workspaceId, (tx) => markNeedsReauth(tx, workspaceId, accountId, err));
+  await withWorkspace(deps.db, workspaceId, (tx) => markNeedsReauth(tx, workspaceId, accountId, err, deps.now()));
   return { status: "needs_reauth", upserted: 0, removed: 0, fullResync: false };
 }
 
@@ -203,7 +203,7 @@ export async function syncCalendarAccount(
         kind: err.kind,
       });
     if (err instanceof IntegrationError && err.kind === "AuthExpired") {
-      await withWorkspace(deps.db, workspaceId, (tx) => markNeedsReauth(tx, workspaceId, accountId, err));
+      await withWorkspace(deps.db, workspaceId, (tx) => markNeedsReauth(tx, workspaceId, accountId, err, deps.now()));
       return { ...result, status: "needs_reauth" };
     }
     if (err instanceof IntegrationError && err.retryable) {

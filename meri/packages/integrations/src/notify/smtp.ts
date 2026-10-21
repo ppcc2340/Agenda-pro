@@ -18,7 +18,7 @@ export interface SmtpNotifierOptions {
   timeoutMs?: number;
 }
 
-const isLocal = (host: string) => host === "localhost" || host === "127.0.0.1" || host === "::1";
+const isLocal = (host: string) => host === "localhost" || host === "127.0.0.1" || host === "[::1]";
 
 /** One line, no control characters: the subject can never carry extra headers. */
 const oneLine = (s: string) => {
@@ -85,20 +85,26 @@ export class SmtpNotifier implements Notifier {
   }
 }
 
-/** SMTP replies: 5xx is final (bad address, policy, authentication); 4xx and network errors can be retried. */
+/**
+ * Only a permanent (5xx) rejection of this recipient, at RCPT TO, is final for this message; nodemailer also labels
+ * sender rejections EENVELOPE, so the failing command decides. Every other failure (authentication, sender not
+ * verified, policy at MAIL FROM, connection, 4xx) is about our side or temporary: it is retried and must never mark
+ * every email in flight as failed (review M2).
+ */
 export function toIntegrationError(e: unknown): IntegrationError {
-  const err = e as { code?: string; responseCode?: number; message?: string };
+  const err = e as { code?: string; responseCode?: number; command?: string };
   const code = err.responseCode;
+  const atRecipient = typeof err.command === "string" && /RCPT/i.test(err.command);
+  if (typeof code === "number" && code >= 500 && atRecipient)
+    return new IntegrationError("Permanent", PROVIDER, `SMTP rejected the recipient (${String(code)})`, {
+      cause: e,
+    });
   if (err.code === "EAUTH")
-    return new IntegrationError("Permanent", PROVIDER, "SMTP authentication rejected (check SMTP_URL)", {
+    return new IntegrationError("Transient", PROVIDER, "SMTP authentication rejected (check SMTP_URL)", {
       cause: e,
     });
-  if (typeof code === "number" && code >= 500)
-    return new IntegrationError("Permanent", PROVIDER, `SMTP rejected the message (${String(code)})`, {
-      cause: e,
-    });
-  if (typeof code === "number" && code >= 400)
-    return new IntegrationError("Transient", PROVIDER, `SMTP deferred the message (${String(code)})`, {
+  if (typeof code === "number")
+    return new IntegrationError("Transient", PROVIDER, `SMTP refused the message (${String(code)})`, {
       cause: e,
     });
   return new IntegrationError("Transient", PROVIDER, `SMTP connection failed (${err.code ?? "unknown"})`, {

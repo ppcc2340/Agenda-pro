@@ -2,27 +2,18 @@
  * One-click email unsubscribe (D-116, RFC 8058). Mail servers POST here from the `List-Unsubscribe` header without
  * a cookie, an Origin or our CSRF header: the signed token is the only authorization, and the action can only reduce
  * what we send. The answer is the same whether or not the workspace was already unsubscribed. A GET never
- * unsubscribes (link scanners open URLs); the web page `/correo/baja` asks for a click and calls this route.
+ * unsubscribes (link scanners open URLs): it redirects to the web page `/correo/baja`, which asks for a click.
  */
 import type { FastifyInstance } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import { z } from "zod";
 import { verifyUnsubscribeToken } from "@meri/config/crypto";
-import {
-  audit,
-  getPreferences,
-  updatePreferences,
-  withWorkspace,
-  workspaceEmailRecipient,
-  type Db,
-  type UserId,
-  type WorkspaceId,
-} from "@meri/db";
+import { audit, turnOffEmailNotifications, withWorkspace, type Db, type WorkspaceId } from "@meri/db";
 import { ApiError } from "../errors";
 
 export function emailRoutes(
   app: FastifyInstance,
-  options: { db: Db; now: () => Date; authSecret: string },
+  options: { db: Db; now: () => Date; authSecret: string; appUrl: string },
   done: () => void,
 ): void {
   // RFC 8058 bodies are `List-Unsubscribe=One-Click`, form-encoded or multipart. Nothing in them matters.
@@ -34,10 +25,23 @@ export function emailRoutes(
     },
   );
   const r = app.withTypeProvider<ZodTypeProvider>();
+  // A mail client without RFC 8058 opens the List-Unsubscribe URL: send it to the confirmation page, change nothing.
+  r.get(
+    "/v1/email/unsubscribe",
+    {
+      config: { public: true, signedToken: true, rateLimit: { max: 300, timeWindow: "1 minute" } },
+      schema: { tags: ["notifications"], querystring: z.object({ t: z.string().min(1).max(200) }) },
+    },
+    (request, reply) =>
+      reply.redirect(
+        `${options.appUrl.replace(/\/+$/, "")}/correo/baja?t=${encodeURIComponent(request.query.t)}`,
+        303,
+      ),
+  );
   r.post(
     "/v1/email/unsubscribe",
     {
-      config: { public: true, signedToken: true, rateLimit: { max: 20, timeWindow: "1 minute" } },
+      config: { public: true, signedToken: true, rateLimit: { max: 300, timeWindow: "1 minute" } },
       schema: {
         tags: ["notifications"],
         querystring: z.object({ t: z.string().min(1).max(200) }),
@@ -50,18 +54,17 @@ export function emailRoutes(
       const ws = workspaceId as WorkspaceId;
       const now = options.now();
       await withWorkspace(options.db, ws, async (tx) => {
-        const before = await getPreferences(tx, ws);
-        if (!before || before.emailNotifications === "off") return;
-        await updatePreferences(tx, ws, { emailNotifications: "off" }, { now });
-        const owner = await workspaceEmailRecipient(tx, ws);
+        const before = await turnOffEmailNotifications(tx, ws, now);
+        if (!before) return;
+        // Whoever holds the link may act (a mail server, a forwarded email): not attributed to the owner.
         await audit(
           tx,
-          { workspaceId: ws, actor: "user", actorUserId: (owner?.userId ?? null) as UserId | null },
+          { workspaceId: ws, actor: "system" },
           {
             action: "notifications.email_unsubscribed",
             entityType: "preferences",
-            before: { emailNotifications: before.emailNotifications },
-            after: { emailNotifications: "off" },
+            before: { emailNotifications: before },
+            after: { emailNotifications: "off", via: "signed_link" },
           },
         );
       });

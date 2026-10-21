@@ -1,6 +1,7 @@
 import { ADMIN_WORKSPACE_CONTEXT, bootstrapAccount, createDb } from "@meri/db";
 import { afterAll, describe, expect, it } from "vitest";
-import { backdateOnboarding } from "../e2e-fixtures";
+import { verifyUnsubscribeToken } from "@meri/config/crypto";
+import { backdateOnboarding, unsubscribeToken } from "../e2e-fixtures";
 
 const APP = process.env.DATABASE_URL_TEST ?? "postgres://meri_app:meri_app@localhost:5432/meri_test";
 const ADMIN = process.env.DATABASE_ADMIN_URL_TEST ?? "postgres://meri:meri@localhost:5432/meri_test";
@@ -23,5 +24,13 @@ describe("pnpm e2e:fixture --onboarded-days-ago (phase 6 E2E)", () => {
     expect(new Date(String(row?.onboarded_at)).toISOString()).toBe("2026-09-30T08:40:00.000Z");
     await expect(backdateOnboarding(APP, "someone@example.com", 20, now)).rejects.toThrow(/@meri\.local/);
     await expect(backdateOnboarding(APP, email, -1, now)).rejects.toThrow(/days/);
+  });
+
+  it("prints a valid unsubscribe token only for test accounts", async () => {
+    const email = `fixture-unsub-${Date.now().toString(36)}@meri.local`;
+    const acc = await bootstrapAccount(app.db, { email, now: new Date() });
+    const secret = "s".repeat(40);
+    expect(verifyUnsubscribeToken(secret, await unsubscribeToken(APP, secret, email))).toBe(acc.workspaceId);
+    await expect(unsubscribeToken(APP, secret, "someone@example.com")).rejects.toThrow(/@meri\.local/);
   });
 });

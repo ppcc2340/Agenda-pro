@@ -1,9 +1,12 @@
 import { z } from "zod";
+import { localDateKey } from "@meri/core";
 import { decryptEnvelopeToString, parseEnvelope } from "@meri/config/crypto";
 import {
   audit,
   getEncryptedTokens,
   getIntegrationAccount,
+  getPreferences,
+  insertNotification,
   markIntegrationNeedsReauth,
   setMeriCalendarId,
   swapEncryptedTokens,
@@ -140,7 +143,9 @@ export async function markNeedsReauth(
   workspaceId: WorkspaceId,
   accountId: string,
   err: IntegrationError,
+  now: Date = new Date(),
 ): Promise<boolean> {
+  const before = await getIntegrationAccount(tx, workspaceId, accountId);
   const marked = await markIntegrationNeedsReauth(
     tx,
     workspaceId,
@@ -159,5 +164,23 @@ export async function markNeedsReauth(
         reason: `${err.kind}: ${err.message.slice(0, 120)}`,
       },
     );
+  // One notice per loss of access (D-114): the inbox and, under the default email preference, an email. Ids only.
+  if (marked && before && before.status !== "needs_reauth") {
+    const timezone = (await getPreferences(tx, workspaceId))?.timezone ?? "UTC";
+    await insertNotification(
+      tx,
+      workspaceId,
+      {
+        kind: "integration",
+        template: "integration.needs_reauth",
+        title: "Tu conexión con Google necesita atención",
+        body: "Vuelve a conectar Google en el Centro de control para que Meri siga leyendo tu calendario y tu correo.",
+        params: {},
+        refs: [{ type: "integration_account", id: accountId }],
+        day: localDateKey(now.getTime(), timezone),
+      },
+      now,
+    );
+  }
   return marked;
 }

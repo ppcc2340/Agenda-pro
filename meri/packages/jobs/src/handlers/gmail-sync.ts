@@ -113,7 +113,7 @@ export async function syncMailAccount(
     access = await googleAccess(deps, workspaceId, accountId);
   } catch (err) {
     if (err instanceof IntegrationError && err.kind === "AuthExpired") {
-      await withWorkspace(deps.db, workspaceId, (tx) => markNeedsReauth(tx, workspaceId, accountId, err));
+      await withWorkspace(deps.db, workspaceId, (tx) => markNeedsReauth(tx, workspaceId, accountId, err, deps.now()));
       return skipped("needs_reauth");
     }
     throw err;
@@ -206,7 +206,7 @@ export async function syncMailAccount(
         kind: err.kind,
       });
     if (err instanceof IntegrationError && err.kind === "AuthExpired") {
-      await withWorkspace(deps.db, workspaceId, (tx) => markNeedsReauth(tx, workspaceId, accountId, err));
+      await withWorkspace(deps.db, workspaceId, (tx) => markNeedsReauth(tx, workspaceId, accountId, err, deps.now()));
       return skipped("needs_reauth");
     }
     if (err instanceof IntegrationError && err.retryable) {

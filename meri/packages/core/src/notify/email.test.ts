@@ -106,6 +106,34 @@ describe("renderNotificationEmail (D-114)", () => {
     );
   });
 
+  it("the digest subject agrees in number", () => {
+    const subject = (blocks: number, locale: EmailLocale) =>
+      renderNotificationEmail({
+        ...base,
+        kind: "digest",
+        template: "daily.digest",
+        params: { blocks, risks: 0, proposals: 0 },
+        locale,
+      }).subject;
+    expect(subject(1, "es")).toBe("Tu día en Meri: 1 bloque planificado");
+    expect(subject(2, "es")).toBe("Tu día en Meri: 2 bloques planificados");
+    expect(subject(0, "en")).toBe("Your day in Meri: no blocks planned");
+    expect(subject(1, "en")).toBe("Your day in Meri: 1 block planned");
+  });
+
+  it("escapes the links it is given", () => {
+    const out = renderNotificationEmail({
+      kind: "digest",
+      template: "daily.digest",
+      params: {},
+      locale: "es",
+      appUrl: 'https://app.example.com/"><script>',
+      unsubscribePageUrl: 'https://app.example.com/x?t="><script>',
+    });
+    expect(out.html).not.toContain("<script>");
+    expect(out.html).toContain("&quot;&gt;&lt;script&gt;");
+  });
+
   it("non-numeric or negative counts render as 0", () => {
     const out = renderNotificationEmail({
       ...base,
@@ -114,7 +142,7 @@ describe("renderNotificationEmail (D-114)", () => {
       params: { blocks: -3, risks: "9", proposals: Number.NaN },
       locale: "es",
     });
-    expect(out.subject).toBe("Tu día en Meri: 0 bloques planificados");
+    expect(out.subject).toBe("Tu día en Meri: sin bloques planificados");
     expect(out.text).toContain("Riesgos y conflictos: 0.");
   });
 });
