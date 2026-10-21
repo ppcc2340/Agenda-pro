@@ -60,7 +60,7 @@ jobs:
           PGPASSWORD: meri
       - name: Migrations on a clean database
         run: pnpm db:migrate
-      - name: No email-sending code path (CLAUDE.md: only drafts in the MVP)
+      - name: "No email-sending code path (CLAUDE.md: only drafts in the MVP)"
         run: |
           if grep -rnE "gmail\.send|messages\.send\(|users\.messages\.send|sendMail\(|nodemailer|createTransport\(" apps packages scripts --include=*.ts --include=*.tsx -l; then
             echo "Forbidden email send path found"; exit 1; fi
@@ -175,3 +175,11 @@ jobs:
       - name: pnpm audit, all dependencies (report only; dev tooling advisories are tracked by Dependabot)
         run: pnpm audit --audit-level=high
         continue-on-error: true
+      - name: SBOM (CycloneDX) of the monorepo, kept as a build artifact (ADR 0007)
+        uses: anchore/sbom-action@v0
+        with:
+          path: meri
+          format: cyclonedx-json
+          output-file: meri-sbom.cdx.json
+          artifact-name: meri-sbom.cdx.json
+          upload-release-assets: false
