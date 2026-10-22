@@ -5,16 +5,18 @@ import type { Instrumentation } from "next";
  * bundle gets no SDK, so the Content-Security-Policy keeps `connect-src 'self'`.
  */
 export const onRequestError: Instrumentation.onRequestError = async (error, request, context) => {
-  if (process.env.NEXT_RUNTIME !== "nodejs") return;
-  try {
-    const { reportRequestError } = await import("./server/error-reporting");
-    reportRequestError(error, {
-      method: request.method,
-      routePath: context.routePath,
-      routeType: context.routeType,
-    });
-  } catch (err) {
-    // Reporting must never mask the original failure, which Next already logs.
-    console.error("error reporting unavailable", err instanceof Error ? err.message : "unknown");
+  // Next replaces NEXT_RUNTIME at build time; the import must sit inside this branch so the edge bundle drops it.
+  if (process.env.NEXT_RUNTIME === "nodejs") {
+    try {
+      const { reportRequestError } = await import("./server/error-reporting");
+      reportRequestError(error, {
+        method: request.method,
+        routePath: context.routePath,
+        routeType: context.routeType,
+      });
+    } catch (err) {
+      // Reporting must never mask the original failure, which Next already logs.
+      console.error("error reporting unavailable", err instanceof Error ? err.message : "unknown");
+    }
   }
 };
