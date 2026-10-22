@@ -1,4 +1,4 @@
-import type { ErrorTracker } from "./index";
+import type { ErrorTracker } from "./types";
 
 /** Longest a crashed process keeps running to deliver its report. */
 export const FATAL_FLUSH_MS = 2_000;

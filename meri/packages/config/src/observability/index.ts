@@ -1,6 +1,9 @@
 import type { AppConfig } from "../load";
 import type { Logger } from "../logger";
 import { createSentryErrorTracker, parseSentryDsn } from "./sentry";
+import type { ErrorTracker } from "./types";
+
+export type { CaptureOptions, ErrorTracker } from "./types";
 
 export { reportFatalErrors } from "./process";
 export {
@@ -18,17 +21,6 @@ export {
  * Observability wrappers (P0-10, docs/12 §9). Without a DSN errors go to the logs only; with one they also go to
  * Sentry through the envelope endpoint (D-118, docs/blockers/observability.md). Tracing stays a no-op (debt).
  */
-export interface ErrorTracker {
-  /** `fatal`: the process is about to exit; the report bypasses deduplication and the per-minute cap. */
-  captureException(error: unknown, context?: Record<string, unknown>, options?: CaptureOptions): void;
-  /** Waits for pending reports, at most `timeoutMs` (the tracker's own bound when omitted). */
-  flush(timeoutMs?: number): Promise<void>;
-}
-
-export interface CaptureOptions {
-  fatal?: boolean;
-}
-
 export interface Tracer {
   /** Wraps an async operation in a span; attributes must never contain personal data. */
   span<T>(

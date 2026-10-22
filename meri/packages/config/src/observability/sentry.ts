@@ -1,5 +1,5 @@
 import type { Logger } from "../logger";
-import type { ErrorTracker } from "./index";
+import type { ErrorTracker } from "./types";
 
 /**
  * Error reporting to Sentry over its envelope endpoint (D-118), without the SDK: the SDK instruments `http`,
