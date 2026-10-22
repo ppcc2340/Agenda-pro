@@ -64,7 +64,7 @@ async function main(): Promise<void> {
       "fake adapters on a production build (ALLOW_FAKES_ON_PRODUCTION_BUILD=1): never use this in a deployment",
     );
   const observability = createObservability(observabilityOptions(config, "worker", logger));
-  reportFatalErrors(observability.errors, logger);
+  reportFatalErrors(observability.errors);
   const now = config.env.DEMO_NOW ? () => new Date(config.env.DEMO_NOW ?? 0) : () => new Date();
   const connection = new Redis(config.env.REDIS_URL, { maxRetriesPerRequest: null });
   const handle = createDb(config.env.DATABASE_URL, { max: 5 });

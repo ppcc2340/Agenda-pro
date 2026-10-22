@@ -194,7 +194,11 @@ export class AnthropicAiClient implements AiClient {
           throw new IntegrationError(
             "Permanent",
             "anthropic",
-            `unexpected response shape: ${parsed.error.message}`,
+            // Codes and paths only: the model output is derived from mail content (D-118).
+            `unexpected response shape: ${parsed.error.issues
+              .slice(0, 5)
+              .map((i) => `${i.code} at ${i.path.length > 0 ? i.path.join(".") : "(root)"}`)
+              .join("; ")}`,
           );
         return parsed.data;
       }

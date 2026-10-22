@@ -48,19 +48,39 @@ export const SENTRY_CONTEXT_ALLOWLIST = [
 
 const EMAIL = /[^\s@<>()"',;:]+@[^\s@<>()"',;:]+\.[^\s@<>()"',;:]+/g;
 const BEARER = /\b(bearer|basic)\s+[A-Za-z0-9._~+/=-]+/gi;
-// Long opaque strings: tokens, keys, signatures, OAuth codes. Uuids (36 with dashes) are ids and stay.
-const OPAQUE = /\b(?![0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b)[A-Za-z0-9_\-+/=.]{32,}/g;
+const UUID = /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi;
+// Long opaque strings: tokens, keys, signatures, OAuth codes. Uuids are parked before this runs.
+const OPAQUE = /[A-Za-z0-9_\-+/=.]{32,}/g;
 const QUERY = /(https?:\/\/[^\s?#]+)\?[^\s#]*/g;
-const URL_CREDENTIALS = /\b([a-z][a-z0-9+.-]*:\/\/)[^\s/@]+@/gi;
+// Userinfo may contain `/` (`redis://:ab/cd@host`): everything up to the last `@` before whitespace goes.
+const URL_CREDENTIALS = /\b([a-z][a-z0-9+.-]*:\/\/)[^\s@]+@/gi;
+// Known key prefixes and `key=value` secrets shorter than OPAQUE catches.
+const SECRET_PREFIX =
+  /\b(?:sk|rk|pk)[-_][A-Za-z0-9_-]{6,}|\bwhsec_[A-Za-z0-9]+|\bya29\.[A-Za-z0-9._-]+|\bAIza[A-Za-z0-9_-]{10,}|\bxox[a-z]-[A-Za-z0-9-]+/g;
+const KEY_VALUE = /\b(password|passwd|secret|token|api[_-]?key|key|code|state)=[^\s&]+/gi;
+// Quoted literals carry values (`invalid input syntax for type uuid: "Juan Pérez"`, Zod `received 'x'`).
+const QUOTED = /"[^"\n]{1,200}"|'[^'\n]{1,200}'/g;
 
-/** Removes emails, credentials and query strings from free text (exception messages). */
+/**
+ * Removes emails, credentials, secrets, quoted values and query strings from free text (exception messages).
+ * The input is cut before any pattern runs, so a huge message costs bounded time.
+ */
 export function scrubText(text: string, max = 1_000): string {
-  const out = text
+  // Cut before any pattern runs (bounded time), dropping a word split by the cut so no partial secret survives.
+  const cut = text.length > max * 2 ? text.slice(0, max * 2).replace(/\S*$/, "") : text;
+  // Uuids are ids: park them so OPAQUE never redacts half of one next to a path.
+  const ids: string[] = [];
+  const out = cut
+    .replace(UUID, (m) => `\uE000${String(ids.push(m) - 1)}\uE000`)
     .replace(URL_CREDENTIALS, "$1[redacted]@")
     .replace(EMAIL, "[email]")
     .replace(BEARER, "$1 [redacted]")
     .replace(QUERY, "$1?[redacted]")
-    .replace(OPAQUE, "[redacted]");
+    .replace(KEY_VALUE, "$1=[redacted]")
+    .replace(SECRET_PREFIX, "[redacted]")
+    .replace(QUOTED, "[value]")
+    .replace(OPAQUE, "[redacted]")
+    .replace(/\uE000(\d+)\uE000/g, (_m, i: string) => ids[Number(i)] ?? "");
   return out.length > max ? `${out.slice(0, max)}…` : out;
 }
 
@@ -74,11 +94,14 @@ interface StackFrame {
 
 const FRAME = /^\s*at (?:(.+?) \()?(.+?):(\d+):(\d+)\)?$/;
 
-/** V8 stack lines to Sentry frames, oldest call first (Sentry's order). */
-export function parseStack(stack: string | undefined, maxFrames = 50): StackFrame[] {
+/**
+ * V8 stack lines to Sentry frames, oldest call first (Sentry's order). `headerLines` skips the `Name: message`
+ * header, so a message line shaped like a frame never becomes one (frames are not scrubbed).
+ */
+export function parseStack(stack: string | undefined, maxFrames = 50, headerLines = 1): StackFrame[] {
   if (!stack) return [];
   const frames: StackFrame[] = [];
-  for (const line of stack.split("\n")) {
+  for (const line of stack.split("\n").slice(headerLines)) {
     const m = FRAME.exec(line);
     if (!m) continue;
     const filename = (m[2] ?? "").replace(/^file:\/\//, "");
@@ -106,9 +129,9 @@ function exceptionValues(error: unknown): ExceptionValue[] {
   let current: unknown = error;
   for (let depth = 0; depth < 3 && current !== undefined && current !== null; depth++) {
     if (current instanceof Error) {
-      const frames = parseStack(current.stack);
+      const frames = parseStack(current.stack, 50, current.message.split("\n").length);
       values.push({
-        type: current.name || "Error",
+        type: scrubText(current.name || "Error", 100),
         value: scrubText(current.message),
         ...(frames.length > 0 ? { stacktrace: { frames } } : {}),
       });
@@ -171,6 +194,7 @@ export function createSentryErrorTracker(options: SentryTrackerOptions): SentryE
   const recent = new Map<string, number>();
   let blockedUntil = 0;
   let dropped = 0;
+  let reportedDropped = 0;
   const auth = `Sentry sentry_version=7, sentry_key=${options.dsn.publicKey}, sentry_client=meri-tracker/1.0`;
 
   const admit = (fingerprint: string, t: number): boolean => {
@@ -190,6 +214,8 @@ export function createSentryErrorTracker(options: SentryTrackerOptions): SentryE
         method: "POST",
         headers: { "content-type": "application/x-sentry-envelope", "x-sentry-auth": auth },
         body,
+        // A redirect would replay the body and the auth header to another host.
+        redirect: "error",
         signal: AbortSignal.timeout(timeoutMs),
       });
       if (res.status === 429) {
@@ -207,15 +233,17 @@ export function createSentryErrorTracker(options: SentryTrackerOptions): SentryE
     get dropped() {
       return dropped;
     },
-    captureException(error, context) {
-      options.logger.error({ err: error, ...context }, "captured exception");
+    captureException(error, context, capture) {
+      const fatal = capture?.fatal === true;
+      options.logger[fatal ? "fatal" : "error"]({ err: error, ...context }, "captured exception");
       try {
         const values = exceptionValues(error);
         const main = values[values.length - 1];
         const top = main?.stacktrace?.frames[main.stacktrace.frames.length - 1];
         const fingerprint = `${main?.type ?? ""}|${main?.value ?? ""}|${top?.filename ?? ""}:${String(top?.lineno ?? "")}`;
         const t = now();
-        if (!admit(fingerprint, t)) {
+        // A crash report is the last word of a dying process: only Sentry's own Retry-After holds it back.
+        if (fatal ? t < blockedUntil : !admit(fingerprint, t)) {
           dropped++;
           return;
         }
@@ -224,7 +252,7 @@ export function createSentryErrorTracker(options: SentryTrackerOptions): SentryE
           event_id: eventId,
           timestamp: t / 1_000,
           platform: "node",
-          level: "error",
+          level: fatal ? "fatal" : "error",
           logger: options.service,
           environment: options.environment,
           ...(options.release ? { release: options.release } : {}),
@@ -246,16 +274,28 @@ export function createSentryErrorTracker(options: SentryTrackerOptions): SentryE
         );
       }
     },
-    async flush() {
-      if (pending.size === 0) return;
-      let timer: NodeJS.Timeout | undefined;
-      await Promise.race([
-        Promise.all([...pending]),
-        new Promise<void>((resolve) => {
-          timer = setTimeout(resolve, timeoutMs);
-        }),
-      ]);
-      clearTimeout(timer);
+    async flush(boundMs = timeoutMs) {
+      // Reports captured while flushing (a second crash) are awaited too, within the same deadline.
+      const deadline = now() + boundMs;
+      while (pending.size > 0) {
+        const left = deadline - now();
+        if (left <= 0) break;
+        let timer: NodeJS.Timeout | undefined;
+        const expired = await Promise.race([
+          Promise.all([...pending]).then(() => false),
+          new Promise<boolean>((resolve) => {
+            timer = setTimeout(() => {
+              resolve(true);
+            }, left);
+          }),
+        ]);
+        clearTimeout(timer);
+        if (expired) break;
+      }
+      if (dropped > reportedDropped) {
+        options.logger.warn({ dropped: dropped - reportedDropped }, "error reports not sent to sentry");
+        reportedDropped = dropped;
+      }
     },
   };
 }

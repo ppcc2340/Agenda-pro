@@ -29,7 +29,7 @@ async function main(): Promise<void> {
     );
   // Errors reach Sentry from the first request on, and a crash is reported before the process exits (D-118).
   const observability = createObservability(observabilityOptions(config, "api", logger));
-  reportFatalErrors(observability.errors, logger);
+  reportFatalErrors(observability.errors);
   const now = config.env.DEMO_NOW ? () => new Date(config.env.DEMO_NOW ?? 0) : () => new Date();
   const handle = createDb(config.env.DATABASE_URL);
   await assertAppRole(handle.db);

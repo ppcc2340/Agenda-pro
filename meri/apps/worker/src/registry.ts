@@ -36,6 +36,17 @@ export interface RegistryDeps {
   backoff?: (attemptsMade: number) => number;
 }
 
+/**
+ * Issue codes and paths without the values: Zod messages quote received values, and this text reaches the
+ * dead-letter queue, the logs and Sentry (D-118).
+ */
+function summarizeIssues(error: z.ZodError): string {
+  return error.issues
+    .slice(0, 5)
+    .map((i) => `${i.code} at ${i.path.map((p) => (typeof p === "number" ? "[]" : p)).join(".") || "(root)"}`)
+    .join("; ");
+}
+
 /** Thrown for jobs that must never be retried (invalid payload). BullMQ skips remaining attempts. */
 export class DeadLetterError extends UnrecoverableError {
   override readonly name = "DeadLetterError";
@@ -102,13 +113,13 @@ export class QueueRegistry {
         const envelope = JobEnvelope.safeParse(job.data);
         if (!envelope.success) {
           throw new DeadLetterError(
-            `job ${job.id ?? "?"} rejected: missing workspaceId/traceId (${envelope.error.message})`,
+            `job ${job.id ?? "?"} rejected: missing workspaceId/traceId (${summarizeIssues(envelope.error)})`,
           );
         }
         const payload = def.schema.safeParse(job.data);
         if (!payload.success)
           throw new DeadLetterError(
-            `job ${job.id ?? "?"} rejected: invalid payload (${payload.error.message})`,
+            `job ${job.id ?? "?"} rejected: invalid payload (${summarizeIssues(payload.error)})`,
           );
         const log = this.deps.logger.child({
           jobId: job.id,

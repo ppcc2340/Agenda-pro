@@ -32,7 +32,18 @@ La fase 0 dejó los envoltorios de observabilidad (P0-10) con un rastreador que 
    - Web: `instrumentation.ts` con `onRequestError` (renderizado, rutas, acciones), solo en el runtime de Node. Sin cliente en el navegador; la CSP no cambia.
    - API y worker: `uncaughtException` y `unhandledRejection` se informan, se vacían y el proceso sale con 1, como haría Node sin el manejador. La web deja ese caso a Next.
 
+## Revisión (code, security) y su resolución
+- **Mensajes con valores**: además de correos y credenciales se quitan los literales entre comillas (postgres `invalid input syntax … "Juan Pérez"`, Zod `received 'x'`), los `clave=valor` (`password=`, `token=`, `code=`…) y los prefijos de claves cortas (`sk-`, `whsec_`, `ya29.`, `AIza`, `xox?-`). Los UUID se apartan antes y se restauran, así que nunca quedan a medias.
+- **Mensajes de Zod**: el worker (`DeadLetterError`) y el cliente de Anthropic ya no copian el mensaje de Zod, que cita valores; solo envían el código del problema y su ruta.
+- **Coste acotado**: el texto se corta a 2 000 caracteres antes de cualquier patrón, quitando la palabra que el corte parte, para que no quede media clave.
+- **Ruta**: la etiqueta es siempre la plantilla de Fastify; una petición sin ruta va como `unmatched`, nunca con su ruta en bruto. Se añaden `method` y `statusCode`. El 500 por fallo al serializar la respuesta también se informa.
+- **Caídas**: un informe `fatal` salta la deduplicación y el tope por minuto (solo lo para el `Retry-After` de Sentry) y sale con `level: fatal`. El proceso espera como mucho 2 s para entregarlo, porque mientras tanto sigue aceptando trabajo en un estado indefinido. `flush` espera también a los informes que llegan mientras vacía, dentro del mismo plazo, y registra cuántos eventos se descartaron.
+- **Red**: `redirect: "error"`, para que una redirección no reenvíe el cuerpo ni la cabecera de autenticación a otro host. Las líneas del mensaje nunca se leen como marcos de la pila. El nombre del error también se limpia.
+
 ## Consecuencias
+- Limpiar de más es el coste aceptado: un mensaje con un nombre de tabla entre comillas o una ruta de fichero larga llega como `[value]` o `[redacted]`. La pila conserva fichero y línea.
+- No se informan: los errores de conexión de BullMQ (`worker.on("error")`, solo log), un fallo al mover un job a `dead-letter` (log) y los fallos de arranque anteriores a crear el rastreador (`main().catch`, salen por consola y el proceso no arranca).
+- La web no vacía los informes pendientes al recibir SIGTERM: puede perder los de los últimos 5 s antes de un despliegue.
 - Probado contra un servidor HTTP local que hace de Sentry (`apps/api/src/observability.test.ts`: un 500 real llega con ids y sin datos personales) y con `fetch` simulado. Nunca contra sentry.io: `pnpm smoke observability` es la primera prueba real (humana).
 - Sin *breadcrumbs*, sin contexto de usuario, sin agrupación propia (lo hace Sentry), sin trazas de rendimiento ni sourcemaps. Las pilas de la web compilada apuntan a `.next/server`.
 - Los errores del navegador no se informan (ni del middleware en edge). Se ven en los logs del servidor cuando afectan a una petición.

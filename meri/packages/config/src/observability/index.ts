@@ -19,8 +19,14 @@ export {
  * Sentry through the envelope endpoint (D-118, docs/blockers/observability.md). Tracing stays a no-op (debt).
  */
 export interface ErrorTracker {
-  captureException(error: unknown, context?: Record<string, unknown>): void;
-  flush(): Promise<void>;
+  /** `fatal`: the process is about to exit; the report bypasses deduplication and the per-minute cap. */
+  captureException(error: unknown, context?: Record<string, unknown>, options?: CaptureOptions): void;
+  /** Waits for pending reports, at most `timeoutMs` (the tracker's own bound when omitted). */
+  flush(timeoutMs?: number): Promise<void>;
+}
+
+export interface CaptureOptions {
+  fatal?: boolean;
 }
 
 export interface Tracer {
@@ -58,8 +64,8 @@ export const noopTracer: Tracer = { span: (_name, _attributes, fn) => fn() };
 /** Logger-backed tracker used in dev/test: errors are visible in logs with the trace context. */
 export function loggerErrorTracker(logger: Logger): ErrorTracker {
   return {
-    captureException: (error, context) => {
-      logger.error({ err: error, ...context }, "captured exception");
+    captureException: (error, context, options) => {
+      logger[options?.fatal ? "fatal" : "error"]({ err: error, ...context }, "captured exception");
     },
     flush: () => Promise.resolve(),
   };

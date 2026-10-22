@@ -9,10 +9,11 @@ await run("observability", async ({ config, integrations }) => {
   ok(`one event and one error sent in mode ${a.mode}`);
 
   // Sentry (D-118): the same tracker the services use, with the response status recorded.
-  if (config.modes.analytics !== "live" || !config.env.SENTRY_DSN) {
+  if (config.modes.analytics !== "live") {
     ok("Sentry skipped (ANALYTICS_MODE is not live)");
     return;
   }
+  if (!config.env.SENTRY_DSN) throw new Error("SENTRY_DSN is missing. See docs/blockers/observability.md.");
   const dsn = parseSentryDsn(config.env.SENTRY_DSN);
   if (!dsn) throw new Error("SENTRY_DSN is malformed. See docs/blockers/observability.md.");
   const statuses: number[] = [];

@@ -104,6 +104,14 @@ export function createErrorHandler(errors: ErrorTracker) {
     }
     if (isResponseSerializationError(error)) {
       request.log.error({ err: error }, "response serialization failed");
+      errors.captureException(error, {
+        traceId,
+        source: "serialization",
+        route: request.routeOptions.url ?? "unmatched",
+        method: request.method,
+        statusCode: 500,
+        workspaceId: request.session?.workspaceId,
+      });
       return sendProblem(reply, problemFrom("INTERNAL", traceId));
     }
     const fe = error as FastifyError;
@@ -117,7 +125,10 @@ export function createErrorHandler(errors: ErrorTracker) {
     request.log.error({ err: error }, "unhandled error");
     errors.captureException(error, {
       traceId,
-      route: request.routeOptions.url ?? request.url,
+      // The template only: an unmatched request's raw path can carry ids, names or encoded emails.
+      route: request.routeOptions.url ?? "unmatched",
+      method: request.method,
+      statusCode: 500,
       workspaceId: request.session?.workspaceId,
     });
     return sendProblem(reply, problemFrom("INTERNAL", traceId));

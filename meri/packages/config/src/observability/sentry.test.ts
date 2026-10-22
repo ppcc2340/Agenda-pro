@@ -1,6 +1,6 @@
 import { Writable } from "node:stream";
 import pino from "pino";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { createSentryErrorTracker, parseSentryDsn, parseStack, scrubText, type SentryDsn } from "./sentry";
 
 function captureLogger() {
@@ -16,6 +16,7 @@ function captureLogger() {
 
 interface Sent {
   url: string;
+  redirect: RequestRedirect | undefined;
   headers: Record<string, string>;
   lines: unknown[];
 }
@@ -26,6 +27,7 @@ function fakeFetch(respond: () => Response | Promise<Response> = () => new Respo
   const impl = (async (input: string, init?: RequestInit) => {
     sent.push({
       url: input,
+      redirect: init?.redirect,
       headers: init?.headers as Record<string, string>,
       lines: (init?.body as string).split("\n").map((l) => JSON.parse(l) as unknown),
     });
@@ -100,8 +102,32 @@ describe("scrubText", () => {
     expect(out).toContain("3f2b1c4d-1111-4222-8333-444455556666");
   });
 
-  it("truncates long messages", () => {
+  it("truncates long messages and never keeps the half of a secret split by the cut", () => {
     expect(scrubText("x ".repeat(2_000)).length).toBeLessThanOrEqual(1_001);
+    const secret = "s".repeat(40);
+    // Quoted values shrink to `[value]`, so the secret, cut after 29 characters (too short for OPAQUE), would
+    // land inside the 1 000-character output: 9 × 201 + 162 = 1 971 characters before it.
+    const filler = `${`"${"x".repeat(198)}" `.repeat(9)}${"ab ".repeat(54)}`;
+    const out = scrubText(`${filler}${secret}`);
+    expect(out).not.toContain("sssss");
+  });
+
+  it("keeps uuids whole, also next to a path", () => {
+    const id = "550e8400-e29b-41d4-a716-446655440000";
+    expect(scrubText(`ws ${id}/tasks/abc`)).toBe(`ws ${id}/tasks/abc`);
+    expect(scrubText(`a ${id} b`)).toBe(`a ${id} b`);
+  });
+
+  it("removes quoted values, short secrets and credentials containing slashes", () => {
+    const out = scrubText(
+      "invalid input syntax for type uuid: \"Juan Pérez\"; received 'Acme SL' " +
+        "password=hunter2 token=abc sk-ant-api03-short whsec_abc123 ya29.a0short AIzaSyA1234567890 " +
+        "redis://:ab/cd@redis:6379",
+    );
+    expect(out).not.toMatch(/Juan|Acme|hunter2|abc|sk-ant|whsec|ya29|AIza|ab\/cd/);
+    expect(out).toContain("[value]");
+    expect(out).toContain("password=[redacted]");
+    expect(out).toContain("redis://[redacted]@redis:6379");
   });
 });
 
@@ -123,12 +149,20 @@ describe("parseStack", () => {
     expect(frames[2]).toMatchObject({ function: "handler", lineno: 10, colno: 5 });
     expect(parseStack(undefined)).toEqual([]);
   });
+
+  it("never turns a message line into a frame", async () => {
+    const { t, sent } = tracker();
+    t.captureException(new Error("first line\n    at leak (ana@cliente.es:1:2)"));
+    await t.flush();
+    expect(JSON.stringify(sent[0]?.lines)).not.toContain("cliente");
+  });
 });
 
 describe("createSentryErrorTracker (D-118)", () => {
   it("sends one envelope with the scrubbed error, allowlisted tags and the auth header", async () => {
     const { t, sent, lines } = tracker();
     const err = new Error("lookup failed for ana@cliente.es", { cause: new TypeError("socket hang up") });
+    err.name = "Error";
     t.captureException(err, {
       traceId: "trace-1",
       route: "/v1/tasks/:id?q=secret",
@@ -143,6 +177,7 @@ describe("createSentryErrorTracker (D-118)", () => {
     expect(s?.url).toBe("https://o7.ingest.sentry.example/api/1234/envelope/");
     expect(s?.headers["x-sentry-auth"]).toContain("sentry_key=pubkey");
     expect(s?.headers["content-type"]).toBe("application/x-sentry-envelope");
+    expect(s?.redirect).toBe("error");
     expect(s?.lines[1]).toEqual({ type: "event" });
     const event = eventOf(s);
     expect(event.environment).toBe("production");
@@ -224,19 +259,50 @@ describe("createSentryErrorTracker (D-118)", () => {
     }).not.toThrow();
     await failing.flush();
     expect(lines.join("")).toContain("sentry delivery failed");
+  });
 
-    const hanging = createSentryErrorTracker({
-      dsn: DSN,
-      service: "worker",
-      environment: "production",
-      logger,
-      timeoutMs: 50,
-      fetch: () => new Promise<Response>(() => {}),
-    });
-    hanging.captureException(new Error("y"));
-    const started = Date.now();
-    await hanging.flush();
-    expect(Date.now() - started).toBeLessThan(1_000);
+  it("bounds flush by its deadline, also for reports captured while flushing", async () => {
+    vi.useFakeTimers();
+    try {
+      const { logger } = captureLogger();
+      let calls = 0;
+      const hanging = createSentryErrorTracker({
+        dsn: DSN,
+        service: "worker",
+        environment: "production",
+        logger,
+        now: () => Date.now(),
+        fetch: () => {
+          calls++;
+          return new Promise<Response>(() => {});
+        },
+      });
+      hanging.captureException(new Error("y"));
+      let done = false;
+      void hanging.flush(2_000).then(() => {
+        done = true;
+      });
+      await vi.advanceTimersByTimeAsync(1_000);
+      hanging.captureException(new Error("second crash"), {}, { fatal: true });
+      await vi.advanceTimersByTimeAsync(900);
+      expect(done).toBe(false);
+      await vi.advanceTimersByTimeAsync(200);
+      expect(done).toBe(true);
+      expect(calls).toBe(2);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("sends a fatal report past deduplication and the cap, at fatal level, and logs what it dropped", async () => {
+    const { t, sent, lines } = tracker({ now: () => 5_000_000 });
+    for (let i = 0; i < 31; i++) t.captureException(new Error(`e ${String(i)}`));
+    t.captureException(new Error("e 0"));
+    t.captureException(new Error("e 0"), { source: "uncaughtException" }, { fatal: true });
+    await t.flush();
+    expect(sent).toHaveLength(31);
+    expect((sent[30]?.lines[2] as { level: string }).level).toBe("fatal");
+    expect(lines.join("")).toContain('"dropped":2');
   });
 
   it("logs a rejected event without retrying it", async () => {
