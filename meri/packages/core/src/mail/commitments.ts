@@ -3,7 +3,7 @@
  * Sentences with a commitment verb from the sender (or a request addressed to me) become candidates; the
  * evidence is the sentence itself, so it is verbatim by construction.
  */
-import { findDate, normalizeText, type CaptureContext } from "../capture/parse";
+import { findDate, normalizeText, originalSpan, type CaptureContext } from "../capture/parse";
 import { emailAddress } from "./prefilter";
 
 export interface MailMessageInput {
@@ -329,7 +329,7 @@ export function extractCommitmentsByRules(
       counterpartyEmail: counterparty,
       action: deriveAction(sentence, captureCtx),
       dueAt: date?.dueAt ?? null,
-      dueText: date?.match.text ?? null,
+      dueText: date ? originalSpan(sentence, date.match) : null,
       kind,
       confidence,
       evidence: sentence.slice(0, 200),

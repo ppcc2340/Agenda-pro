@@ -6,7 +6,7 @@
  * Usage: pnpm demo:seed [--reset]   (--reset deletes the demo workspace first; needs DATABASE_ADMIN_URL)
  */
 import { createLogger, DEMO_USER, loadConfig, loadDotenv } from "@meri/config";
-import { fromLocalParts, toLocalParts, addLocalDays } from "@meri/core";
+import { fromLocalParts, toLocalParts, addLocalDays, resolveDatePhrase } from "@meri/core";
 import {
   ADMIN_WORKSPACE_CONTEXT,
   audit,
@@ -82,6 +82,15 @@ export async function seedDemo(options: { now: Date; reset?: boolean; databaseUr
     const at = (dayOffset: number, hour: number, minute = 0) => {
       const d = addLocalDays(local, dayOffset);
       return new Date(fromLocalParts({ ...d, hour, minute }, DEMO_TIMEZONE));
+    };
+    // A date promised in a demo email is resolved as the extractor does it: from the day that message was written,
+    // never as an offset from today («el miércoles» in Monday's email is Wednesday). No exact date → null.
+    const promised = (thread: string, evidence: string): { due: Date | null; dueText?: string } => {
+      const t = DEMO_MAIL_THREADS.find((x) => x.key === thread);
+      const msg = t?.messages.find((m) => m.bodyText.toLowerCase().includes(evidence.toLowerCase()));
+      if (!t || !msg) throw new Error(`demo seed: «${evidence}» is not in the demo thread ${thread}`);
+      const r = resolveDatePhrase(evidence, demoMailDate(now, msg.daysAgo), DEMO_TIMEZONE);
+      return r ? { due: new Date(r.dueAt), dueText: r.dueText } : { due: null };
     };
     const actorUser = { workspaceId: ws, actor: "user" as const, actorUserId: account.userId };
 
@@ -178,14 +187,14 @@ export async function seedDemo(options: { now: Date; reset?: boolean; databaseUr
       await commit({ client: "acme", dir: "owed_by_me", action: "Entregar el informe trimestral", who: PEOPLE[0], due: at(3, 18), status: "confirmed", kind: "explicit", confidence: 0.95, evidence: null, thread: null });
       await commit({ client: "acme", dir: "owed_by_me", action: "Enviar la propuesta revisada", who: PEOPLE[0], due: at(1, 18), status: "confirmed", kind: "explicit", confidence: 0.9, evidence: null, thread: null });
       await commit({ client: "luna", dir: "owed_by_me", action: "Confirmar la fecha de audiencia", who: PEOPLE[3], due: at(4, 12), status: "confirmed", kind: "explicit", confidence: 0.9, evidence: null, thread: "poder" });
-      await commit({ client: "acme", dir: "owed_to_me", action: "Datos de ventas del tercer trimestre", who: PEOPLE[1], due: at(-1, 18), status: "confirmed", kind: "explicit", confidence: 0.9, evidence: "te paso los datos de ventas del tercer trimestre mañana", thread: "ventas" });
-      await commit({ client: "luna", dir: "owed_to_me", action: "Poder notarial firmado", who: PEOPLE[3], due: at(2, 18), status: "confirmed", kind: "explicit", confidence: 0.9, evidence: "te envío el poder notarial firmado el miércoles", thread: "poder" });
-      await commit({ client: "beta", dir: "owed_to_me", action: "Aprobación del presupuesto", who: PEOPLE[4], due: at(4, 18), status: "confirmed", kind: "explicit", confidence: 0.9, evidence: "apruebo el presupuesto el viernes", thread: "presupuesto" });
+      await commit({ client: "acme", dir: "owed_to_me", action: "Datos de ventas del tercer trimestre", who: PEOPLE[1], ...promised("ventas", "te paso los datos de ventas del tercer trimestre mañana"), status: "confirmed", kind: "explicit", confidence: 0.9, evidence: "te paso los datos de ventas del tercer trimestre mañana", thread: "ventas" });
+      await commit({ client: "luna", dir: "owed_to_me", action: "Poder notarial firmado", who: PEOPLE[3], ...promised("poder", "te envío el poder notarial firmado el miércoles"), status: "confirmed", kind: "explicit", confidence: 0.9, evidence: "te envío el poder notarial firmado el miércoles", thread: "poder" });
+      await commit({ client: "beta", dir: "owed_to_me", action: "Aprobación del presupuesto", who: PEOPLE[4], ...promised("presupuesto", "apruebo el presupuesto el viernes"), status: "confirmed", kind: "explicit", confidence: 0.9, evidence: "apruebo el presupuesto el viernes", thread: "presupuesto" });
 
       const proposals = [
-        { client: "acme" as const, dir: "owed_to_me" as const, action: "Enviar el contrato firmado", who: PEOPLE[0], due: at(2, 18), dueText: "el miércoles", kind: "explicit" as const, confidence: 0.94, evidence: "te envío el contrato firmado el miércoles", thread: "contrato", subject: "RE: Contrato de servicios 2026" },
+        { client: "acme" as const, dir: "owed_to_me" as const, action: "Enviar el contrato firmado", who: PEOPLE[0], ...promised("contrato", "te envío el contrato firmado el miércoles"), kind: "explicit" as const, confidence: 0.94, evidence: "te envío el contrato firmado el miércoles", thread: "contrato", subject: "RE: Contrato de servicios 2026" },
         { client: "beta" as const, dir: "owed_by_me" as const, action: "Revisar el presupuesto de transporte", who: PEOPLE[4], due: null, dueText: null, kind: "inferred" as const, confidence: 0.71, evidence: "¿Podrías mirar el presupuesto cuando puedas?", thread: "presupuesto", subject: "Presupuesto transporte Q4" },
-        { client: "norte" as const, dir: "owed_by_me" as const, action: "Agendar la reunión de cierre", who: PEOPLE[2], due: at(10, 18), dueText: "fin de mes", kind: "suggested" as const, confidence: 0.55, evidence: "Quizá podríamos vernos a fin de mes", thread: "cierre", subject: "Cierre de proyecto" },
+        { client: "norte" as const, dir: "owed_by_me" as const, action: "Agendar la reunión de cierre", who: PEOPLE[2], ...promised("cierre", "Quizá podríamos vernos a fin de mes"), kind: "suggested" as const, confidence: 0.55, evidence: "Quizá podríamos vernos a fin de mes", thread: "cierre", subject: "Cierre de proyecto" },
       ];
       let proposalsSeeded = 0;
       for (const p of proposals) {
@@ -200,7 +209,7 @@ export async function seedDemo(options: { now: Date; reset?: boolean; databaseUr
             explanation: p.kind,
             dedupeHash: `proposal:demo:${p.action}`,
             sourceRef: { type: "thread", id: threads[p.thread] ?? "", url: `https://mail.google.com/mail/u/0/#all/${demoThreadId(p.thread)}` },
-            payload: { commitmentId: c.id, direction: p.dir, action: p.action, dueAt: p.due ? p.due.toISOString() : null, dueText: p.dueText, kind: p.kind, confidence: p.confidence, evidence: p.evidence, counterpartyEmail: p.who.email, counterpartyName: p.who.name, clientId: ids[p.client], threadId: threads[p.thread] ?? null, externalThreadId: demoThreadId(p.thread), subject: p.subject, externalMessageId: demoMessageId(p.thread, 0), eventId: null },
+            payload: { commitmentId: c.id, direction: p.dir, action: p.action, dueAt: p.due ? p.due.toISOString() : null, dueText: p.dueText ?? null, kind: p.kind, confidence: p.confidence, evidence: p.evidence, counterpartyEmail: p.who.email, counterpartyName: p.who.name, clientId: ids[p.client], threadId: threads[p.thread] ?? null, externalThreadId: demoThreadId(p.thread), subject: p.subject, externalMessageId: demoMessageId(p.thread, 0), eventId: null },
           },
           now,
         );

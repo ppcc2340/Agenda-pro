@@ -86,7 +86,8 @@ describe("extractCommitmentsByRules (D-032)", () => {
       externalMessageId: "m1",
     });
     expect(c?.action).toBe("enviar contrato firmado");
-    expect(c?.dueText).toBe("el miercoles");
+    // The phrase as written, accents included: it is shown to the user.
+    expect(c?.dueText).toBe("el miércoles");
     expect(c?.evidence).toBe("Hola, te envío el contrato firmado el miércoles.");
   });
 
@@ -105,7 +106,7 @@ describe("extractCommitmentsByRules (D-032)", () => {
       direction: "owed_by_me",
       kind: "explicit",
       counterpartyEmail: "ana@acme.com",
-      dueText: "manana",
+      dueText: "mañana",
     });
     expect(mine[0]?.action).toBe("enviar propuesta revisada");
     const request = extractCommitmentsByRules(

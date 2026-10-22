@@ -45,6 +45,31 @@ interface Match {
   index: number;
 }
 
+/**
+ * The words of `original` that a match on its normalised form covers, as the person wrote them ("el miércoles",
+ * not "el miercoles"). Falls back to the normalised text when normalising changed the length.
+ */
+export function originalSpan(original: string, match: Match): string {
+  return normalizeText(original).length === original.length
+    ? original.slice(match.index, match.index + match.text.length)
+    : match.text;
+}
+
+/**
+ * Resolves the date in a sentence relative to when it was written (`writtenAt`, ISO): "el viernes" in a message
+ * sent on Sunday 18 is Friday 23. Returns the phrase as written, or null when the sentence names no exact date
+ * ("fin de mes", "cuando puedas").
+ */
+export function resolveDatePhrase(
+  sentence: string,
+  writtenAt: string,
+  timezone: string,
+  defaultDueHour = 18,
+): { dueAt: string; dueText: string } | null {
+  const date = findDate(normalizeText(sentence), { now: writtenAt, timezone, clients: [], defaultDueHour });
+  return date ? { dueAt: date.dueAt, dueText: originalSpan(sentence, date.match) } : null;
+}
+
 export function findDate(lower: string, ctx: CaptureContext): { dueAt: string; match: Match } | null {
   const nowMs = Date.parse(ctx.now);
   const local = toLocalParts(nowMs, ctx.timezone);
@@ -211,7 +236,9 @@ export function parseCapture(raw: string, ctx: CaptureContext): CaptureSuggestio
 
   const estimate = duration?.minutes ?? null;
   const mentions = (nouns: string[] | undefined) =>
-    (nouns ?? []).some((n) => new RegExp(`\\b${normalizeText(n).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`).test(lower));
+    (nouns ?? []).some((n) =>
+      new RegExp(`\\b${normalizeText(n).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`).test(lower),
+    );
   const hardDeadline = date !== null && mentions(ctx.vocabulary?.deadlineNouns);
   const deliverable = estimate === null && mentions(ctx.vocabulary?.deliverableNouns);
   const kind = estimate === null ? (deliverable ? "deep" : null) : estimate >= 90 ? "deep" : "shallow";
@@ -221,7 +248,7 @@ export function parseCapture(raw: string, ctx: CaptureContext): CaptureSuggestio
     clientId: client?.client.id ?? null,
     clientName: client?.client.name ?? null,
     dueAt: date?.dueAt ?? null,
-    dueText: date?.match.text ?? null,
+    dueText: date ? originalSpan(text, date.match) : null,
     estimateMinutes: estimate,
     priority: priority?.priority ?? (hardDeadline ? 2 : null),
     kind,

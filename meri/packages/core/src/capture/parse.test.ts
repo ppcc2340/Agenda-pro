@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseCapture } from "./parse";
+import { parseCapture, resolveDatePhrase } from "./parse";
 
 const ctx = {
   now: "2026-10-19T13:40:00Z", // Monday 10:40 in Santiago (UTC-3)
@@ -63,5 +63,40 @@ describe("parseCapture (F-02 rules fallback)", () => {
     const madrid = { ...ctx, now: "2026-10-23T08:00:00Z", timezone: "Europe/Madrid" }; // Friday
     expect(parseCapture("Cierre el lunes", madrid).dueAt).toBe("2026-10-26T17:00:00.000Z"); // after DST end: 18:00 CET = 17:00Z
     expect(parseCapture("Cierre el sábado", madrid).dueAt).toBe("2026-10-24T16:00:00.000Z"); // still CEST
+  });
+});
+
+describe("resolveDatePhrase (exact dates from what people wrote)", () => {
+  const madrid = "Europe/Madrid";
+  it("resolves weekdays and «mañana» from the day the sentence was written, keeping the words as written", () => {
+    // Monday 19 Oct 2026: «el miércoles» is Wednesday 21, not two days after whenever it is read.
+    expect(
+      resolveDatePhrase("Te envío el contrato firmado el miércoles", "2026-10-19T08:00:00Z", madrid),
+    ).toEqual({
+      dueAt: "2026-10-21T16:00:00.000Z",
+      dueText: "el miércoles",
+    });
+    // Sunday 18: «el viernes» is Friday 23.
+    expect(
+      resolveDatePhrase("Apruebo el presupuesto el viernes", "2026-10-18T08:00:00Z", madrid)?.dueAt,
+    ).toBe("2026-10-23T16:00:00.000Z");
+    // Sunday 11: «mañana» is Monday 12, eight days before Tuesday 20.
+    expect(resolveDatePhrase("Te paso los datos mañana", "2026-10-11T08:00:00Z", madrid)).toEqual({
+      dueAt: "2026-10-12T16:00:00.000Z",
+      dueText: "mañana",
+    });
+  });
+
+  it("returns null when the sentence names no exact date", () => {
+    expect(
+      resolveDatePhrase("Quizá podríamos vernos a fin de mes", "2026-10-18T08:00:00Z", madrid),
+    ).toBeNull();
+    expect(
+      resolveDatePhrase("¿Podrías mirar el presupuesto cuando puedas?", "2026-10-18T08:00:00Z", madrid),
+    ).toBeNull();
+  });
+
+  it("keeps the capture's due phrase as typed", () => {
+    expect(parseCapture("Llamar a Acme el miércoles", ctx).dueText).toBe("el miércoles");
   });
 });

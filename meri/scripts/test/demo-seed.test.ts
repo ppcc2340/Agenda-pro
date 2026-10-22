@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createDb, getSubscription, latestPlanRun, listAudit, listValueEvents, listBlocks, listCalendarEvents, listClients, listProposals, listTasks, listTimeEntries, withWorkspace, type WorkspaceId } from "@meri/db";
+import { createDb, getSubscription, latestPlanRun, listAudit, listCommitments, listValueEvents, listBlocks, listCalendarEvents, listClients, listProposals, listTasks, listTimeEntries, withWorkspace, type WorkspaceId } from "@meri/db";
 import { seedDemo } from "../demo-seed";
 
 const TEST_APP_URL = process.env.DATABASE_URL_TEST ?? "postgres://meri_app:meri_app@localhost:5432/meri_test";
@@ -89,6 +89,29 @@ describe("pnpm demo:seed (PROTOTYPE.md, D-048)", () => {
     expect(a.blocks.length).toBeGreaterThan(0);
     expect(b).toEqual(a);
   }, 120_000);
+
+  it("dates every promise in the demo mail from the day it was written, never as an offset from today", async () => {
+    const first = await seedDemo({ now: NOW, reset: true, databaseUrl: TEST_APP_URL, adminUrl: TEST_ADMIN_URL, env });
+    const handle = createDb(TEST_APP_URL, { max: 1 });
+    const ws = first.workspaceId as WorkspaceId;
+    try {
+      const { items } = await withWorkspace(handle.db, ws, (tx) => listCommitments(tx, ws, { includeProposed: true }, { limit: 50 }));
+      const local = (d: Date | null) =>
+        d ? d.toLocaleString("es-ES", { timeZone: "Europe/Madrid", weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" }) : null;
+      const byAction = Object.fromEntries(items.map((c) => [c.action, { due: local(c.dueAt), dueText: c.dueText }]));
+      // Tuesday 20 Oct: Monday's «el miércoles» and Thursday 15's «el miércoles» are Wednesday 21; Sunday's «el viernes» is Friday 23.
+      expect(byAction["Enviar el contrato firmado"]).toEqual({ due: "miércoles, 21 de octubre, 18:00", dueText: "el miércoles" });
+      expect(byAction["Poder notarial firmado"]?.due).toBe("miércoles, 21 de octubre, 18:00");
+      expect(byAction["Aprobación del presupuesto"]?.due).toBe("viernes, 23 de octubre, 18:00");
+      // «mañana» written on Sunday 11 is Monday 12: eight days late on Tuesday 20.
+      expect(byAction["Datos de ventas del tercer trimestre"]?.due).toBe("lunes, 12 de octubre, 18:00");
+      // «fin de mes» and «cuando puedas» name no exact date: none is invented.
+      expect(byAction["Agendar la reunión de cierre"]).toEqual({ due: null, dueText: null });
+      expect(byAction["Revisar el presupuesto de transporte"]).toEqual({ due: null, dueText: null });
+    } finally {
+      await handle.close();
+    }
+  }, 60_000);
 
   it("seeds on the first day of a month (date bounds use calendar arithmetic)", async () => {
     const first = await seedDemo({ now: new Date("2026-11-01T09:00:00Z"), reset: true, databaseUrl: TEST_APP_URL, adminUrl: TEST_ADMIN_URL, env });
