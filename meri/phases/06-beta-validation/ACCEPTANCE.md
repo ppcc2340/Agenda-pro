@@ -70,5 +70,5 @@ code-reviewer, security-auditor, test-engineer y ux-reviewer sobre la fase compl
 |---|---|
 | `pnpm verify` (lint, typecheck, test, build, dependency-cruiser, `check:migrations`, scripts) | ✅ 746 tests (api 175, core 144, integrations 117, jobs 80, scripts 66, config 49, db 45, web 29, worker 21, ai 20) tras el informe de errores (2026-10-22) |
 | Cobertura | `core` 96,1 % líneas / 92,4 % ramas; `api` 98,2 % / 86,2 % |
-| `pnpm e2e` (desktop + móvil, axe AA) | ✅ 57 passed, 4 skipped («solo desktop» en móvil), 7,6 min, build de `f45b723`. La ejecución anterior tuvo un fallo intermitente («Más → Valor y revisión», navegación que no terminó bajo carga) que no se repitió aislado (2/2) ni en esta ejecución; anotado en la deuda |
+| `pnpm e2e` (desktop + móvil, axe AA) | ✅ 57 passed, 4 skipped («solo desktop» en móvil): 7,6 min sobre `f45b723` y 7,2 min tras el informe de errores (2026-10-22, sin ninguna excepción capturada en los logs de la demo). La ejecución anterior tuvo un fallo intermitente («Más → Valor y revisión», navegación que no terminó bajo carga) que no se repitió aislado (2/2) ni en esta ejecución; anotado en la deuda |
 | `pnpm eval` (adaptador de IA simulado) | 100 % en captura, prefiltro, compromisos (238), inyección (28) y briefings (12) |
