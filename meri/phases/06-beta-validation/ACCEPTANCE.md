@@ -13,7 +13,8 @@ Cierre de la **parte técnica**: 2026-10-21. Los cinco criterios de la fase mide
   - `pnpm beta:report` escribe `docs/beta/report-<fecha>.md` (0600, fuera de git) con los agregados del panel y las secciones que completa una persona: 10 problemas principales, entrevistas y decisión.
 - [ ] **Uptime ≥ 99,5 % durante la beta; incidentes con post-mortem.** *Humano: no hay producción.*
   - Preparado: imágenes no-root fijadas por digest para api, worker, web y migraciones (`Dockerfile`, `.github/workflows/images.yml` las construye y arranca), `pnpm check:migrations` en CI, `/health` y `/ready`, runbooks de despliegue, incidentes, caída de proveedor y recuperación (fase 5).
-  - Falta: hosting, alertas reales (Sentry/monitor externo, bloqueo `observability`) y medición durante la beta.
+  - Informe de errores a Sentry desde la API, el worker y la web (D-118, ADR 0010), probado contra un servidor local que hace de Sentry.
+  - Falta: hosting, conectar Sentry (`/connect-blocker observability`, `pnpm smoke observability`), configurar sus alertas y un monitor externo de `/health`, y medir durante la beta.
 - [ ] **Decisión registrada en `STATE.md` (avanzar a Fase 7 / iterar / pivotar).** *Humano, con el informe de la beta.*
 
 ## Qué se construyó para la beta (P6-01..P6-06)
@@ -45,6 +46,20 @@ Plan y decisiones en `PLAN-mvp-final.md` (D-113..D-117) y ADR 0009. Es el único
 
 Sin probar contra un proveedor real: `pnpm smoke email` es la primera prueba real (humana, `docs/blockers/email.md`).
 
+## Informe de errores (2026-10-22)
+
+D-118, ADR 0010. Antes, con `SENTRY_DSN` puesto, la API solo escribía un aviso en el log, y el worker y la web no capturaban nada.
+
+| Pieza | Evidencia |
+|---|---|
+| Rastreador sin SDK (envelope, limpieza, lista cerrada, tope, deduplicación, `Retry-After`, `fatal`, `flush` acotado) | `packages/config/src/observability/sentry.test.ts`, `observability.test.ts`, `process.test.ts`; `env.test.ts` (DSN mal formado falla al arrancar) |
+| API: un 500 real llega por HTTP con ids y sin datos personales | `apps/api/src/observability.test.ts` (servidor local que hace de Sentry) |
+| Worker: un informe por job agotado, ninguno por reintento; fallos de despachadores | `apps/worker/src/registry.test.ts`, `schedule.test.ts` |
+| Web: `onRequestError` solo con plantilla de ruta, método y *digest* | `apps/web/src/server/error-reporting.test.ts`; `next build` sin el import de Node en el bundle de edge |
+| Prueba real | `pnpm smoke observability` (humana, con `ANALYTICS_MODE=live`) |
+
+Revisores code y security: medios corregidos en el commit `fix(observability): apply the error-reporting review findings`; bajos en «Deuda técnica» de `STATE.md`.
+
 ## Revisores
 
 code-reviewer, security-auditor, test-engineer y ux-reviewer sobre la fase completa. Altos y medios corregidos en `1d743e7` (Google), `946461b` (beta, facturación, migraciones, Docker) y `97025e2` (web). Sobre el cierre del MVP, otra ronda de los cuatro, con altos y medios corregidos en `f45b723`. Los bajos están en «Deuda técnica» de `STATE.md`.
@@ -53,7 +68,7 @@ code-reviewer, security-auditor, test-engineer y ux-reviewer sobre la fase compl
 
 | Comprobación | Resultado |
 |---|---|
-| `pnpm verify` (lint, typecheck, test, build, dependency-cruiser, `check:migrations`, scripts) | ✅ 724 tests (api 174, core 144, integrations 117, jobs 80, scripts 66, db 45, config 30, web 28, ai 20, worker 20) sobre `f45b723` |
+| `pnpm verify` (lint, typecheck, test, build, dependency-cruiser, `check:migrations`, scripts) | ✅ 746 tests (api 175, core 144, integrations 117, jobs 80, scripts 66, config 49, db 45, web 29, worker 21, ai 20) tras el informe de errores (2026-10-22) |
 | Cobertura | `core` 96,1 % líneas / 92,4 % ramas; `api` 98,2 % / 86,2 % |
 | `pnpm e2e` (desktop + móvil, axe AA) | ✅ 57 passed, 4 skipped («solo desktop» en móvil), 7,6 min, build de `f45b723`. La ejecución anterior tuvo un fallo intermitente («Más → Valor y revisión», navegación que no terminó bajo carga) que no se repitió aislado (2/2) ni en esta ejecución; anotado en la deuda |
 | `pnpm eval` (adaptador de IA simulado) | 100 % en captura, prefiltro, compromisos (238), inyección (28) y briefings (12) |

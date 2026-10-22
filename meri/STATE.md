@@ -49,7 +49,7 @@ Las reglas de producto se cumplen en código y tests: la IA propone, las reglas 
 - Estado de los bloqueos: `pnpm blockers`.
 
 ### Qué se probó y con qué cobertura
-- `pnpm verify` en verde: lint, typecheck, build, dependency-cruiser, `check:migrations` y **724 tests** (api 174, core 144, integrations 117, jobs 80, scripts 66, db 45, config 30, web 28, ai 20, worker 20). Corren contra Postgres y Redis reales, con RLS forzada y el rol de la aplicación sin privilegios.
+- `pnpm verify` en verde: lint, typecheck, build, dependency-cruiser, `check:migrations` y **746 tests** (api 175, core 144, integrations 117, jobs 80, scripts 66, config 49, db 45, web 29, worker 21, ai 20). Corren contra Postgres y Redis reales, con RLS forzada y el rol de la aplicación sin privilegios.
 - Cobertura: `core` 96,1 % de líneas y 92,4 % de ramas (baja de 99,3 % porque no todos los tests renderizan cada texto en inglés de los correos); `api` 98,2 % y 86,2 %.
 - E2E con Playwright y axe (AA) en escritorio y móvil: 61 casos (57 se ejecutan y 4 se omiten por ser «solo escritorio»). En la última ejecución completa pasan los 57 (7,6 min). La anterior tuvo un fallo intermitente de la fase 4, anotado en la deuda. El de la fase 6 encontró un fallo real: la lista de espera no llegaba nunca a la API. Está corregido.
 - Evals de IA al 100 % en sus cinco conjuntos (captura, prefiltro, 238 compromisos, 28 correos hostiles, 12 briefings), **solo contra el cliente de IA simulado**.
