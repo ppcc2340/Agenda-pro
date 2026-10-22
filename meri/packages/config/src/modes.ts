@@ -1,5 +1,6 @@
 import type { Env } from "./env";
 import { ConfigError } from "./env";
+import { parseSentryDsn } from "./observability/sentry";
 import blockersManifest from "../../../blockers.json";
 
 export interface BlockerDefinition {
@@ -125,6 +126,12 @@ export function resolveModes(env: Env, blockers: readonly BlockerDefinition[] = 
         "SMTP_URL must be smtp://user:pass@host:587 or smtps://user:pass@host:465 (URL-encode special characters in the password). See docs/blockers/email.md.",
       );
   }
+
+  // A DSN that does not parse would silently send errors nowhere (D-118). Never echo it: it carries the key.
+  if (modes.analytics === "live" && env.SENTRY_DSN && !parseSentryDsn(env.SENTRY_DSN))
+    errors.push(
+      "SENTRY_DSN must look like https://<key>@<host>/<projectId>. See docs/blockers/observability.md.",
+    );
 
   if (env.KMS_PROVIDER === "gcp")
     errors.push("KMS_PROVIDER=gcp is not available yet (ADR 0007 chose AWS KMS). See docs/blockers/kms.md.");

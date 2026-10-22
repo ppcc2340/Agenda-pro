@@ -31,7 +31,7 @@ Cómo se lleva Meri a staging o producción (fase 6, D-098). Lo preparado en el 
 | `STRIPE_MODE=live`, `STRIPE_*` | api, worker | `docs/blockers/stripe.md` |
 | `KMS_PROVIDER=aws`, `KMS_KEY_ID`, `AWS_REGION` | api, worker | `docs/blockers/kms.md` |
 | `NOTIFY_MODE=live`, `SMTP_URL`, `MAIL_FROM` | worker (envía) y api (valida la configuración) | `docs/blockers/email.md`. `APP_URL` debe ser la URL pública de la web: los enlaces y la baja de los correos se construyen con ella |
-| `SENTRY_DSN`, `POSTHOG_KEY`, `ANALYTICS_MODE=live` | todas | `docs/blockers/observability.md` |
+| `SENTRY_DSN`, `POSTHOG_KEY`, `ANALYTICS_MODE=live`; `SENTRY_RELEASE` (sha de la imagen, opcional) | todas | `docs/blockers/observability.md` |
 | `BETA_INVITE_REQUIRED=1` | api, web | Beta cerrada: las cuentas nuevas necesitan invitación (`pnpm beta:invite <correo>`; avisa al pasar de 100 personas, el tope de una app de Google en «Testing») |
 | `LISTEN_HOST=0.0.0.0` | api, worker | Ya fijado en la imagen |
 

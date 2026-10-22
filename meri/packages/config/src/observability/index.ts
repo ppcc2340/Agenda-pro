@@ -1,8 +1,22 @@
+import type { AppConfig } from "../load";
 import type { Logger } from "../logger";
+import { createSentryErrorTracker, parseSentryDsn } from "./sentry";
+
+export { reportFatalErrors } from "./process";
+export {
+  createSentryErrorTracker,
+  parseSentryDsn,
+  parseStack,
+  scrubText,
+  SENTRY_CONTEXT_ALLOWLIST,
+  type SentryDsn,
+  type SentryErrorTracker,
+  type SentryTrackerOptions,
+} from "./sentry";
 
 /**
- * Observability wrappers (P0-10, docs/12 §9). Without keys everything is a no-op; with keys the live SDKs are
- * loaded lazily so the dependency only matters when ANALYTICS_MODE=live (docs/blockers/observability.md).
+ * Observability wrappers (P0-10, docs/12 §9). Without a DSN errors go to the logs only; with one they also go to
+ * Sentry through the envelope endpoint (D-118, docs/blockers/observability.md). Tracing stays a no-op (debt).
  */
 export interface ErrorTracker {
   captureException(error: unknown, context?: Record<string, unknown>): void;
@@ -29,7 +43,13 @@ export interface ObservabilityOptions {
   service: string;
   sentryDsn?: string | undefined;
   otelEndpoint?: string | undefined;
+  /** Sentry `environment` (APP_ENV, else NODE_ENV). */
+  environment?: string | undefined;
+  /** Sentry `release`, e.g. the image's git sha. */
+  release?: string | undefined;
   logger: Logger;
+  /** Injected for tests. */
+  fetch?: typeof fetch;
 }
 
 export const noopErrorTracker: ErrorTracker = { captureException: () => {}, flush: () => Promise.resolve() };
@@ -46,19 +66,48 @@ export function loggerErrorTracker(logger: Logger): ErrorTracker {
 }
 
 export function createObservability(options: ObservabilityOptions): Observability {
-  const sentry = Boolean(options.sentryDsn);
   const otel = Boolean(options.otelEndpoint);
-  if (sentry || otel) {
-    // Live SDK wiring (Sentry / OpenTelemetry exporters) is connected with the observability blocker (phase 4+).
+  if (otel)
     options.logger.warn(
-      { sentry, otel },
-      "observability keys present but live SDKs are wired in a later phase; using logger-backed tracker",
+      "OTEL_EXPORTER_OTLP_ENDPOINT is set but tracing export is not wired yet (debt, D-118)",
     );
-  }
+  const dsn = options.sentryDsn ? parseSentryDsn(options.sentryDsn) : null;
+  // resolveModes rejects a malformed DSN at startup; this guard keeps a direct caller from failing open silently.
+  if (options.sentryDsn && !dsn) options.logger.error("SENTRY_DSN is malformed; errors go to the logs only");
+  const errors = dsn
+    ? createSentryErrorTracker({
+        dsn,
+        service: options.service,
+        environment: options.environment ?? "development",
+        release: options.release,
+        logger: options.logger,
+        ...(options.fetch ? { fetch: options.fetch } : {}),
+      })
+    : loggerErrorTracker(options.logger);
   return {
-    errors: loggerErrorTracker(options.logger),
+    errors,
     tracer: noopTracer,
-    enabled: { sentry, otel },
-    shutdown: () => Promise.resolve(),
+    enabled: { sentry: dsn !== null, otel },
+    shutdown: () => errors.flush(),
+  };
+}
+
+/**
+ * The options every service builds from its configuration. Sentry is on only with ANALYTICS_MODE=live, the
+ * switch of the observability blocker, so a DSN copied into a dev `.env` never reports local errors.
+ */
+export function observabilityOptions(
+  config: AppConfig,
+  service: string,
+  logger: Logger,
+): ObservabilityOptions {
+  const live = config.modes.analytics === "live";
+  return {
+    service,
+    logger,
+    sentryDsn: live ? config.env.SENTRY_DSN : undefined,
+    otelEndpoint: config.env.OTEL_EXPORTER_OTLP_ENDPOINT,
+    environment: config.env.APP_ENV ?? config.env.NODE_ENV,
+    release: config.env.SENTRY_RELEASE,
   };
 }

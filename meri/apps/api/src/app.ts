@@ -8,6 +8,7 @@ import Fastify from "fastify";
 import { jsonSchemaTransform, serializerCompiler, validatorCompiler } from "fastify-type-provider-zod";
 import {
   createObservability,
+  observabilityOptions,
   InMemoryFlagStore,
   type AppConfig,
   type FeatureFlagStore,
@@ -118,13 +119,7 @@ export async function buildApp(deps: AppDeps) {
   });
   app.decorate("routeTable", routeTable);
   const observability =
-    deps.observability ??
-    createObservability({
-      service: "api",
-      logger: deps.logger,
-      sentryDsn: config.env.SENTRY_DSN,
-      otelEndpoint: config.env.OTEL_EXPORTER_OTLP_ENDPOINT,
-    });
+    deps.observability ?? createObservability(observabilityOptions(config, "api", deps.logger));
   app.setErrorHandler(createErrorHandler(observability.errors));
   app.addHook("onClose", async () => {
     // Buffered product events leave before the process does ([M9]).

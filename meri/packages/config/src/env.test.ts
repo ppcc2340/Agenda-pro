@@ -175,7 +175,7 @@ describe("production secrets", () => {
       STRIPE_PRICE_CREDITS_500: "p5",
       STRIPE_PRICE_CREDITS_2000: "p6",
       ANALYTICS_MODE: "live",
-      SENTRY_DSN: "d",
+      SENTRY_DSN: "https://pub@o1.ingest.sentry.example/42",
       POSTHOG_KEY: "p",
       KMS_PROVIDER: "aws",
       KMS_KEY_ID: "arn",
@@ -189,6 +189,8 @@ describe("production secrets", () => {
     expect(() => loadConfig(prod)).toThrow(/AUTH_SECRET still hold the \.env\.example placeholder/);
     expect(() => loadConfig(prod)).toThrow(/AUTH_URL is required in production/);
     expect(() => loadConfig({ ...prod, APP_URL: "http://app.meri.test" })).toThrow(/APP_URL must use https/);
+    expect(() => loadConfig({ ...prod, SENTRY_DSN: "d" })).toThrow(/SENTRY_DSN must look like https/);
+    expect(() => loadConfig({ ...prod, SENTRY_DSN: "http://pub@sentry.example/1" })).toThrow(/SENTRY_DSN/);
     expect(() =>
       loadConfig({ ...prod, AUTH_SECRET: "r".repeat(40), AUTH_URL: "https://app.meri.test" }),
     ).toThrow(/GOOGLE_CALENDAR_CHANNEL_TOKEN/);

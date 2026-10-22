@@ -1,6 +1,13 @@
 import type { Redis } from "ioredis";
 import { encode } from "@auth/core/jwt";
-import { createLogger, parseEnv, resolveModes, type AppConfig, type FeatureFlagStore } from "@meri/config";
+import {
+  createLogger,
+  parseEnv,
+  resolveModes,
+  type AppConfig,
+  type FeatureFlagStore,
+  type Observability,
+} from "@meri/config";
 import {
   bootstrapAccount,
   createDb,
@@ -62,6 +69,7 @@ export async function createTestApp(
     rateLimitRedis?: Redis;
     flags?: FeatureFlagStore;
     env?: Record<string, string>;
+    observability?: Observability;
   } = {},
 ): Promise<TestApp> {
   const config = testConfig(options.env);
@@ -79,6 +87,7 @@ export async function createTestApp(
     rateLimitMax: options.rateLimitMax ?? 1000,
     rateLimitRedis: options.rateLimitRedis,
     flags: options.flags,
+    ...(options.observability ? { observability: options.observability } : {}),
   });
   const name = sessionCookieName(false);
   return {

@@ -1,7 +1,7 @@
 import { Queue, UnrecoverableError, Worker, type Job, type JobsOptions } from "bullmq";
 import type { Redis } from "ioredis";
 import type { z } from "zod";
-import type { Logger } from "@meri/config";
+import type { ErrorTracker, Logger } from "@meri/config";
 import { withWorkspace, type Db, type WorkspaceTx } from "@meri/db";
 import { DEAD_LETTER_QUEUE, JobEnvelope, DEFAULT_JOB_OPTIONS, type QueueName } from "@meri/jobs";
 
@@ -30,6 +30,8 @@ export interface RegistryDeps {
   logger: Logger;
   /** Key prefix so several environments can share one Redis in tests. */
   prefix?: string;
+  /** Receives every job that exhausted its attempts (D-118); retries in between are only logged. */
+  errors?: ErrorTracker;
   /** Retry delay strategy; defaults to exponential backoff with jitter. Injected for tests. */
   backoff?: (attemptsMade: number) => number;
 }
@@ -140,6 +142,16 @@ export class QueueRegistry {
         "job failed",
       );
       if (exhausted) {
+        const envelope = JobEnvelope.safeParse(job.data);
+        this.deps.errors?.captureException(err, {
+          source: "job",
+          queue: def.name,
+          jobId: job.id,
+          attempt: job.attemptsMade,
+          ...(envelope.success
+            ? { workspaceId: envelope.data.workspaceId, traceId: envelope.data.traceId }
+            : {}),
+        });
         const move = this.deadLetter
           .add(
             def.name,

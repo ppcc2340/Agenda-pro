@@ -1,4 +1,11 @@
-import { createLogger, loadConfig, loadDotenv } from "@meri/config";
+import {
+  createLogger,
+  createObservability,
+  loadConfig,
+  loadDotenv,
+  observabilityOptions,
+  reportFatalErrors,
+} from "@meri/config";
 import { DbFlagStore, assertAppRole, createDb } from "@meri/db";
 import { createIntegrations, FakeAiClient } from "@meri/integrations";
 import { registerFakeAiHandlers } from "@meri/ai";
@@ -20,6 +27,9 @@ async function main(): Promise<void> {
     logger.warn(
       "fake adapters on a production build (ALLOW_FAKES_ON_PRODUCTION_BUILD=1): never use this in a deployment",
     );
+  // Errors reach Sentry from the first request on, and a crash is reported before the process exits (D-118).
+  const observability = createObservability(observabilityOptions(config, "api", logger));
+  reportFatalErrors(observability.errors, logger);
   const now = config.env.DEMO_NOW ? () => new Date(config.env.DEMO_NOW ?? 0) : () => new Date();
   const handle = createDb(config.env.DATABASE_URL);
   await assertAppRole(handle.db);
@@ -43,6 +53,7 @@ async function main(): Promise<void> {
     db: handle.db,
     integrations,
     logger,
+    observability,
     now,
     dispatcher,
     rateLimitMax: config.env.RATE_LIMIT_PER_MINUTE,

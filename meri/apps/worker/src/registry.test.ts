@@ -41,12 +41,25 @@ describe("QueueRegistry with real Redis", () => {
   let handle: DbHandle;
   let registry: QueueRegistry;
   const logger = createLogger({ name: "worker-test", level: "silent" });
+  const captured: { error: unknown; context: Record<string, unknown> | undefined }[] = [];
 
   beforeAll(() => {
     connection = new Redis(REDIS_URL, { maxRetriesPerRequest: null });
     handle = createDb(TEST_APP_URL, { max: 1 });
     // Fast retries for tests; production uses backoffDelayMs (tested above).
-    registry = new QueueRegistry({ connection, db: handle.db, logger, prefix, backoff: () => 10 });
+    registry = new QueueRegistry({
+      connection,
+      db: handle.db,
+      logger,
+      prefix,
+      backoff: () => 10,
+      errors: {
+        captureException: (error, context) => {
+          captured.push({ error, context });
+        },
+        flush: () => Promise.resolve(),
+      },
+    });
     registry.register({ ...examplePing, attempts: 3 });
   });
   afterAll(async () => {
@@ -85,6 +98,8 @@ describe("QueueRegistry with real Redis", () => {
     expect(body.status).toBe("ready");
     expect(typeof body.queues["example.ping"]?.active).toBe("number");
     await health.close();
+    // A retried failure that later succeeds is not an error report (D-118).
+    expect(captured.some((c) => c.context?.traceId === "t-1")).toBe(false);
   });
 
   it("moves a job to the dead-letter queue after the last failed attempt", async () => {
@@ -99,6 +114,17 @@ describe("QueueRegistry with real Redis", () => {
     expect(dead.some((d) => (d.data as { failedJobId?: string }).failedJobId === job.id)).toBe(true);
     expect((await registry.health()).deadLetter).toBeGreaterThan(0);
     expect(registry.queue(DEAD_LETTER_QUEUE)).toBe(registry.deadLetter);
+    // The exhausted job is reported once, with ids only.
+    const reports = captured.filter((c) => c.context?.traceId === "t-2");
+    expect(reports).toHaveLength(1);
+    expect(reports[0]?.context).toEqual({
+      source: "job",
+      queue: "example.ping",
+      jobId: job.id,
+      attempt: 3,
+      workspaceId: WS,
+      traceId: "t-2",
+    });
   });
 
   it("sends a malformed payload straight to the dead-letter queue (no retries)", async () => {
@@ -117,5 +143,11 @@ describe("QueueRegistry with real Redis", () => {
     );
     const refreshed = await q.getJob(job.id ?? "");
     expect(refreshed?.attemptsMade).toBe(1);
+    expect(captured.find((c) => c.context?.jobId === job.id)?.context).toEqual({
+      source: "job",
+      queue: "example.ping",
+      jobId: job.id,
+      attempt: 1,
+    });
   });
 });

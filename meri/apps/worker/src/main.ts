@@ -1,7 +1,15 @@
 import { Redis } from "ioredis";
 import postgres from "postgres";
 import { registerFakeAiHandlers } from "@meri/ai";
-import { ConfigError, createLogger, loadConfig, loadDotenv } from "@meri/config";
+import {
+  ConfigError,
+  createLogger,
+  createObservability,
+  loadConfig,
+  loadDotenv,
+  observabilityOptions,
+  reportFatalErrors,
+} from "@meri/config";
 import { ADMIN_WORKSPACE_CONTEXT, assertAppRole, createDb } from "@meri/db";
 import { createIntegrations, FakeAiClient } from "@meri/integrations";
 import { createDispatcher } from "@meri/jobs";
@@ -55,6 +63,8 @@ async function main(): Promise<void> {
     logger.warn(
       "fake adapters on a production build (ALLOW_FAKES_ON_PRODUCTION_BUILD=1): never use this in a deployment",
     );
+  const observability = createObservability(observabilityOptions(config, "worker", logger));
+  reportFatalErrors(observability.errors, logger);
   const now = config.env.DEMO_NOW ? () => new Date(config.env.DEMO_NOW ?? 0) : () => new Date();
   const connection = new Redis(config.env.REDIS_URL, { maxRetriesPerRequest: null });
   const handle = createDb(config.env.DATABASE_URL, { max: 5 });
@@ -66,7 +76,7 @@ async function main(): Promise<void> {
     },
   });
   if (integrations.ai instanceof FakeAiClient) registerFakeAiHandlers(integrations.ai);
-  const registry = new QueueRegistry({ connection, db: handle.db, logger });
+  const registry = new QueueRegistry({ connection, db: handle.db, logger, errors: observability.errors });
   registry.register(examplePing);
   const dispatcher = createDispatcher(connection);
   const handlerDeps = { db: handle.db, integrations, keys: integrations.kms.keys, now };
@@ -118,6 +128,7 @@ async function main(): Promise<void> {
     5 * 60_000,
     () => dispatchCalendarPolling({ adminSql, dispatcher, logger, now }),
     logger,
+    observability.errors,
   );
 
   const stopMailPolling = schedule(
@@ -125,6 +136,7 @@ async function main(): Promise<void> {
     5 * 60_000,
     () => dispatchMailPolling({ adminSql, dispatcher, logger, now }),
     logger,
+    observability.errors,
   );
   // Hourly in production; every minute elsewhere so a freshly confirmed overdue commitment surfaces in a demo.
   const followupsEveryMs = config.isProduction ? 60 * 60_000 : 60_000;
@@ -133,60 +145,70 @@ async function main(): Promise<void> {
     followupsEveryMs,
     () => dispatchFollowupsScan({ adminSql, dispatcher, logger, now }, followupsEveryMs),
     logger,
+    observability.errors,
   );
   const stopClientsScan = schedule(
     "clients.scan",
     config.isProduction ? 60 * 60_000 : 60_000,
     () => dispatchClientsScan({ adminSql, dispatcher, logger, now }),
     logger,
+    observability.errors,
   );
   const stopBriefings = schedule(
     "briefings.prepare",
     config.isProduction ? 60 * 60_000 : 60_000,
     () => dispatchBriefingsPrepare({ adminSql, dispatcher, logger, now }),
     logger,
+    observability.errors,
   );
   const stopTimeInfer = schedule(
     "time.infer",
     config.isProduction ? 60 * 60_000 : 60_000,
     () => dispatchTimeInfer({ adminSql, dispatcher, logger, now }),
     logger,
+    observability.errors,
   );
   const stopRetention = schedule(
     "data.retention",
     6 * 60 * 60_000,
     () => dispatchRetention({ adminSql, dispatcher, logger, now }),
     logger,
+    observability.errors,
   );
   const stopPurge = schedule(
     "data.delete_account",
     6 * 60 * 60_000,
     () => dispatchAccountPurge({ adminSql, dispatcher, logger, now }),
     logger,
+    observability.errors,
   );
   const stopRollup = schedule(
     "billing.usage_rollup",
     config.isProduction ? 60 * 60_000 : 5 * 60_000,
     () => dispatchUsageRollup({ adminSql, dispatcher, logger, now }),
     logger,
+    observability.errors,
   );
   const stopClose = schedule(
     "daily.close",
     15 * 60_000,
     () => dispatchDailyClose({ adminSql, dispatcher, logger, now }),
     logger,
+    observability.errors,
   );
   const stopEmail = schedule(
     "notify.email",
     60_000,
     () => dispatchNotifyEmail({ adminSql, dispatcher, logger, now }),
     logger,
+    observability.errors,
   );
   const stopDigest = schedule(
     "daily.review",
     15 * 60_000,
     () => dispatchDailyReview({ adminSql, dispatcher, logger, now }),
     logger,
+    observability.errors,
   );
 
   const health = await buildHealthServer(registry, logger);
@@ -235,6 +257,7 @@ async function main(): Promise<void> {
     await dispatcher.close();
     await adminSql.end({ timeout: 5 });
     await integrations.analytics.flush();
+    await observability.shutdown();
     await handle.close();
     connection.disconnect();
     process.exit(0);

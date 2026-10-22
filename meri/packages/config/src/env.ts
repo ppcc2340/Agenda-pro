@@ -84,6 +84,8 @@ export const EnvSchema = z.object({
 
   ANALYTICS_MODE: z.enum(["noop", "live"]).default("noop"),
   SENTRY_DSN: optionalString(),
+  /** Sentry `release` (e.g. the deployed git sha); optional. */
+  SENTRY_RELEASE: optionalString(),
   POSTHOG_KEY: optionalString(),
   POSTHOG_HOST: z.preprocess(emptyToUndefined, z.string().url().default("https://eu.i.posthog.com")),
   OTEL_EXPORTER_OTLP_ENDPOINT: optionalString(),

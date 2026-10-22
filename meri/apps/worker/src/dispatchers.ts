@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import type { Logger } from "@meri/config";
+import type { ErrorTracker, Logger } from "@meri/config";
 import { PURGE_AFTER_DAYS } from "@meri/db";
 import { CALENDAR_SCOPES } from "@meri/integrations";
 import {
@@ -328,7 +328,6 @@ export async function dispatchUsageRollup(deps: DispatcherDeps): Promise<number>
 /** D-115: notifications this recent may still get their email copy. */
 export const EMAIL_WINDOW_MS = 2 * 3_600_000;
 
-
 /**
  * notify.email (D-115): recent notifications without an email outcome whose workspace preference allows email. The
  * SQL mirrors `emailAllowed` (@meri/core) only to keep the queue small; the handler decides again with the core rule.
@@ -362,6 +361,7 @@ export function schedule(
   everyMs: number,
   fn: () => Promise<unknown>,
   logger: Logger,
+  errors?: ErrorTracker,
 ): () => void {
   let running = false;
   const timer = setInterval(() => {
@@ -370,6 +370,7 @@ export function schedule(
     fn()
       .catch((err: unknown) => {
         logger.error({ err, cron: name }, "cron failed");
+        errors?.captureException(err, { source: "cron", queue: name });
       })
       .finally(() => {
         running = false;
