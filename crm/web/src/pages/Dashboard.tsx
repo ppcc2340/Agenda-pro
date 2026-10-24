@@ -34,7 +34,7 @@ export function Dashboard() {
           <Link to="/contactos?filters=%7B%22logic%22%3A%22and%22%2C%22conditions%22%3A%5B%7B%22field%22%3A%22created_at%22%2C%22op%22%3A%22last_days%22%2C%22value%22%3A30%7D%5D%7D" className="stat" style={{ color: "inherit" }}><div className="label">Nuevos leads (30 d)</div><div className="value num">{fmtNum(d.new_leads_30d)}</div><div className="delta">{d.my_tasks.overdue ? <span style={{ color: "var(--risk)" }}>{d.my_tasks.overdue} tareas vencidas</span> : "sin tareas vencidas"} · {d.my_tasks.today ?? 0} para hoy</div></Link>
         </div>
         <div className="grid c2 mb16">
-          <div className="card"><div className="card-title"><h2>Pipeline por etapa</h2><Link to="/negocios" className="small">Ver kanban</Link></div><Bars data={d.pipeline} x="name" bars={[{ key: "amount", label: "Importe" }, { key: "weighted", label: "Ponderado", color: "#5CC9CF" }]} money height={220} /></div>
+          <div className="card"><div className="card-title"><h2>Pipeline por etapa</h2><Link to="/negocios" className="small">Ver kanban</Link></div><Bars data={d.pipeline} x="name" bars={[{ key: "amount", label: "Importe" }, { key: "weighted", label: "Ponderado", color: "#66ccff" }]} money height={220} /></div>
           <div className="card"><div className="card-title"><h2>Ganado por mes</h2><Link to="/informes" className="small">Informes</Link></div>{d.won_by_month.length ? <Lines data={d.won_by_month} x="month" lines={[{ key: "amount", label: "Importe ganado" }]} height={220} money /> : <p className="muted">Aún no hay negocios ganados.</p>}</div>
         </div>
         <div className="grid c3">

@@ -1,20 +1,24 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { NavLink, Link, useNavigate, useLocation } from "react-router-dom";
-import { Home, Sun, Users, Building2, Handshake, CheckSquare, LifeBuoy, BarChart3, Settings, Search, Bell, LogOut, Package, FileText, ListChecks, Menu as MenuIcon, X } from "lucide-react";
+import { Home, Sun, Users, Building2, Handshake, LifeBuoy, BarChart3, Settings, Search, Bell, LogOut, Package, FileText, Menu as MenuIcon, X } from "lucide-react";
 import { useApp } from "../lib/app";
 import { api } from "../api";
 import { Avatar, Menu } from "./ui";
 import { relTime, fmtMoney } from "../lib/format";
 
-const NAV = [
+const TOP = [
   { to: "/", label: "Inicio", icon: Home, end: true },
   { to: "/mi-dia", label: "Mi día", icon: Sun },
-  { to: "/contactos", label: "Contactos", icon: Users },
-  { to: "/empresas", label: "Empresas", icon: Building2 },
-  { to: "/negocios", label: "Negocios", icon: Handshake },
-  { to: "/tareas", label: "Tareas", icon: CheckSquare },
-  { to: "/tickets", label: "Tickets", icon: LifeBuoy },
-  { to: "/listas", label: "Listas", icon: ListChecks },
+];
+const BOARDS = [
+  { to: "/contactos", label: "Contactos", color: "var(--c-blue)" },
+  { to: "/empresas", label: "Empresas", color: "var(--c-purple)" },
+  { to: "/negocios", label: "Negocios", color: "var(--c-green)" },
+  { to: "/tareas", label: "Tareas", color: "var(--c-orange)" },
+  { to: "/tickets", label: "Tickets", color: "var(--c-red)" },
+  { to: "/listas", label: "Listas", color: "var(--c-indigo)" },
+];
+const TOOLS = [
   { to: "/productos", label: "Productos", icon: Package },
   { to: "/presupuestos", label: "Presupuestos", icon: FileText },
   { to: "/informes", label: "Informes", icon: BarChart3 },
@@ -34,7 +38,12 @@ export function Layout({ children, onLogout }: { children: ReactNode; onLogout: 
   const logout = async () => { await api.post("auth/logout").catch(() => undefined); onLogout(); };
   const navItems = (
     <nav className="nav">
-      {NAV.map((n) => <NavLink key={n.to} to={n.to} end={n.end} className={({ isActive }) => (isActive ? "active" : "")}><n.icon />{n.label}</NavLink>)}
+      {TOP.map((n) => <NavLink key={n.to} to={n.to} end={n.end} className={({ isActive }) => (isActive ? "active" : "")}><n.icon />{n.label}</NavLink>)}
+      <div className="ws"><span className="wsi">{(settings.company_name || "C").slice(0, 1).toUpperCase()}</span><span className="ell grow">{settings.company_name || "Espacio de trabajo"}</span></div>
+      <div className="section">Tableros</div>
+      {BOARDS.map((n) => <NavLink key={n.to} to={n.to} className={({ isActive }) => (isActive ? "active" : "")}><span className="sq" style={{ background: n.color }} />{n.label}</NavLink>)}
+      <div className="section">Herramientas</div>
+      {TOOLS.map((n) => <NavLink key={n.to} to={n.to} className={({ isActive }) => (isActive ? "active" : "")}><n.icon />{n.label}</NavLink>)}
       <div className="section">Administración</div>
       <NavLink to="/ajustes" className={({ isActive }) => (isActive ? "active" : "")}><Settings />Ajustes</NavLink>
     </nav>
@@ -42,12 +51,12 @@ export function Layout({ children, onLogout }: { children: ReactNode; onLogout: 
   return (
     <div className="app">
       <aside className="sidebar">
-        <div className="brand"><span className="logo">{(settings.company_name || "C").slice(0, 1).toUpperCase()}</span><span className="ell">{settings.company_name || "CRM"}</span></div>
+        <div className="brand"><span className="dots"><i /><i /><i /></span><span className="ell">{settings.company_name || "CRM"}<span className="sub" style={{ fontWeight: 400 }}> crm</span></span></div>
         {navItems}
         <div className="user">
           <Avatar name={me.name} />
-          <div className="grow" style={{ minWidth: 0 }}><div className="ell" style={{ color: "#fff", fontWeight: 600, fontSize: 13 }}>{me.name}</div><div className="ell xs" style={{ color: "#8da0b1" }}>{me.role.name}</div></div>
-          <button className="iconbtn" style={{ color: "#8da0b1" }} onClick={logout} title="Cerrar sesión"><LogOut size={16} /></button>
+          <div className="grow" style={{ minWidth: 0 }}><div className="ell" style={{ fontWeight: 600, fontSize: 13 }}>{me.name}</div><div className="ell xs sub">{me.role.name}</div></div>
+          <button className="iconbtn" onClick={logout} title="Cerrar sesión"><LogOut size={16} /></button>
         </div>
       </aside>
       <div className="main">
@@ -75,9 +84,9 @@ export function Layout({ children, onLogout }: { children: ReactNode; onLogout: 
       {mobileNav && (
         <div className="overlay" style={{ alignItems: "stretch", padding: 0 }} onMouseDown={(e) => { if (e.target === e.currentTarget) setMobileNav(false); }}>
           <div style={{ background: "var(--side)", width: 260, height: "100%", overflowY: "auto", color: "var(--side-ink)" }}>
-            <div className="brand"><span className="logo">{(settings.company_name || "C").slice(0, 1)}</span><span className="grow">{settings.company_name}</span><button className="iconbtn" style={{ color: "#fff" }} onClick={() => setMobileNav(false)}><X /></button></div>
+            <div className="brand"><span className="dots"><i /><i /><i /></span><span className="grow ell">{settings.company_name}</span><button className="iconbtn" onClick={() => setMobileNav(false)}><X /></button></div>
             {navItems}
-            <div className="user"><Avatar name={me.name} /><div className="grow" style={{ color: "#fff" }}>{me.name}</div><button className="iconbtn" style={{ color: "#8da0b1" }} onClick={logout}><LogOut size={16} /></button></div>
+            <div className="user"><Avatar name={me.name} /><div className="grow">{me.name}</div><button className="iconbtn" onClick={logout}><LogOut size={16} /></button></div>
           </div>
         </div>
       )}

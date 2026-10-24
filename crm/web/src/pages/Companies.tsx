@@ -11,6 +11,7 @@ import { formatCustom } from "../components/CustomFields";
 import { api } from "../api";
 import { useApp } from "../lib/app";
 import { COMPANY_TYPES, LIFECYCLE, fmtMoney, fmtNum, fmtDate, relTime } from "../lib/format";
+import { COMPANY_TYPE_OPTS } from "../lib/colors";
 
 type Rec = Record<string, unknown>;
 interface Co { id: string; name: string; domain: string | null; sector: string | null; size: number | null; city: string | null; country: string | null; type: string; owner_name: string | null; contacts_count: number; open_deals: number; tags: string[]; last_activity_at: string | null; created_at: string; custom: Rec; revenue: number | null }
@@ -22,26 +23,30 @@ export function CompaniesPage() {
   const { customFields, can } = useApp();
   const toast = useToast();
   const confirm = useConfirm();
+  const patch = (c: Co, body: Record<string, unknown>) => api.patch(`companies/${c.id}`, body).then(() => undefined);
+  const editable = can("company", "update");
   const cols: Column<Co>[] = [
-    { key: "name", label: "Empresa", className: "nowrap", render: (c) => <div><Link to={`/empresas/${c.id}`} className="bold" onClick={(e) => e.stopPropagation()}>{c.name}</Link>{c.domain && <div className="xs muted">{c.domain}</div>}</div> },
-    { key: "type", label: "Tipo", sortable: true, render: (c) => <span className={`badge ${c.type === "customer" ? "ok" : ""}`}>{COMPANY_TYPES[c.type]}</span> },
-    { key: "sector", label: "Sector", sortable: true },
-    { key: "size", label: "Empleados", sortable: true, className: "r", render: (c) => (c.size ? fmtNum(c.size) : "") },
-    { key: "revenue", label: "Facturación", sortable: true, className: "r", default: false, render: (c) => (c.revenue ? fmtMoney(c.revenue) : "") },
-    { key: "city", label: "Ciudad", sortable: true },
-    { key: "country", label: "País", sortable: true, default: false },
-    { key: "contacts_count", label: "Contactos", className: "r" },
-    { key: "open_deals", label: "Negocios abiertos", className: "r" },
-    { key: "owner_name", label: "Propietario" },
-    { key: "tags", label: "Etiquetas", default: false, render: (c) => <span className="row wrap" style={{ gap: 3 }}>{(c.tags ?? []).map((t) => <span key={t} className="tag">{t}</span>)}</span> },
-    { key: "last_activity_at", label: "Última actividad", sortable: true, render: (c) => <span className="muted">{relTime(c.last_activity_at) || "nunca"}</span> },
-    { key: "created_at", label: "Creada", sortable: true, default: false, render: (c) => fmtDate(c.created_at) },
-    ...customFields.filter((f) => f.object === "company").map<Column<Co>>((f) => ({ key: `custom.${f.key}`, label: f.label, sortable: true, default: false, render: (c) => String(c.custom?.[f.key] ?? "") })),
+    { key: "name", label: "Empresa", type: "name", sub: (c) => c.domain, render: (c) => <Link to={`/empresas/${c.id}`} onClick={(e) => e.stopPropagation()}>{c.name}</Link> },
+    { key: "type", label: "Tipo", sortable: true, type: "status", options: COMPANY_TYPE_OPTS, onEdit: editable ? (c, v) => patch(c, { type: v }) : undefined },
+    { key: "owner_name", label: "Propietario", type: "person", onEdit: editable ? (c, v) => patch(c, { owner_id: v }) : undefined },
+    { key: "sector", label: "Sector", sortable: true, className: "l", onEdit: editable ? (c, v) => patch(c, { sector: v }) : undefined },
+    { key: "size", label: "Empleados", sortable: true, type: "number", onEdit: editable ? (c, v) => patch(c, { size: v }) : undefined },
+    { key: "revenue", label: "Facturación", sortable: true, type: "money", default: false, onEdit: editable ? (c, v) => patch(c, { revenue: v }) : undefined },
+    { key: "city", label: "Ciudad", sortable: true, className: "l", onEdit: editable ? (c, v) => patch(c, { city: v }) : undefined },
+    { key: "country", label: "País", sortable: true, className: "l", default: false },
+    { key: "contacts_count", label: "Contactos", type: "number" },
+    { key: "open_deals", label: "Negocios abiertos", type: "number" },
+    { key: "tags", label: "Etiquetas", type: "tags", default: false },
+    { key: "last_activity_at", label: "Última actividad", sortable: true, className: "c", render: (c) => <span className="muted">{relTime(c.last_activity_at) || "nunca"}</span> },
+    { key: "created_at", label: "Creada", sortable: true, type: "date", default: false, render: (c) => fmtDate(c.created_at) },
+    ...customFields.filter((f) => f.object === "company").map<Column<Co>>((f) => ({ key: `custom.${f.key}`, label: f.label, sortable: true, default: false, className: "l", render: (c) => String(c.custom?.[f.key] ?? "") })),
   ];
+  const groupBy = { get: (c: Co) => c.type, groups: Object.entries(COMPANY_TYPE_OPTS).map(([key, o]) => ({ key, label: o.label + "s", color: o.color })) };
   return (
     <div>
-      <div className="page-head"><div><h1>Empresas</h1><p className="sub">Cuentas: prospectos, clientes, partners y proveedores.</p></div><div className="row"><Link to="/ajustes/importar?object=company" className="btn"><Upload />Importar</Link>{can("company", "create") && <button className="btn primary" onClick={() => setCreating(true)}><Plus />Nueva empresa</button>}</div></div>
-      <DataTable<Co> object="company" endpoint="companies" columns={cols} onRowClick={(c) => nav(`/empresas/${c.id}`)} exportUrl="companies/export" emptyText="No hay empresas"
+      <div className="page-head"><div><h1>Empresas</h1><p className="sub">Cuentas: prospectos, clientes, partners y proveedores.</p></div><div className="row"><Link to="/ajustes/importar?object=company" className="btn ghost"><Upload />Importar</Link></div></div>
+      <DataTable<Co> object="company" endpoint="companies" columns={cols} groupBy={groupBy} onRowClick={(c) => nav(`/empresas/${c.id}`)} exportUrl="companies/export" emptyText="No hay empresas" onNew={can("company", "create") ? () => setCreating(true) : undefined} newLabel="Nueva empresa"
+        onDelete={can("company", "delete") ? async (ids) => { if (await confirm({ title: `¿Borrar ${ids.length === 1 ? "esta empresa" : ids.length + " empresas"}?`, danger: true, confirmText: "Borrar" })) { await api.post("companies/bulk", { ids, action: "delete" }); toast("Borrado", "ok"); nav("/empresas", { replace: true }); } } : undefined}
         bulkActions={(ids, clear) => <button className="btn sm danger" onClick={async () => { if (await confirm({ title: `¿Borrar ${ids.length} empresas?`, danger: true, confirmText: "Borrar" })) { await api.post("companies/bulk", { ids, action: "delete" }); toast("Borradas", "ok"); clear(); } }}>Borrar</button>} />
       {creating && <CompanyForm onClose={() => setCreating(false)} onSaved={(c) => nav(`/empresas/${c.id}`)} />}
     </div>

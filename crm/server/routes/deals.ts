@@ -13,7 +13,7 @@ import { parseJson } from "../db.js";
 
 export function dealRoutes() {
   const r = Router();
-  r.get("/", h(async (req) => listDeals(req.ctx, parse(listQuery, req.query))));
+  r.get("/", h(async (req) => listDeals(req.ctx, parse(listQuery, req.query), typeof req.query.pipeline_id === "string" && req.query.pipeline_id ? req.query.pipeline_id : undefined)));
   r.get("/board/:pipelineId", h(async (req) => board(req.ctx, param(req, "pipelineId"), { filters: req.query.filters, owner_id: typeof req.query.owner_id === "string" ? req.query.owner_id : undefined, q: typeof req.query.q === "string" ? req.query.q : undefined })));
   r.get("/forecast", h(async (req) => ({ months: forecast(req.ctx, typeof req.query.pipeline_id === "string" ? req.query.pipeline_id : undefined) })));
   r.get("/loss-reasons", h(async () => ({ items: LOSS_REASONS })));

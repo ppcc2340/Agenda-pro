@@ -47,9 +47,10 @@ export function getDeal(ctx: Ctx, did: string): Row {
   return d;
 }
 
-export function listDeals(ctx: Ctx, q: ListQuery) {
+export function listDeals(ctx: Ctx, q: ListQuery, pipelineId?: string) {
   assert(ctx, "deal", "read");
   return listRecords<Row>(ctx, "deal", q, {
+    where: pipelineId ? "t.pipeline_id = ?" : undefined, params: pipelineId ? [pipelineId] : undefined,
     select: "(SELECT name FROM companies WHERE id=t.company_id) AS company_name, (SELECT name FROM users WHERE id=t.owner_id) AS owner_name, (SELECT name FROM stages WHERE id=t.stage_id) AS stage_name, (SELECT color FROM stages WHERE id=t.stage_id) AS stage_color, (SELECT name FROM pipelines WHERE id=t.pipeline_id) AS pipeline_name, ROUND(t.amount*t.probability/100.0,2) AS weighted_amount",
   });
 }

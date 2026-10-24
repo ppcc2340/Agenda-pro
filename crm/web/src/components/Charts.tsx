@@ -1,7 +1,7 @@
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, LineChart, Line, PieChart, Pie, Cell, Legend } from "recharts";
 import { fmtMoney, fmtNum } from "../lib/format";
 
-export const PALETTE = ["#0E6B74", "#3A6EDB", "#B07414", "#B0407E", "#2F8A5C", "#BF3A4A", "#74869A", "#5CC9CF"];
+export const PALETTE = ["#0073ea", "#a25ddc", "#00c875", "#fdab3d", "#e2445c", "#579bfc", "#784bd1", "#66ccff"];
 const axis = { fontSize: 11, fill: "var(--ink3)" };
 
 export function Bars({ data, x, bars, money, height = 240, stacked }: { data: Record<string, unknown>[]; x: string; bars: { key: string; label: string; color?: string }[]; money?: boolean; height?: number; stacked?: boolean }) {

@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
-import { Plus, Send } from "lucide-react";
+import { Send } from "lucide-react";
 import { api } from "../api";
 import { useApp } from "../lib/app";
 import { DataTable, type Column } from "../components/DataTable";
@@ -8,6 +8,7 @@ import { Timeline } from "../components/Timeline";
 import { TaskRow, TaskForm, type Task } from "../components/Tasks";
 import { Modal, Field, Picker, Spinner, useToast, errorMessage, Tabs } from "../components/ui";
 import { TICKET_STATUS, PRIORITY, fmtDateTime, relTime, isOverdue, fmtDate } from "../lib/format";
+import { TICKET_STATUS_OPTS, PRIORITY_OPTS } from "../lib/colors";
 
 interface T { id: string; number: number; subject: string; status: string; priority: string; category: string | null; channel: string; assignee_name: string | null; contact_name: string | null; company_name: string | null; sla_due_at: string | null; first_response_at: string | null; created_at: string; csat: number | null }
 
@@ -16,22 +17,24 @@ export function TicketsPage() {
   const [creating, setCreating] = useState(false);
   const [refresh, setRefresh] = useState(0);
   const { can } = useApp();
+  const patch = (t: T, body: Record<string, unknown>) => api.put(`tickets/${t.id}`, body).then(() => undefined);
+  const editable = can("ticket", "update");
   const cols: Column<T>[] = [
-    { key: "number", label: "#", className: "r", width: 60, render: (t) => <span className="num">#{t.number}</span> },
-    { key: "subject", label: "Asunto", render: (t) => <Link to={`/tickets/${t.id}`} className="bold" onClick={(e) => e.stopPropagation()}>{t.subject}</Link> },
-    { key: "status", label: "Estado", sortable: true, render: (t) => <span className={`badge ${t.status === "resolved" || t.status === "closed" ? "ok" : t.status === "new" ? "sea" : t.status === "pending" ? "warn" : "info"}`}>{TICKET_STATUS[t.status]}</span> },
-    { key: "priority", label: "Prioridad", sortable: true, render: (t) => <span className={`badge ${t.priority === "urgent" ? "risk" : t.priority === "high" ? "warn" : ""}`}>{PRIORITY[t.priority]}</span> },
-    { key: "contact_name", label: "Contacto" },
-    { key: "company_name", label: "Empresa", default: false },
-    { key: "category", label: "Categoría", sortable: true },
-    { key: "assignee_name", label: "Asignado" },
-    { key: "sla_due_at", label: "SLA", sortable: true, render: (t) => (["resolved", "closed"].includes(t.status) || t.first_response_at ? <span className="muted">{t.first_response_at ? "respondido" : "—"}</span> : <span style={{ color: isOverdue(t.sla_due_at) ? "var(--risk)" : "var(--ink2)" }}>{relTime(t.sla_due_at)}</span>) },
-    { key: "created_at", label: "Creado", sortable: true, render: (t) => fmtDate(t.created_at) },
+    { key: "subject", label: "Ticket", type: "name", sub: (t) => <span className="num">#{t.number}{t.contact_name ? ` · ${t.contact_name}` : ""}</span>, render: (t) => <Link to={`/tickets/${t.id}`} onClick={(e) => e.stopPropagation()}>{t.subject}</Link> },
+    { key: "status", label: "Estado", sortable: true, type: "status", options: TICKET_STATUS_OPTS, onEdit: editable ? (t, v) => patch(t, { status: v }) : undefined },
+    { key: "priority", label: "Prioridad", sortable: true, type: "status", options: PRIORITY_OPTS, onEdit: editable ? (t, v) => patch(t, { priority: v }) : undefined },
+    { key: "assignee_name", label: "Asignado", type: "person", onEdit: editable ? (t, v) => patch(t, { assignee_id: v }) : undefined },
+    { key: "sla_due_at", label: "SLA", sortable: true, className: "c", render: (t) => (["resolved", "closed"].includes(t.status) || t.first_response_at ? <span className="muted">{t.first_response_at ? "respondido" : "—"}</span> : <span><i className={`ddot ${isOverdue(t.sla_due_at) ? "late" : "soon"}`} />{relTime(t.sla_due_at)}</span>) },
+    { key: "company_name", label: "Empresa", className: "l", default: false },
+    { key: "category", label: "Categoría", sortable: true, className: "l", onEdit: editable ? (t, v) => patch(t, { category: v }) : undefined },
+    { key: "channel", label: "Canal", className: "c", default: false },
+    { key: "created_at", label: "Creado", sortable: true, type: "date", render: (t) => fmtDate(t.created_at) },
   ];
+  const groupBy = { get: (t: T) => (["resolved", "closed"].includes(t.status) ? "done" : t.status === "pending" ? "pending" : "open"), groups: [{ key: "open", label: "Abiertos", color: "var(--c-orange)" }, { key: "pending", label: "Pendientes del cliente", color: "var(--c-purple)" }, { key: "done", label: "Resueltos", color: "var(--c-green)" }] };
   return (
     <div>
-      <div className="page-head"><div><h1>Tickets</h1><p className="sub">Soporte y atención al cliente con SLA por prioridad.</p></div>{can("ticket", "create") && <button className="btn primary" onClick={() => setCreating(true)}><Plus />Nuevo ticket</button>}</div>
-      <DataTable<T> object="ticket" endpoint="tickets" columns={cols} onRowClick={(t) => nav(`/tickets/${t.id}`)} refreshKey={refresh} emptyText="No hay tickets" defaultSort={{ field: "created_at", dir: "desc" }} />
+      <div className="page-head"><div><h1>Tickets</h1><p className="sub">Soporte y atención al cliente con SLA por prioridad.</p></div></div>
+      <DataTable<T> object="ticket" endpoint="tickets" columns={cols} groupBy={groupBy} onRowClick={(t) => nav(`/tickets/${t.id}`)} refreshKey={refresh} emptyText="No hay tickets" defaultSort={{ field: "created_at", dir: "desc" }} onNew={can("ticket", "create") ? () => setCreating(true) : undefined} newLabel="Nuevo ticket" />
       {creating && <TicketForm onClose={() => setCreating(false)} onSaved={(t) => { setRefresh((r) => r + 1); nav(`/tickets/${t.id}`); }} />}
     </div>
   );

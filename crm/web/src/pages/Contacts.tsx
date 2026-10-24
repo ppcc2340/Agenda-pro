@@ -1,14 +1,15 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
-import { Plus, Upload, Copy } from "lucide-react";
+import { Upload, Copy } from "lucide-react";
 import { DataTable, type Column } from "../components/DataTable";
 import { ContactForm } from "../components/RecordForms";
 import { ScoreBar, useToast, useConfirm, Modal, Field } from "../components/ui";
 import { api } from "../api";
 import { useApp } from "../lib/app";
-import { LIFECYCLE, LEAD_STATUS, SOURCES, relTime, fmtDate } from "../lib/format";
+import { LIFECYCLE, SOURCES, relTime, fmtDate } from "../lib/format";
+import { LIFECYCLE_OPTS, LEAD_STATUS_OPTS } from "../lib/colors";
 
-interface C { id: string; first_name: string; last_name: string; email: string | null; phone: string | null; job_title: string | null; company_id: string | null; company_name: string | null; lifecycle_stage: string; lead_status: string; source: string | null; owner_name: string | null; score: number; tags: string[]; last_activity_at: string | null; created_at: string; city: string | null; open_deals: number; custom: Record<string, unknown> }
+interface C { id: string; first_name: string; last_name: string; email: string | null; phone: string | null; job_title: string | null; company_id: string | null; company_name: string | null; lifecycle_stage: string; lead_status: string; source: string | null; owner_id: string | null; owner_name: string | null; score: number; tags: string[]; last_activity_at: string | null; created_at: string; city: string | null; open_deals: number; custom: Record<string, unknown> }
 
 export function ContactsPage() {
   const nav = useNavigate();
@@ -22,28 +23,32 @@ export function ContactsPage() {
   const [bulkOwner, setBulkOwner] = useState("");
   const [bulkStage, setBulkStage] = useState("");
   const [bulkTag, setBulkTag] = useState("");
+  const patch = (c: C, body: Record<string, unknown>) => api.patch(`contacts/${c.id}`, body).then(() => undefined);
+  const editable = can("contact", "update");
   const cols: Column<C>[] = [
-    { key: "name", label: "Nombre", sortable: false, className: "nowrap", render: (c) => <div><Link to={`/contactos/${c.id}`} className="bold" onClick={(e) => e.stopPropagation()}>{c.first_name} {c.last_name}</Link>{c.job_title && <div className="xs muted">{c.job_title}</div>}</div> },
-    { key: "company_name", label: "Empresa", className: "nowrap", render: (c) => c.company_id ? <Link to={`/empresas/${c.company_id}`} onClick={(e) => e.stopPropagation()}>{c.company_name}</Link> : <span className="muted">—</span> },
-    { key: "email", label: "Email", sortable: true, render: (c) => c.email ? <a href={`mailto:${c.email}`} onClick={(e) => e.stopPropagation()}>{c.email}</a> : <span className="muted">—</span> },
-    { key: "phone", label: "Teléfono", render: (c) => c.phone ? <a href={`tel:${c.phone}`} onClick={(e) => e.stopPropagation()}>{c.phone}</a> : "" },
-    { key: "lifecycle_stage", label: "Etapa", sortable: true, render: (c) => <span className={`badge ${c.lifecycle_stage === "customer" ? "ok" : c.lifecycle_stage === "sql" || c.lifecycle_stage === "opportunity" ? "sea" : c.lifecycle_stage === "lost" ? "risk" : ""}`}>{LIFECYCLE[c.lifecycle_stage]}</span> },
-    { key: "lead_status", label: "Estado lead", sortable: true, render: (c) => LEAD_STATUS[c.lead_status], default: false },
-    { key: "score", label: "Score", sortable: true, render: (c) => <ScoreBar value={c.score} /> },
-    { key: "source", label: "Origen", sortable: true, render: (c) => SOURCES[c.source ?? ""] ?? c.source ?? "", default: false },
-    { key: "owner_name", label: "Propietario" },
-    { key: "open_deals", label: "Negocios", className: "r", default: false },
-    { key: "tags", label: "Etiquetas", render: (c) => <span className="row wrap" style={{ gap: 3 }}>{(c.tags ?? []).map((t) => <span key={t} className="tag">{t}</span>)}</span>, default: false },
-    { key: "city", label: "Ciudad", sortable: true, default: false },
-    { key: "last_activity_at", label: "Última actividad", sortable: true, render: (c) => <span className="muted" title={fmtDate(c.last_activity_at)}>{relTime(c.last_activity_at) || "nunca"}</span> },
-    { key: "created_at", label: "Creado", sortable: true, render: (c) => fmtDate(c.created_at), default: false },
-    ...customFields.filter((f) => f.object === "contact").map<Column<C>>((f) => ({ key: `custom.${f.key}`, label: f.label, sortable: true, default: false, render: (c) => String(c.custom?.[f.key] ?? "") })),
+    { key: "name", label: "Contacto", type: "name", value: (c) => `${c.first_name} ${c.last_name}`, sub: (c) => c.job_title, render: (c) => <Link to={`/contactos/${c.id}`} onClick={(e) => e.stopPropagation()}>{c.first_name} {c.last_name}</Link> },
+    { key: "company_name", label: "Empresa", className: "l", render: (c) => c.company_id ? <Link to={`/empresas/${c.company_id}`} onClick={(e) => e.stopPropagation()}>{c.company_name}</Link> : <span className="muted">—</span> },
+    { key: "lifecycle_stage", label: "Etapa", sortable: true, type: "status", options: LIFECYCLE_OPTS, onEdit: editable ? (c, v) => patch(c, { lifecycle_stage: v }) : undefined },
+    { key: "lead_status", label: "Estado lead", sortable: true, type: "status", options: LEAD_STATUS_OPTS, onEdit: editable ? (c, v) => patch(c, { lead_status: v }) : undefined },
+    { key: "owner_name", label: "Propietario", type: "person", onEdit: editable ? (c, v) => patch(c, { owner_id: v }) : undefined },
+    { key: "email", label: "Email", sortable: true, className: "l", onEdit: editable ? (c, v) => patch(c, { email: v }) : undefined, render: (c) => c.email ? <a href={`mailto:${c.email}`} onClick={(e) => e.stopPropagation()}>{c.email}</a> : <span className="muted">—</span> },
+    { key: "phone", label: "Teléfono", className: "l", onEdit: editable ? (c, v) => patch(c, { phone: v }) : undefined },
+    { key: "score", label: "Score", sortable: true, type: "number", agg: "avg", width: 120, render: (c) => <ScoreBar value={c.score} /> },
+    { key: "source", label: "Origen", sortable: true, className: "c", render: (c) => SOURCES[c.source ?? ""] ?? c.source ?? "", default: false },
+    { key: "open_deals", label: "Negocios", type: "number", default: false },
+    { key: "tags", label: "Etiquetas", type: "tags", default: false },
+    { key: "city", label: "Ciudad", sortable: true, className: "l", default: false, onEdit: editable ? (c, v) => patch(c, { city: v }) : undefined },
+    { key: "last_activity_at", label: "Última actividad", sortable: true, className: "c", render: (c) => <span className="muted" title={fmtDate(c.last_activity_at)}>{relTime(c.last_activity_at) || "nunca"}</span> },
+    { key: "created_at", label: "Creado", sortable: true, type: "date", render: (c) => fmtDate(c.created_at), default: false },
+    ...customFields.filter((f) => f.object === "contact").map<Column<C>>((f) => ({ key: `custom.${f.key}`, label: f.label, sortable: true, default: false, className: "l", render: (c) => String(c.custom?.[f.key] ?? "") })),
   ];
+  const groupBy = { get: (c: C) => (["customer", "evangelist"].includes(c.lifecycle_stage) ? "customer" : c.lifecycle_stage === "lost" ? "lost" : ["sql", "opportunity"].includes(c.lifecycle_stage) ? "qualified" : "lead"), groups: [{ key: "lead", label: "Leads", color: "var(--c-blue)" }, { key: "qualified", label: "Cualificados", color: "var(--c-purple)" }, { key: "customer", label: "Clientes", color: "var(--c-green)" }, { key: "lost", label: "Perdidos", color: "var(--c-red)" }] };
   const runBulk = async (body: Record<string, unknown>) => { if (!bulk) return; const r = await api.post<{ affected: number }>("contacts/bulk", { ids: bulk.ids, ...body }); toast(`${r.affected} contactos actualizados`, "ok"); bulk.clear(); setBulk(null); };
   return (
     <div>
-      <div className="page-head"><div><h1>Contactos</h1><p className="sub">Personas: leads, clientes y todo lo que sabes de ellas.</p></div><div className="row"><Link to="/contactos/duplicados" className="btn"><Copy />Duplicados</Link><Link to="/ajustes/importar?object=contact" className="btn"><Upload />Importar</Link>{can("contact", "create") && <button className="btn primary" onClick={() => setCreating(true)}><Plus />Nuevo contacto</button>}</div></div>
-      <DataTable<C> object="contact" endpoint="contacts" columns={cols} onRowClick={(c) => nav(`/contactos/${c.id}`)} exportUrl="contacts/export" refreshKey={refresh} emptyText="No hay contactos"
+      <div className="page-head"><div><h1>Contactos</h1><p className="sub">Personas: leads, clientes y todo lo que sabes de ellas.</p></div><div className="row"><Link to="/contactos/duplicados" className="btn ghost"><Copy />Duplicados</Link><Link to="/ajustes/importar?object=contact" className="btn ghost"><Upload />Importar</Link></div></div>
+      <DataTable<C> object="contact" endpoint="contacts" columns={cols} groupBy={groupBy} onRowClick={(c) => nav(`/contactos/${c.id}`)} exportUrl="contacts/export" refreshKey={refresh} emptyText="No hay contactos" onNew={can("contact", "create") ? () => setCreating(true) : undefined} newLabel="Nuevo contacto"
+        onDelete={can("contact", "delete") ? async (ids) => { if (await confirm({ title: `¿Borrar ${ids.length === 1 ? "este contacto" : ids.length + " contactos"}?`, text: "Irán a la papelera 30 días.", danger: true, confirmText: "Borrar" })) { await api.post("contacts/bulk", { ids, action: "delete" }); toast("Borrado", "ok"); setRefresh((r) => r + 1); } } : undefined}
         bulkActions={(ids, clear) => (<>
           <button className="btn sm" onClick={() => setBulk({ ids, clear })}>Editar en masa</button>
           <button className="btn sm danger" onClick={async () => { if (await confirm({ title: `¿Borrar ${ids.length} contactos?`, text: "Irán a la papelera 30 días.", danger: true, confirmText: "Borrar" })) { await api.post("contacts/bulk", { ids, action: "delete" }); toast("Borrados", "ok"); clear(); } }}>Borrar</button>

@@ -7,11 +7,12 @@ import { Kanban, type BoardStage } from "../components/Kanban";
 import { DataTable, type Column } from "../components/DataTable";
 import { DealForm } from "../components/RecordForms";
 import { Seg, Spinner, useToast, errorMessage, Modal } from "../components/ui";
-import { fmtMoney, fmtDate, relTime, DEAL_STATUS } from "../lib/format";
+import { fmtMoney, fmtDate, relTime } from "../lib/format";
+import { DEAL_STATUS_OPTS } from "../lib/colors";
 import { Bars } from "../components/Charts";
 import { CloseDealDialog } from "./DealDetail";
 
-interface D { id: string; name: string; company_id: string | null; company_name: string | null; pipeline_name: string; stage_name: string; stage_color: string; status: string; amount: number; currency: string; probability: number; weighted_amount: number; expected_close_date: string | null; owner_name: string | null; closed_at: string | null; loss_reason: string | null; last_activity_at: string | null; created_at: string; custom: Record<string, unknown>; tags: string[] }
+interface D { id: string; name: string; company_id: string | null; company_name: string | null; pipeline_id: string; pipeline_name: string; stage_id: string; stage_name: string; stage_color: string; status: string; amount: number; currency: string; probability: number; weighted_amount: number; expected_close_date: string | null; owner_name: string | null; closed_at: string | null; loss_reason: string | null; last_activity_at: string | null; created_at: string; custom: Record<string, unknown>; tags: string[] }
 
 export function DealsPage() {
   const nav = useNavigate();
@@ -42,22 +43,27 @@ export function DealsPage() {
   };
   const openStages = board?.stages.filter((s) => s.kind === "open") ?? [];
   const totals = openStages.reduce((a, s) => ({ count: a.count + s.count, amount: a.amount + s.amount, weighted: a.weighted + s.weighted }), { count: 0, amount: 0, weighted: 0 });
+  const patch = (d: D, body: Record<string, unknown>) => api.patch(`deals/${d.id}`, body).then(() => undefined);
+  const editable = can("deal", "update");
+  const pipeline = pipelines.find((p) => p.id === pid);
+  const stageOpts = Object.fromEntries((pipeline?.stages ?? []).map((s) => [s.id, { label: s.name, color: s.color }]));
   const cols: Column<D>[] = [
-    { key: "name", label: "Negocio", className: "nowrap", render: (d) => <Link to={`/negocios/${d.id}`} className="bold" onClick={(e) => e.stopPropagation()}>{d.name}</Link> },
-    { key: "company_name", label: "Empresa", render: (d) => d.company_id ? <Link to={`/empresas/${d.company_id}`} onClick={(e) => e.stopPropagation()}>{d.company_name}</Link> : "" },
-    { key: "stage_id", label: "Etapa", sortable: true, render: (d) => <span className="badge dot" style={{ color: d.stage_color }}>{d.stage_name}</span> },
-    { key: "status", label: "Estado", sortable: true, render: (d) => <span className={`badge ${d.status === "won" ? "ok" : d.status === "lost" ? "risk" : "sea"}`}>{DEAL_STATUS[d.status]}</span> },
-    { key: "amount", label: "Importe", sortable: true, className: "r", render: (d) => <span className="num">{fmtMoney(d.amount, d.currency)}</span> },
-    { key: "probability", label: "Prob.", sortable: true, className: "r", render: (d) => `${d.probability}%` },
-    { key: "weighted_amount", label: "Ponderado", className: "r", default: false, render: (d) => <span className="num">{fmtMoney(d.weighted_amount, d.currency)}</span> },
-    { key: "expected_close_date", label: "Cierre previsto", sortable: true, render: (d) => fmtDate(d.expected_close_date) },
-    { key: "owner_name", label: "Propietario" },
-    { key: "pipeline_id", label: "Pipeline", default: false, render: (d) => d.pipeline_name },
-    { key: "last_activity_at", label: "Últ. actividad", sortable: true, render: (d) => <span className="muted">{relTime(d.last_activity_at) || "nunca"}</span> },
-    { key: "created_at", label: "Creado", sortable: true, default: false, render: (d) => fmtDate(d.created_at) },
-    { key: "closed_at", label: "Cerrado", sortable: true, default: false, render: (d) => fmtDate(d.closed_at) },
-    ...customFields.filter((f) => f.object === "deal").map<Column<D>>((f) => ({ key: `custom.${f.key}`, label: f.label, sortable: true, default: false, render: (d) => String(d.custom?.[f.key] ?? "") })),
+    { key: "name", label: "Negocio", type: "name", sub: (d) => (d.company_name && !d.name.includes(d.company_name) ? d.company_name : null), render: (d) => <Link to={`/negocios/${d.id}`} onClick={(e) => e.stopPropagation()}>{d.name}</Link> },
+    { key: "stage_id", label: "Etapa", sortable: true, type: "status", options: stageOpts, value: (d) => d.stage_id, onEdit: editable ? async (d, v) => { const st = pipeline?.stages.find((s) => s.id === v); if (st && st.kind !== "open") { setClosing({ id: d.id, name: d.name, stage: st.kind }); return; } await api.post(`deals/${d.id}/stage`, { stage_id: v }); } : undefined },
+    { key: "status", label: "Estado", sortable: true, type: "status", options: DEAL_STATUS_OPTS },
+    { key: "owner_name", label: "Propietario", type: "person", onEdit: editable ? (d, v) => patch(d, { owner_id: v }) : undefined },
+    { key: "amount", label: "Importe", sortable: true, type: "money", onEdit: editable ? (d, v) => patch(d, { amount: v }) : undefined, render: (d) => <span className="num">{fmtMoney(d.amount, d.currency)}</span> },
+    { key: "probability", label: "Prob.", sortable: true, type: "number", agg: "avg", width: 90, render: (d) => `${d.probability}%`, onEdit: editable ? (d, v) => patch(d, { probability: Math.max(0, Math.min(100, Number(v))) }) : undefined },
+    { key: "weighted_amount", label: "Ponderado", type: "money", default: false, render: (d) => <span className="num">{fmtMoney(d.weighted_amount, d.currency)}</span> },
+    { key: "expected_close_date", label: "Cierre previsto", sortable: true, type: "date", onEdit: editable ? (d, v) => patch(d, { expected_close_date: v }) : undefined },
+    { key: "company_name", label: "Empresa", className: "l", default: false, render: (d) => d.company_id ? <Link to={`/empresas/${d.company_id}`} onClick={(e) => e.stopPropagation()}>{d.company_name}</Link> : "" },
+    { key: "pipeline_id", label: "Pipeline", className: "l", default: false, render: (d) => d.pipeline_name },
+    { key: "last_activity_at", label: "Últ. actividad", sortable: true, className: "c", render: (d) => <span className="muted">{relTime(d.last_activity_at) || "nunca"}</span> },
+    { key: "created_at", label: "Creado", sortable: true, type: "date", default: false, render: (d) => fmtDate(d.created_at) },
+    { key: "closed_at", label: "Cerrado", sortable: true, type: "date", default: false, render: (d) => fmtDate(d.closed_at) },
+    ...customFields.filter((f) => f.object === "deal").map<Column<D>>((f) => ({ key: `custom.${f.key}`, label: f.label, sortable: true, default: false, className: "l", render: (d) => String(d.custom?.[f.key] ?? "") })),
   ];
+  const groupBy = { get: (d: D) => (d.status === "open" ? d.stage_id : d.status), groups: [...(pipeline?.stages ?? []).filter((s) => s.kind === "open").map((s) => ({ key: s.id, label: s.name, color: s.color })), { key: "won", label: "Ganados", color: "var(--c-green)" }, { key: "lost", label: "Perdidos", color: "var(--c-red)" }], other: "Otros pipelines" };
   return (
     <div>
       <div className="page-head">
@@ -65,7 +71,7 @@ export function DealsPage() {
         <div className="row wrap">
           <Seg items={[{ key: "board", label: "Kanban" }, { key: "table", label: "Tabla" }, { key: "forecast", label: "Previsión" }]} value={view} onChange={setView} />
           {pipelines.length > 1 && <select className="input sm" style={{ width: "auto" }} value={pid} onChange={(e) => setPipelineId(e.target.value)}>{pipelines.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select>}
-          <Link to="/ajustes/importar?object=deal" className="btn"><Upload /></Link>
+          <Link to="/ajustes/importar?object=deal" className="btn ghost" title="Importar"><Upload /></Link>
           {can("deal", "create") && <button className="btn primary" onClick={() => setCreating(true)}><Plus />Nuevo negocio</button>}
         </div>
       </div>
@@ -73,7 +79,7 @@ export function DealsPage() {
         <div className="filterbar"><input className="input sm" style={{ maxWidth: 240 }} placeholder="Buscar negocio o empresa…" value={q} onChange={(e) => setQ(e.target.value)} />{(isAdmin || me.role.visibility !== "own") && <select className="input sm" style={{ width: "auto" }} value={owner} onChange={(e) => setOwner(e.target.value)}><option value="">Todos los propietarios</option>{users.filter((u) => u.active).map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}</select>}<span className="muted small right hide-mobile">Arrastra para cambiar de etapa · <span className="light green" style={{ display: "inline-block" }} /> actividad programada · <span className="light yellow" style={{ display: "inline-block" }} /> sin actividad · <span className="light red" style={{ display: "inline-block" }} /> tarea vencida</span></div>
         {!board ? <Spinner /> : <Kanban stages={board.stages} onMove={move} onOpen={(d) => nav(`/negocios/${d.id}`)} />}
       </>)}
-      {view === "table" && <DataTable<D> object="deal" endpoint="deals" columns={cols} onRowClick={(d) => nav(`/negocios/${d.id}`)} exportUrl="deals/export" refreshKey={refresh} emptyText="No hay negocios" defaultSort={{ field: "expected_close_date", dir: "asc" }} />}
+      {view === "table" && <DataTable<D> object="deal" endpoint="deals" columns={cols} groupBy={groupBy} extraParams={{ pipeline_id: pid }} onRowClick={(d) => nav(`/negocios/${d.id}`)} exportUrl="deals/export" refreshKey={refresh} emptyText="No hay negocios" defaultSort={{ field: "expected_close_date", dir: "asc" }} />}
       {view === "forecast" && <Forecast pipelineId={pid} />}
       {creating && <DealForm defaults={{ pipeline_id: pid }} onClose={() => setCreating(false)} onSaved={(d) => nav(`/negocios/${d.id}`)} />}
       {closing && <CloseDealDialog dealId={closing.id} dealName={closing.name} status={closing.stage as "won" | "lost"} onClose={() => setClosing(null)} onDone={() => { setClosing(null); setRefresh((r) => r + 1); loadBoard(); }} />}
@@ -89,7 +95,7 @@ function Forecast({ pipelineId }: { pipelineId: string }) {
   const label = (m: string) => (m === "sin fecha" ? m : fmtDate(m + "-01", { month: "short", year: "numeric" }));
   return (
     <div>
-      <div className="card mb16"><h2 className="mb12">Previsión por mes de cierre</h2><Bars data={months.map((m) => ({ ...m, label: label(m.month) }))} x="label" bars={[{ key: "committed", label: "Comprometido (≥70%)", color: "#2A7B58" }, { key: "weighted", label: "Ponderado", color: "#0E6B74" }, { key: "amount", label: "Pipeline total", color: "#c9d6e0" }]} money /></div>
+      <div className="card mb16"><h2 className="mb12">Previsión por mes de cierre</h2><Bars data={months.map((m) => ({ ...m, label: label(m.month) }))} x="label" bars={[{ key: "committed", label: "Comprometido (≥70%)", color: "#00c875" }, { key: "weighted", label: "Ponderado", color: "#0073ea" }, { key: "amount", label: "Pipeline total", color: "#c5e0fb" }]} money /></div>
       <div className="card tight"><table className="table"><thead><tr><th>Mes</th><th className="r">Negocios</th><th className="r">Pipeline</th><th className="r">Ponderado</th><th className="r">Comprometido</th><th className="r">Mejor caso</th></tr></thead><tbody>
         {months.map((m) => (<><tr key={m.month} className="clickable" onClick={() => setOpen(open === m.month ? null : m.month)}><td className="bold">{label(m.month)}</td><td className="r num">{m.count}</td><td className="r num">{fmtMoney(m.amount)}</td><td className="r num">{fmtMoney(m.weighted)}</td><td className="r num">{fmtMoney(m.committed)}</td><td className="r num">{fmtMoney(m.best_case)}</td></tr>
           {open === m.month && m.deals.map((d) => <tr key={d.id}><td colSpan={2} style={{ paddingLeft: 28 }}><Link to={`/negocios/${d.id}`}>{d.name}</Link><div className="xs muted">{d.company_name} · {d.stage_name} · {fmtDate(d.expected_close_date)}</div></td><td className="r num">{fmtMoney(d.amount)}</td><td className="r num">{fmtMoney(d.weighted)} <span className="muted">({d.probability}%)</span></td><td colSpan={2} /></tr>)}</>))}

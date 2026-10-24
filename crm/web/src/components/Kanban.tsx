@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { DndContext, DragOverlay, PointerSensor, TouchSensor, useDraggable, useDroppable, useSensor, useSensors, type DragEndEvent, type DragStartEvent } from "@dnd-kit/core";
-import { Link } from "react-router-dom";
 import { Clock, AlertTriangle } from "lucide-react";
 import { fmtMoney, fmtDate, initials } from "../lib/format";
 
@@ -35,7 +34,7 @@ function Column({ stage, onOpen }: { stage: BoardStage; onOpen: (d: BoardDeal) =
   return (
     <div className={`kcol ${isOver ? "over" : ""}`} style={{ "--stage": stage.color } as React.CSSProperties}>
       <div className="kcol-head">
-        <div className="t"><span>{stage.name}</span><span className="muted num">{stage.count}</span></div>
+        <div className="t"><span className="ell">{stage.name}</span><span className="num">{stage.count}</span></div>
         <div className="m num">{fmtMoney(stage.amount)} · pond. {fmtMoney(stage.weighted)}</div>
       </div>
       <div className="kcol-body" ref={setNodeRef}>
@@ -53,12 +52,12 @@ function DraggableCard({ d, onOpen }: { d: BoardDeal; onOpen: (d: BoardDeal) => 
 
 function Card({ d, overlay }: { d: BoardDeal; overlay?: boolean }) {
   return (
-    <div className={`kcard ${d.stale ? "stale" : ""} ${d.status !== "open" ? "" : ""}`} style={overlay ? { width: 256 } : undefined}>
+    <div className={`kcard ${d.stale ? "stale" : ""}`} style={overlay ? { width: 256 } : undefined}>
+      {d.company_name && <div className="c ell" style={{ color: "var(--stage)" }}>{d.company_name}</div>}
       <div className="row between" style={{ alignItems: "flex-start" }}>
         <div className="n ell" title={d.name}>{d.name}</div>
         {d.status === "won" && <span className="badge ok">Ganado</span>}{d.status === "lost" && <span className="badge risk">Perdido</span>}
       </div>
-      {d.company_name && <div className="c ell"><Link to="#" onClick={(e) => e.preventDefault()}>{d.company_name}</Link></div>}
       <div className="f">
         <span className={`light ${d.light}`} title={d.light === "green" ? "Actividad programada" : d.light === "yellow" ? "Sin actividad programada" : "Tarea vencida"} />
         <strong className="num" style={{ color: "var(--ink)" }}>{fmtMoney(d.amount, d.currency)}</strong>
@@ -67,7 +66,7 @@ function Card({ d, overlay }: { d: BoardDeal; overlay?: boolean }) {
       </div>
       <div className="f" style={{ marginTop: 5 }}>
         {d.stale ? <span style={{ color: "var(--warn)" }} className="row" title={`Más de lo esperado en etapa`}><AlertTriangle size={12} /> {d.days_in_stage} d</span> : <span className="row"><Clock size={12} /> {d.days_in_stage} d</span>}
-        {d.owner_name && <span className="right avatar sm" title={d.owner_name} style={{ background: "var(--ink3)" }}>{initials(d.owner_name)}</span>}
+        {d.owner_name && <span className="right avatar sm" title={d.owner_name}>{initials(d.owner_name)}</span>}
       </div>
     </div>
   );
