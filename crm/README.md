@@ -62,6 +62,8 @@ Pendiente de operación (no de código): copia de seguridad diaria del archivo S
 
 `crm/demo/crm-tutorial.html` es una demo usable en un solo archivo (sin servidor, datos en el navegador) con un tutorial guiado de 27 pasos que resalta cada función en pantalla: tableros, edición en celda, columnas y etiquetas nuevas, agrupaciones, kanban con etapas editables, reglas «cuando… entonces…», fichas 360, tickets, presupuestos, informes, formularios y roles. Ábrelo con doble clic.
 
+La demo incluye también la pestaña **Contratos (CLM)** con el mismo principio: tablero por estado, solicitud guiada, plantillas y cláusulas, revisión contra playbook, aprobaciones, firma simulada con OTP y evidencias, obligaciones, hitos, pagos, enmiendas, renovaciones, terminación, informes y configuración; el tutorial tiene un capítulo «Contratos» con diez pasos.
+
 ## Tableros personalizables (estilo monday)
 
 Cada tablero (Contactos, Empresas, Negocios, Tickets) se adapta sin tocar código, y la configuración se comparte con todo el equipo:
