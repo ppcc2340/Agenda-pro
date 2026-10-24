@@ -58,6 +58,10 @@ Cubierta por los tests de `server/tests/crm.test.ts` y la interfaz: alta de cont
 
 Pendiente de operación (no de código): copia de seguridad diaria del archivo SQLite y prueba de restauración.
 
+## Demo con tutorial
+
+`crm/demo/crm-tutorial.html` es una demo usable en un solo archivo (sin servidor, datos en el navegador) con un tutorial guiado de 27 pasos que resalta cada función en pantalla: tableros, edición en celda, columnas y etiquetas nuevas, agrupaciones, kanban con etapas editables, reglas «cuando… entonces…», fichas 360, tickets, presupuestos, informes, formularios y roles. Ábrelo con doble clic.
+
 ## Tableros personalizables (estilo monday)
 
 Cada tablero (Contactos, Empresas, Negocios, Tickets) se adapta sin tocar código, y la configuración se comparte con todo el equipo:
