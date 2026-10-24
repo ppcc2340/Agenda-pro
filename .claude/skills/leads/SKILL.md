@@ -72,6 +72,15 @@ Tarda varios minutos; avisa antes. Al terminar di: cuántos negocios nuevos, cu�
 ## 5. Excel
 `python leads.py excel` → entrégale la ruta `leads/leads.xlsx` y di qué hoja mirar (Respondieron).
 
+## Otras peticiones del manual (leads/MANUAL.pdf)
+- "sube el límite diario a 60" → edita `correo.max_por_dia` en `leads/config.yaml`; advierte del riesgo de spam.
+- "marca a X como baja" → busca su id en `python leads.py estado`/`cola`/`respuestas --json` y ejecuta
+  `python leads.py registrar-respuesta <id> --baja --texto "pidió no recibir más correos"`.
+- "borra todos los leads / empecemos de nuevo" → pide confirmación explícita; luego borra `leads/leads.db`
+  (la configuración y las plantillas se conservan).
+- "manda el seguimiento a los que no respondieron" → aún no está automatizado: explícalo y ofrece
+  preparar los correos uno a uno con `previa --id N --plantilla seguimiento` y enviarlos con Gmail.
+
 ## "¿Cómo vamos?"
 `python leads.py` → resume en 3 líneas y propone el siguiente paso que indica.
 
