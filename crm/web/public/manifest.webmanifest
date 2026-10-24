@@ -1,0 +1,1 @@
+{ "name": "CRM interno", "short_name": "CRM", "start_url": "/", "display": "standalone", "background_color": "#F3F5F7", "theme_color": "#0F1E2E", "icons": [{ "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230E6B74'/%3E%3C/svg%3E", "sizes": "any", "type": "image/svg+xml" }] }
