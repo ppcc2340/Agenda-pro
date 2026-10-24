@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS leads (
   url_origen  TEXT,
   estado      TEXT DEFAULT 'nuevo',
   message_id  TEXT,
+  plantilla   TEXT,
   enviado_el  TEXT,
   respondio_el TEXT,
   respuesta   TEXT,
@@ -37,7 +38,14 @@ def conectar() -> sqlite3.Connection:
     con = sqlite3.connect(DB)
     con.row_factory = sqlite3.Row
     con.executescript(_SQL)
+    columnas = {f["name"] for f in con.execute("PRAGMA table_info(leads)")}
+    if "plantilla" not in columnas:  # bases creadas con versiones anteriores
+        con.execute("ALTER TABLE leads ADD COLUMN plantilla TEXT")
     return con
+
+
+def por_id(con: sqlite3.Connection, id_: int) -> sqlite3.Row | None:
+    return con.execute("SELECT * FROM leads WHERE id=?", (id_,)).fetchone()
 
 
 def ahora() -> str:
@@ -57,10 +65,10 @@ def guardar(con: sqlite3.Connection, lead: dict) -> bool:
         estado = "nuevo" if lead.get("email") else "sin_correo"
         con.execute(
             """INSERT INTO leads (nombre,rubro,ciudad,fuente,web,email,telefono,direccion,
-               instagram,url_origen,estado,creado_el) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""",
+               instagram,url_origen,estado,plantilla,creado_el) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (nombre, lead.get("rubro"), lead.get("ciudad"), lead.get("fuente"),
              lead.get("web"), lead.get("email"), lead.get("telefono"), lead.get("direccion"),
-             lead.get("instagram"), lead.get("url_origen"), estado, ahora()),
+             lead.get("instagram"), lead.get("url_origen"), estado, lead.get("plantilla"), ahora()),
         )
         con.commit()
         return True

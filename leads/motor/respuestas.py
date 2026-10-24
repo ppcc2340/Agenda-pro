@@ -1,4 +1,10 @@
-"""Lee la bandeja por IMAP y cruza las respuestas con los leads enviados."""
+"""Respuestas de los leads.
+
+  modo gmail → `para_revisar` lista qué buscar en Gmail; Claude busca con su conector y
+               llama a `registrar` con lo que encuentre.
+  modo smtp  → `revisar` lee la bandeja por IMAP y cruza las respuestas automáticamente.
+"""
+import json
 import email
 import imaplib
 import re
@@ -28,10 +34,49 @@ def _recorte(texto: str, n: int = 400) -> str:
     return " ".join(lineas)[:n]
 
 
+def clasificar(asunto: str, cuerpo: str, remitente: str = "") -> str:
+    if any(x in remitente.lower() or x in asunto.lower() for x in _REBOTE):
+        return "rebote"
+    if _BAJA.search(cuerpo[:300]) or _BAJA.search(asunto):
+        return "baja"
+    return "respondio"
+
+
+def para_revisar(con, como_json: bool) -> list[dict]:
+    """Modo gmail: leads enviados sin respuesta registrada, con la búsqueda sugerida para Gmail."""
+    filas = store.listar(con, "enviado")
+    salida = []
+    for l in filas:
+        fecha = (l["enviado_el"] or "")[:10].replace("-", "/")
+        salida.append({"id": l["id"], "nombre": l["nombre"], "email": l["email"],
+                       "enviado_el": l["enviado_el"],
+                       "busqueda_gmail": f"from:{l['email']} after:{fecha}"})
+    if como_json:
+        print(json.dumps(salida, ensure_ascii=False, indent=2))
+    else:
+        print(f"Leads enviados sin respuesta registrada: {len(salida)}\n")
+        for s in salida:
+            print(f"  #{s['id']:<4} {s['nombre'][:40]:40} {s['busqueda_gmail']}")
+    return salida
+
+
+def registrar(con, id_: int, texto: str, asunto: str = "", estado: str | None = None) -> str:
+    """Modo gmail: Claude registra la respuesta que encontró. Detecta BAJA/rebote si no se indica."""
+    lead = store.por_id(con, id_)
+    if lead is None:
+        raise SystemExit(f"No existe el lead #{id_}")
+    estado = estado or clasificar(asunto, texto)
+    store.actualizar(con, id_, estado=estado, respondio_el=store.ahora(),
+                     respuesta=f"[{asunto}] {_recorte(texto)}" if asunto else _recorte(texto))
+    print(f"{'✔' if estado == 'respondio' else '·'} #{id_} {lead['nombre']} → {estado}")
+    return estado
+
+
 def revisar(con, dias: int = 30) -> int:
     usuario, clave = env("EMAIL_USER"), env("EMAIL_PASS")
     if not usuario or not clave:
-        raise SystemExit("Falta EMAIL_USER / EMAIL_PASS en .env")
+        raise SystemExit("Modo smtp: falta EMAIL_USER / EMAIL_PASS en .env "
+                         "(o cambia correo.modo a 'gmail' en config.yaml)")
 
     enviados = {l["email"].lower(): l for l in store.listar(con) if l["email"] and l["message_id"]}
     por_msgid = {l["message_id"]: l for l in enviados.values()}
@@ -56,12 +101,7 @@ def revisar(con, dias: int = 30) -> int:
             continue
         cuerpo = _texto(msg)
         asunto = str(make_header(decode_header(msg.get("Subject", ""))))
-        if any(x in remitente or x in asunto.lower() for x in _REBOTE):
-            estado = "rebote"
-        elif _BAJA.search(cuerpo[:300]) or _BAJA.search(asunto):
-            estado = "baja"
-        else:
-            estado = "respondio"
+        estado = clasificar(asunto, cuerpo, remitente)
         store.actualizar(con, lead["id"], estado=estado, respondio_el=store.ahora(),
                          respuesta=f"[{asunto}] {_recorte(cuerpo)}")
         nuevas += 1

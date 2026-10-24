@@ -15,6 +15,7 @@ busquedas:
     ciudad: "Santiago, Chile"
   - rubro: "estudio jurídico"
     ciudad: "Valparaíso, Chile"
+    plantilla: presentacion-servicios   # opcional: plantilla distinta para esta búsqueda
 
 # Fuentes activas: google, maps, instagram
 fuentes: [google, maps, instagram]
@@ -26,26 +27,18 @@ max_por_fuente: 20
 buscar_correo_en_web: true
 
 correo:
-  asunto: "Propuesta para {nombre}"
-  # Variables disponibles: {nombre} {rubro} {ciudad} {remitente} {negocio} {servicio} {telefono} {web}
-  cuerpo: |
-    Hola, equipo de {nombre}:
+  # Cómo se envían y leen los correos:
+  #   gmail → a través del conector de Gmail de Claude (sin contraseñas; Claude envía y lee)
+  #   smtp  → directo desde este programa con EMAIL_USER / EMAIL_PASS del .env
+  modo: gmail
 
-    Soy {remitente}, de {negocio}. Trabajamos con negocios de {rubro} en {ciudad}
-    ofreciendo {servicio}.
+  # Plantilla por defecto. Están en la carpeta plantillas/ (una por archivo, edítalas
+  # libremente o crea nuevas). Cada búsqueda puede indicar su propia "plantilla:".
+  plantilla: propuesta-breve
 
-    Me gustaría contarles en 15 minutos cómo podríamos ayudarles. ¿Tienen
-    disponibilidad esta semana o la próxima?
-
-    Saludos,
-    {remitente}
-    {negocio} · {telefono} · {web}
-
-    ---
-    Si no desea recibir más correos, responda con la palabra "BAJA".
   max_por_dia: 40            # límite diario de envíos (protege tu reputación)
-  segundos_entre_envios: 45  # pausa entre correos
-  personalizar_con_ia: false # true = Claude redacta un primer párrafo a medida
+  segundos_entre_envios: 45  # pausa entre correos (solo modo smtp)
+  personalizar_con_ia: false # true = Claude redacta un primer párrafo a medida (requiere ANTHROPIC_API_KEY)
 
 excel:
   archivo: "leads.xlsx"

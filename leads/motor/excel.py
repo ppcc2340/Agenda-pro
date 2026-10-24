@@ -10,7 +10,7 @@ COLUMNAS = [
     ("Nombre", "nombre", 32), ("Rubro", "rubro", 18), ("Ciudad", "ciudad", 20),
     ("Correo", "email", 30), ("Teléfono", "telefono", 16), ("Web", "web", 32),
     ("Instagram", "instagram", 30), ("Dirección", "direccion", 36), ("Fuente", "fuente", 10),
-    ("Estado", "estado", 11), ("Enviado", "enviado_el", 16), ("Respondió", "respondio_el", 16),
+    ("Estado", "estado", 11), ("Plantilla", "plantilla", 20), ("Enviado", "enviado_el", 16), ("Respondió", "respondio_el", 16),
     ("Respuesta", "respuesta", 60),
 ]
 COLOR_ESTADO = {"respondio": "C6EFCE", "enviado": "FFF2CC", "baja": "F4CCCC",

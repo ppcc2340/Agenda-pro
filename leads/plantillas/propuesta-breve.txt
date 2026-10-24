@@ -1,0 +1,16 @@
+Asunto: Propuesta para {nombre}
+
+Hola, equipo de {nombre}:
+
+Soy {remitente}, de {negocio}. Trabajamos con negocios de {rubro} en {ciudad}
+ofreciendo {servicio}.
+
+Me gustaría contarles en 15 minutos cómo podríamos ayudarles. ¿Tienen
+disponibilidad esta semana o la próxima?
+
+Saludos,
+{remitente}
+{negocio} · {telefono} · {web}
+
+---
+Si no desea recibir más correos, responda con la palabra "BAJA".

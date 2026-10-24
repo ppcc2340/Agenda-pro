@@ -1,0 +1,15 @@
+Asunto: Re: Propuesta para {nombre}
+
+Hola de nuevo, equipo de {nombre}:
+
+Hace unos días les escribí sobre {servicio}. Entiendo que estén ocupados, así que
+solo quería dejarles la puerta abierta: si en algún momento quieren conversar,
+basta con responder a este correo.
+
+Gracias por su tiempo.
+
+{remitente}
+{negocio} · {telefono} · {web}
+
+---
+Si no desea recibir más correos, responda con la palabra "BAJA".

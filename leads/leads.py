@@ -1,27 +1,31 @@
 #!/usr/bin/env python3
-"""Motor de leads — un solo comando, cuatro pasos.
+"""Motor de leads — buscar → enviar → respuestas → excel.
 
-  python leads.py buscar                 # Google + Maps + Instagram → base local
-  python leads.py enviar [--confirmar]   # correos a los leads nuevos (sin flag = vista previa)
-  python leads.py respuestas             # lee la bandeja y marca quién respondió
-  python leads.py excel                  # exporta leads.xlsx
-  python leads.py todo [--confirmar]     # los cuatro pasos seguidos
-  python leads.py estado                 # resumen rápido
+  python leads.py buscar [--rubro X --ciudad Y] [--fuentes google,maps,instagram]
+  python leads.py plantillas [nombre]        # lista plantillas o muestra una
+  python leads.py previa [--id N] [--plantilla X]   # cómo quedaría el correo
+  python leads.py cola [--json]              # modo gmail: correos listos para que Claude envíe
+  python leads.py marcar-enviado ID [--message-id X]
+  python leads.py enviar [--confirmar]       # modo smtp: envía directo
+  python leads.py respuestas [--json]        # gmail: qué buscar · smtp: lee la bandeja
+  python leads.py registrar-respuesta ID --texto "..." [--asunto S] [--baja|--rebote]
+  python leads.py excel                      # exporta leads.xlsx
+  python leads.py estado                     # resumen
 """
 import argparse
 import importlib
 
-from motor import config, excel, respuestas, store
-from motor.correo import enviar_pendientes
+from motor import config, correo, excel, plantillas, respuestas, store
 from motor.fuentes.web import encontrar_email
 
 
-def cmd_buscar(con, cfg, args):
-    fuentes = args.fuentes.split(",") if args.fuentes else cfg["fuentes"]
+# ── buscar ──────────────────────────────────────────────────────────────
+def cmd_buscar(con, cfg, a):
+    fuentes = a.fuentes.split(",") if a.fuentes else cfg["fuentes"]
     busquedas = cfg["busquedas"]
-    if args.rubro and args.ciudad:
-        busquedas = [{"rubro": args.rubro, "ciudad": args.ciudad}]
-    total_nuevos = 0
+    if a.rubro and a.ciudad:
+        busquedas = [{"rubro": a.rubro, "ciudad": a.ciudad, "plantilla": a.plantilla}]
+    total = 0
     for b in busquedas:
         print(f"\n▶ {b['rubro']} — {b['ciudad']}")
         for nombre in fuentes:
@@ -31,8 +35,10 @@ def cmd_buscar(con, cfg, args):
             except Exception as e:  # una fuente caída no detiene las demás
                 print(f"  {nombre:10} error: {e}")
                 continue
+            for l in leads:
+                l["plantilla"] = b.get("plantilla")
             nuevos = sum(store.guardar(con, l) for l in leads)
-            total_nuevos += nuevos
+            total += nuevos
             print(f"  {nombre:10} {len(leads):3} encontrados, {nuevos:3} nuevos")
 
     if cfg.get("buscar_correo_en_web"):
@@ -44,69 +50,107 @@ def cmd_buscar(con, cfg, args):
                 if email:
                     store.actualizar(con, l["id"], email=email, estado="nuevo")
                     print(f"  ✔ {l['nombre']}: {email}")
-    print(f"\nNuevos leads: {total_nuevos}")
-    cmd_estado(con, cfg, args)
+    print(f"\nNuevos leads: {total}")
+    cmd_estado(con, cfg, a)
 
 
-def cmd_enviar(con, cfg, args):
-    n = enviar_pendientes(con, cfg, confirmar=args.confirmar, limite=args.limite)
-    if args.confirmar:
+# ── plantillas y vista previa ───────────────────────────────────────────
+def cmd_plantillas(con, cfg, a):
+    if a.nombre:
+        asunto, cuerpo = plantillas.cargar(a.nombre)
+        print(f"Archivo: {plantillas.ruta(a.nombre)}\nAsunto: {asunto}\n\n{cuerpo}")
+        return
+    actual = cfg["correo"].get("plantilla")
+    print("Plantillas (carpeta plantillas/):")
+    for n in plantillas.listar():
+        print(f"  {'●' if n == actual else '○'} {n}")
+    print(f"\nVariables: {', '.join('{'+v+'}' for v in plantillas.VARIABLES)}")
+    print("Cambia la predeterminada en config.yaml → correo.plantilla, o usa --plantilla en cada comando.")
+
+
+def cmd_previa(con, cfg, a):
+    lead = store.por_id(con, a.id) if a.id else next(iter(correo.pendientes(con, cfg, 1)), None)
+    if lead is None:
+        raise SystemExit("No hay ningún lead con correo pendiente. Ejecuta antes `buscar`.")
+    correo.imprimir_correo(correo.componer(lead, cfg, a.plantilla))
+
+
+# ── enviar ──────────────────────────────────────────────────────────────
+def cmd_cola(con, cfg, a):
+    correo.cola(con, cfg, a.plantilla, a.limite, a.json)
+
+
+def cmd_marcar_enviado(con, cfg, a):
+    correo.marcar_enviado(con, cfg, a.id, a.message_id, a.plantilla)
+
+
+def cmd_enviar(con, cfg, a):
+    if cfg["correo"].get("modo", "gmail") != "smtp":
+        print("Modo gmail: los correos los envía Claude con su conector. Usa `cola` para verlos\n"
+              "y `marcar-enviado ID` tras cada envío. Para enviar directo pon correo.modo: smtp.")
+        return
+    n = correo.enviar_smtp(con, cfg, a.confirmar, a.plantilla, a.limite)
+    if a.confirmar:
         print(f"\nEnviados: {n}")
 
 
-def cmd_respuestas(con, cfg, args):
-    n = respuestas.revisar(con, dias=args.dias)
+# ── respuestas ──────────────────────────────────────────────────────────
+def cmd_respuestas(con, cfg, a):
+    if cfg["correo"].get("modo", "gmail") != "smtp":
+        respuestas.para_revisar(con, a.json)
+        return
+    n = respuestas.revisar(con, dias=a.dias)
     print(f"\nRespuestas nuevas: {n}")
 
 
-def cmd_excel(con, cfg, args):
-    ruta = excel.exportar(con, cfg["excel"]["archivo"])
-    print(f"Excel generado: {ruta}")
+def cmd_registrar(con, cfg, a):
+    estado = "baja" if a.baja else "rebote" if a.rebote else None
+    respuestas.registrar(con, a.id, a.texto, a.asunto or "", estado)
 
 
-def cmd_estado(con, cfg, args):
+# ── excel / estado ──────────────────────────────────────────────────────
+def cmd_excel(con, cfg, a):
+    print(f"Excel generado: {excel.exportar(con, cfg['excel']['archivo'])}")
+
+
+def cmd_estado(con, cfg, a):
     r = store.resumen(con)
     print("\n── Estado ──")
     for k in ("total", "nuevo", "sin_correo", "enviado", "respondio", "baja", "rebote"):
         print(f"  {k:11} {r[k]}")
-
-
-def cmd_todo(con, cfg, args):
-    cmd_buscar(con, cfg, args)
-    cmd_enviar(con, cfg, args)
-    if args.confirmar:
-        cmd_respuestas(con, cfg, args)
-    cmd_excel(con, cfg, args)
+    print(f"  modo correo {cfg['correo'].get('modo', 'gmail')} · plantilla {cfg['correo'].get('plantilla')}")
 
 
 def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = p.add_subparsers(dest="cmd", required=True)
 
-    b = sub.add_parser("buscar", help="buscar leads en las fuentes")
-    b.add_argument("--rubro"); b.add_argument("--ciudad")
-    b.add_argument("--fuentes", help="google,maps,instagram")
+    def pl(x):
+        x.add_argument("--plantilla", help="nombre de plantilla (ver `plantillas`)")
 
-    e = sub.add_parser("enviar", help="enviar correos a leads nuevos")
-    e.add_argument("--confirmar", action="store_true", help="enviar de verdad")
-    e.add_argument("--limite", type=int)
+    s = sub.add_parser("buscar"); s.add_argument("--rubro"); s.add_argument("--ciudad")
+    s.add_argument("--fuentes", help="google,maps,instagram"); pl(s)
+    s = sub.add_parser("plantillas"); s.add_argument("nombre", nargs="?")
+    s = sub.add_parser("previa"); s.add_argument("--id", type=int); pl(s)
+    s = sub.add_parser("cola"); s.add_argument("--json", action="store_true")
+    s.add_argument("--limite", type=int); pl(s)
+    s = sub.add_parser("marcar-enviado"); s.add_argument("id", type=int)
+    s.add_argument("--message-id"); pl(s)
+    s = sub.add_parser("enviar"); s.add_argument("--confirmar", action="store_true")
+    s.add_argument("--limite", type=int); pl(s)
+    s = sub.add_parser("respuestas"); s.add_argument("--json", action="store_true")
+    s.add_argument("--dias", type=int, default=30)
+    s = sub.add_parser("registrar-respuesta"); s.add_argument("id", type=int)
+    s.add_argument("--texto", required=True); s.add_argument("--asunto")
+    s.add_argument("--baja", action="store_true"); s.add_argument("--rebote", action="store_true")
+    sub.add_parser("excel"); sub.add_parser("estado")
 
-    r = sub.add_parser("respuestas", help="leer respuestas de la bandeja")
-    r.add_argument("--dias", type=int, default=30)
-
-    sub.add_parser("excel", help="exportar a Excel")
-    sub.add_parser("estado", help="resumen")
-
-    t = sub.add_parser("todo", help="buscar + enviar + respuestas + excel")
-    t.add_argument("--confirmar", action="store_true")
-    t.add_argument("--rubro"); t.add_argument("--ciudad"); t.add_argument("--fuentes")
-    t.add_argument("--limite", type=int); t.add_argument("--dias", type=int, default=30)
-
-    args = p.parse_args()
+    a = p.parse_args()
     cfg = config.cargar()
     con = store.conectar()
-    {"buscar": cmd_buscar, "enviar": cmd_enviar, "respuestas": cmd_respuestas,
-     "excel": cmd_excel, "estado": cmd_estado, "todo": cmd_todo}[args.cmd](con, cfg, args)
+    {"buscar": cmd_buscar, "plantillas": cmd_plantillas, "previa": cmd_previa, "cola": cmd_cola,
+     "marcar-enviado": cmd_marcar_enviado, "enviar": cmd_enviar, "respuestas": cmd_respuestas,
+     "registrar-respuesta": cmd_registrar, "excel": cmd_excel, "estado": cmd_estado}[a.cmd](con, cfg, a)
 
 
 if __name__ == "__main__":
