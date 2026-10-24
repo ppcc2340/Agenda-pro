@@ -1,0 +1,3 @@
+Carpeta de datos del motor de leads cuando se usa dentro de este repositorio
+(Claude Code web). Contiene config.yaml, plantillas/, leads.db y leads.xlsx.
+No subas aquí .env (está ignorado por git).

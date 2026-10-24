@@ -1,0 +1,17 @@
+{
+  "name": "agenda-pro",
+  "owner": { "name": "ppcc2340" },
+  "metadata": {
+    "description": "Plugins de ppcc2340 para Claude Code"
+  },
+  "plugins": [
+    {
+      "name": "leads",
+      "source": "./plugins/leads",
+      "description": "Motor de leads: busca clientes (Google, Maps, Instagram), les escribe desde tu Gmail y exporta a Excel quién respondió.",
+      "version": "1.0.0",
+      "category": "productivity",
+      "keywords": ["leads", "prospección", "ventas", "gmail", "excel"]
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "name": "leads",
+  "description": "Motor de leads: busca clientes en Google, Google Maps e Instagram, les escribe desde tu Gmail (vía Claude) y exporta a Excel quién respondió. Para personas sin conocimientos técnicos.",
+  "version": "1.0.0",
+  "author": { "name": "ppcc2340" },
+  "homepage": "https://github.com/ppcc2340/Agenda-pro/tree/main/plugins/leads",
+  "repository": "https://github.com/ppcc2340/Agenda-pro",
+  "license": "MIT",
+  "keywords": ["leads", "prospección", "ventas", "gmail", "scraping", "excel"]
+}

@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>Manual de uso — Motor de leads</title>
+<style>
+@page { size: A4; margin: 18mm 16mm 20mm 16mm; }
+body { font-family: "Segoe UI", Helvetica, Arial, sans-serif; font-size: 11.2pt; line-height: 1.5; color: #1a1a1a; }
+h1 { font-size: 26pt; margin: 0 0 4px; color: #1F4E78; }
+h2 { font-size: 16pt; color: #1F4E78; border-bottom: 2px solid #1F4E78; padding-bottom: 3px; margin-top: 28px; page-break-after: avoid; }
+h3 { font-size: 12.5pt; margin: 18px 0 6px; color: #333; page-break-after: avoid; }
+.sub { color: #555; font-size: 12pt; margin-bottom: 18px; }
+.portada { text-align:center; padding-top: 140px; page-break-after: always; }
+.portada h1 { font-size: 34pt; }
+.portada p { font-size: 13pt; color:#444; }
+.di { background: #EAF3FB; border-left: 5px solid #1F4E78; padding: 10px 14px; margin: 10px 0; border-radius: 4px; page-break-inside: avoid; }
+.di b { color: #1F4E78; }
+.di q { font-size: 12.5pt; font-weight: 600; quotes: "«" "»"; }
+.pasa { background: #F6F6F6; padding: 8px 14px; margin: 6px 0 14px; border-radius: 4px; page-break-inside: avoid; }
+.ok { background: #E8F5E9; border-left: 5px solid #2E7D32; padding: 10px 14px; margin: 10px 0; border-radius: 4px; }
+.ojo { background: #FFF4E5; border-left: 5px solid #E65100; padding: 10px 14px; margin: 10px 0; border-radius: 4px; }
+.no { background: #FDECEA; border-left: 5px solid #C62828; padding: 10px 14px; margin: 10px 0; border-radius: 4px; }
+table { border-collapse: collapse; width: 100%; margin: 10px 0 16px; page-break-inside: avoid; }
+th, td { border: 1px solid #CCC; padding: 7px 9px; vertical-align: top; text-align: left; }
+th { background: #1F4E78; color: #fff; }
+tr:nth-child(even) td { background: #F7F9FC; }
+code, .ruta { font-family: Consolas, Menlo, monospace; background: #F0F0F0; padding: 1px 5px; border-radius: 3px; font-size: 10.2pt; }
+pre { background: #F0F0F0; padding: 10px 14px; border-radius: 4px; font-size: 10pt; white-space: pre-wrap; page-break-inside: avoid; }
+ol li, ul li { margin: 4px 0; }
+.ciclo { display:flex; justify-content:space-between; margin: 16px 0 6px; }
+.ciclo div { flex:1; text-align:center; background:#1F4E78; color:#fff; padding:10px 4px; margin:0 3px; border-radius:6px; font-weight:600; font-size:10.5pt; }
+.ciclo div span { display:block; font-size:9pt; font-weight:400; opacity:.85; }
+.pie { color:#777; font-size: 9.5pt; margin-top: 30px; border-top: 1px solid #DDD; padding-top: 6px; }
+.salto { page-break-before: always; }
+</style></head><body>
+
+<div class="portada">
+  <h1>Motor de leads</h1>
+  <p class="sub">Manual de uso paso a paso</p>
+  <p>Encuentra clientes en Google, Google Maps e Instagram,<br>escríbeles desde tu Gmail y recibe en un Excel quién respondió.</p>
+  <p style="margin-top:60px">No necesitas saber nada de programación.<br><b>Todo se hace hablándole a Claude.</b></p>
+  <p style="margin-top:80px;color:#888">Versión 1.0 · Octubre 2026</p>
+</div>
+
+<h2>1. ¿Qué hace esto y cómo funciona?</h2>
+<p>Es un asistente de prospección. Tú le dices a Claude <i>qué tipo de negocios</i> buscas y <i>dónde</i>; él los encuentra, les manda un correo ofreciendo tu servicio desde <b>tu propia cuenta de Gmail</b>, revisa quién contestó y te lo deja todo ordenado en un Excel.</p>
+<div class="ciclo">
+  <div>1. Buscar<span>Google · Maps · Instagram</span></div>
+  <div>2. Mensaje<span>elegir o editar</span></div>
+  <div>3. Enviar<span>desde tu Gmail</span></div>
+  <div>4. Respuestas<span>quién contestó</span></div>
+  <div>5. Excel<span>todo ordenado</span></div>
+</div>
+<p>Tú no tocas programas ni archivos: <b>le escribes a Claude en español normal</b> y él se encarga. Lo único que te pedirá siempre es tu <b>confirmación antes de enviar correos</b>.</p>
+
+<h2>2. Qué necesitas (lista de comprobación)</h2>
+<table>
+<tr><th style="width:36px">✔</th><th>Requisito</th><th>Para qué</th></tr>
+<tr><td>☐</td><td>Una cuenta de <b>Gmail</b> desde la que enviarás los correos</td><td>Los correos salen de tu cuenta, con tu nombre</td></tr>
+<tr><td>☐</td><td>Una cuenta de <b>Claude</b> (claude.ai) con <b>Claude Code</b></td><td>Es quien hace el trabajo</td></tr>
+<tr><td>☐</td><td>Python instalado en tu computador (en Mac ya viene; en Windows se descarga de python.org marcando “Add to PATH”)</td><td>El motor está escrito en Python</td></tr>
+<tr><td>☐</td><td>Internet</td><td>Para buscar y enviar</td></tr>
+</table>
+
+<h2>3. Primera vez: dejarlo listo (10 minutos)</h2>
+
+<h3>Paso A — Conectar tu Gmail a Claude</h3>
+<ol>
+<li>Entra a <b>claude.ai</b> con tu cuenta.</li>
+<li>Abre <b>Configuración</b> (tu inicial o foto, arriba a la derecha) → <b>Conectores</b>.</li>
+<li>Busca <b>Gmail</b> y pulsa <b>Conectar</b>. Google te pedirá permiso: acepta con la cuenta desde la que quieres enviar.</li>
+</ol>
+<div class="ok"><b>¿Para qué sirve?</b> Para que Claude pueda enviar y leer correos en tu nombre. No se guarda ninguna contraseña en el proyecto: el permiso lo gestiona Google y lo puedes quitar cuando quieras desde esa misma pantalla.</div>
+
+<h3>Paso B — Instalar el motor en tu Claude Code</h3>
+<ol>
+<li>Abre <b>Claude Code</b> (la aplicación de escritorio o en la terminal). Da igual en qué carpeta.</li>
+<li>En el cuadro donde se escribe, copia esta línea tal cual y pulsa Enter:</li>
+</ol>
+<pre>/plugin install leads --marketplace ppcc2340/Agenda-pro</pre>
+<ol start="3">
+<li>Se abre una ventanita: elige el ámbito <b>“Usuario”</b> (así lo tienes en todos tus proyectos) y confirma.</li>
+<li>Listo. A partir de ahora Claude sabe manejar el motor de leads en cualquier carpeta que abras.</li>
+</ol>
+<div class="ojo"><b>Si tu Claude Code es antiguo</b> y esa línea no funciona, hazlo en dos pasos:<br>
+<code>/plugin marketplace add ppcc2340/Agenda-pro</code> &nbsp;y luego&nbsp; <code>/plugin install leads@agenda-pro</code></div>
+<div class="ok"><b>¿Te llegó como archivo .zip en vez de esta línea?</b> También vale: abre Claude Code en tu computador, arrastra el zip al chat y escribe <q>instala el plugin de leads que está en este zip</q>. Claude lo instala y te dice que cierres y vuelvas a abrir. Importante: tiene que ser <b>Claude Code</b>, no el chat normal de claude.ai (ahí Claude no puede ejecutar nada en tu computador).</div>
+<div class="ok"><b>¿Dónde quedan mis cosas?</b> En una carpeta llamada <span class="ruta">leads</span> dentro de tu carpeta personal (en Windows <span class="ruta">C:\Usuarios\TuNombre\leads</span>, en Mac <span class="ruta">/Usuarios/TuNombre/leads</span>). Ahí están tu configuración, los mensajes y el Excel. Actualizar el motor nunca la borra.</div>
+
+<h3>Paso C — Contarle de tu negocio</h3>
+<div class="di"><b>Dile a Claude:</b> <q>configura el motor de leads</q></div>
+<div class="pasa">Claude te hará <b>4 preguntas</b> en un solo mensaje. Responde con naturalidad:
+<ol>
+<li><b>¿Cómo se llama tu empresa y cómo te llamas tú?</b> → <i>“Traveling Ingeniería, soy Pablo”</i></li>
+<li><b>¿Qué servicio ofreces?</b> → <i>“automatización de procesos y sitios web para pymes”</i></li>
+<li><b>¿Qué negocios quieres contactar y en qué ciudad?</b> → <i>“clínicas dentales y gimnasios en Santiago”</i></li>
+<li><b>Teléfono y web para la firma</b> (opcional) → <i>“+56 9 1234 5678, traveling.cl”</i></li>
+</ol>
+Claude guarda todo y te muestra cómo quedaría el correo con tus datos. Si te gusta, listo. Si no, ve al punto 5 (“Cómo editar el correo”).</div>
+<div class="ok">Si algo falta por instalar en tu computador, <b>se instala solo</b> la primera vez. Puede tardar un par de minutos.</div>
+
+<h2 class="salto">4. Uso diario: qué le dices a Claude</h2>
+<p>Estas son las frases que funcionan. No tienen que ser exactas; Claude entiende variantes.</p>
+
+<h3>4.1 Buscar clientes</h3>
+<div class="di"><b>Dile:</b> <q>busca clínicas dentales en Santiago</q> &nbsp;·&nbsp; <q>busca todo lo que tengo configurado</q></div>
+<div class="pasa">Tarda <b>varios minutos</b> (visita Google, Google Maps, Instagram y las páginas web de cada negocio para encontrar su correo). Al terminar te dirá algo como: <i>“Encontré 27 negocios nuevos, 19 tienen correo”</i>. Los que no tienen correo quedan guardados igual (con teléfono o Instagram) para que los contactes tú si quieres.</div>
+
+<h3>4.2 Ver y aprobar el mensaje</h3>
+<div class="di"><b>Dile:</b> <q>muéstrame cómo quedaría el correo</q> &nbsp;·&nbsp; <q>qué mensajes hay</q></div>
+<div class="pasa">Te muestra el correo completo tal como lo recibiría el primer negocio de la lista, con tus datos ya puestos. Hay tres mensajes de fábrica: <b>propuesta-breve</b> (corto, pide una llamada de 15 min), <b>presentacion-servicios</b> (más completo, con lista de beneficios) y <b>seguimiento</b> (para insistir a quien no contestó).</div>
+
+<h3>4.3 Enviar los correos</h3>
+<div class="di"><b>Dile:</b> <q>envíales el correo</q></div>
+<div class="pasa">
+<ol>
+<li>Claude te dice <b>cuántos correos</b> va a enviar y te muestra el primero completo.</li>
+<li><b>Te pregunta si los envía.</b> Nada sale hasta que digas que sí.</li>
+<li>Los envía uno a uno desde tu Gmail (los verás en tu carpeta <i>Enviados</i>).</li>
+<li>Te confirma cuántos salieron y si alguno falló.</li>
+</ol>
+Hay un <b>tope de 40 correos al día</b>. Es a propósito: mandar cientos de golpe hace que Gmail te marque como spam. Si tienes más leads, al día siguiente dices <i>“envíales el correo”</i> otra vez y sigue con los que faltan.</div>
+
+<h3>4.4 Ver quién respondió</h3>
+<div class="di"><b>Dile:</b> <q>revisa quién respondió</q></div>
+<div class="pasa">Claude busca en tu Gmail las respuestas de cada negocio al que escribiste y te resume quién contestó y qué dijo. Si alguien pidió que no le escribas más (“BAJA”), lo marca y <b>nunca</b> vuelve a entrar en la lista de envío. Conviene hacerlo cada 2–3 días.</div>
+
+<h3>4.5 Obtener el Excel</h3>
+<div class="di"><b>Dile:</b> <q>pásamelo a Excel</q></div>
+<div class="pasa">Genera el archivo <span class="ruta">leads.xlsx</span> en tu carpeta <span class="ruta">leads</span> personal y te dice la ruta exacta. Ver sección 6.</div>
+
+<h3>4.6 Saber cómo vas / cambiar cosas</h3>
+<table>
+<tr><th>Quieres…</th><th>Dile…</th></tr>
+<tr><td>Un resumen</td><td><q>¿cómo vamos con los leads?</q></td></tr>
+<tr><td>Añadir otro tipo de negocio o ciudad</td><td><q>agrega cafeterías en Viña del Mar</q></td></tr>
+<tr><td>Cambiar lo que ofreces o tu firma</td><td><q>cambia el servicio a asesoría contable</q> · <q>cambia mi teléfono a …</q></td></tr>
+<tr><td>Buscar solo en una fuente</td><td><q>busca gimnasios en Temuco solo en Google Maps</q></td></tr>
+<tr><td>Insistir a los que no contestaron</td><td><q>manda el mensaje de seguimiento a los que no han respondido</q></td></tr>
+</table>
+
+<h2 class="salto">5. Cómo editar el correo</h2>
+<p>Hay tres maneras, de la más fácil a la más manual. <b>La primera es la recomendada.</b></p>
+
+<h3>Manera 1 — Pedírselo a Claude (recomendada)</h3>
+<div class="di"><b>Dile, por ejemplo:</b><br>
+<q>hazlo más corto y tutea</q><br>
+<q>cambia el asunto a “Una idea para {nombre}”</q><br>
+<q>agrega una frase diciendo que tenemos 10 años de experiencia</q><br>
+<q>escribe un mensaje nuevo para gimnasios, más informal</q></div>
+<div class="pasa">Claude cambia el texto y te vuelve a mostrar cómo queda. Puedes iterar las veces que quieras hasta que te guste. Cuando digas <i>“así está bien”</i>, ese será el mensaje que se envíe.</div>
+
+<h3>Manera 2 — Elegir otro de los mensajes que ya existen</h3>
+<div class="di"><b>Dile:</b> <q>usa el mensaje presentacion-servicios</q> &nbsp;·&nbsp; <q>para los gimnasios usa el mensaje informal</q></div>
+
+<h3>Manera 3 — Abrir el archivo tú mismo</h3>
+<p>Cada mensaje es un archivo de texto normal en la carpeta <span class="ruta">leads / plantillas</span> de tu carpeta personal. Puedes abrirlo con el <b>Bloc de notas</b> (Windows) o <b>TextEdit</b> (Mac) y escribir lo que quieras. Así es uno:</p>
+<pre>Asunto: Propuesta para {nombre}
+
+Hola, equipo de {nombre}:
+
+Soy {remitente}, de {negocio}. Trabajamos con negocios de {rubro} en {ciudad}
+ofreciendo {servicio}.
+
+Me gustaría contarles en 15 minutos cómo podríamos ayudarles. ¿Tienen
+disponibilidad esta semana o la próxima?
+
+Saludos,
+{remitente}
+{negocio} · {telefono} · {web}
+
+---
+Si no desea recibir más correos, responda con la palabra "BAJA".</pre>
+<p>Reglas del archivo:</p>
+<ul>
+<li>La <b>primera línea</b> siempre empieza con <code>Asunto:</code> y es el asunto del correo.</li>
+<li>Lo que va entre llaves <code>{ }</code> se rellena solo con los datos de cada negocio y los tuyos:</li>
+</ul>
+<table>
+<tr><th>Escribes</th><th>Se convierte en</th></tr>
+<tr><td><code>{nombre}</code></td><td>El nombre del negocio al que escribes (ej. “Clínica Dental Sonrisa”)</td></tr>
+<tr><td><code>{rubro}</code></td><td>El tipo de negocio (ej. “clínica dental”)</td></tr>
+<tr><td><code>{ciudad}</code></td><td>Su ciudad</td></tr>
+<tr><td><code>{remitente}</code></td><td>Tu nombre</td></tr>
+<tr><td><code>{negocio}</code></td><td>El nombre de tu empresa</td></tr>
+<tr><td><code>{servicio}</code></td><td>Lo que ofreces, tal como lo configuraste</td></tr>
+<tr><td><code>{telefono}</code> / <code>{web}</code></td><td>Tu teléfono / tu sitio web</td></tr>
+</table>
+<div class="no"><b>No borres las dos últimas líneas</b> (la raya y la frase de “BAJA”). La ley chilena obliga a ofrecer una forma de darse de baja en correos comerciales (Ley 19.496, art. 28 B) y además es lo que permite al motor detectar quién no quiere más correos.</div>
+<div class="ojo">Para crear un mensaje nuevo, copia uno de los archivos, cámbiale el nombre (sin espacios, por ejemplo <span class="ruta">informal-gimnasios.txt</span>) y edítalo. Aparecerá automáticamente cuando le digas a Claude <i>“qué mensajes hay”</i>.</div>
+
+<h2 class="salto">6. El Excel</h2>
+<p>El archivo es <span class="ruta">leads.xlsx</span>, en la carpeta <span class="ruta">leads</span> de tu carpeta personal. Se vuelve a generar completo cada vez que dices <i>“pásamelo a Excel”</i>, así que siempre está al día. Tiene tres hojas (pestañas abajo):</p>
+<table>
+<tr><th>Hoja</th><th>Qué contiene</th><th>Para qué la usas</th></tr>
+<tr><td><b>Respondieron</b></td><td>Solo los negocios que contestaron, con la fecha y un resumen de lo que dijeron</td><td><b>Esta es la que importa.</b> Son tus oportunidades: llámalos.</td></tr>
+<tr><td><b>Enviados</b></td><td>Todos los correos que han salido y en qué estado están</td><td>Control de lo que se ha hecho</td></tr>
+<tr><td><b>Todos los leads</b></td><td>Toda la base: también los que no tienen correo (con teléfono, dirección o Instagram)</td><td>Para contactar por otros medios</td></tr>
+</table>
+<p>Columnas: Nombre · Rubro · Ciudad · Correo · Teléfono · Web · Instagram · Dirección · Fuente · Estado · Plantilla · Enviado · Respondió · Respuesta. La columna <b>Estado</b> va coloreada:</p>
+<table>
+<tr><th>Estado</th><th>Color</th><th>Significa</th></tr>
+<tr><td>respondio</td><td style="background:#C6EFCE">verde</td><td>Contestó. ¡Oportunidad!</td></tr>
+<tr><td>enviado</td><td style="background:#FFF2CC">amarillo</td><td>Se le escribió, aún no responde</td></tr>
+<tr><td>nuevo</td><td style="background:#DDEBF7">azul</td><td>Tiene correo, todavía no se le ha escrito</td></tr>
+<tr><td>sin_correo</td><td>blanco</td><td>No se encontró correo (sí quizá teléfono o Instagram)</td></tr>
+<tr><td>baja</td><td style="background:#F4CCCC">rojo</td><td>Pidió no recibir más. No se le vuelve a escribir</td></tr>
+<tr><td>rebote</td><td style="background:#E0E0E0">gris</td><td>El correo no existe o fue rechazado</td></tr>
+</table>
+
+<h2>7. Problemas frecuentes y qué hacer</h2>
+<table>
+<tr><th style="width:40%">Qué pasa</th><th>Qué hacer</th></tr>
+<tr><td>Claude dice que <b>Gmail no está autorizado</b></td><td>Haz el Paso A de la sección 3 (claude.ai → Configuración → Conectores → Gmail → Conectar) y vuelve a pedírselo.</td></tr>
+<tr><td>Claude <b>no entiende</b> de qué le hablo / no sabe qué es el motor de leads</td><td>El plugin no está instalado o está desactivado. Repite el Paso B de la sección 3, o escribe <code>/plugin</code> y comprueba que “leads” aparece activado.</td></tr>
+<tr><td>Dice que <b>no encuentra Python</b></td><td>Instala Python desde python.org (en Windows marca la casilla “Add Python to PATH”) y vuelve a intentarlo.</td></tr>
+<tr><td>Quiero <b>actualizar</b> el motor a la última versión</td><td>Escribe <code>/plugin</code> → pestaña de instalados → leads → Actualizar. Tus datos no se tocan.</td></tr>
+<tr><td>Dice que <b>Google Maps o Instagram fallaron</b></td><td>Pasa a veces: esas páginas cambian o bloquean temporalmente. Las demás fuentes siguen funcionando. Vuelve a intentarlo más tarde. Si pasa siempre, pide a alguien técnico que agregue una clave de Google (sección 9).</td></tr>
+<tr><td>Encontró negocios pero <b>pocos tienen correo</b></td><td>Es normal: muchos negocios solo publican teléfono o Instagram. Están en la hoja “Todos los leads” para que los contactes por otro medio.</td></tr>
+<tr><td>Quiero mandar <b>más de 40 al día</b></td><td>No lo recomendamos (riesgo de que Gmail te bloquee). Si de verdad lo necesitas, dile a Claude <i>“sube el límite diario a 60”</i>.</td></tr>
+<tr><td>Un negocio pidió <b>que no le escriban más</b></td><td>Si respondió con “BAJA” ya quedó marcado. Si lo pidió con otras palabras, dile a Claude <i>“marca a Clínica X como baja”</i>.</td></tr>
+<tr><td>Me equivoqué al configurar (nombre, servicio…)</td><td>Dile a Claude qué cambiar: <i>“cambia el nombre de la empresa a …”</i>.</td></tr>
+<tr><td>Quiero <b>empezar de cero</b></td><td>Dile a Claude <i>“borra todos los leads y empecemos de nuevo”</i>. Te pedirá confirmación.</td></tr>
+</table>
+
+<h2>8. Reglas de oro</h2>
+<div class="ok">
+<ol>
+<li><b>Revisa siempre el mensaje antes de la primera tanda.</b> Lo que apruebes es lo que llegará a decenas de personas.</li>
+<li><b>Confirma los envíos conscientemente.</b> Claude siempre pregunta; léelo antes de decir sí.</li>
+<li><b>Revisa respuestas cada 2–3 días</b> y llama a quien contestó. Un lead caliente se enfría rápido.</li>
+<li><b>Respeta las bajas.</b> El sistema lo hace solo; no lo fuerces.</li>
+<li><b>Volumen bajo y constante</b> (20–40 al día) funciona mejor que una avalancha.</li>
+</ol></div>
+
+<h2>9. Para la persona técnica que te ayude (opcional)</h2>
+<p>Esta sección no es para ti; es para que se la pases a quien te dé soporte.</p>
+<ul>
+<li>Es un plugin de Claude Code publicado en el repo <span class="ruta">github.com/ppcc2340/Agenda-pro</span> (marketplace <code>agenda-pro</code>, carpeta <span class="ruta">plugins/leads</span>). Skill: <span class="ruta">skills/leads/SKILL.md</span>. Código Python: <span class="ruta">leads.py</span> + <span class="ruta">motor/</span>.</li>
+<li>Datos del usuario en <span class="ruta">~/leads</span> (variable <code>LEADS_DIR</code> para cambiarla): <span class="ruta">config.yaml</span>, <span class="ruta">plantillas/*.txt</span>, <span class="ruta">leads.db</span> (SQLite), <span class="ruta">leads.xlsx</span>, <span class="ruta">.env</span>.</li>
+<li>Terminal: <code>python &lt;plugin&gt;/leads.py</code> muestra estado y comandos (<code>configurar, buscar, plantillas, previa, cola, marcar-enviado, respuestas, registrar-respuesta, excel, instalar</code>).</li>
+<li>Fuentes más estables con claves en <span class="ruta">~/leads/.env</span> (copiar de <span class="ruta">.env.example</span>): <code>GOOGLE_API_KEY</code> (Places API para Maps) + <code>GOOGLE_CSE_ID</code> (Custom Search). Sin claves usa DuckDuckGo y un navegador headless (Playwright).</li>
+<li>Modo sin Claude: <code>correo.modo: smtp</code> en <span class="ruta">~/leads/config.yaml</span> + <code>EMAIL_USER</code>/<code>EMAIL_PASS</code> (contraseña de aplicación de Gmail) → <code>enviar --confirmar</code> y <code>respuestas</code> (IMAP) funcionan solos.</li>
+<li>Documentación completa: <span class="ruta">plugins/leads/README.md</span> en el repo.</li>
+</ul>
+
+<h2>10. Glosario</h2>
+<table>
+<tr><th>Palabra</th><th>Qué significa aquí</th></tr>
+<tr><td><b>Lead</b></td><td>Un posible cliente: un negocio con su nombre y algún dato de contacto.</td></tr>
+<tr><td><b>Rubro</b></td><td>El tipo de negocio que buscas (“clínica dental”, “gimnasio”, “estudio jurídico”).</td></tr>
+<tr><td><b>Mensaje / plantilla</b></td><td>El texto del correo que se envía, con huecos <code>{ }</code> que se rellenan solos.</td></tr>
+<tr><td><b>Conector de Gmail</b></td><td>El permiso que le das a Claude en claude.ai para usar tu Gmail. Se quita desde el mismo lugar.</td></tr>
+<tr><td><b>Plugin / skill</b></td><td>El “paquete” que instalas en Claude Code con las instrucciones y el programa del motor. No hay que tocarlo.</td></tr>
+<tr><td><b>Baja</b></td><td>Cuando alguien responde que no quiere más correos. Queda bloqueado para siempre.</td></tr>
+<tr><td><b>Rebote</b></td><td>Correo que no llegó (dirección inexistente o rechazada).</td></tr>
+</table>
+
+<p class="pie">Motor de leads · Manual de uso · Si algo de este manual no coincide con lo que ves, dile a Claude “¿qué hago ahora?” — siempre te dirá el siguiente paso.</p>
+</body></html>

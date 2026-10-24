@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+leads-plugin.zip
+leads-datos/.env
+leads-datos/__pycache__/
