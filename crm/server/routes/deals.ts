@@ -90,7 +90,7 @@ export function pipelineRoutes() {
     return { ok: true };
   }));
   r.post("/:id/stages", h(async (req) => {
-    assertAdmin(req.ctx);
+    if (!req.ctx.role.permissions.admin) assert(req.ctx, "deal", "update");
     const b = parse(stageSchema, req.body);
     const pos = req.ctx.db.get<{ n: number }>("SELECT COALESCE(MAX(position),-1)+1 n FROM stages WHERE pipeline_id=? AND kind='open'", param(req, "id"))?.n ?? 0;
     const sid = id();
@@ -98,7 +98,7 @@ export function pipelineRoutes() {
     return parseJson(req.ctx.db.get<Row>("SELECT * FROM stages WHERE id=?", sid), ["required_fields"]);
   }));
   r.put("/:id/stages/:sid", h(async (req) => {
-    assertAdmin(req.ctx);
+    if (!req.ctx.role.permissions.admin) assert(req.ctx, "deal", "update");
     const b = parse(stageSchema.partial(), req.body);
     const s = req.ctx.db.get<Row>("SELECT * FROM stages WHERE id=? AND workspace_id=?", param(req, "sid"), req.ctx.ws);
     if (!s) throw notFound("Etapa");
@@ -107,13 +107,13 @@ export function pipelineRoutes() {
     return parseJson(req.ctx.db.get<Row>("SELECT * FROM stages WHERE id=?", param(req, "sid")), ["required_fields"]);
   }));
   r.put("/:id/stages-order", h(async (req) => {
-    assertAdmin(req.ctx);
+    if (!req.ctx.role.permissions.admin) assert(req.ctx, "deal", "update");
     const { order } = parse(z.object({ order: z.array(z.string()) }), req.body);
     order.forEach((sid, i) => req.ctx.db.run("UPDATE stages SET position=? WHERE id=? AND pipeline_id=? AND kind='open'", i, sid, param(req, "id")));
     return { ok: true };
   }));
   r.delete("/:id/stages/:sid", h(async (req) => {
-    assertAdmin(req.ctx);
+    if (!req.ctx.role.permissions.admin) assert(req.ctx, "deal", "update");
     const s = req.ctx.db.get<Row>("SELECT * FROM stages WHERE id=?", param(req, "sid"));
     if (!s) throw notFound("Etapa");
     if (s.kind !== "open") throw badRequest("Las etapas Ganado y Perdido no se pueden borrar");

@@ -58,6 +58,19 @@ Cubierta por los tests de `server/tests/crm.test.ts` y la interfaz: alta de cont
 
 Pendiente de operación (no de código): copia de seguridad diaria del archivo SQLite y prueba de restauración.
 
+## Tableros personalizables (estilo monday)
+
+Cada tablero (Contactos, Empresas, Negocios, Tickets) se adapta sin tocar código, y la configuración se comparte con todo el equipo:
+
+- **Columnas**: botón «+» en la cabecera para añadir columnas de tipo Estado, Texto, Número, Importe, Porcentaje, Fecha, Persona, Casilla, Enlace, Email, Teléfono o Etiquetas múltiples. Menú de cada columna (⌄) para ordenar, renombrar, mover, cambiar el ancho, ocultar o borrar.
+- **Etiquetas de estado**: desde cualquier celda de estado, «Editar etiquetas» cambia texto y color; en las columnas creadas por ti también se añaden o quitan opciones.
+- **Grupos**: «Agrupar por» etapa, estado, propietario o cualquier columna de tipo Estado. Clic en el nombre del grupo para renombrarlo, paleta para su color, menú para subir, bajar u ocultar.
+- **Filas**: «+ Añadir elemento» al pie de cada grupo crea el registro con el valor del grupo; el menú de la fila permite abrir, duplicar, mover a otro grupo o borrar. Todas las celdas se editan al clic.
+- **Etapas del pipeline**: en el kanban, menú de cada columna para renombrar, cambiar color, probabilidad, días esperados, reordenar o borrar, y «Añadir etapa» al final.
+- **Automatizaciones**: botón en el tablero con reglas «Cuando … entonces …» (estado cambia, se crea un elemento, etapa cambia, sin actividad N días, SLA en riesgo → notificar, asignar, crear tarea, cambiar estado, mover de etapa, etiquetar, enviar email). Se guardan como workflows y se pueden ampliar con condiciones y varias acciones en el editor completo.
+
+API: `GET/PUT /api/boards/:object` (columnas, etiquetas, agrupación), `POST/PUT/DELETE /api/admin/custom-fields`, `POST/PUT/DELETE /api/pipelines/:id/stages`, `POST /api/workflows`.
+
 ## Integraciones externas (puntos de extensión)
 
 El manual contempla sincronización de Gmail/Microsoft 365, telefonía, WhatsApp, etc. El CRM está preparado para ello sin cambiar el modelo:

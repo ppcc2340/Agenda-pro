@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { Upload, Copy } from "lucide-react";
-import { DataTable, type Column } from "../components/DataTable";
+import { DataTable, type Column, type GroupOption } from "../components/DataTable";
+import { useBoard, customColumns } from "../lib/board";
 import { ContactForm } from "../components/RecordForms";
 import { ScoreBar, useToast, useConfirm, Modal, Field } from "../components/ui";
 import { api } from "../api";
@@ -16,7 +17,8 @@ export function ContactsPage() {
   const [params, setParams] = useSearchParams();
   const [creating, setCreating] = useState(!!params.get("new"));
   const [refresh, setRefresh] = useState(0);
-  const { users, customFields, can } = useApp();
+  const { users, customFields, can, userName } = useApp();
+  const board = useBoard("contact");
   const toast = useToast();
   const confirm = useConfirm();
   const [bulk, setBulk] = useState<{ ids: string[]; clear: () => void } | null>(null);
@@ -28,11 +30,12 @@ export function ContactsPage() {
   const cols: Column<C>[] = [
     { key: "name", label: "Contacto", type: "name", value: (c) => `${c.first_name} ${c.last_name}`, sub: (c) => c.job_title, render: (c) => <Link to={`/contactos/${c.id}`} onClick={(e) => e.stopPropagation()}>{c.first_name} {c.last_name}</Link> },
     { key: "company_name", label: "Empresa", className: "l", render: (c) => c.company_id ? <Link to={`/empresas/${c.company_id}`} onClick={(e) => e.stopPropagation()}>{c.company_name}</Link> : <span className="muted">—</span> },
-    { key: "lifecycle_stage", label: "Etapa", sortable: true, type: "status", options: LIFECYCLE_OPTS, onEdit: editable ? (c, v) => patch(c, { lifecycle_stage: v }) : undefined },
-    { key: "lead_status", label: "Estado lead", sortable: true, type: "status", options: LEAD_STATUS_OPTS, onEdit: editable ? (c, v) => patch(c, { lead_status: v }) : undefined },
+    { key: "lifecycle_stage", label: "Etapa", sortable: true, type: "status", fixedOptions: true, options: LIFECYCLE_OPTS, onEdit: editable ? (c, v) => patch(c, { lifecycle_stage: v }) : undefined },
+    { key: "lead_status", label: "Estado lead", sortable: true, type: "status", fixedOptions: true, options: LEAD_STATUS_OPTS, onEdit: editable ? (c, v) => patch(c, { lead_status: v }) : undefined },
     { key: "owner_name", label: "Propietario", type: "person", onEdit: editable ? (c, v) => patch(c, { owner_id: v }) : undefined },
     { key: "email", label: "Email", sortable: true, className: "l", onEdit: editable ? (c, v) => patch(c, { email: v }) : undefined, render: (c) => c.email ? <a href={`mailto:${c.email}`} onClick={(e) => e.stopPropagation()}>{c.email}</a> : <span className="muted">—</span> },
     { key: "phone", label: "Teléfono", className: "l", onEdit: editable ? (c, v) => patch(c, { phone: v }) : undefined },
+    { key: "job_title", label: "Cargo", className: "l", default: false, onEdit: editable ? (c, v) => patch(c, { job_title: v }) : undefined },
     { key: "score", label: "Score", sortable: true, type: "number", agg: "avg", width: 120, render: (c) => <ScoreBar value={c.score} /> },
     { key: "source", label: "Origen", sortable: true, className: "c", render: (c) => SOURCES[c.source ?? ""] ?? c.source ?? "", default: false },
     { key: "open_deals", label: "Negocios", type: "number", default: false },
@@ -40,14 +43,22 @@ export function ContactsPage() {
     { key: "city", label: "Ciudad", sortable: true, className: "l", default: false, onEdit: editable ? (c, v) => patch(c, { city: v }) : undefined },
     { key: "last_activity_at", label: "Última actividad", sortable: true, className: "c", render: (c) => <span className="muted" title={fmtDate(c.last_activity_at)}>{relTime(c.last_activity_at) || "nunca"}</span> },
     { key: "created_at", label: "Creado", sortable: true, type: "date", render: (c) => fmtDate(c.created_at), default: false },
-    ...customFields.filter((f) => f.object === "contact").map<Column<C>>((f) => ({ key: `custom.${f.key}`, label: f.label, sortable: true, default: false, className: "l", render: (c) => String(c.custom?.[f.key] ?? "") })),
+    ...customColumns<C>(customFields, "contact", board, editable ? (c, k, v) => patch(c, { custom: { [k]: v } }) : undefined, userName),
   ];
-  const groupBy = { get: (c: C) => (["customer", "evangelist"].includes(c.lifecycle_stage) ? "customer" : c.lifecycle_stage === "lost" ? "lost" : ["sql", "opportunity"].includes(c.lifecycle_stage) ? "qualified" : "lead"), groups: [{ key: "lead", label: "Leads", color: "var(--c-blue)" }, { key: "qualified", label: "Cualificados", color: "var(--c-purple)" }, { key: "customer", label: "Clientes", color: "var(--c-green)" }, { key: "lost", label: "Perdidos", color: "var(--c-red)" }] };
+  const ownerGroups = users.filter((u) => u.active).map((u) => ({ key: u.id, label: u.name, color: "var(--c-blue)" }));
+  const groupOptions: GroupOption<C>[] = [
+    { key: "lifecycle_stage", label: "Etapa", get: (c) => c.lifecycle_stage, groups: Object.entries(LIFECYCLE_OPTS).map(([key, o]) => ({ key, label: o.label, color: o.color })), setValue: (c, g) => patch(c, { lifecycle_stage: g }), createValue: (g) => ({ lifecycle_stage: g }) },
+    { key: "lead_status", label: "Estado del lead", get: (c) => c.lead_status, groups: Object.entries(LEAD_STATUS_OPTS).map(([key, o]) => ({ key, label: o.label, color: o.color })), setValue: (c, g) => patch(c, { lead_status: g }), createValue: (g) => ({ lead_status: g }) },
+    { key: "owner_id", label: "Propietario", get: (c) => c.owner_id ?? "", groups: ownerGroups, other: "Sin propietario", setValue: (c, g) => patch(c, { owner_id: g }), createValue: (g) => ({ owner_id: g }) },
+    ...customFields.filter((f) => f.object === "contact" && f.type === "select").map<GroupOption<C>>((f) => ({ key: `custom.${f.key}`, label: f.label, get: (c) => String(c.custom?.[f.key] ?? ""), groups: (cols.find((c) => c.key === `custom.${f.key}`)?.options ? Object.entries(cols.find((c) => c.key === `custom.${f.key}`)!.options!).map(([key, o]) => ({ key, label: o.label, color: o.color })) : []), other: "Sin valor", setValue: (c, g) => patch(c, { custom: { [f.key]: g } }), createValue: (g) => ({ custom: { [f.key]: g } }) })),
+  ];
+  const create = async (name: string, extra: Record<string, unknown>) => { const [first, ...rest] = name.split(/\s+/); await api.post("contacts", { first_name: first, last_name: rest.join(" "), force: true, ...extra }); };
+  const duplicate = async (c: C) => { await api.post("contacts", { first_name: c.first_name, last_name: `${c.last_name} (copia)`.trim(), phone: c.phone, job_title: c.job_title, company_id: c.company_id, lifecycle_stage: c.lifecycle_stage, lead_status: c.lead_status, source: c.source, owner_id: c.owner_id, tags: c.tags, city: c.city, custom: c.custom, force: true }); };
   const runBulk = async (body: Record<string, unknown>) => { if (!bulk) return; const r = await api.post<{ affected: number }>("contacts/bulk", { ids: bulk.ids, ...body }); toast(`${r.affected} contactos actualizados`, "ok"); bulk.clear(); setBulk(null); };
   return (
     <div>
       <div className="page-head"><div><h1>Contactos</h1><p className="sub">Personas: leads, clientes y todo lo que sabes de ellas.</p></div><div className="row"><Link to="/contactos/duplicados" className="btn ghost"><Copy />Duplicados</Link><Link to="/ajustes/importar?object=contact" className="btn ghost"><Upload />Importar</Link></div></div>
-      <DataTable<C> object="contact" endpoint="contacts" columns={cols} groupBy={groupBy} onRowClick={(c) => nav(`/contactos/${c.id}`)} exportUrl="contacts/export" refreshKey={refresh} emptyText="No hay contactos" onNew={can("contact", "create") ? () => setCreating(true) : undefined} newLabel="Nuevo contacto"
+      <DataTable<C> object="contact" endpoint="contacts" columns={cols} board={board} groupOptions={groupOptions} onCreate={editable ? create : undefined} onDuplicate={can("contact", "create") ? duplicate : undefined} onRowClick={(c) => nav(`/contactos/${c.id}`)} exportUrl="contacts/export" refreshKey={refresh} emptyText="No hay contactos" onNew={can("contact", "create") ? () => setCreating(true) : undefined} newLabel="Nuevo contacto"
         onDelete={can("contact", "delete") ? async (ids) => { if (await confirm({ title: `¿Borrar ${ids.length === 1 ? "este contacto" : ids.length + " contactos"}?`, text: "Irán a la papelera 30 días.", danger: true, confirmText: "Borrar" })) { await api.post("contacts/bulk", { ids, action: "delete" }); toast("Borrado", "ok"); setRefresh((r) => r + 1); } } : undefined}
         bulkActions={(ids, clear) => (<>
           <button className="btn sm" onClick={() => setBulk({ ids, clear })}>Editar en masa</button>

@@ -50,7 +50,7 @@ export function WorkflowsAdmin() {
   );
 }
 
-function WorkflowEditor({ wf, onClose, onSaved }: { wf: WF | null; onClose: () => void; onSaved: () => void }) {
+export function WorkflowEditor({ wf, onClose, onSaved }: { wf: WF | null; onClose: () => void; onSaved: () => void }) {
   const { users, pipelines, teams } = useApp();
   const toast = useToast();
   const [name, setName] = useState(wf?.name ?? "");

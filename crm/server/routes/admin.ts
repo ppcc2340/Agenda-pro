@@ -1,12 +1,12 @@
 import { Router } from "express";
 import { z } from "zod";
 import { h, parse, param } from "./_helpers.js";
-import { assertAdmin, PRESET_ROLES, OBJECTS, ACTIONS } from "../lib/permissions.js";
+import { assertAdmin, assert, PRESET_ROLES, OBJECTS, ACTIONS } from "../lib/permissions.js";
 import { id, now, hashPassword, token, sha256 } from "../lib/util.js";
 import { badRequest, notFound } from "../lib/errors.js";
 import { audit } from "../services/audit.js";
 import { publicUser } from "./auth.js";
-import { DEFAULT_SETTINGS } from "../context.js";
+import { DEFAULT_SETTINGS, type Ctx } from "../context.js";
 import { parseJson, type Row } from "../db.js";
 import { emailMode, sentLog } from "../services/email.js";
 import { attemptDelivery } from "../services/webhooks.js";
@@ -91,9 +91,10 @@ export function adminRoutes() {
   // ---------- custom fields ----------
   r.get("/custom-fields", h(async (req) => ({ items: req.ctx.db.all<Row>("SELECT * FROM custom_fields WHERE workspace_id=? ORDER BY object, position", req.ctx.ws).map((f) => parseJson(f, ["options", "show_if"])) })));
   const cfSchema = z.object({ object: z.enum(["contact", "company", "deal", "ticket"]), key: z.string().regex(/^[a-z][a-z0-9_]*$/, "Clave en minúsculas, sin espacios"), label: z.string().trim().min(1), type: z.enum(["text", "textarea", "number", "currency", "percent", "date", "datetime", "boolean", "select", "multiselect", "user", "url", "email", "phone"]), options: z.array(z.string()).optional(), required: z.boolean().optional(), default_value: z.string().nullable().optional(), position: z.number().int().optional(), section: z.string().nullable().optional(), show_if: z.object({ field: z.string(), value: z.string() }).nullable().optional() });
+  const canEditFields = (ctx: Ctx, object: string) => { if (!ctx.role.permissions.admin) assert(ctx, object, "update"); };
   r.post("/custom-fields", h(async (req) => {
-    assertAdmin(req.ctx);
     const b = parse(cfSchema, req.body);
+    canEditFields(req.ctx, b.object);
     if (req.ctx.db.get("SELECT id FROM custom_fields WHERE workspace_id=? AND object=? AND key=?", req.ctx.ws, b.object, b.key)) throw badRequest("Ya existe un campo con esa clave");
     const fid = id();
     const pos = req.ctx.db.get<{ n: number }>("SELECT COUNT(*) n FROM custom_fields WHERE workspace_id=? AND object=?", req.ctx.ws, b.object)?.n ?? 0;
@@ -102,12 +103,14 @@ export function adminRoutes() {
     return parseJson(req.ctx.db.get<Row>("SELECT * FROM custom_fields WHERE id=?", fid), ["options", "show_if"]);
   }));
   r.put("/custom-fields/:id", h(async (req) => {
-    assertAdmin(req.ctx);
+    const cur = req.ctx.db.get<Row>("SELECT * FROM custom_fields WHERE id=? AND workspace_id=?", param(req, "id"), req.ctx.ws);
+    if (!cur) throw notFound("Campo");
+    canEditFields(req.ctx, String(cur.object));
     const b = parse(cfSchema.partial().omit({ object: true, key: true }), req.body);
     req.ctx.db.update("custom_fields", param(req, "id"), { ...b, required: b.required === undefined ? undefined : b.required ? 1 : 0 });
     return parseJson(req.ctx.db.get<Row>("SELECT * FROM custom_fields WHERE id=?", param(req, "id")), ["options", "show_if"]);
   }));
-  r.delete("/custom-fields/:id", h(async (req) => { assertAdmin(req.ctx); req.ctx.db.run("DELETE FROM custom_fields WHERE id=? AND workspace_id=?", param(req, "id"), req.ctx.ws); return { ok: true }; }));
+  r.delete("/custom-fields/:id", h(async (req) => { const cur = req.ctx.db.get<Row>("SELECT * FROM custom_fields WHERE id=? AND workspace_id=?", param(req, "id"), req.ctx.ws); if (!cur) throw notFound("Campo"); canEditFields(req.ctx, String(cur.object)); req.ctx.db.run("DELETE FROM custom_fields WHERE id=? AND workspace_id=?", param(req, "id"), req.ctx.ws); return { ok: true }; }));
 
   // ---------- settings ----------
   r.get("/settings", h(async (req) => ({ settings: req.ctx.settings, email_mode: emailMode(), public_url: process.env.PUBLIC_URL ?? "http://localhost:3000" })));

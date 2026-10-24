@@ -590,3 +590,12 @@ CREATE TABLE IF NOT EXISTS counters (
   value INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY (workspace_id, key)
 );
+
+CREATE TABLE IF NOT EXISTS board_configs (
+  workspace_id TEXT NOT NULL,
+  object TEXT NOT NULL,
+  config TEXT NOT NULL DEFAULT '{}',
+  updated_by TEXT,
+  updated_at TEXT NOT NULL,
+  PRIMARY KEY (workspace_id, object)
+);

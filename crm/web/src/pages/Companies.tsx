@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams, Link, useSearchParams } from "react-router-dom";
 import { Plus, Upload, Pencil, Trash2, MoreHorizontal, Globe, Phone, MapPin, Building2, StickyNote, CheckSquare, Handshake, Users } from "lucide-react";
-import { DataTable, type Column } from "../components/DataTable";
+import { DataTable, type Column, type GroupOption } from "../components/DataTable";
+import { useBoard, customColumns } from "../lib/board";
 import { CompanyForm, ContactForm, DealForm } from "../components/RecordForms";
 import { Timeline, Composer } from "../components/Timeline";
 import { TaskRow, TaskForm, type Task } from "../components/Tasks";
@@ -14,20 +15,21 @@ import { COMPANY_TYPES, LIFECYCLE, fmtMoney, fmtNum, fmtDate, relTime } from "..
 import { COMPANY_TYPE_OPTS } from "../lib/colors";
 
 type Rec = Record<string, unknown>;
-interface Co { id: string; name: string; domain: string | null; sector: string | null; size: number | null; city: string | null; country: string | null; type: string; owner_name: string | null; contacts_count: number; open_deals: number; tags: string[]; last_activity_at: string | null; created_at: string; custom: Rec; revenue: number | null }
+interface Co { id: string; name: string; domain: string | null; sector: string | null; size: number | null; city: string | null; country: string | null; type: string; owner_id: string | null; owner_name: string | null; contacts_count: number; open_deals: number; tags: string[]; last_activity_at: string | null; created_at: string; custom: Rec; revenue: number | null }
 
 export function CompaniesPage() {
   const nav = useNavigate();
   const [params] = useSearchParams();
   const [creating, setCreating] = useState(!!params.get("new"));
-  const { customFields, can } = useApp();
+  const { customFields, can, users, userName } = useApp();
+  const board = useBoard("company");
   const toast = useToast();
   const confirm = useConfirm();
   const patch = (c: Co, body: Record<string, unknown>) => api.patch(`companies/${c.id}`, body).then(() => undefined);
   const editable = can("company", "update");
   const cols: Column<Co>[] = [
     { key: "name", label: "Empresa", type: "name", sub: (c) => c.domain, render: (c) => <Link to={`/empresas/${c.id}`} onClick={(e) => e.stopPropagation()}>{c.name}</Link> },
-    { key: "type", label: "Tipo", sortable: true, type: "status", options: COMPANY_TYPE_OPTS, onEdit: editable ? (c, v) => patch(c, { type: v }) : undefined },
+    { key: "type", label: "Tipo", sortable: true, type: "status", fixedOptions: true, options: COMPANY_TYPE_OPTS, onEdit: editable ? (c, v) => patch(c, { type: v }) : undefined },
     { key: "owner_name", label: "Propietario", type: "person", onEdit: editable ? (c, v) => patch(c, { owner_id: v }) : undefined },
     { key: "sector", label: "Sector", sortable: true, className: "l", onEdit: editable ? (c, v) => patch(c, { sector: v }) : undefined },
     { key: "size", label: "Empleados", sortable: true, type: "number", onEdit: editable ? (c, v) => patch(c, { size: v }) : undefined },
@@ -39,13 +41,19 @@ export function CompaniesPage() {
     { key: "tags", label: "Etiquetas", type: "tags", default: false },
     { key: "last_activity_at", label: "Última actividad", sortable: true, className: "c", render: (c) => <span className="muted">{relTime(c.last_activity_at) || "nunca"}</span> },
     { key: "created_at", label: "Creada", sortable: true, type: "date", default: false, render: (c) => fmtDate(c.created_at) },
-    ...customFields.filter((f) => f.object === "company").map<Column<Co>>((f) => ({ key: `custom.${f.key}`, label: f.label, sortable: true, default: false, className: "l", render: (c) => String(c.custom?.[f.key] ?? "") })),
+    ...customColumns<Co>(customFields, "company", board, editable ? (c, k, v) => patch(c, { custom: { [k]: v } }) : undefined, userName),
   ];
-  const groupBy = { get: (c: Co) => c.type, groups: Object.entries(COMPANY_TYPE_OPTS).map(([key, o]) => ({ key, label: o.label + "s", color: o.color })) };
+  const groupOptions: GroupOption<Co>[] = [
+    { key: "type", label: "Tipo", get: (c) => c.type, groups: Object.entries(COMPANY_TYPE_OPTS).map(([key, o]) => ({ key, label: o.label + "s", color: o.color })), setValue: (c, g) => patch(c, { type: g }), createValue: (g) => ({ type: g }) },
+    { key: "owner_id", label: "Propietario", get: (c) => c.owner_id ?? "", groups: users.filter((u) => u.active).map((u) => ({ key: u.id, label: u.name, color: "var(--c-purple)" })), other: "Sin propietario", setValue: (c, g) => patch(c, { owner_id: g }), createValue: (g) => ({ owner_id: g }) },
+    ...customFields.filter((f) => f.object === "company" && f.type === "select").map<GroupOption<Co>>((f) => ({ key: `custom.${f.key}`, label: f.label, get: (c) => String(c.custom?.[f.key] ?? ""), groups: Object.entries(cols.find((c) => c.key === `custom.${f.key}`)?.options ?? {}).map(([key, o]) => ({ key, label: o.label, color: o.color })), other: "Sin valor", setValue: (c, g) => patch(c, { custom: { [f.key]: g } }), createValue: (g) => ({ custom: { [f.key]: g } }) })),
+  ];
+  const create = async (name: string, extra: Record<string, unknown>) => { await api.post("companies", { name, force: true, ...extra }); };
+  const duplicate = async (c: Co) => { await api.post("companies", { name: `${c.name} (copia)`, sector: c.sector, size: c.size, city: c.city, country: c.country, type: c.type, owner_id: c.owner_id, tags: c.tags, custom: c.custom, revenue: c.revenue, force: true }); };
   return (
     <div>
       <div className="page-head"><div><h1>Empresas</h1><p className="sub">Cuentas: prospectos, clientes, partners y proveedores.</p></div><div className="row"><Link to="/ajustes/importar?object=company" className="btn ghost"><Upload />Importar</Link></div></div>
-      <DataTable<Co> object="company" endpoint="companies" columns={cols} groupBy={groupBy} onRowClick={(c) => nav(`/empresas/${c.id}`)} exportUrl="companies/export" emptyText="No hay empresas" onNew={can("company", "create") ? () => setCreating(true) : undefined} newLabel="Nueva empresa"
+      <DataTable<Co> object="company" endpoint="companies" columns={cols} board={board} groupOptions={groupOptions} onCreate={editable ? create : undefined} onDuplicate={can("company", "create") ? duplicate : undefined} onRowClick={(c) => nav(`/empresas/${c.id}`)} exportUrl="companies/export" emptyText="No hay empresas" onNew={can("company", "create") ? () => setCreating(true) : undefined} newLabel="Nueva empresa"
         onDelete={can("company", "delete") ? async (ids) => { if (await confirm({ title: `¿Borrar ${ids.length === 1 ? "esta empresa" : ids.length + " empresas"}?`, danger: true, confirmText: "Borrar" })) { await api.post("companies/bulk", { ids, action: "delete" }); toast("Borrado", "ok"); nav("/empresas", { replace: true }); } } : undefined}
         bulkActions={(ids, clear) => <button className="btn sm danger" onClick={async () => { if (await confirm({ title: `¿Borrar ${ids.length} empresas?`, danger: true, confirmText: "Borrar" })) { await api.post("companies/bulk", { ids, action: "delete" }); toast("Borradas", "ok"); clear(); } }}>Borrar</button>} />
       {creating && <CompanyForm onClose={() => setCreating(false)} onSaved={(c) => nav(`/empresas/${c.id}`)} />}

@@ -3,38 +3,48 @@ import { useNavigate, useParams, Link } from "react-router-dom";
 import { Send } from "lucide-react";
 import { api } from "../api";
 import { useApp } from "../lib/app";
-import { DataTable, type Column } from "../components/DataTable";
+import { DataTable, type Column, type GroupOption } from "../components/DataTable";
+import { useBoard, customColumns } from "../lib/board";
 import { Timeline } from "../components/Timeline";
 import { TaskRow, TaskForm, type Task } from "../components/Tasks";
 import { Modal, Field, Picker, Spinner, useToast, errorMessage, Tabs } from "../components/ui";
 import { TICKET_STATUS, PRIORITY, fmtDateTime, relTime, isOverdue, fmtDate } from "../lib/format";
 import { TICKET_STATUS_OPTS, PRIORITY_OPTS } from "../lib/colors";
 
-interface T { id: string; number: number; subject: string; status: string; priority: string; category: string | null; channel: string; assignee_name: string | null; contact_name: string | null; company_name: string | null; sla_due_at: string | null; first_response_at: string | null; created_at: string; csat: number | null }
+interface T { id: string; number: number; subject: string; status: string; priority: string; category: string | null; channel: string; assignee_id: string | null; assignee_name: string | null; custom?: Record<string, unknown>; tags?: string[]; contact_name: string | null; company_name: string | null; sla_due_at: string | null; first_response_at: string | null; created_at: string; csat: number | null }
 
 export function TicketsPage() {
   const nav = useNavigate();
   const [creating, setCreating] = useState(false);
   const [refresh, setRefresh] = useState(0);
-  const { can } = useApp();
+  const { can, users, customFields, userName } = useApp();
+  const board = useBoard("ticket");
   const patch = (t: T, body: Record<string, unknown>) => api.put(`tickets/${t.id}`, body).then(() => undefined);
   const editable = can("ticket", "update");
   const cols: Column<T>[] = [
     { key: "subject", label: "Ticket", type: "name", sub: (t) => <span className="num">#{t.number}{t.contact_name ? ` · ${t.contact_name}` : ""}</span>, render: (t) => <Link to={`/tickets/${t.id}`} onClick={(e) => e.stopPropagation()}>{t.subject}</Link> },
-    { key: "status", label: "Estado", sortable: true, type: "status", options: TICKET_STATUS_OPTS, onEdit: editable ? (t, v) => patch(t, { status: v }) : undefined },
-    { key: "priority", label: "Prioridad", sortable: true, type: "status", options: PRIORITY_OPTS, onEdit: editable ? (t, v) => patch(t, { priority: v }) : undefined },
+    { key: "status", label: "Estado", sortable: true, type: "status", fixedOptions: true, options: TICKET_STATUS_OPTS, onEdit: editable ? (t, v) => patch(t, { status: v }) : undefined },
+    { key: "priority", label: "Prioridad", sortable: true, type: "status", fixedOptions: true, options: PRIORITY_OPTS, onEdit: editable ? (t, v) => patch(t, { priority: v }) : undefined },
     { key: "assignee_name", label: "Asignado", type: "person", onEdit: editable ? (t, v) => patch(t, { assignee_id: v }) : undefined },
     { key: "sla_due_at", label: "SLA", sortable: true, className: "c", render: (t) => (["resolved", "closed"].includes(t.status) || t.first_response_at ? <span className="muted">{t.first_response_at ? "respondido" : "—"}</span> : <span><i className={`ddot ${isOverdue(t.sla_due_at) ? "late" : "soon"}`} />{relTime(t.sla_due_at)}</span>) },
     { key: "company_name", label: "Empresa", className: "l", default: false },
     { key: "category", label: "Categoría", sortable: true, className: "l", onEdit: editable ? (t, v) => patch(t, { category: v }) : undefined },
     { key: "channel", label: "Canal", className: "c", default: false },
     { key: "created_at", label: "Creado", sortable: true, type: "date", render: (t) => fmtDate(t.created_at) },
+    ...customColumns<T & { custom?: Record<string, unknown> }>(customFields, "ticket", board, editable ? (t, k, v) => patch(t, { custom: { [k]: v } }) : undefined, userName),
   ];
-  const groupBy = { get: (t: T) => (["resolved", "closed"].includes(t.status) ? "done" : t.status === "pending" ? "pending" : "open"), groups: [{ key: "open", label: "Abiertos", color: "var(--c-orange)" }, { key: "pending", label: "Pendientes del cliente", color: "var(--c-purple)" }, { key: "done", label: "Resueltos", color: "var(--c-green)" }] };
+  const groupOptions: GroupOption<T>[] = [
+    { key: "status", label: "Estado", get: (t) => t.status, groups: Object.entries(TICKET_STATUS_OPTS).map(([key, o]) => ({ key, label: o.label, color: o.color })), setValue: (t, g) => patch(t, { status: g }), createValue: (g) => ({ status: g }) },
+    { key: "priority", label: "Prioridad", get: (t) => t.priority, groups: Object.entries(PRIORITY_OPTS).map(([key, o]) => ({ key, label: o.label, color: o.color })), setValue: (t, g) => patch(t, { priority: g }), createValue: (g) => ({ priority: g }) },
+    { key: "assignee_id", label: "Asignado", get: (t) => t.assignee_id ?? "", groups: users.filter((u) => u.active).map((u) => ({ key: u.id, label: u.name, color: "var(--c-red)" })), other: "Sin asignar", setValue: (t, g) => patch(t, { assignee_id: g }), createValue: (g) => ({ assignee_id: g }) },
+    ...customFields.filter((f) => f.object === "ticket" && f.type === "select").map<GroupOption<T>>((f) => ({ key: `custom.${f.key}`, label: f.label, get: (t) => String(t.custom?.[f.key] ?? ""), groups: Object.entries(cols.find((c) => c.key === `custom.${f.key}`)?.options ?? {}).map(([key, o]) => ({ key, label: o.label, color: o.color })), other: "Sin valor", setValue: (t, g) => patch(t, { custom: { [f.key]: g } }), createValue: (g) => ({ custom: { [f.key]: g } }) })),
+  ];
+  const create = async (subject: string, extra: Record<string, unknown>) => { await api.post("tickets", { subject, ...extra }); };
+  const duplicate = async (t: T) => { await api.post("tickets", { subject: `${t.subject} (copia)`, priority: t.priority, category: t.category, channel: t.channel, assignee_id: t.assignee_id, custom: t.custom }); };
   return (
     <div>
       <div className="page-head"><div><h1>Tickets</h1><p className="sub">Soporte y atención al cliente con SLA por prioridad.</p></div></div>
-      <DataTable<T> object="ticket" endpoint="tickets" columns={cols} groupBy={groupBy} onRowClick={(t) => nav(`/tickets/${t.id}`)} refreshKey={refresh} emptyText="No hay tickets" defaultSort={{ field: "created_at", dir: "desc" }} onNew={can("ticket", "create") ? () => setCreating(true) : undefined} newLabel="Nuevo ticket" />
+      <DataTable<T> object="ticket" endpoint="tickets" columns={cols} board={board} groupOptions={groupOptions} onCreate={editable ? create : undefined} onDuplicate={can("ticket", "create") ? duplicate : undefined} onRowClick={(t) => nav(`/tickets/${t.id}`)} refreshKey={refresh} emptyText="No hay tickets" defaultSort={{ field: "created_at", dir: "desc" }} onNew={can("ticket", "create") ? () => setCreating(true) : undefined} newLabel="Nuevo ticket" />
       {creating && <TicketForm onClose={() => setCreating(false)} onSaved={(t) => { setRefresh((r) => r + 1); nav(`/tickets/${t.id}`); }} />}
     </div>
   );
