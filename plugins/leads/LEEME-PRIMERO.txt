@@ -1,0 +1,44 @@
+MOTOR DE LEADS — plugin para Claude Code
+=========================================
+
+Este zip contiene el motor completo. Para instalarlo NO necesitas saber programar.
+
+OPCIÓN 1 (la fácil): deja que Claude lo instale
+-----------------------------------------------
+1. Abre Claude Code en tu computador (la aplicación de escritorio o la terminal).
+   OJO: tiene que ser Claude Code, no el chat normal de claude.ai. El motor necesita
+   correr en tu computador.
+2. Arrastra este archivo zip al chat de Claude Code (o dile dónde lo descargaste).
+3. Escribe:  instala el plugin de leads que está en este zip
+4. Claude lo descomprime en la carpeta  ~/.claude/skills/leads  y te avisa.
+5. Cierra y vuelve a abrir Claude Code. Escribe:  configura el motor de leads
+   y sigue las preguntas. Listo.
+
+OPCIÓN 2 (a mano)
+-----------------
+Descomprime el zip de modo que quede esta carpeta:
+   (tu carpeta personal)/.claude/skills/leads/
+   y dentro:  leads.py, motor/, skills/, .claude-plugin/, plantillas.default/ ...
+Vuelve a abrir Claude Code y escribe:  configura el motor de leads
+
+ANTES DE EMPEZAR
+----------------
+- Activa el conector de Gmail en claude.ai → Configuración → Conectores → Gmail.
+  Así Claude envía y lee correos desde tu cuenta, sin guardar contraseñas.
+- Necesitas Python instalado (en Mac ya viene; en Windows: python.org, marca "Add to PATH").
+  Lo demás se instala solo la primera vez.
+
+MANUAL COMPLETO
+---------------
+MANUAL.pdf, en esta misma carpeta. Léelo; está hecho para alguien que no programa.
+
+Tus datos (configuración, mensajes, base de leads y el Excel) quedarán en la carpeta
+"leads" dentro de tu carpeta personal, fuera del plugin.
+
+── Nota para Claude ───────────────────────────────────────────────────────────
+Si estás leyendo esto porque el usuario te pidió instalar el plugin:
+  1. Descomprime el zip en  ~/.claude/skills/leads/  (crea la carpeta; si existe, reemplázala).
+     El contenido del zip ya está dentro de una carpeta "leads/", así que descomprime en ~/.claude/skills/.
+  2. Comprueba que existe  ~/.claude/skills/leads/.claude-plugin/plugin.json  y  ~/.claude/skills/leads/leads.py
+  3. Ejecuta  python ~/.claude/skills/leads/leads.py instalar   para dejar las dependencias listas.
+  4. Dile al usuario que cierre y vuelva a abrir Claude Code y escriba «configura el motor de leads».

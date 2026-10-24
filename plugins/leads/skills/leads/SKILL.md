@@ -19,6 +19,9 @@ Si faltan dependencias, el programa las instala solo al arrancar; si el navegado
 sigue con las otras fuentes y avisa en una línea.
 
 **En este archivo, `python leads.py …` es la forma corta de `python ${CLAUDE_PLUGIN_ROOT}/leads.py …`.**
+Si ves la ruta literalmente como `${CLAUDE_PLUGIN_ROOT}` (sin sustituir), el programa está en la carpeta
+raíz de este plugin: dos niveles por encima de este `SKILL.md` (`…/skills/leads/SKILL.md` → `…/leads.py`).
+Localízala con `find ~/.claude -name leads.py -path "*leads*" 2>/dev/null | head -1` y usa esa ruta.
 
 ## 0. Primera vez: conocer el negocio
 

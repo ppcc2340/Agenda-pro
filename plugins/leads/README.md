@@ -23,6 +23,10 @@ No necesitas saber programar: **se lo pides a Claude en palabras normales** y é
    Claude te hará 4 preguntas (tu empresa, qué ofreces, a qué negocios quieres llegar y en qué
    ciudad, y tu firma) y lo deja listo. Lo que falte por instalar se instala solo.
 
+**¿Sin acceso al repositorio?** Pide el archivo `leads-plugin.zip`, arrástralo al chat de Claude Code
+(en tu computador, no al chat web de claude.ai) y escribe «instala el plugin de leads que está en este
+zip». Dentro va un `LEEME-PRIMERO.txt` con los pasos.
+
 Tus datos (configuración, mensajes, base de leads y el Excel) quedan en la carpeta **`leads`
 dentro de tu carpeta personal** (`~/leads`), fuera del plugin, así que actualizar el plugin nunca
 los borra.
