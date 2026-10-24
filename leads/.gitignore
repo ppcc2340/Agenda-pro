@@ -1,0 +1,4 @@
+.env
+leads.db
+*.xlsx
+__pycache__/

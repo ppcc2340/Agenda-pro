@@ -1,0 +1,51 @@
+# ─────────────────────────────────────────────────────────────────────
+#  Configuración del motor de leads. Edita solo este archivo.
+# ─────────────────────────────────────────────────────────────────────
+
+negocio:
+  nombre: "Mi Empresa"
+  remitente: "Juan Pérez"
+  servicio: "desarrollo de sitios web y automatización de procesos"
+  telefono: "+56 9 1234 5678"
+  web: "https://miempresa.cl"
+
+# Qué buscar y dónde. Cada búsqueda = rubro + ciudad.
+busquedas:
+  - rubro: "clínica dental"
+    ciudad: "Santiago, Chile"
+  - rubro: "estudio jurídico"
+    ciudad: "Valparaíso, Chile"
+
+# Fuentes activas: google, maps, instagram
+fuentes: [google, maps, instagram]
+
+# Máximo de resultados por fuente y por búsqueda
+max_por_fuente: 20
+
+# Si un lead tiene sitio web pero no correo, lo visita para buscar el correo
+buscar_correo_en_web: true
+
+correo:
+  asunto: "Propuesta para {nombre}"
+  # Variables disponibles: {nombre} {rubro} {ciudad} {remitente} {negocio} {servicio} {telefono} {web}
+  cuerpo: |
+    Hola, equipo de {nombre}:
+
+    Soy {remitente}, de {negocio}. Trabajamos con negocios de {rubro} en {ciudad}
+    ofreciendo {servicio}.
+
+    Me gustaría contarles en 15 minutos cómo podríamos ayudarles. ¿Tienen
+    disponibilidad esta semana o la próxima?
+
+    Saludos,
+    {remitente}
+    {negocio} · {telefono} · {web}
+
+    ---
+    Si no desea recibir más correos, responda con la palabra "BAJA".
+  max_por_dia: 40            # límite diario de envíos (protege tu reputación)
+  segundos_entre_envios: 45  # pausa entre correos
+  personalizar_con_ia: false # true = Claude redacta un primer párrafo a medida
+
+excel:
+  archivo: "leads.xlsx"
