@@ -1,62 +1,82 @@
 ---
 name: leads
-description: Motor de leads en `leads/`. Úsalo cuando el usuario pida buscar clientes/leads/prospectos (Google, Google Maps, Instagram), redactar o elegir el mensaje, enviar correos de prospección (vía conector de Gmail), revisar quién respondió o exportar leads a Excel.
+description: Motor de leads en `leads/`. Úsalo cuando el usuario hable de buscar clientes/leads/prospectos, mandar correos de prospección, ver quién respondió, el Excel de leads, o configurar su negocio para esto. El usuario NO sabe programar; tú haces todo.
 ---
 
-# Motor de leads
+# Motor de leads — manual para Claude
 
-Todo vive en `leads/`. Se opera con `cd leads && python leads.py <comando>`.
-Configuración en `leads/config.yaml`; mensajes en `leads/plantillas/*.txt`.
-Nunca leas en voz alta ni copies el contenido de `leads/.env`.
+El usuario es una persona de negocio, no programador. **Nunca le pidas que ejecute comandos
+ni edite archivos**: lo haces tú y le cuentas el resultado en palabras simples. No menciones
+Python, YAML, SQLite ni rutas salvo la del Excel final.
 
-## Flujo completo (modo gmail, el predeterminado)
+Todo vive en `leads/`. Comandos: `cd leads && python leads.py <comando>`.
+Si faltan dependencias, el programa las instala solo al arrancar; si el navegador de Maps falla,
+sigue con las otras fuentes y avisa en una línea.
 
+## 0. Primera vez: conocer el negocio
+
+Ejecuta `python leads.py` (sin argumentos). Si responde "Aún no sé nada de tu negocio", haz la
+**entrevista en un solo mensaje**, con estas preguntas y nada más:
+
+1. ¿Cómo se llama tu empresa y cómo te llamas tú (quien firma)?
+2. ¿Qué servicio ofreces? (una frase, como se lo contarías a un cliente)
+3. ¿Qué tipo de negocios quieres contactar y en qué ciudad(es)? (p. ej. "clínicas dentales en Santiago")
+4. Teléfono y sitio web para la firma del correo (opcional).
+
+Con las respuestas ejecuta:
 ```
-buscar → plantillas/previa → cola → [Gmail: enviar] → marcar-enviado → respuestas → [Gmail: buscar] → registrar-respuesta → excel
+python leads.py configurar --negocio "…" --remitente "…" --servicio "…" --telefono "…" --web "…" \
+  --buscar "clínica dental|Santiago, Chile" --buscar "gimnasio|Concepción, Chile"
 ```
+(usa el rubro en singular y la ciudad con país). Luego muestra `python leads.py previa` **no**
+(aún no hay leads): muestra `python leads.py plantillas propuesta-breve` con sus datos y pregunta
+si el mensaje le gusta o quiere cambiarlo. Después ofrece empezar a buscar.
 
-En modo gmail **tú (Claude) eres quien envía y lee el correo** con el conector de Gmail
-del usuario. El programa solo prepara la cola y lleva el registro.
+Cambios posteriores ("agrega cafeterías en Viña", "cambia el servicio a…"):
+`configurar --buscar "cafetería|Viña del Mar, Chile" --agregar`, `configurar --servicio "…"`.
 
-### 1. Buscar
-| El usuario dice… | Ejecuta |
-|---|---|
-| "busca X en Y" | `python leads.py buscar --rubro "X" --ciudad "Y"` |
-| "busca lo de la config" | `python leads.py buscar` |
-| "solo en maps / instagram" | añade `--fuentes maps` o `--fuentes instagram` |
+## 1. Buscar
+- "busca X en Y" → `python leads.py buscar --rubro "X" --ciudad "Y"`
+- "busca" / "busca todo" → `python leads.py buscar` (usa las búsquedas guardadas)
+- "solo Maps / Instagram" → añade `--fuentes maps` / `--fuentes instagram`
+Tarda varios minutos; avisa antes. Al terminar di: cuántos negocios nuevos, cuántos con correo.
 
-### 2. Mensaje (elegir / editar)
-| El usuario dice… | Haz |
-|---|---|
-| "qué mensajes hay" | `python leads.py plantillas` y muéstraselas |
-| "muéstrame el mensaje X" | `python leads.py plantillas X` |
-| "cómo quedaría el correo" | `python leads.py previa [--id N] [--plantilla X]` |
-| "usa el mensaje X" | `--plantilla X` en `cola`, o cambia `correo.plantilla` en `config.yaml` si es permanente |
-| "cambia el mensaje / escribe uno nuevo" | Edita `leads/plantillas/<nombre>.txt` (primera línea `Asunto: …`, luego el cuerpo; variables `{nombre} {rubro} {ciudad} {remitente} {negocio} {servicio} {telefono} {web}`). Para uno nuevo crea otro `.txt` en la misma carpeta. Mantén siempre el pie con "BAJA". Luego muestra `previa` para que lo apruebe. |
+## 2. Mensaje
+- "qué mensajes hay" → `python leads.py plantillas`; descríbelos en una línea cada uno.
+- "muéstrame cómo quedaría" → `python leads.py previa [--id N] [--plantilla X]`
+- "usa el mensaje X" → `--plantilla X` en `cola`; si es para siempre: `configurar --plantilla X`
+- "cámbialo / hazlo más corto / tutea / escribe uno nuevo" → edita `leads/plantillas/<nombre>.txt`
+  (línea 1 `Asunto: …`, luego el cuerpo; variables `{nombre} {rubro} {ciudad} {remitente} {negocio}
+  {servicio} {telefono} {web}`; para uno nuevo crea otro `.txt`). **Conserva siempre el pie con
+  "BAJA"** (obligación legal). Luego `previa` para que lo apruebe.
 
-### 3. Enviar (con el conector de Gmail)
-1. `python leads.py cola` → muestra al usuario cuántos correos hay y el primero completo.
-2. **Pide confirmación explícita** ("¿envío estos N correos?"). Sin un sí claro en esta conversación, no envíes.
-3. `python leads.py cola --json` → por cada elemento, envía con la herramienta de **enviar correo del conector Gmail** (`para`, `asunto`, `cuerpo` tal cual, texto plano). Si el conector solo permite crear borradores, créalos y díselo al usuario.
-4. Tras cada envío correcto: `python leads.py marcar-enviado <id> [--message-id "<id devuelto>"]`. Si uno falla, no lo marques y repórtalo.
-5. Si el conector de Gmail no está autorizado, dile al usuario que lo active en los conectores de claude.ai; alternativa: `correo.modo: smtp` en `config.yaml` con `EMAIL_USER`/`EMAIL_PASS` en `.env` y entonces `python leads.py enviar --confirmar` envía solo.
+## 3. Enviar (tú envías, con el conector de Gmail del usuario)
+1. `python leads.py cola` → di cuántos correos hay y muestra el primero completo.
+2. **Pide confirmación explícita** ("¿Los envío?"). Sin un sí claro en esta conversación, no envíes.
+3. `python leads.py cola --json` → por cada elemento envía con la herramienta de **enviar correo
+   del conector Gmail**: destinatario `para`, asunto `asunto`, cuerpo `cuerpo` tal cual, texto plano.
+   Si el conector solo permite borradores, créalos y avísale que debe pulsar Enviar en Gmail.
+4. Tras cada envío correcto: `python leads.py marcar-enviado <id> [--message-id "<id devuelto>"]`.
+   Si uno falla, no lo marques y repórtalo al final.
+5. Si el conector de Gmail no está autorizado: explícale que debe activarlo en claude.ai →
+   Configuración → Conectores → Gmail, y que vuelva a pedírtelo. No propongas el modo smtp
+   salvo que él lo pida.
 
-### 4. Respuestas (con el conector de Gmail)
-1. `python leads.py respuestas --json` → lista leads enviados con `busqueda_gmail` (ej. `from:x@y.cl after:2026/10/24`).
-2. Por cada uno, busca en Gmail con esa consulta. Si hay respuesta, lee el mensaje y ejecuta
+## 4. Respuestas (tú lees, con el conector de Gmail)
+1. `python leads.py respuestas --json` → cada lead trae `busqueda_gmail` (ej. `from:x@y.cl after:2026/10/24`).
+2. Busca en Gmail con esa consulta. Si hay respuesta, léela y ejecuta
    `python leads.py registrar-respuesta <id> --texto "<primeras líneas>" --asunto "<asunto>"`
-   (detecta BAJA y rebotes solo; puedes forzar con `--baja` o `--rebote`). Si no hay respuesta, no hagas nada.
-3. Resume al usuario quién respondió y qué dijeron.
+   (detecta BAJA y rebotes solo; `--baja` / `--rebote` para forzar). Si no hay, no hagas nada.
+3. Cuéntale quién respondió y qué dijeron, en una línea por persona.
 
-### 5. Excel
-`python leads.py excel` → entrega la ruta `leads/leads.xlsx` (hojas Respondieron / Enviados / Todos).
+## 5. Excel
+`python leads.py excel` → entrégale la ruta `leads/leads.xlsx` y di qué hoja mirar (Respondieron).
 
-### Estado
-`python leads.py estado`
+## "¿Cómo vamos?"
+`python leads.py` → resume en 3 líneas y propone el siguiente paso que indica.
 
 ## Reglas
-1. Nunca envíes sin que el usuario haya visto `cola`/`previa` y confirmado en esta conversación.
-2. Respeta `max_por_dia` (la `cola` ya lo aplica); no inventes destinatarios ni modifiques el cuerpo al enviar.
-3. Si `.env` no existe y se necesita (claves opcionales o modo smtp), cópialo de `.env.example` y pide los datos.
-4. Si una fuente falla (Maps/Instagram cambian su HTML), informa y sigue con las demás; sugiere `GOOGLE_API_KEY` para la variante estable.
-5. Al terminar, resume en 3-4 líneas: leads nuevos, con correo, enviados, respondieron, y la ruta del Excel.
+1. Nunca envíes sin confirmación explícita en esta conversación; nunca cambies el cuerpo al enviar.
+2. No leas ni repitas el contenido de `leads/.env`.
+3. Si algo falla, explícalo en una frase sin jerga y di qué hiciste para seguir.
+4. Cierra siempre con un resumen corto y la pregunta "¿seguimos con …?" según el paso siguiente.

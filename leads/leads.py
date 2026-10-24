@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """Motor de leads — buscar → enviar → respuestas → excel.
 
+  python leads.py                            # ¿cómo voy? y qué sigue
+  python leads.py configurar                 # preguntas sencillas sobre tu negocio
+  python leads.py instalar                   # instala lo que falte (se hace solo si hace falta)
   python leads.py buscar [--rubro X --ciudad Y] [--fuentes google,maps,instagram]
   python leads.py plantillas [nombre]        # lista plantillas o muestra una
   python leads.py previa [--id N] [--plantilla X]   # cómo quedaría el correo
@@ -14,9 +17,49 @@
 """
 import argparse
 import importlib
+import sys
 
-from motor import config, correo, excel, plantillas, respuestas, store
-from motor.fuentes.web import encontrar_email
+from motor import instalar as _inst
+
+if _inst.faltantes() and "instalar" not in sys.argv:
+    print("Faltan componentes; los instalo ahora (solo la primera vez)…")
+    _inst.instalar()
+
+from motor import config, configurar, correo, excel, plantillas, respuestas, store  # noqa: E402
+from motor.fuentes.web import encontrar_email  # noqa: E402
+
+NECESITAN_CONFIG = {"buscar", "previa", "cola", "enviar"}
+
+
+# ── primeros pasos ──────────────────────────────────────────────────────
+def cmd_inicio(con, cfg, a):
+    if not configurar.esta_configurado(cfg):
+        print("Aún no sé nada de tu negocio. Primer paso: python leads.py configurar\n"
+              "(o pídele a Claude: «configura el motor de leads»)")
+        return
+    print(configurar.resumen(cfg))
+    cmd_estado(con, cfg, a)
+    r = store.resumen(con)
+    if r["total"] == 0:
+        print("\nSiguiente paso: buscar leads  →  python leads.py buscar")
+    elif r["nuevo"]:
+        print(f"\nSiguiente paso: hay {r['nuevo']} leads con correo listos  →  python leads.py cola")
+    elif r["enviado"]:
+        print(f"\nSiguiente paso: {r['enviado']} correos esperan respuesta  →  python leads.py respuestas")
+    else:
+        print("\nSiguiente paso: python leads.py excel  (o busca más leads)")
+
+
+def cmd_configurar(con, cfg, a):
+    sin_args = not any([a.negocio, a.remitente, a.servicio, a.telefono, a.web, a.buscar,
+                        a.plantilla, a.modo])
+    cfg = configurar.interactivo(cfg) if sin_args else configurar.desde_argumentos(cfg, a)
+    configurar.guardar(cfg)
+    print("\n✔ Configuración guardada:\n" + configurar.resumen(cfg))
+
+
+def cmd_instalar(con, cfg, a):
+    _inst.instalar(todo=True)
 
 
 # ── buscar ──────────────────────────────────────────────────────────────
@@ -128,6 +171,13 @@ def main():
     def pl(x):
         x.add_argument("--plantilla", help="nombre de plantilla (ver `plantillas`)")
 
+    s = sub.add_parser("configurar", help="preguntas sencillas sobre tu negocio")
+    for opt in ("--negocio", "--remitente", "--servicio", "--telefono", "--web", "--plantilla"):
+        s.add_argument(opt)
+    s.add_argument("--buscar", action="append", metavar='"rubro|ciudad"')
+    s.add_argument("--agregar", action="store_true", help="sumar búsquedas en vez de reemplazar")
+    s.add_argument("--modo", choices=["gmail", "smtp"])
+    sub.add_parser("instalar", help="instala dependencias y navegador")
     s = sub.add_parser("buscar"); s.add_argument("--rubro"); s.add_argument("--ciudad")
     s.add_argument("--fuentes", help="google,maps,instagram"); pl(s)
     s = sub.add_parser("plantillas"); s.add_argument("nombre", nargs="?")
@@ -145,10 +195,16 @@ def main():
     s.add_argument("--baja", action="store_true"); s.add_argument("--rebote", action="store_true")
     sub.add_parser("excel"); sub.add_parser("estado")
 
+    if len(sys.argv) == 1:
+        sys.argv.append("inicio")
+    sub.add_parser("inicio")
     a = p.parse_args()
     cfg = config.cargar()
     con = store.conectar()
-    {"buscar": cmd_buscar, "plantillas": cmd_plantillas, "previa": cmd_previa, "cola": cmd_cola,
+    if a.cmd in NECESITAN_CONFIG and not configurar.esta_configurado(cfg):
+        raise SystemExit("Antes necesito saber de tu negocio y a quién buscar.\n"
+                         "Ejecuta: python leads.py configurar   (o pídeselo a Claude)")
+    {"inicio": cmd_inicio, "configurar": cmd_configurar, "instalar": cmd_instalar, "buscar": cmd_buscar, "plantillas": cmd_plantillas, "previa": cmd_previa, "cola": cmd_cola,
      "marcar-enviado": cmd_marcar_enviado, "enviar": cmd_enviar, "respuestas": cmd_respuestas,
      "registrar-respuesta": cmd_registrar, "excel": cmd_excel, "estado": cmd_estado}[a.cmd](con, cfg, a)
 
