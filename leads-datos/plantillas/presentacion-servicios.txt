@@ -1,0 +1,21 @@
+Asunto: {negocio} — {servicio} para {nombre}
+
+Estimado equipo de {nombre}:
+
+Les escribo desde {negocio}. Nos especializamos en {servicio} y hemos trabajado
+con varios negocios de {rubro} en {ciudad}.
+
+En concreto podemos ayudarles a:
+• Ahorrar tiempo automatizando tareas repetitivas.
+• Captar más clientes con una presencia digital clara.
+• Tener todo medido para decidir con datos.
+
+Si les interesa, respondan a este correo y coordinamos una llamada breve sin
+compromiso.
+
+Un cordial saludo,
+{remitente}
+{negocio} · {telefono} · {web}
+
+---
+Si no desea recibir más correos, responda con la palabra "BAJA".
