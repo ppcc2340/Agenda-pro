@@ -9,6 +9,7 @@ import { resumeActions, runScheduledDaily } from "./workflows.js";
 import { retryDueDeliveries } from "./webhooks.js";
 import { withRelated as dealWithRelated } from "./deals.js";
 import { anonymizeContact } from "./contacts.js";
+import { dailyContractChecks } from "./clm.js";
 
 let timer: NodeJS.Timeout | null = null;
 let lastDaily = "";
@@ -63,6 +64,7 @@ export async function tick(db: Db, opts: { forceDaily?: boolean } = {}) {
       if (opts.forceDaily || lastDaily !== today) {
         lastDaily = today;
         dailyChecks(db, w.id, ctx);
+        try { dailyContractChecks(ctx); } catch (e) { console.error("[clm daily]", e); }
       }
     } catch (e) {
       console.error("[scheduler]", e);

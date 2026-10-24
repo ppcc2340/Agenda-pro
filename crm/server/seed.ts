@@ -12,6 +12,7 @@ import { logActivity } from "./services/activities.js";
 import { createTicket } from "./services/tickets.js";
 import { createQuote } from "./services/quotes.js";
 import type { Ctx } from "./context.js";
+import { seedClmCatalog, seedClmDemo } from "./clm_seed.js";
 
 export interface BootstrapInfo { createdAdmin: boolean; seededDemo: boolean; adminEmail: string; adminPassword: string; workspaceId: string }
 
@@ -64,6 +65,7 @@ export function bootstrap(db: Db, opts: { demo?: boolean; adminEmail?: string; a
     db.insert("forms", { id: id(), workspace_id: ws, name: "Solicitud de información", slug: "contacto", fields: [{ key: "name", label: "Nombre y apellidos", type: "text", required: true }, { key: "email", label: "Email de trabajo", type: "email", required: true }, { key: "phone", label: "Teléfono", type: "phone", required: false }, { key: "company", label: "Empresa", type: "text", required: false }, { key: "custom.interes", label: "¿Qué te interesa?", type: "select", required: false, options: ["CRM", "Consultoría", "Formación", "Soporte"] }, { key: "message", label: "Cuéntanos qué necesitas", type: "textarea", required: false }], settings: { assignment: { mode: "round_robin", team_id: null }, create_deal: false, create_task: true, task_title: "Llamar al nuevo lead en 1 h", thank_you: "¡Gracias! Te contactaremos en menos de 24 horas.", consent_text: "Acepto recibir comunicaciones comerciales.", require_consent: false, tags: ["web"], source: "web", lifecycle_stage: "lead", notify_assignee: true, button_text: "Enviar solicitud", title: "¿Hablamos?", description: "Déjanos tus datos y te llamamos." }, active: 1, submissions: 0, created_at: now() });
   });
   let seededDemo = false;
+  seedClmCatalog(db, ws);
   if (opts.demo) { seedDemo(db, ws); seededDemo = true; }
   return { createdAdmin: true, seededDemo, adminEmail, adminPassword, workspaceId: ws };
 }
@@ -199,6 +201,8 @@ export function seedDemo(db: Db, ws: string) {
   for (const c of contacts.filter((c) => c.consent_marketing).slice(0, 15)) db.run("INSERT OR IGNORE INTO list_members (list_id, record_id, added_at) VALUES (?,?,?)", l2, c.id, now());
   db.insert("views", { id: id(), workspace_id: ws, object: "contact", name: "Mis leads nuevos", filters: { logic: "and", conditions: [{ field: "lead_status", op: "eq", value: "new" }] }, columns: ["name", "company_name", "email", "source", "score", "created_at"], sort: { field: "created_at", dir: "desc" }, shared: 1, user_id: admin.id, created_at: now() });
   db.insert("views", { id: id(), workspace_id: ws, object: "deal", name: "Cierres este mes", filters: { logic: "and", conditions: [{ field: "status", op: "eq", value: "open" }, { field: "expected_close_date", op: "next_days", value: 30 }] }, columns: ["name", "company_name", "stage_name", "amount", "expected_close_date", "owner_name"], sort: { field: "expected_close_date", dir: "asc" }, shared: 1, user_id: admin.id, created_at: now() });
+  // CLM demo contracts
+  seedClmDemo(db, ws, as);
   // clean notifications generated during seed (keep a couple)
   db.run("DELETE FROM notifications WHERE workspace_id=?", ws);
   db.run("DELETE FROM workflow_runs WHERE workspace_id=?", ws);

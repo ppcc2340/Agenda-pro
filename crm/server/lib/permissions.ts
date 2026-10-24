@@ -1,7 +1,7 @@
 import type { Ctx, Permissions } from "../context.js";
 import { forbidden } from "./errors.js";
 
-export const OBJECTS = ["contact", "company", "deal", "task", "activity", "ticket", "product", "quote", "list", "report"] as const;
+export const OBJECTS = ["contact", "company", "deal", "task", "activity", "ticket", "product", "quote", "list", "report", "contract"] as const;
 export const ACTIONS = ["create", "read", "update", "delete", "export"] as const;
 
 export const FULL: Permissions = Object.fromEntries(OBJECTS.map((o) => [o, [...ACTIONS]])) as Permissions;

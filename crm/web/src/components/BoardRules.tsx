@@ -11,7 +11,7 @@ import { relTime } from "../lib/format";
 type Any = Record<string, unknown>;
 interface WF { id: string; name: string; description: string | null; trigger: { type: string; object?: string; field?: string; value?: string; stage_id?: string; days?: number }; conditions: { logic: "and" | "or"; conditions: { field: string; op: string; value?: unknown }[] }; actions: ({ type: string } & Any)[]; active: number; allow_reenroll: number; runs: number; last_run_at: string | null; errors: number }
 
-const OBJ_LABEL: Record<string, string> = { contact: "contacto", company: "empresa", deal: "negocio", ticket: "ticket" };
+const OBJ_LABEL: Record<string, string> = { contact: "contacto", company: "empresa", deal: "negocio", ticket: "ticket", contract: "contrato" };
 
 /** Which workflows belong to this board */
 function belongs(w: WF, object: string) {
@@ -23,7 +23,7 @@ function belongs(w: WF, object: string) {
   return false;
 }
 
-export function BoardRules({ object, columns, onClose }: { object: "contact" | "company" | "deal" | "ticket"; columns: Column<unknown>[]; onClose: () => void }) {
+export function BoardRules({ object, columns, onClose }: { object: "contact" | "company" | "deal" | "ticket" | "contract"; columns: Column<unknown>[]; onClose: () => void }) {
   const toast = useToast();
   const confirm = useConfirm();
   const [items, setItems] = useState<WF[] | null>(null);

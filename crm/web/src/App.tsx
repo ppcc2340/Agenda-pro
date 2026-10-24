@@ -18,6 +18,9 @@ import { ListsPage, ListDetailPage } from "./pages/Lists";
 import { ProductsPage, QuotesPage } from "./pages/Products";
 import { ReportsPage } from "./pages/Reports";
 import { SettingsPage } from "./pages/Settings";
+import { ContractsPage } from "./pages/Contracts";
+import { ContractDetailPage } from "./pages/ContractDetail";
+import { ClmSettingsPage } from "./pages/ClmSettings";
 
 type MeResp = { user: Me | null; settings?: Settings; requires_2fa?: boolean };
 
@@ -50,6 +53,9 @@ export default function App() {
                   <Route path="/negocios" element={<DealsPage />} />
                   <Route path="/negocios/:id" element={<DealDetailPage />} />
                   <Route path="/tareas" element={<TasksPage />} />
+                  <Route path="/contratos" element={<ContractsPage />} />
+                  <Route path="/contratos/configuracion" element={<ClmSettingsPage />} />
+                  <Route path="/contratos/:id" element={<ContractDetailPage />} />
                   <Route path="/tickets" element={<TicketsPage />} />
                   <Route path="/tickets/:id" element={<TicketDetailPage />} />
                   <Route path="/listas" element={<ListsPage />} />

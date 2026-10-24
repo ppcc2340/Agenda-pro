@@ -38,7 +38,7 @@ export interface GroupOption<T> {
 export interface SavedView { id: string; object: string; name: string; filters: FilterGroup; columns: string[]; sort: { field?: string; dir?: string }; shared: number; user_id: string }
 
 interface Props<T> {
-  object: "contact" | "company" | "deal" | "ticket";
+  object: "contact" | "company" | "deal" | "ticket" | "contract";
   endpoint: string;
   columns: Column<T>[];
   board: Board;

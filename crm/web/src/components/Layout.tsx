@@ -14,6 +14,7 @@ const BOARDS = [
   { to: "/contactos", label: "Contactos", color: "var(--c-blue)" },
   { to: "/empresas", label: "Empresas", color: "var(--c-purple)" },
   { to: "/negocios", label: "Negocios", color: "var(--c-green)" },
+  { to: "/contratos", label: "Contratos", color: "#175a63" },
   { to: "/tareas", label: "Tareas", color: "var(--c-orange)" },
   { to: "/tickets", label: "Tickets", color: "var(--c-red)" },
   { to: "/listas", label: "Listas", color: "var(--c-indigo)" },
@@ -95,7 +96,7 @@ export function Layout({ children, onLogout }: { children: ReactNode; onLogout: 
   );
 }
 
-type SearchRes = { contacts: { id: string; first_name: string; last_name: string; email: string | null; company_name: string | null }[]; companies: { id: string; name: string; domain: string | null; city: string | null }[]; deals: { id: string; name: string; amount: number; currency: string; company_name: string | null; stage_name: string }[]; tickets: { id: string; number: number; subject: string; status: string }[]; quotes: { id: string; number: string; status: string; total: number; deal_id: string }[] };
+type SearchRes = { contacts: { id: string; first_name: string; last_name: string; email: string | null; company_name: string | null }[]; companies: { id: string; name: string; domain: string | null; city: string | null }[]; deals: { id: string; name: string; amount: number; currency: string; company_name: string | null; stage_name: string }[]; tickets: { id: string; number: number; subject: string; status: string }[]; quotes: { id: string; number: string; status: string; total: number; deal_id: string }[]; contracts?: { id: string; number: string; title: string; status: string }[] };
 
 function Palette({ onClose }: { onClose: () => void }) {
   const [q, setQ] = useState("");
@@ -115,6 +116,7 @@ function Palette({ onClose }: { onClose: () => void }) {
   if (res) {
     res.contacts.forEach((c) => items.push({ label: `${c.first_name} ${c.last_name}`, sub: c.company_name ?? c.email ?? "", to: `/contactos/${c.id}`, group: "Contactos", icon: Users }));
     res.companies.forEach((c) => items.push({ label: c.name, sub: c.domain ?? c.city ?? "", to: `/empresas/${c.id}`, group: "Empresas", icon: Building2 }));
+    res.contracts?.forEach((c) => items.push({ label: `${c.number} ${c.title}`, sub: c.status, to: `/contratos/${c.id}`, group: "Contratos", icon: FileText }));
     res.deals.forEach((d) => items.push({ label: d.name, sub: `${d.stage_name} · ${fmtMoney(d.amount, d.currency)}`, to: `/negocios/${d.id}`, group: "Negocios", icon: Handshake }));
     res.tickets.forEach((t) => items.push({ label: `#${t.number} ${t.subject}`, sub: t.status, to: `/tickets/${t.id}`, group: "Tickets", icon: LifeBuoy }));
     res.quotes.forEach((x) => items.push({ label: `Presupuesto ${x.number}`, sub: `${x.status} · ${fmtMoney(x.total)}`, to: `/negocios/${x.deal_id}`, group: "Presupuestos", icon: FileText }));

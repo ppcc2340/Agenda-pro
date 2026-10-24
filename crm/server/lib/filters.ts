@@ -30,6 +30,13 @@ export const OBJECT_FIELDS: Record<string, Record<string, "text" | "number" | "d
     contact_id: "text", company_id: "text", created_at: "date", sla_due_at: "date", resolved_at: "date", tags: "json",
   },
   task: { title: "text", type: "text", priority: "text", assignee_id: "text", due_at: "date", completed_at: "date", created_at: "date" },
+  contract: {
+    number: "text", title: "text", type_id: "text", counterparty_company_id: "text", deal_id: "text", owner_id: "text", legal_owner_id: "text", department: "text",
+    status: "text", kind: "text", parent_id: "text", paper_origin: "text", language: "text", governing_law: "text", requested_at: "date", signed_at: "date", effective_date: "date", end_date: "date",
+    term_type: "text", renewal_type: "text", notice_deadline: "date", total_value: "number", annual_value: "number", currency: "text", payment_model: "text", payment_terms_days: "number",
+    risk_level: "text", risk_score: "number", confidentiality: "text", contains_personal_data: "bool", data_role: "text", dora_in_scope: "bool", urgency: "text", source: "text",
+    legal_hold: "bool", created_at: "date", updated_at: "date", tags: "json",
+  },
 };
 
 export const OPS = ["eq", "neq", "contains", "not_contains", "starts", "gt", "gte", "lt", "lte", "empty", "not_empty", "in", "not_in", "last_days", "next_days", "before", "after", "today", "is_true", "is_false"];

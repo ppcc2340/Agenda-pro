@@ -64,7 +64,7 @@ export function DealDetailPage() {
           </div>
           <div className="row">
             {d.status === "open" ? (<><button className="btn" style={{ color: "var(--ok)" }} onClick={() => setClosing("won")}><Trophy />Ganado</button><button className="btn" style={{ color: "var(--risk)" }} onClick={() => setClosing("lost")}><XCircle />Perdido</button></>) : <button className="btn" onClick={reopen}><RotateCcw />Reabrir</button>}
-            <Menu trigger={<button className="iconbtn"><MoreHorizontal size={18} /></button>}><button onClick={() => setEditing(true)}><Pencil />Editar</button><button onClick={() => setProducts(true)}><Plus />Líneas de producto</button><button onClick={() => setQuote(true)}><FileText />Nuevo presupuesto</button><div className="sep" />{can("deal", "delete") && <button className="danger" onClick={del}><Trash2 />Borrar</button>}</Menu>
+            <Menu trigger={<button className="iconbtn"><MoreHorizontal size={18} /></button>}><button onClick={() => setEditing(true)}><Pencil />Editar</button><button onClick={() => setProducts(true)}><Plus />Líneas de producto</button><button onClick={() => setQuote(true)}><FileText />Nuevo presupuesto</button><button onClick={() => nav(`/contratos?new=1&deal=${d.id}`)}><FileText />Generar contrato</button><div className="sep" />{can("deal", "delete") && <button className="danger" onClick={del}><Trash2 />Borrar</button>}</Menu>
           </div>
         </div>
         {d.status === "open" && openStages.length > 0 && (

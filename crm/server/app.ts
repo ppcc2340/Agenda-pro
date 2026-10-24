@@ -20,6 +20,8 @@ import { workflowRoutes } from "./routes/workflows.js";
 import { formAdminRoutes, formPublicRoutes } from "./routes/forms.js";
 import { publicRoutes } from "./routes/public.js";
 import { reportRoutes } from "./routes/reports.js";
+import { clmRoutes } from "./routes/clm.js";
+import { signRoutes } from "./routes/sign.js";
 import { registerWorkflowEngine } from "./services/workflows.js";
 import { registerWebhookDispatcher } from "./services/webhooks.js";
 
@@ -40,6 +42,7 @@ export function createApp(db: Db) {
   app.use("/api/auth", authRoutes(db));
   app.use(publicRoutes(db));
   app.use("/f", formPublicRoutes(db));
+  app.use(signRoutes(db));
 
   const api = express.Router();
   api.use(requireAuth(db));
@@ -56,6 +59,7 @@ export function createApp(db: Db) {
   api.use("/workflows", workflowRoutes());
   api.use("/forms", formAdminRoutes());
   api.use("/reports", reportRoutes());
+  api.use("/clm", clmRoutes());
   api.use(miscRoutes());
   app.use("/api", api);
   app.use("/api/v1", api); // versioned alias for integrations with API key
@@ -65,7 +69,7 @@ export function createApp(db: Db) {
   const webDir = candidates.find((d) => fs.existsSync(path.join(d, "assets")) && fs.existsSync(path.join(d, "index.html")));
   if (webDir) {
     app.use(express.static(webDir, { index: false, maxAge: "1h" }));
-    app.get(/^(?!\/api|\/f\/|\/t\/|\/q\/|\/hooks\/).*/, (_req, res) => res.sendFile(path.join(webDir, "index.html")));
+    app.get(/^(?!\/api|\/f\/|\/t\/|\/q\/|\/s\/|\/hooks\/).*/, (_req, res) => res.sendFile(path.join(webDir, "index.html")));
   }
 
   app.use((req, res) => { res.status(404).json({ error: `Ruta no encontrada: ${req.method} ${req.path}` }); });

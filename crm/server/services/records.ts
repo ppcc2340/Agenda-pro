@@ -12,14 +12,16 @@ export const JSON_COLS: Record<string, string[]> = {
   deal: ["tags", "custom"],
   ticket: ["tags"],
   task: [],
+  contract: ["tags", "custom", "effective_values", "intake", "risk_factors"],
 };
-export const TABLES: Record<string, string> = { contact: "contacts", company: "companies", deal: "deals", ticket: "tickets", task: "tasks" };
+export const TABLES: Record<string, string> = { contact: "contacts", company: "companies", deal: "deals", ticket: "tickets", task: "tasks", contract: "contracts" };
 export const SEARCH_COLS: Record<string, string[]> = {
   contact: ["first_name", "last_name", "email", "phone", "job_title"],
   company: ["name", "domain", "city", "tax_id"],
   deal: ["name"],
   ticket: ["subject"],
   task: ["title"],
+  contract: ["number", "title", "description"],
 };
 
 export const listQuery = z.object({

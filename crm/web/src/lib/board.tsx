@@ -19,7 +19,7 @@ export interface BoardConfig {
 export interface Board { object: string; config: BoardConfig; loaded: boolean; update: (patch: Partial<BoardConfig> | ((c: BoardConfig) => BoardConfig)) => void }
 
 /** Loads and persists the shared board configuration for an object (columns, labels, groups). */
-export function useBoard(object: "contact" | "company" | "deal" | "ticket"): Board {
+export function useBoard(object: "contact" | "company" | "deal" | "ticket" | "contract"): Board {
   const [config, setConfig] = useState<BoardConfig>({});
   const [loaded, setLoaded] = useState(false);
   const latest = useRef(config);

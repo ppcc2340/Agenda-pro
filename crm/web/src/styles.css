@@ -278,3 +278,22 @@ code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospac
 .rsel, .rtxt, .rnum { border: 0; border-bottom: 2px solid var(--sea); background: var(--sea-soft); color: var(--sea); font: inherit; font-size: 15px; font-weight: 600; padding: 4px 8px; border-radius: 4px 4px 0 0; outline: 0; max-width: 100%; }
 .rtxt { min-width: 220px; } .rnum { width: 70px; text-align: center; }
 .empty .t { font-weight: 600; margin-top: 6px; }
+
+/* ---------- CLM ---------- */
+.wiz-steps { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
+.wiz-steps button { border: 1px solid var(--rule2); background: var(--raised); border-radius: 20px; padding: 6px 14px 6px 6px; display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink2); cursor: default; }
+.wiz-steps button .n { width: 22px; height: 22px; border-radius: 50%; background: var(--rule2); display: grid; place-items: center; font-size: 11px; font-weight: 700; }
+.wiz-steps button.cur { border-color: var(--sea); color: var(--ink); font-weight: 600; } .wiz-steps button.cur .n { background: var(--sea); color: #fff; } .wiz-steps button.done .n { background: var(--c-green); color: #fff; } .wiz-steps button.done { cursor: pointer; }
+.doc-view { white-space: pre-wrap; font: 13.5px/1.6 ui-monospace, Menlo, Consolas, monospace; max-height: 70vh; overflow: auto; }
+.doc-editor { min-height: 60vh; font: 13px/1.5 ui-monospace, Menlo, Consolas, monospace; width: 100%; }
+.hl-minor { background: #fff5e6; box-shadow: -4px 0 0 var(--c-orange); } .hl-major { background: #fdecef; box-shadow: -4px 0 0 var(--c-red); } .hl-prohibited { background: #e8e9ee; box-shadow: -4px 0 0 var(--c-dark); font-weight: 600; }
+.diff { white-space: pre-wrap; font: 13px/1.6 ui-monospace, Menlo, Consolas, monospace; max-height: 60vh; overflow: auto; } .diff p { margin: 0 0 6px; } .diff ins { background: #e6f8ef; color: #037f4c; text-decoration: underline; } .diff del { background: #fdecef; color: #bb3354; text-decoration: line-through; } .diff p.ins { background: #e6f8ef; border-left: 3px solid var(--c-green); padding-left: 6px; } .diff p.del { background: #fdecef; border-left: 3px solid var(--c-red); padding-left: 6px; text-decoration: line-through; color: var(--ink3); }
+.vrow { display: flex; gap: 10px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--rule2); } .vrow.cur { background: var(--sea-soft); margin: 0 -8px; padding: 8px; border-radius: 6px; } .vrow .vlabel { width: 44px; height: 32px; border-radius: 6px; background: var(--panel); display: grid; place-items: center; font-weight: 700; font-size: 12px; flex: none; }
+.flow { display: flex; gap: 10px; overflow-x: auto; padding: 4px 0; } .fstep { flex: 0 0 240px; border: 1px solid var(--rule2); border-left: 4px solid var(--c-grey); border-radius: 8px; padding: 10px 12px; background: var(--raised); } .fstep.pending { border-left-color: var(--c-orange); } .fstep.approved { border-left-color: var(--c-green); } .fstep.rejected { border-left-color: var(--c-red); } .fstep.invalidated, .fstep.skipped { opacity: .6; }
+.tl { display: flex; flex-direction: column; gap: 0; } .tlrow { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--rule2); } .tlrow .tlico { width: 26px; height: 26px; border-radius: 50%; background: var(--panel); display: grid; place-items: center; flex: none; font-size: 13px; } .tlrow.agent .tlico { background: var(--sea-soft); } .tlrow.external .tlico { background: var(--warn-soft); } .tlrow.system .tlico { background: var(--rule2); }
+.kv { display: grid; grid-template-columns: 150px 1fr; gap: 6px 12px; font-size: 13px; margin: 0; } .kv dt { color: var(--ink2); } .kv dd { margin: 0; }
+.ok { color: var(--ok); } .warn { color: var(--warn); } .nowrap { white-space: nowrap; }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; }
+.kpi { background: var(--raised); border-radius: var(--radius); padding: 14px 16px; box-shadow: var(--shadow); min-width: 0; }
+.kpi .l { font-size: 12.5px; color: var(--ink2); font-weight: 500; } .kpi .v { font-size: 26px; font-weight: 600; margin-top: 2px; letter-spacing: -0.01em; } .kpi .s { font-size: 12px; color: var(--ink2); margin-top: 2px; }
+@media (max-width: 700px) { .kpi .v { font-size: 20px; } }

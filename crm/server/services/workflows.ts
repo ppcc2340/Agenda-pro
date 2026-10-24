@@ -14,6 +14,7 @@ import { updateContact, getContact } from "./contacts.js";
 import { updateCompany } from "./companies.js";
 import { updateDeal, moveStage, createDeal, getDeal } from "./deals.js";
 import { updateTicket } from "./tickets.js";
+import { getContract, updateContract } from "./clm.js";
 import { pickAssignee } from "./assignment.js";
 import { logActivity } from "./activities.js";
 import { ownerScope } from "../lib/permissions.js";
@@ -23,7 +24,7 @@ export const ACTION_TYPES = ["create_task", "notify", "send_email", "update_fiel
 
 export const triggerSchema = z.object({
   type: z.enum(TRIGGER_TYPES),
-  object: z.enum(["contact", "company", "deal", "task", "ticket", "quote"]).optional(),
+  object: z.enum(["contact", "company", "deal", "task", "ticket", "quote", "contract"]).optional(),
   field: z.string().optional(),
   value: z.string().optional(),
   stage_id: z.string().optional(),
@@ -312,6 +313,7 @@ function applyPatch(ctx: Ctx, object: string, rid: string, patch: Record<string,
     case "company": updateCompany(ctx, rid, patch, { depth }); break;
     case "deal": updateDeal(ctx, rid, patch, { depth }); break;
     case "ticket": updateTicket(ctx, rid, patch, { depth }); break;
+    case "contract": updateContract(ctx, rid, patch as never); break;
     default: throw new Error(`No se puede actualizar ${object}`);
   }
 }
@@ -334,6 +336,7 @@ export function loadRecord(ctx: Ctx, object: string, rid: string): Record<string
     if (object === "company") return parseJson(ctx.db.get<Row>("SELECT * FROM companies WHERE id=?", rid), ["tags", "custom"]) ?? null;
     if (object === "ticket") return ctx.db.get<Row>("SELECT * FROM tickets WHERE id=?", rid) ?? null;
     if (object === "task") return ctx.db.get<Row>("SELECT * FROM tasks WHERE id=?", rid) ?? null;
+    if (object === "contract") { const c = getContract(ctx, rid); const company = c.counterparty_company_id ? ctx.db.get<Row>("SELECT * FROM companies WHERE id=?", c.counterparty_company_id) : null; return { ...c, company }; }
   } catch { return null; }
   return null;
 }
@@ -346,12 +349,12 @@ export function runScheduledDaily(ctx: Ctx) {
     const t = w.trigger as Trigger;
     if (t.type !== "scheduled_daily") continue;
     const object = t.object ?? "contact";
-    const table = { contact: "contacts", company: "companies", deal: "deals", ticket: "tickets", task: "tasks", quote: "quotes" }[object];
+    const table = ({ contact: "contacts", company: "companies", deal: "deals", ticket: "tickets", task: "tasks", quote: "quotes", contract: "contracts" } as Record<string, string>)[object] ?? "contacts";
     let where: { sql: string; params: unknown[] };
     try { where = buildWhere(object, w.conditions as FilterGroup, "t"); } catch { continue; }
     const scope = ownerScope(ctx, "t.owner_id");
     void scope;
-    const rows = ctx.db.all<Row>(`SELECT t.id FROM ${table} t WHERE t.workspace_id=? AND ${where.sql}${["contacts", "companies", "deals"].includes(table) ? " AND t.deleted_at IS NULL" : ""} LIMIT 1000`, ctx.ws, ...where.params);
+    const rows = ctx.db.all<Row>(`SELECT t.id FROM ${table} t WHERE t.workspace_id=? AND ${where.sql}${["contacts", "companies", "deals", "contracts"].includes(table) ? " AND t.deleted_at IS NULL" : ""} LIMIT 1000`, ctx.ws, ...where.params);
     for (const r of rows) {
       const ranToday = ctx.db.get("SELECT id FROM workflow_runs WHERE workflow_id=? AND record_id=? AND date(ran_at)=date('now')", w.id, r.id);
       if (ranToday) continue;

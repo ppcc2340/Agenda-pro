@@ -30,6 +30,7 @@ export function miscRoutes() {
       companies: db.all(`SELECT id, name, domain, city FROM companies WHERE workspace_id=? AND deleted_at IS NULL AND ${cs.sql} AND (name LIKE ? OR domain LIKE ? OR tax_id LIKE ?) LIMIT 6`, ws, ...cs.params, like, like, like),
       deals: db.all(`SELECT d.id, d.name, d.amount, d.currency, d.status, (SELECT name FROM companies WHERE id=d.company_id) company_name, (SELECT name FROM stages WHERE id=d.stage_id) stage_name FROM deals d WHERE workspace_id=? AND deleted_at IS NULL AND ${ds.sql} AND name LIKE ? LIMIT 6`, ws, ...ds.params, like),
       tickets: db.all(`SELECT id, number, subject, status FROM tickets WHERE workspace_id=? AND (subject LIKE ? OR CAST(number AS TEXT)=?) LIMIT 5`, ws, like, q.replace("#", "")),
+      contracts: db.all(`SELECT id, number, title, status FROM contracts WHERE workspace_id=? AND deleted_at IS NULL AND ${ds.sql} AND (title LIKE ? OR number LIKE ?) LIMIT 6`, ws, ...ds.params, like, like),
       quotes: db.all(`SELECT id, number, status, total, deal_id FROM quotes WHERE workspace_id=? AND number LIKE ? LIMIT 5`, ws, like),
     };
   }));
@@ -45,7 +46,7 @@ export function miscRoutes() {
   r.put("/views/:id", h(async (req) => { const b = parse(viewSchema.partial(), req.body); const v = req.ctx.db.get<Row>("SELECT * FROM views WHERE id=? AND workspace_id=?", param(req, "id"), req.ctx.ws); if (!v) throw notFound("Vista"); if (v.user_id !== req.ctx.user.id && !req.ctx.role.permissions.admin) throw new HttpError(403, "Solo el creador puede editar esta vista"); req.ctx.db.update("views", v.id as string, { ...b, shared: b.shared === undefined ? undefined : b.shared ? 1 : 0 }); return parseJson(req.ctx.db.get<Row>("SELECT * FROM views WHERE id=?", v.id), ["filters", "columns", "sort"]); }));
   r.delete("/views/:id", h(async (req) => { req.ctx.db.run("DELETE FROM views WHERE id=? AND workspace_id=? AND (user_id=? OR ?=1)", param(req, "id"), req.ctx.ws, req.ctx.user.id, req.ctx.role.permissions.admin ? 1 : 0); return { ok: true }; }));
   // ----- board configuration (columns, labels, groups) -----
-  const boardObj = z.enum(["contact", "company", "deal", "ticket"]);
+  const boardObj = z.enum(["contact", "company", "deal", "ticket", "contract"]);
   r.get("/boards/:object", h(async (req) => { const o = boardObj.parse(param(req, "object")); const row = req.ctx.db.get<Row>("SELECT * FROM board_configs WHERE workspace_id=? AND object=?", req.ctx.ws, o); return { object: o, config: row ? JSON.parse(String(row.config)) : {}, updated_at: row?.updated_at ?? null }; }));
   r.put("/boards/:object", h(async (req) => {
     const o = boardObj.parse(param(req, "object"));
@@ -54,7 +55,7 @@ export function miscRoutes() {
     req.ctx.db.run("INSERT INTO board_configs (workspace_id, object, config, updated_by, updated_at) VALUES (?,?,?,?,?) ON CONFLICT(workspace_id, object) DO UPDATE SET config=excluded.config, updated_by=excluded.updated_by, updated_at=excluded.updated_at", req.ctx.ws, o, JSON.stringify(cfg), req.ctx.user.id, now());
     return { object: o, config: cfg };
   }));
-  r.get("/filter-meta", h(async (req) => ({ fields: OBJECT_FIELDS, ops: OPS, custom: { contact: customFieldDefs(req.ctx, "contact"), company: customFieldDefs(req.ctx, "company"), deal: customFieldDefs(req.ctx, "deal"), ticket: customFieldDefs(req.ctx, "ticket") } })));
+  r.get("/filter-meta", h(async (req) => ({ fields: OBJECT_FIELDS, ops: OPS, custom: { contact: customFieldDefs(req.ctx, "contact"), company: customFieldDefs(req.ctx, "company"), deal: customFieldDefs(req.ctx, "deal"), ticket: customFieldDefs(req.ctx, "ticket"), contract: customFieldDefs(req.ctx, "contract") } })));
 
   // ---------- lists / segments (2.2, 2.3) ----------
   r.get("/lists", h(async (req) => ({ items: req.ctx.db.all<Row>("SELECT l.*, (SELECT COUNT(*) FROM list_members m WHERE m.list_id=l.id) members FROM lists l WHERE workspace_id=? ORDER BY name", req.ctx.ws).map((l) => parseJson(l, ["filters"])) })));

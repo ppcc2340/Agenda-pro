@@ -599,3 +599,112 @@ CREATE TABLE IF NOT EXISTS board_configs (
   updated_at TEXT NOT NULL,
   PRIMARY KEY (workspace_id, object)
 );
+
+-- ===================== CLM (gestión del ciclo de vida del contrato) =====================
+CREATE TABLE IF NOT EXISTS contract_types (
+  id TEXT PRIMARY KEY, workspace_id TEXT NOT NULL, code TEXT NOT NULL, name TEXT NOT NULL, family TEXT NOT NULL DEFAULT 'commercial',
+  direction TEXT NOT NULL DEFAULT 'income', description TEXT, min_signature_level TEXT NOT NULL DEFAULT 'SES', retention_years INTEGER NOT NULL DEFAULT 6,
+  retention_basis TEXT NOT NULL DEFAULT 'termination', number_prefix TEXT NOT NULL DEFAULT 'CTR', requires_dpa INTEGER NOT NULL DEFAULT 1,
+  requires_kyc INTEGER NOT NULL DEFAULT 0, sla_hours INTEGER NOT NULL DEFAULT 72, self_service INTEGER NOT NULL DEFAULT 0, approval_rules TEXT NOT NULL DEFAULT '[]',
+  default_template_id TEXT, default_playbook_id TEXT, color TEXT NOT NULL DEFAULT '#579bfc', position INTEGER NOT NULL DEFAULT 0, active INTEGER NOT NULL DEFAULT 1, created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_contract_types_ws ON contract_types(workspace_id, code);
+
+CREATE TABLE IF NOT EXISTS contracts (
+  id TEXT PRIMARY KEY, workspace_id TEXT NOT NULL, number TEXT NOT NULL, title TEXT NOT NULL, type_id TEXT NOT NULL,
+  counterparty_company_id TEXT, deal_id TEXT, quote_id TEXT, owner_id TEXT, legal_owner_id TEXT, department TEXT,
+  status TEXT NOT NULL DEFAULT 'DRAFT', substatus TEXT, prev_status TEXT, kind TEXT NOT NULL DEFAULT 'master', parent_id TEXT, amendment_seq INTEGER NOT NULL DEFAULT 0, amendment_type TEXT,
+  paper_origin TEXT NOT NULL DEFAULT 'ours', language TEXT NOT NULL DEFAULT 'es', governing_law TEXT NOT NULL DEFAULT 'ES', jurisdiction TEXT, arbitration INTEGER NOT NULL DEFAULT 0,
+  requested_at TEXT, signed_at TEXT, effective_date TEXT, end_date TEXT, term_type TEXT NOT NULL DEFAULT 'fixed', term_months INTEGER,
+  renewal_type TEXT NOT NULL DEFAULT 'none', renewal_period_months INTEGER, notice_period_days INTEGER, notice_deadline TEXT, next_renewal_date TEXT, max_renewals INTEGER, renewals_done INTEGER NOT NULL DEFAULT 0,
+  total_value REAL NOT NULL DEFAULT 0, annual_value REAL NOT NULL DEFAULT 0, currency TEXT NOT NULL DEFAULT 'EUR', value_basis TEXT NOT NULL DEFAULT 'fixed', payment_model TEXT NOT NULL DEFAULT 'one_off', payment_terms_days INTEGER NOT NULL DEFAULT 30,
+  risk_level TEXT NOT NULL DEFAULT 'low', risk_score REAL NOT NULL DEFAULT 0, risk_factors TEXT NOT NULL DEFAULT '[]', risk_override TEXT, risk_override_reason TEXT,
+  confidentiality TEXT NOT NULL DEFAULT 'normal', contains_personal_data INTEGER NOT NULL DEFAULT 0, data_role TEXT, international_transfer INTEGER NOT NULL DEFAULT 0, dora_in_scope INTEGER NOT NULL DEFAULT 0, public_sector INTEGER NOT NULL DEFAULT 0,
+  current_version_id TEXT, signed_version_id TEXT, tags TEXT NOT NULL DEFAULT '[]', custom TEXT NOT NULL DEFAULT '{}', effective_values TEXT NOT NULL DEFAULT '{}', intake TEXT NOT NULL DEFAULT '{}',
+  urgency TEXT NOT NULL DEFAULT 'normal', sla_due_at TEXT, sla_paused INTEGER NOT NULL DEFAULT 0, description TEXT, counterparty_outside_eea INTEGER NOT NULL DEFAULT 0,
+  termination_date TEXT, termination_cause TEXT, retention_until TEXT, legal_hold INTEGER NOT NULL DEFAULT 0, legal_hold_reason TEXT, source TEXT NOT NULL DEFAULT 'intake',
+  last_activity_at TEXT, deleted_at TEXT, created_by TEXT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_contracts_ws ON contracts(workspace_id, status);
+CREATE INDEX IF NOT EXISTS idx_contracts_cp ON contracts(counterparty_company_id);
+CREATE INDEX IF NOT EXISTS idx_contracts_parent ON contracts(parent_id);
+CREATE INDEX IF NOT EXISTS idx_contracts_end ON contracts(workspace_id, end_date);
+
+CREATE TABLE IF NOT EXISTS contract_versions (
+  id TEXT PRIMARY KEY, workspace_id TEXT NOT NULL, contract_id TEXT NOT NULL, label TEXT NOT NULL, major INTEGER NOT NULL, minor INTEGER NOT NULL, branch TEXT NOT NULL DEFAULT 'internal',
+  source TEXT NOT NULL DEFAULT 'generated', body TEXT NOT NULL DEFAULT '', file_name TEXT, sha256 TEXT NOT NULL, author_id TEXT, comment TEXT,
+  is_current INTEGER NOT NULL DEFAULT 1, is_final INTEGER NOT NULL DEFAULT 0, is_signed INTEGER NOT NULL DEFAULT 0, locked INTEGER NOT NULL DEFAULT 0, template_id TEXT, created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_cversions ON contract_versions(contract_id, major, minor);
+
+CREATE TABLE IF NOT EXISTS clauses (
+  id TEXT PRIMARY KEY, workspace_id TEXT NOT NULL, code TEXT NOT NULL, title TEXT NOT NULL, category TEXT NOT NULL, variant_type TEXT NOT NULL DEFAULT 'standard',
+  position TEXT NOT NULL DEFAULT 'preferred', direction TEXT NOT NULL DEFAULT 'both', body TEXT NOT NULL, risk_level TEXT NOT NULL DEFAULT 'low', status TEXT NOT NULL DEFAULT 'approved',
+  usage_guide TEXT, negotiation_notes TEXT, approver_role TEXT, version INTEGER NOT NULL DEFAULT 1, usage_count INTEGER NOT NULL DEFAULT 0, language TEXT NOT NULL DEFAULT 'es', created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_clauses_ws ON clauses(workspace_id, category);
+
+CREATE TABLE IF NOT EXISTS contract_clauses (
+  id TEXT PRIMARY KEY, workspace_id TEXT NOT NULL, contract_id TEXT NOT NULL, version_id TEXT NOT NULL, clause_id TEXT, category TEXT NOT NULL, heading TEXT,
+  text_final TEXT, status TEXT NOT NULL DEFAULT 'standard', deviation_level TEXT NOT NULL DEFAULT 'none', deviation_summary TEXT, approver_role TEXT, suggested_clause_id TEXT,
+  params TEXT NOT NULL DEFAULT '{}', source_text TEXT, confidence REAL NOT NULL DEFAULT 1, position INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_cclauses ON contract_clauses(contract_id, version_id);
+
+CREATE TABLE IF NOT EXISTS clm_templates (
+  id TEXT PRIMARY KEY, workspace_id TEXT NOT NULL, name TEXT NOT NULL, type_id TEXT, language TEXT NOT NULL DEFAULT 'es', body TEXT NOT NULL, kind TEXT NOT NULL DEFAULT 'contract',
+  status TEXT NOT NULL DEFAULT 'approved', version INTEGER NOT NULL DEFAULT 1, description TEXT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS playbooks (
+  id TEXT PRIMARY KEY, workspace_id TEXT NOT NULL, name TEXT NOT NULL, type_id TEXT, direction TEXT NOT NULL DEFAULT 'both', rules TEXT NOT NULL DEFAULT '[]', active INTEGER NOT NULL DEFAULT 1, created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS contract_approvals (
+  id TEXT PRIMARY KEY, workspace_id TEXT NOT NULL, contract_id TEXT NOT NULL, version_id TEXT NOT NULL, version_sha256 TEXT NOT NULL, step_order INTEGER NOT NULL, step_name TEXT NOT NULL,
+  reason TEXT, approver_user_id TEXT, approver_role TEXT, status TEXT NOT NULL DEFAULT 'pending', decided_at TEXT, decided_by TEXT, comment TEXT, conditions TEXT, due_at TEXT, escalated_at TEXT, created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_capprovals ON contract_approvals(contract_id, status);
+
+CREATE TABLE IF NOT EXISTS signature_envelopes (
+  id TEXT PRIMARY KEY, workspace_id TEXT NOT NULL, contract_id TEXT NOT NULL, version_id TEXT NOT NULL, version_sha256 TEXT NOT NULL, level TEXT NOT NULL DEFAULT 'SES',
+  status TEXT NOT NULL DEFAULT 'draft', message TEXT, sent_at TEXT, expires_at TEXT, completed_at TEXT, final_sha256 TEXT, evidence TEXT NOT NULL DEFAULT '{}', created_by TEXT, created_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS signers (
+  id TEXT PRIMARY KEY, workspace_id TEXT NOT NULL, envelope_id TEXT NOT NULL, contact_id TEXT, user_id TEXT, name TEXT NOT NULL, email TEXT NOT NULL, order_no INTEGER NOT NULL DEFAULT 1,
+  role TEXT NOT NULL DEFAULT 'signer', party TEXT NOT NULL DEFAULT 'them', title TEXT, status TEXT NOT NULL DEFAULT 'pending', token TEXT NOT NULL, otp_code TEXT, otp_sent_at TEXT, otp_attempts INTEGER NOT NULL DEFAULT 0,
+  viewed_at TEXT, signed_at TEXT, ip TEXT, user_agent TEXT, declined_reason TEXT, consent_text TEXT, created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_signers_token ON signers(token);
+CREATE TABLE IF NOT EXISTS signature_events (
+  id TEXT PRIMARY KEY, workspace_id TEXT NOT NULL, envelope_id TEXT NOT NULL, signer_id TEXT, type TEXT NOT NULL, at TEXT NOT NULL, ip TEXT, meta TEXT NOT NULL DEFAULT '{}'
+);
+CREATE TABLE IF NOT EXISTS signature_authority (
+  id TEXT PRIMARY KEY, workspace_id TEXT NOT NULL, user_id TEXT NOT NULL, type_codes TEXT NOT NULL DEFAULT '[]', max_value REAL, requires_joint INTEGER NOT NULL DEFAULT 0,
+  valid_from TEXT, valid_to TEXT, power_ref TEXT, active INTEGER NOT NULL DEFAULT 1, created_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS obligations (
+  id TEXT PRIMARY KEY, workspace_id TEXT NOT NULL, contract_id TEXT NOT NULL, title TEXT NOT NULL, description TEXT, type TEXT NOT NULL DEFAULT 'other', obligor TEXT NOT NULL DEFAULT 'us',
+  owner_id TEXT, due_date TEXT, recurrence TEXT NOT NULL DEFAULT 'none', status TEXT NOT NULL DEFAULT 'pending', amount REAL, currency TEXT, penalty_rule TEXT,
+  evidence_required INTEGER NOT NULL DEFAULT 0, evidence_note TEXT, evidence_url TEXT, fulfilled_at TEXT, breached_at TEXT, breach_notes TEXT, survives_termination INTEGER NOT NULL DEFAULT 0, survival_until TEXT,
+  ai_extracted INTEGER NOT NULL DEFAULT 0, source_clause TEXT, reminded_at TEXT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_obligations ON obligations(workspace_id, status, due_date);
+CREATE TABLE IF NOT EXISTS milestones (
+  id TEXT PRIMARY KEY, workspace_id TEXT NOT NULL, contract_id TEXT NOT NULL, type TEXT NOT NULL, label TEXT NOT NULL, date TEXT NOT NULL, computed INTEGER NOT NULL DEFAULT 0,
+  owner_id TEXT, alert_offsets TEXT NOT NULL DEFAULT '[30,7,1]', alerted TEXT NOT NULL DEFAULT '[]', status TEXT NOT NULL DEFAULT 'upcoming', actioned_at TEXT, action_taken TEXT, created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_milestones ON milestones(workspace_id, date);
+CREATE TABLE IF NOT EXISTS contract_comments (
+  id TEXT PRIMARY KEY, workspace_id TEXT NOT NULL, contract_id TEXT NOT NULL, version_id TEXT, author_id TEXT, author_name TEXT, body TEXT NOT NULL, visibility TEXT NOT NULL DEFAULT 'internal',
+  anchor TEXT, resolved_at TEXT, created_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS renewal_decisions (
+  id TEXT PRIMARY KEY, workspace_id TEXT NOT NULL, contract_id TEXT NOT NULL, decision TEXT NOT NULL, reason TEXT, decided_by TEXT, decided_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS payment_schedule (
+  id TEXT PRIMARY KEY, workspace_id TEXT NOT NULL, contract_id TEXT NOT NULL, label TEXT, due_date TEXT NOT NULL, amount REAL NOT NULL, currency TEXT NOT NULL DEFAULT 'EUR',
+  type TEXT NOT NULL DEFAULT 'recurring', status TEXT NOT NULL DEFAULT 'planned', invoice_ref TEXT, paid_at TEXT, created_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS contract_timeline (
+  id TEXT PRIMARY KEY, workspace_id TEXT NOT NULL, contract_id TEXT NOT NULL, type TEXT NOT NULL, title TEXT NOT NULL, body TEXT, actor_id TEXT, actor_name TEXT, actor_type TEXT NOT NULL DEFAULT 'user', meta TEXT NOT NULL DEFAULT '{}', at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_ctimeline ON contract_timeline(contract_id, at);

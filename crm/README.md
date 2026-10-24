@@ -75,6 +75,22 @@ Cada tablero (Contactos, Empresas, Negocios, Tickets) se adapta sin tocar códig
 
 API: `GET/PUT /api/boards/:object` (columnas, etiquetas, agrupación), `POST/PUT/DELETE /api/admin/custom-fields`, `POST/PUT/DELETE /api/pipelines/:id/stages`, `POST /api/workflows`.
 
+## Contratos (CLM)
+
+Tablero **Contratos** en `/contratos`, con el mismo principio que el resto (columnas, etiquetas, agrupaciones y reglas editables) y las funciones del manual de CLM:
+
+- **Solicitud (intake)** con asistente: tipo, contraparte, papel propio o externo, importes, plazo y renovación; numeración `PREFIJO-AAAA-00001`.
+- **Plantillas y cláusulas**: motor de plantillas (`{{variable|filtro}}`, condicionales, bucles, `{% clause "CODE" %}`), biblioteca de 70 categorías con variantes estándar / alternativa / mínimo aceptable / prohibida.
+- **Negociación**: versiones numeradas, comparación de versiones, extracción automática de cláusulas y revisión contra el **playbook** (umbrales, patrones prohibidos, cláusulas obligatorias) con puntuación de riesgo explicable.
+- **Aprobaciones** por política (negocio, legal, director legal, finanzas, DPO, dirección) con separación de funciones, delegación y escalado por SLA.
+- **Firma electrónica (SES)** con página pública `/s/:token`, código OTP, evidencias y hash SHA-256 de la versión firmada (inmutable).
+- **Repositorio, obligaciones, hitos y pagos**: obligaciones recurrentes, alertas de vencimiento y preaviso, calendario de pagos por modelo.
+- **Enmiendas, renovaciones y terminación**: contratos hijo (`-A01`, `-R01`), valores efectivos consolidados, cartas de terminación y obligaciones de salida.
+- **Tarea diaria**: alertas, renovación tácita por inacción, vencimientos, incumplimientos y recordatorios de firma.
+- **Informes**: activos, valor anual, vencimientos a 12 meses, tiempo de ciclo, desviaciones de playbook.
+
+Configuración en `/contratos/configuracion` (tipos, cláusulas, plantillas, playbooks, poderes de firma). API: `/api/clm/*` (contratos, versiones, aprobaciones, sobres de firma, obligaciones, hitos, informes) y firma pública en `/s/:token`.
+
 ## Integraciones externas (puntos de extensión)
 
 El manual contempla sincronización de Gmail/Microsoft 365, telefonía, WhatsApp, etc. El CRM está preparado para ello sin cambiar el modelo:

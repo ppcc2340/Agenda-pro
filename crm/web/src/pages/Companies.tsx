@@ -135,6 +135,7 @@ export function CompanyDetailPage() {
         <aside className="side r">
           <div className="card"><div className="card-title"><h3>Contactos clave</h3><button className="btn xs" onClick={() => setNewContact(true)}>+</button></div>{c.contacts.slice(0, 6).map((p) => <div key={p.id} className="small" style={{ padding: "5px 0", borderBottom: "1px solid var(--rule2)" }}><Link to={`/contactos/${p.id}`} className="bold">{p.first_name} {p.last_name}</Link><div className="xs muted">{p.job_title ?? p.email}</div></div>)}{c.contacts.length === 0 && <p className="muted small">Ninguno todavía.</p>}</div>
           <div className="card"><div className="card-title"><h3>Negocios abiertos</h3><button className="btn xs" onClick={() => setNewDeal(true)}>+</button></div>{c.deals.filter((d) => d.status === "open").map((d) => <div key={d.id} style={{ padding: "5px 0", borderBottom: "1px solid var(--rule2)" }}><Link to={`/negocios/${d.id}`} className="bold ell small" style={{ display: "block" }}>{d.name}</Link><div className="xs row"><span className="badge dot" style={{ color: d.stage_color }}>{d.stage_name}</span><span className="num muted">{fmtMoney(d.amount, d.currency)}</span></div></div>)}{c.deals.filter((d) => d.status === "open").length === 0 && <p className="muted small">Ninguno abierto.</p>}</div>
+          <CompanyContracts companyId={c.id} />
           {c.tickets.length > 0 && <div className="card"><div className="card-title"><h3>Tickets</h3></div>{c.tickets.slice(0, 5).map((t) => <div key={t.id} className="small" style={{ padding: "4px 0" }}><Link to={`/tickets/${t.id}`}>#{t.number} {t.subject}</Link></div>)}</div>}
         </aside>
       </div>
@@ -148,4 +149,19 @@ export function CompanyDetailPage() {
 type TreeNode = { id: string; name: string; type: string; open_deals: number; open_amount: number; children: TreeNode[] };
 function Tree({ node, current, depth = 0 }: { node: TreeNode; current: string; depth?: number }) {
   return (<div style={{ marginLeft: depth * 18 }}><div className="row" style={{ padding: "4px 0" }}><Building2 size={14} className="muted" /><Link to={`/empresas/${node.id}`} className={node.id === current ? "bold" : ""}>{node.name}</Link><span className="badge">{COMPANY_TYPES[node.type]}</span><span className="muted small num">{node.open_deals} negocios · {fmtMoney(node.open_amount)}</span></div>{node.children.map((ch) => <Tree key={ch.id} node={ch} current={current} depth={depth + 1} />)}</div>);
+}
+
+function CompanyContracts({ companyId }: { companyId: string }) {
+  const [items, setItems] = useState<{ id: string; number: string; title: string; status: string; annual_value: number; currency: string; end_date: string | null; risk_level: string }[]>([]);
+  useEffect(() => { api.get<{ items: typeof items }>(`clm/contracts?counterparty=${companyId}&page_size=20`).then((r) => setItems(r.items)).catch(() => undefined); }, [companyId]);
+  const LABEL: Record<string, string> = { DRAFT: "Borrador", INTERNAL_REVIEW: "Revisión", NEGOTIATION: "Negociación", PENDING_APPROVAL: "Aprobación", APPROVED: "Aprobado", OUT_FOR_SIGNATURE: "En firma", PARTIALLY_SIGNED: "Firma parcial", ACTIVE: "Activo", EXPIRED: "Vencido", TERMINATED: "Terminado", RENEWED: "Renovado", CANCELLED: "Cancelado", REJECTED: "Rechazado", ON_HOLD: "En pausa", ARCHIVED: "Archivado" };
+  const active = items.filter((x) => x.status === "ACTIVE");
+  return (
+    <div className="card"><div className="card-title"><h3>Contratos</h3><Link to={`/contratos?new=1&company=${companyId}`} className="btn xs">+</Link></div>
+      {items.length === 0 ? <p className="muted small">Sin contratos.</p> : <>
+        <div className="small sub mb8">{active.length} activos · exposición {fmtMoney(active.reduce((a, x) => a + Number(x.annual_value), 0))} /año</div>
+        {items.slice(0, 6).map((x) => <div key={x.id} className="small" style={{ padding: "5px 0", borderBottom: "1px solid var(--rule2)" }}><Link to={`/contratos/${x.id}`}>{x.title}</Link><div className="xs muted">{x.number} · {LABEL[x.status] ?? x.status}{x.end_date ? ` · hasta ${fmtDate(x.end_date)}` : ""} · {fmtMoney(x.annual_value, x.currency)}</div></div>)}
+      </>}
+    </div>
+  );
 }
