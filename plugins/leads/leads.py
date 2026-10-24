@@ -162,6 +162,7 @@ def cmd_estado(con, cfg, a):
     for k in ("total", "nuevo", "sin_correo", "enviado", "respondio", "baja", "rebote"):
         print(f"  {k:11} {r[k]}")
     print(f"  modo correo {cfg['correo'].get('modo', 'gmail')} · plantilla {cfg['correo'].get('plantilla')}")
+    print(f"  carpeta de datos: {config.DATOS}")
 
 
 def main():

@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 
 # Sin importar motor.config: este módulo debe funcionar aunque falte pyyaml o dotenv.
-RAIZ = Path(__file__).resolve().parent.parent
+CODIGO = Path(__file__).resolve().parent.parent
 
 _MODULOS = {"requests": "requests", "openpyxl": "openpyxl", "yaml": "pyyaml",
             "dotenv": "python-dotenv", "playwright": "playwright", "anthropic": "anthropic"}
@@ -19,7 +19,7 @@ def instalar(todo: bool = False) -> None:
     pendientes = faltantes()
     if pendientes or todo:
         print("Instalando componentes de Python…")
-        subprocess.run([sys.executable, "-m", "pip", "install", "-q", "-r", str(RAIZ / "requirements.txt")],
+        subprocess.run([sys.executable, "-m", "pip", "install", "-q", "-r", str(CODIGO / "requirements.txt")],
                        check=True)
     print("Comprobando el navegador para Google Maps…")
     r = subprocess.run([sys.executable, "-m", "playwright", "install", "chromium"],

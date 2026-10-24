@@ -55,7 +55,7 @@ ol li, ul li { margin: 4px 0; }
 <tr><th style="width:36px">✔</th><th>Requisito</th><th>Para qué</th></tr>
 <tr><td>☐</td><td>Una cuenta de <b>Gmail</b> desde la que enviarás los correos</td><td>Los correos salen de tu cuenta, con tu nombre</td></tr>
 <tr><td>☐</td><td>Una cuenta de <b>Claude</b> (claude.ai) con <b>Claude Code</b></td><td>Es quien hace el trabajo</td></tr>
-<tr><td>☐</td><td>La carpeta del proyecto <span class="ruta">Agenda-pro</span> en tu computador</td><td>Ahí vive el motor (subcarpeta <span class="ruta">leads</span>)</td></tr>
+<tr><td>☐</td><td>Python instalado en tu computador (en Mac ya viene; en Windows se descarga de python.org marcando “Add to PATH”)</td><td>El motor está escrito en Python</td></tr>
 <tr><td>☐</td><td>Internet</td><td>Para buscar y enviar</td></tr>
 </table>
 
@@ -69,13 +69,19 @@ ol li, ul li { margin: 4px 0; }
 </ol>
 <div class="ok"><b>¿Para qué sirve?</b> Para que Claude pueda enviar y leer correos en tu nombre. No se guarda ninguna contraseña en el proyecto: el permiso lo gestiona Google y lo puedes quitar cuando quieras desde esa misma pantalla.</div>
 
-<h3>Paso B — Abrir el proyecto en Claude Code</h3>
+<h3>Paso B — Instalar el motor en tu Claude Code</h3>
 <ol>
-<li>Abre <b>Claude Code</b> (la aplicación de escritorio, o en claude.ai/code).</li>
-<li>Abre la carpeta <span class="ruta">Agenda-pro</span> como proyecto.</li>
-<li>Verás un cuadro para escribir. Ahí hablas con Claude.</li>
+<li>Abre <b>Claude Code</b> (la aplicación de escritorio o en la terminal). Da igual en qué carpeta.</li>
+<li>En el cuadro donde se escribe, copia esta línea tal cual y pulsa Enter:</li>
 </ol>
-<div class="ojo"><b>Importante:</b> siempre debes abrir <u>esa carpeta</u>. Dentro hay una carpeta oculta <span class="ruta">.claude</span> con las instrucciones que le dicen a Claude cómo manejar el motor (la “skill”). Si abres otra carpeta, Claude no sabrá de qué le hablas.</div>
+<pre>/plugin install leads --marketplace ppcc2340/Agenda-pro</pre>
+<ol start="3">
+<li>Se abre una ventanita: elige el ámbito <b>“Usuario”</b> (así lo tienes en todos tus proyectos) y confirma.</li>
+<li>Listo. A partir de ahora Claude sabe manejar el motor de leads en cualquier carpeta que abras.</li>
+</ol>
+<div class="ojo"><b>Si tu Claude Code es antiguo</b> y esa línea no funciona, hazlo en dos pasos:<br>
+<code>/plugin marketplace add ppcc2340/Agenda-pro</code> &nbsp;y luego&nbsp; <code>/plugin install leads@agenda-pro</code></div>
+<div class="ok"><b>¿Dónde quedan mis cosas?</b> En una carpeta llamada <span class="ruta">leads</span> dentro de tu carpeta personal (en Windows <span class="ruta">C:\Usuarios\TuNombre\leads</span>, en Mac <span class="ruta">/Usuarios/TuNombre/leads</span>). Ahí están tu configuración, los mensajes y el Excel. Actualizar el motor nunca la borra.</div>
 
 <h3>Paso C — Contarle de tu negocio</h3>
 <div class="di"><b>Dile a Claude:</b> <q>configura el motor de leads</q></div>
@@ -117,7 +123,7 @@ Hay un <b>tope de 40 correos al día</b>. Es a propósito: mandar cientos de gol
 
 <h3>4.5 Obtener el Excel</h3>
 <div class="di"><b>Dile:</b> <q>pásamelo a Excel</q></div>
-<div class="pasa">Genera el archivo <span class="ruta">leads/leads.xlsx</span> dentro de la carpeta del proyecto y te dice dónde está. Ver sección 6.</div>
+<div class="pasa">Genera el archivo <span class="ruta">leads.xlsx</span> en tu carpeta <span class="ruta">leads</span> personal y te dice la ruta exacta. Ver sección 6.</div>
 
 <h3>4.6 Saber cómo vas / cambiar cosas</h3>
 <table>
@@ -144,7 +150,7 @@ Hay un <b>tope de 40 correos al día</b>. Es a propósito: mandar cientos de gol
 <div class="di"><b>Dile:</b> <q>usa el mensaje presentacion-servicios</q> &nbsp;·&nbsp; <q>para los gimnasios usa el mensaje informal</q></div>
 
 <h3>Manera 3 — Abrir el archivo tú mismo</h3>
-<p>Cada mensaje es un archivo de texto normal en la carpeta <span class="ruta">Agenda-pro / leads / plantillas</span>. Puedes abrirlo con el <b>Bloc de notas</b> (Windows) o <b>TextEdit</b> (Mac) y escribir lo que quieras. Así es uno:</p>
+<p>Cada mensaje es un archivo de texto normal en la carpeta <span class="ruta">leads / plantillas</span> de tu carpeta personal. Puedes abrirlo con el <b>Bloc de notas</b> (Windows) o <b>TextEdit</b> (Mac) y escribir lo que quieras. Así es uno:</p>
 <pre>Asunto: Propuesta para {nombre}
 
 Hola, equipo de {nombre}:
@@ -180,7 +186,7 @@ Si no desea recibir más correos, responda con la palabra "BAJA".</pre>
 <div class="ojo">Para crear un mensaje nuevo, copia uno de los archivos, cámbiale el nombre (sin espacios, por ejemplo <span class="ruta">informal-gimnasios.txt</span>) y edítalo. Aparecerá automáticamente cuando le digas a Claude <i>“qué mensajes hay”</i>.</div>
 
 <h2 class="salto">6. El Excel</h2>
-<p>El archivo es <span class="ruta">Agenda-pro / leads / leads.xlsx</span>. Se vuelve a generar completo cada vez que dices <i>“pásamelo a Excel”</i>, así que siempre está al día. Tiene tres hojas (pestañas abajo):</p>
+<p>El archivo es <span class="ruta">leads.xlsx</span>, en la carpeta <span class="ruta">leads</span> de tu carpeta personal. Se vuelve a generar completo cada vez que dices <i>“pásamelo a Excel”</i>, así que siempre está al día. Tiene tres hojas (pestañas abajo):</p>
 <table>
 <tr><th>Hoja</th><th>Qué contiene</th><th>Para qué la usas</th></tr>
 <tr><td><b>Respondieron</b></td><td>Solo los negocios que contestaron, con la fecha y un resumen de lo que dijeron</td><td><b>Esta es la que importa.</b> Son tus oportunidades: llámalos.</td></tr>
@@ -202,7 +208,9 @@ Si no desea recibir más correos, responda con la palabra "BAJA".</pre>
 <table>
 <tr><th style="width:40%">Qué pasa</th><th>Qué hacer</th></tr>
 <tr><td>Claude dice que <b>Gmail no está autorizado</b></td><td>Haz el Paso A de la sección 3 (claude.ai → Configuración → Conectores → Gmail → Conectar) y vuelve a pedírselo.</td></tr>
-<tr><td>Claude <b>no entiende</b> de qué le hablo / no sabe qué es el motor de leads</td><td>Seguramente abriste otra carpeta. Cierra y abre la carpeta <span class="ruta">Agenda-pro</span> (la que contiene <span class="ruta">leads</span> y la carpeta oculta <span class="ruta">.claude</span>).</td></tr>
+<tr><td>Claude <b>no entiende</b> de qué le hablo / no sabe qué es el motor de leads</td><td>El plugin no está instalado o está desactivado. Repite el Paso B de la sección 3, o escribe <code>/plugin</code> y comprueba que “leads” aparece activado.</td></tr>
+<tr><td>Dice que <b>no encuentra Python</b></td><td>Instala Python desde python.org (en Windows marca la casilla “Add Python to PATH”) y vuelve a intentarlo.</td></tr>
+<tr><td>Quiero <b>actualizar</b> el motor a la última versión</td><td>Escribe <code>/plugin</code> → pestaña de instalados → leads → Actualizar. Tus datos no se tocan.</td></tr>
 <tr><td>Dice que <b>Google Maps o Instagram fallaron</b></td><td>Pasa a veces: esas páginas cambian o bloquean temporalmente. Las demás fuentes siguen funcionando. Vuelve a intentarlo más tarde. Si pasa siempre, pide a alguien técnico que agregue una clave de Google (sección 9).</td></tr>
 <tr><td>Encontró negocios pero <b>pocos tienen correo</b></td><td>Es normal: muchos negocios solo publican teléfono o Instagram. Están en la hoja “Todos los leads” para que los contactes por otro medio.</td></tr>
 <tr><td>Quiero mandar <b>más de 40 al día</b></td><td>No lo recomendamos (riesgo de que Gmail te bloquee). Si de verdad lo necesitas, dile a Claude <i>“sube el límite diario a 60”</i>.</td></tr>
@@ -224,11 +232,12 @@ Si no desea recibir más correos, responda con la palabra "BAJA".</pre>
 <h2>9. Para la persona técnica que te ayude (opcional)</h2>
 <p>Esta sección no es para ti; es para que se la pases a quien te dé soporte.</p>
 <ul>
-<li>Código: carpeta <span class="ruta">leads/</span>. Instrucciones para Claude: <span class="ruta">.claude/skills/leads/SKILL.md</span>. Configuración: <span class="ruta">leads/config.yaml</span>. Mensajes: <span class="ruta">leads/plantillas/*.txt</span>. Datos: <span class="ruta">leads/leads.db</span> (SQLite).</li>
-<li>Terminal: <code>cd leads &amp;&amp; python leads.py</code> muestra estado y comandos (<code>configurar, buscar, plantillas, previa, cola, marcar-enviado, respuestas, registrar-respuesta, excel, instalar</code>).</li>
-<li>Fuentes más estables con claves en <span class="ruta">leads/.env</span> (copiar de <span class="ruta">.env.example</span>): <code>GOOGLE_API_KEY</code> (Places API para Maps) + <code>GOOGLE_CSE_ID</code> (Custom Search). Sin claves usa DuckDuckGo y un navegador headless (Playwright).</li>
-<li>Modo sin Claude: <code>correo.modo: smtp</code> en <span class="ruta">config.yaml</span> + <code>EMAIL_USER</code>/<code>EMAIL_PASS</code> (contraseña de aplicación de Gmail) → <code>enviar --confirmar</code> y <code>respuestas</code> (IMAP) funcionan solos.</li>
-<li>Documentación completa: <span class="ruta">leads/README.md</span>.</li>
+<li>Es un plugin de Claude Code publicado en el repo <span class="ruta">github.com/ppcc2340/Agenda-pro</span> (marketplace <code>agenda-pro</code>, carpeta <span class="ruta">plugins/leads</span>). Skill: <span class="ruta">skills/leads/SKILL.md</span>. Código Python: <span class="ruta">leads.py</span> + <span class="ruta">motor/</span>.</li>
+<li>Datos del usuario en <span class="ruta">~/leads</span> (variable <code>LEADS_DIR</code> para cambiarla): <span class="ruta">config.yaml</span>, <span class="ruta">plantillas/*.txt</span>, <span class="ruta">leads.db</span> (SQLite), <span class="ruta">leads.xlsx</span>, <span class="ruta">.env</span>.</li>
+<li>Terminal: <code>python &lt;plugin&gt;/leads.py</code> muestra estado y comandos (<code>configurar, buscar, plantillas, previa, cola, marcar-enviado, respuestas, registrar-respuesta, excel, instalar</code>).</li>
+<li>Fuentes más estables con claves en <span class="ruta">~/leads/.env</span> (copiar de <span class="ruta">.env.example</span>): <code>GOOGLE_API_KEY</code> (Places API para Maps) + <code>GOOGLE_CSE_ID</code> (Custom Search). Sin claves usa DuckDuckGo y un navegador headless (Playwright).</li>
+<li>Modo sin Claude: <code>correo.modo: smtp</code> en <span class="ruta">~/leads/config.yaml</span> + <code>EMAIL_USER</code>/<code>EMAIL_PASS</code> (contraseña de aplicación de Gmail) → <code>enviar --confirmar</code> y <code>respuestas</code> (IMAP) funcionan solos.</li>
+<li>Documentación completa: <span class="ruta">plugins/leads/README.md</span> en el repo.</li>
 </ul>
 
 <h2>10. Glosario</h2>
@@ -238,7 +247,7 @@ Si no desea recibir más correos, responda con la palabra "BAJA".</pre>
 <tr><td><b>Rubro</b></td><td>El tipo de negocio que buscas (“clínica dental”, “gimnasio”, “estudio jurídico”).</td></tr>
 <tr><td><b>Mensaje / plantilla</b></td><td>El texto del correo que se envía, con huecos <code>{ }</code> que se rellenan solos.</td></tr>
 <tr><td><b>Conector de Gmail</b></td><td>El permiso que le das a Claude en claude.ai para usar tu Gmail. Se quita desde el mismo lugar.</td></tr>
-<tr><td><b>Skill</b></td><td>Las instrucciones (en la carpeta oculta <span class="ruta">.claude</span>) que le enseñan a Claude a manejar el motor. No hay que tocarlas.</td></tr>
+<tr><td><b>Plugin / skill</b></td><td>El “paquete” que instalas en Claude Code con las instrucciones y el programa del motor. No hay que tocarlo.</td></tr>
 <tr><td><b>Baja</b></td><td>Cuando alguien responde que no quiere más correos. Queda bloqueado para siempre.</td></tr>
 <tr><td><b>Rebote</b></td><td>Correo que no llegó (dirección inexistente o rechazada).</td></tr>
 </table>

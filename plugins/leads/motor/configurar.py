@@ -9,7 +9,7 @@ EJEMPLOS = {"", "mi empresa", "juan pérez", "tu empresa"}
 _CABECERA = """\
 # Configuración del motor de leads.
 # Puedes cambiarla en cualquier momento pidiéndoselo a Claude ("cambia el servicio a…",
-# "agrega la búsqueda de gimnasios en Temuco") o con: python leads.py configurar
+# "agrega la búsqueda de gimnasios en Temuco"). Carpeta de datos: la que contiene este archivo.
 """
 
 

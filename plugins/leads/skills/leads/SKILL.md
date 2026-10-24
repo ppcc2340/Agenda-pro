@@ -1,6 +1,7 @@
 ---
 name: leads
-description: Motor de leads en `leads/`. Úsalo cuando el usuario hable de buscar clientes/leads/prospectos, mandar correos de prospección, ver quién respondió, el Excel de leads, o configurar su negocio para esto. El usuario NO sabe programar; tú haces todo.
+description: Motor de leads (prospección). Úsalo cuando el usuario hable de buscar clientes, leads o prospectos, mandar correos de prospección, ver quién respondió, el Excel de leads, o configurar su negocio para esto. El usuario NO sabe programar; tú haces todo.
+allowed-tools: Bash(python ${CLAUDE_PLUGIN_ROOT}/leads.py *) Bash(python3 ${CLAUDE_PLUGIN_ROOT}/leads.py *) Bash(py ${CLAUDE_PLUGIN_ROOT}/leads.py *)
 ---
 
 # Motor de leads — manual para Claude
@@ -9,9 +10,15 @@ El usuario es una persona de negocio, no programador. **Nunca le pidas que ejecu
 ni edite archivos**: lo haces tú y le cuentas el resultado en palabras simples. No menciones
 Python, YAML, SQLite ni rutas salvo la del Excel final.
 
-Todo vive en `leads/`. Comandos: `cd leads && python leads.py <comando>`.
+**Cómo ejecutar:** el programa está dentro de este plugin, en `${CLAUDE_PLUGIN_ROOT}/leads.py`.
+Cada comando se ejecuta como `python ${CLAUDE_PLUGIN_ROOT}/leads.py <comando>` (si `python` no
+existe prueba `python3`, y en Windows `py`). Los datos del usuario (configuración, mensajes, base,
+Excel) viven en **`~/leads`** (carpeta `leads` dentro de su carpeta personal; se puede cambiar con
+la variable `LEADS_DIR`). Se crea sola la primera vez.
 Si faltan dependencias, el programa las instala solo al arrancar; si el navegador de Maps falla,
 sigue con las otras fuentes y avisa en una línea.
+
+**En este archivo, `python leads.py …` es la forma corta de `python ${CLAUDE_PLUGIN_ROOT}/leads.py …`.**
 
 ## 0. Primera vez: conocer el negocio
 
@@ -45,9 +52,9 @@ Tarda varios minutos; avisa antes. Al terminar di: cuántos negocios nuevos, cu�
 - "qué mensajes hay" → `python leads.py plantillas`; descríbelos en una línea cada uno.
 - "muéstrame cómo quedaría" → `python leads.py previa [--id N] [--plantilla X]`
 - "usa el mensaje X" → `--plantilla X` en `cola`; si es para siempre: `configurar --plantilla X`
-- "cámbialo / hazlo más corto / tutea / escribe uno nuevo" → edita `leads/plantillas/<nombre>.txt`
-  (línea 1 `Asunto: …`, luego el cuerpo; variables `{nombre} {rubro} {ciudad} {remitente} {negocio}
-  {servicio} {telefono} {web}`; para uno nuevo crea otro `.txt`). **Conserva siempre el pie con
+- "cámbialo / hazlo más corto / tutea / escribe uno nuevo" → edita `~/leads/plantillas/<nombre>.txt`
+  en **`~/leads/plantillas/`** (línea 1 `Asunto: …`, luego el cuerpo; variables `{nombre} {rubro}
+  {ciudad} {remitente} {negocio} {servicio} {telefono} {web}`; para uno nuevo crea otro `.txt` ahí). **Conserva siempre el pie con
   "BAJA"** (obligación legal). Luego `previa` para que lo apruebe.
 
 ## 3. Enviar (tú envías, con el conector de Gmail del usuario)
@@ -70,13 +77,13 @@ Tarda varios minutos; avisa antes. Al terminar di: cuántos negocios nuevos, cu�
 3. Cuéntale quién respondió y qué dijeron, en una línea por persona.
 
 ## 5. Excel
-`python leads.py excel` → entrégale la ruta `leads/leads.xlsx` y di qué hoja mirar (Respondieron).
+`python leads.py excel` → entrégale la ruta que imprime (`~/leads/leads.xlsx`) y di qué hoja mirar (Respondieron).
 
-## Otras peticiones del manual (leads/MANUAL.pdf)
-- "sube el límite diario a 60" → edita `correo.max_por_dia` en `leads/config.yaml`; advierte del riesgo de spam.
+## Otras peticiones del manual (`${CLAUDE_PLUGIN_ROOT}/MANUAL.pdf`; si lo pide, dale esa ruta)
+- "sube el límite diario a 60" → edita `correo.max_por_dia` en `~/leads/config.yaml`; advierte del riesgo de spam.
 - "marca a X como baja" → busca su id en `python leads.py estado`/`cola`/`respuestas --json` y ejecuta
   `python leads.py registrar-respuesta <id> --baja --texto "pidió no recibir más correos"`.
-- "borra todos los leads / empecemos de nuevo" → pide confirmación explícita; luego borra `leads/leads.db`
+- "borra todos los leads / empecemos de nuevo" → pide confirmación explícita; luego borra `~/leads/leads.db`
   (la configuración y las plantillas se conservan).
 - "manda el seguimiento a los que no respondieron" → aún no está automatizado: explícalo y ofrece
   preparar los correos uno a uno con `previa --id N --plantilla seguimiento` y enviarlos con Gmail.
@@ -86,6 +93,6 @@ Tarda varios minutos; avisa antes. Al terminar di: cuántos negocios nuevos, cu�
 
 ## Reglas
 1. Nunca envíes sin confirmación explícita en esta conversación; nunca cambies el cuerpo al enviar.
-2. No leas ni repitas el contenido de `leads/.env`.
+2. No leas ni repitas el contenido de `~/leads/.env`.
 3. Si algo falla, explícalo en una frase sin jerga y di qué hiciste para seguir.
 4. Cierra siempre con un resumen corto y la pregunta "¿seguimos con …?" según el paso siguiente.

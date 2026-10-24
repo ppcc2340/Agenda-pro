@@ -4,16 +4,28 @@ Encuentra posibles clientes en **Google, Google Maps e Instagram**, les escribe 
 Gmail** ofreciendo tus servicios y te deja en un **Excel** quiénes respondieron.
 No necesitas saber programar: **se lo pides a Claude en palabras normales** y él hace todo.
 
-## Antes de empezar (una sola vez, 2 minutos)
+## Instalación (una sola vez, 3 minutos)
 
 1. Activa el **conector de Gmail** en claude.ai → Configuración → Conectores → Gmail.
    Así Claude puede enviar y leer correos desde tu cuenta, sin guardar contraseñas en ningún sitio.
-2. Abre este proyecto con Claude Code y escribe:
+2. Abre **Claude Code** (en cualquier carpeta) y escribe esta línea tal cual:
+
+   ```
+   /plugin install leads --marketplace ppcc2340/Agenda-pro
+   ```
+
+   (En versiones anteriores a 2.1.275, en dos pasos: `/plugin marketplace add ppcc2340/Agenda-pro`
+   y luego `/plugin install leads@agenda-pro`.) Elige el ámbito "usuario" para tenerlo en todos tus proyectos.
+3. Escribe:
 
    > **configura el motor de leads**
 
    Claude te hará 4 preguntas (tu empresa, qué ofreces, a qué negocios quieres llegar y en qué
    ciudad, y tu firma) y lo deja listo. Lo que falte por instalar se instala solo.
+
+Tus datos (configuración, mensajes, base de leads y el Excel) quedan en la carpeta **`leads`
+dentro de tu carpeta personal** (`~/leads`), fuera del plugin, así que actualizar el plugin nunca
+los borra.
 
 ## Qué le dices a Claude
 
@@ -23,7 +35,7 @@ No necesitas saber programar: **se lo pides a Claude en palabras normales** y é
 | Ver / cambiar el mensaje | «qué mensajes hay» · «muéstrame cómo quedaría» · «hazlo más corto y tutea» · «escribe un mensaje nuevo para gimnasios» |
 | Mandar los correos | «envíales el correo» → Claude te muestra la lista, **te pide confirmación** y los envía desde tu Gmail |
 | Saber quién contestó | «revisa quién respondió» |
-| Tener el Excel | «pásamelo a Excel» → te da el archivo `leads.xlsx` |
+| Tener el Excel | «pásamelo a Excel» → te da el archivo `~/leads/leads.xlsx` |
 | Saber cómo vas | «¿cómo vamos con los leads?» |
 | Cambiar el negocio / rubros | «agrega cafeterías en Viña del Mar» · «cambia el servicio a …» |
 
@@ -50,11 +62,12 @@ No necesitas saber programar: **se lo pides a Claude en palabras normales** y é
 <summary><b>Para personas técnicas</b> (terminal, modo sin Claude, claves opcionales)</summary>
 
 ```bash
-cd leads
+cd <carpeta-del-plugin>               # o este repo: plugins/leads
+export LEADS_DIR=~/leads              # carpeta de datos (opcional; es la predeterminada)
 python leads.py                       # estado y siguiente paso
 python leads.py configurar            # preguntas guiadas (o con --negocio … --buscar "rubro|ciudad")
 python leads.py buscar [--rubro X --ciudad Y] [--fuentes google,maps,instagram]
-python leads.py plantillas [nombre]   # mensajes en plantillas/*.txt (línea 1 = Asunto)
+python leads.py plantillas [nombre]   # mensajes en ~/leads/plantillas/*.txt (línea 1 = Asunto)
 python leads.py previa [--id N] [--plantilla X]
 python leads.py cola [--json]         # modo gmail: correos listos para que Claude envíe
 python leads.py marcar-enviado ID [--message-id X]
@@ -63,7 +76,7 @@ python leads.py registrar-respuesta ID --texto "…" [--asunto S] [--baja|--rebo
 python leads.py excel · estado · instalar
 ```
 
-**Modo smtp (sin Claude):** `correo.modo: smtp` en `config.yaml`, copia `.env.example` → `.env`
+**Modo smtp (sin Claude):** `correo.modo: smtp` en `~/leads/config.yaml`, copia `~/leads/.env.example` → `.env`
 con `EMAIL_USER`/`EMAIL_PASS` (contraseña de aplicación de Gmail); entonces `enviar --confirmar`
 envía solo y `respuestas` lee por IMAP.
 
@@ -74,5 +87,5 @@ sobre maps.google.com (`CHROMIUM_PATH` para un Chrome ya instalado). Instagram �
 se guarda igual). Web del lead → portada y /contacto buscando `mailto:`.
 `personalizar_con_ia: true` + `ANTHROPIC_API_KEY` → Claude añade un párrafo de apertura a medida.
 El scraping depende del HTML de Google/Meta y puede romperse; las variantes con API son estables.
-Datos en `leads.db` (SQLite), deduplicados por nombre+ciudad.
+Datos en `~/leads/leads.db` (SQLite), deduplicados por nombre+ciudad. Probar el plugin sin instalar: `claude --plugin-dir ./plugins/leads`; validar: `claude plugin validate ./plugins/leads`.
 </details>
