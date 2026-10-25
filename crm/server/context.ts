@@ -31,6 +31,10 @@ export interface Ctx {
   ip: string;
   via: "session" | "apikey";
   settings: WorkspaceSettings;
+  /** Origen de los cambios hechos con este contexto: ui | api | automation | import | form | system */
+  origin?: string;
+  /** Automatización que está actuando (identidad de ejecución) */
+  automation?: { id: string; name: string };
 }
 
 export interface WorkspaceSettings {
@@ -53,6 +57,10 @@ export interface WorkspaceSettings {
   ticket_sla_hours: Record<string, number>;
   logo_url: string;
   brand_color: string;
+  automation_budget: number;
+  automation_budget_mode: "block_edit" | "pause_all";
+  automation_history_days: number;
+  automation_max_depth: number;
 }
 
 export const DEFAULT_SETTINGS: WorkspaceSettings = {
@@ -75,6 +83,10 @@ export const DEFAULT_SETTINGS: WorkspaceSettings = {
   ticket_sla_hours: { low: 72, normal: 24, high: 8, urgent: 2 },
   logo_url: "",
   brand_color: "#0E6B74",
+  automation_budget: 25000,
+  automation_budget_mode: "block_edit",
+  automation_history_days: 365,
+  automation_max_depth: 10,
 };
 
 export type AuthedRequest = Request & { ctx: Ctx };

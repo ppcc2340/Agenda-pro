@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { applyDefaults, checkRequired } from "./columns.js";
 import type { Ctx } from "../context.js";
 import { parseJson, type Row } from "../db.js";
 import { id, now, normalizeDomain, normalizePhone, capitalizeName } from "../lib/util.js";
@@ -66,6 +67,7 @@ function normalize(input: Partial<CompanyInput>, ctx: Ctx) {
 
 export function createCompany(ctx: Ctx, input: CompanyInput, opts: { force?: boolean; skipEvents?: boolean } = {}): Row {
   assert(ctx, "company", "create");
+  input = applyDefaults(ctx, "company", input);
   const data = normalize(input, ctx);
   if (!opts.force) {
     const dup = (data.domain ? findCompanyByDomain(ctx, data.domain as string) : undefined) ?? findCompanyByName(ctx, data.name as string);
@@ -86,6 +88,7 @@ export function updateCompany(ctx: Ctx, cid: string, patch: Partial<CompanyInput
   const data = normalize(patch, ctx);
   if (patch.parent_id && patch.parent_id === cid) throw badRequest("Una empresa no puede ser su propia matriz");
   if (patch.custom) data.custom = validateCustom(ctx, "company", patch.custom, prev.custom as Record<string, unknown>, true);
+  checkRequired(ctx, "company", prev, data);
   const changes = diff(prev, data);
   if (!Object.keys(changes).length) return prev;
   ctx.db.update("companies", cid, { ...data, updated_at: now() });

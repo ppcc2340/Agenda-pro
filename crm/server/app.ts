@@ -1,3 +1,5 @@
+import { ensureServiceUser } from "./services/workflows.js";
+import { columnRoutes, cellRoutes } from "./routes/columns.js";
 import express, { type Request, type Response, type NextFunction } from "express";
 import cookieParser from "cookie-parser";
 import path from "node:path";
@@ -29,6 +31,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 let registered = false;
 
 export function createApp(db: Db) {
+  for (const w of db.all<{ id: string }>("SELECT id FROM workspaces")) ensureServiceUser(db, w.id);
   if (!registered) { registerWorkflowEngine(); registerWebhookDispatcher(); registered = true; }
   const app = express();
   app.disable("x-powered-by");
@@ -60,6 +63,8 @@ export function createApp(db: Db) {
   api.use("/forms", formAdminRoutes());
   api.use("/reports", reportRoutes());
   api.use("/clm", clmRoutes());
+  api.use("/columns", columnRoutes());
+  api.use("/cells", cellRoutes());
   api.use(miscRoutes());
   app.use("/api", api);
   app.use("/api/v1", api); // versioned alias for integrations with API key

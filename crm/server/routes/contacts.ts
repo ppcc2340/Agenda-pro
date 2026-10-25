@@ -1,3 +1,4 @@
+import { enrichOne } from "../services/columns.js";
 import { Router } from "express";
 import { z } from "zod";
 import { h, parse, param } from "./_helpers.js";
@@ -38,7 +39,8 @@ export function contactRoutes() {
   r.get("/merges", h(async (req) => ({ items: req.ctx.db.all("SELECT m.id, m.survivor_id, m.merged_id, m.created_at, u.name user_name, (SELECT first_name||' '||last_name FROM contacts WHERE id=m.survivor_id) survivor_name FROM merges m LEFT JOIN users u ON u.id=m.user_id WHERE m.workspace_id=? AND m.object='contact' AND m.created_at > datetime('now','-30 days') ORDER BY m.created_at DESC", req.ctx.ws) })));
   r.post("/", h(async (req) => createContact(req.ctx, parse(contactSchema, req.body), { force: req.query.force === "1" || req.body?.force === true })));
   r.get("/:id", h(async (req) => {
-    const c = getContact(req.ctx, param(req, "id"));
+    const c = getContact(req.ctx, param(req, "id"))
+    enrichOne(req.ctx, "contact", c);
     const db = req.ctx.db;
     return {
       ...c,

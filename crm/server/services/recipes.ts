@@ -1,0 +1,99 @@
+/**
+ * Catálogo de recetas (manual monday cap. 23) adaptadas a los tableros de este CRM/CLM.
+ * Instalar una receta crea las columnas que necesite (si faltan) y la(s) automatización(es) en pausa
+ * o activas, con marcadores resueltos ($stage:Nombre, $label:objeto.clave:Etiqueta).
+ */
+import type { Ctx } from "../context.js";
+import { parseJson, type Row } from "../db.js";
+import { id, now } from "../lib/util.js";
+import { badRequest, notFound } from "../lib/errors.js";
+import { fieldDefs, statusLabels, norm } from "./columns.js";
+import { validateFieldSettings } from "./columnAdmin.js";
+import { workflowSchema, planWorkflow, type WorkflowInput } from "./workflows.js";
+
+interface RecipeField { object: string; key: string; label: string; type: string; settings?: Record<string, unknown>; options?: string[] }
+export interface Recipe { code: string; title: string; description: string; category: "CRM" | "CLM" | "Operaciones"; estimate: string; fields?: RecipeField[]; workflows: Omit<WorkflowInput, "conditions"> & { conditions?: unknown }[] | (Record<string, unknown>)[] }
+
+const L = (labels: string[], done?: string) => ({ labels: labels.map((l, i) => ({ label: l, color: ["#c4c4c4", "#fdab3d", "#00c875", "#e2445c", "#579bfc", "#a25ddc"][i % 6], done: l === done })) });
+export const RECIPES: Recipe[] = [
+  { code: "R1", category: "CRM", title: "Lead de formulario → asignar, avisar y checklist", description: "Cuando llega un lead por formulario: asignación rotativa, estado Nuevo, aviso al asignado y dos subelementos («Llamar en 1 h», «Enviar presentación»).", estimate: "≈ 5 acciones por lead",
+    workflows: [{ name: "R1 · Lead de formulario: asignar y checklist", trigger: { type: "form_submitted" }, actions: [{ type: "assign", mode: "round_robin" }, { type: "update_field", field: "lead_status", value: "new" }, { type: "notify", to: "owner", title: "Nuevo lead: {{name}}", body: "Llámale en la próxima hora." }, { type: "create_subitems", titles: "Llamar en 1 h\nEnviar presentación", due_in_days: 0 }] }] },
+  { code: "R2", category: "CRM", title: "Lead cualificado → crear negocio conectado", description: "Cuando el estado del lead cambia a Cualificado, crea un negocio con el contacto y su empresa, ya conectados.", estimate: "1 acción por cualificación",
+    workflows: [{ name: "R2 · Cualificado → negocio", trigger: { type: "field_changed", object: "contact", field: "lead_status", value: "qualified" }, actions: [{ type: "create_record", object: "deal", values: { name: "Negocio {{empresa}} · {{name}}" } }, { type: "notify", to: "owner", title: "Negocio creado para {{name}}" }] }] },
+  { code: "R3", category: "CRM", title: "Próximo seguimiento: aviso el día y escalado a los 3 días", description: "Crea la columna «Próximo seguimiento». El día llega aviso al propietario a las 9:00; si 3 días después el negocio sigue abierto, aviso al manager.", estimate: "≈ 2 acciones por seguimiento",
+    fields: [{ object: "deal", key: "proximo_seguimiento", label: "Próximo seguimiento", type: "date" }],
+    workflows: [
+      { name: "R3 · Seguimiento: hoy toca", trigger: { type: "date_arrives", object: "deal", field: "custom.proximo_seguimiento", offset_days: 0, at_hour: 9 }, conditions: { logic: "and", conditions: [{ field: "status", op: "eq", value: "open" }] }, actions: [{ type: "notify", to: "owner", title: "Hoy toca seguimiento: {{name}}" }] },
+      { name: "R3b · Seguimiento sin hacer (3 días) → manager", trigger: { type: "date_arrives", object: "deal", field: "custom.proximo_seguimiento", offset_days: 3, at_hour: 9 }, conditions: { logic: "and", conditions: [{ field: "status", op: "eq", value: "open" }] }, actions: [{ type: "notify", to: "manager", title: "Seguimiento atrasado: {{name}}", body: "Propietario: {{propietario.nombre}}" }] },
+    ] },
+  { code: "R4", category: "CRM", title: "Negocio 14 días sin cambiar de etapa → estancado", description: "Si la etapa no cambia en 14 días y el negocio sigue abierto, añade la etiqueta «estancado» y avisa.", estimate: "2 acciones por negocio estancado",
+    workflows: [{ name: "R4 · 14 días en la misma etapa", trigger: { type: "status_unchanged", object: "deal", field: "stage_id", days: 14 }, conditions: { logic: "and", conditions: [{ field: "status", op: "eq", value: "open" }] }, actions: [{ type: "add_tag", tag: "estancado" }, { type: "notify", to: "owner", title: "{{name}} lleva 14 días sin avanzar" }] }] },
+  { code: "R5", category: "CRM", title: "Ganado → onboarding, finanzas y bienvenida", description: "Al ganar: checklist de onboarding, aviso al manager para finanzas y email de bienvenida en HTML al contacto.", estimate: "≈ 5 acciones por negocio ganado",
+    workflows: [{ name: "R5 · Ganado → onboarding", trigger: { type: "deal_won" }, actions: [{ type: "create_subitems", titles: "Kickoff con el cliente\nAlta en facturación\nAccesos y formación", due_in_days: 3 }, { type: "notify", to: "manager", title: "Ganado {{name}}: avisa a finanzas", body: "Importe {{importe}}" }, { type: "send_email", to: "contact", title: "¡Bienvenido, {{nombre}}!", body: "<p>Hola {{nombre}},</p><p>Gracias por confiar en nosotros. <b>{{propietario.nombre}}</b> te contactará para el arranque.</p>" }] }] },
+  { code: "R6", category: "CRM", title: "Perdido sin motivo → pedir el motivo", description: "Si un negocio se pierde sin motivo de pérdida, avisa al propietario para que lo complete.", estimate: "1 acción",
+    workflows: [{ name: "R6 · Perdido sin motivo", trigger: { type: "deal_lost" }, conditions: { logic: "and", conditions: [{ field: "loss_reason", op: "empty" }] }, actions: [{ type: "notify", to: "owner", title: "Indica el motivo de pérdida de {{name}}" }] }] },
+  { code: "R7", category: "CRM", title: "Cada lunes 8:00: negocios que cierran esta semana", description: "Cada lunes avisa a cada propietario de sus negocios abiertos con cierre en los próximos 7 días.", estimate: "1 acción por negocio y semana",
+    workflows: [{ name: "R7 · Lunes: cierres de la semana", trigger: { type: "every_period", object: "deal", period: "week", weekday: 1, at_hour: 8 }, conditions: { logic: "and", conditions: [{ field: "status", op: "eq", value: "open" }, { field: "expected_close_date", op: "next_days", value: 7 }] }, actions: [{ type: "notify", to: "owner", title: "Cierra esta semana: {{name}}", body: "Importe {{importe}}" }] }] },
+  { code: "R8", category: "CRM", title: "Importe > 50.000 € → aprobación del CFO", description: "Crea la columna «Aprobación». Si el importe supera 50.000 €, pide aprobación al manager: si aprueba, Aprobado; si no, Rechazado y aviso.", estimate: "2-3 acciones por negocio grande",
+    fields: [{ object: "deal", key: "aprobacion", label: "Aprobación", type: "status", settings: L(["Pendiente CFO", "Aprobado", "Rechazado"], "Aprobado") }],
+    workflows: [{ name: "R8 · Importe > 50.000 € → CFO", trigger: { type: "field_changed", object: "deal", field: "amount" }, conditions: { logic: "and", conditions: [{ field: "amount", op: "gt", value: 50000 }] }, actions: [{ type: "update_field", field: "custom.aprobacion", value: "Pendiente CFO" }, { type: "request_approval", approver: "manager", title: "Aprobar {{name}} ({{importe}} €)", then: [{ type: "update_field", field: "custom.aprobacion", value: "Aprobado" }], else: [{ type: "update_field", field: "custom.aprobacion", value: "Rechazado" }, { type: "notify", to: "owner", title: "El CFO ha rechazado {{name}}" }] }] }] },
+  { code: "R9", category: "CLM", title: "Días hasta el preaviso (fórmula que sí dispara)", description: "Crea la fórmula «Días hasta preaviso» = DAYS({Límite de preaviso}, TODAY()) y avisa cuando quedan 30 días o menos (condición sobre la fórmula, imposible en monday).", estimate: "1 acción por contrato al cruzar el umbral",
+    fields: [{ object: "contract", key: "dias_preaviso", label: "Días hasta preaviso", type: "formula", settings: { expression: "IF(ISBLANK({Límite de preaviso}), \"\", DAYS({Límite de preaviso}, TODAY()))", result: "number" } }],
+    workflows: [{ name: "R9 · Preaviso en 30 días o menos", trigger: { type: "every_period", object: "contract", period: "day", at_hour: 8 }, conditions: { logic: "and", conditions: [{ field: "status", op: "eq", value: "ACTIVE" }, { field: "custom.dias_preaviso", op: "lte", value: 30 }, { field: "custom.dias_preaviso", op: "gte", value: 0 }] }, actions: [{ type: "notify", to: "owner,legal", title: "Preaviso de {{number}} en {{custom.dias_preaviso}} días" }] }] },
+  { code: "R10", category: "CLM", title: "30 días antes del preaviso → En revisión", description: "Crea «Estado de renovación». 30 días antes del límite de preaviso: aviso al propietario y a Legal y estado En revisión.", estimate: "3 acciones por contrato",
+    fields: [{ object: "contract", key: "estado_renovacion", label: "Estado de renovación", type: "status", settings: L(["Sin revisar", "En revisión", "Decidido"], "Decidido") }],
+    workflows: [{ name: "R10 · Alerta 30 días antes del preaviso", trigger: { type: "date_arrives", object: "contract", field: "notice_deadline", offset_days: -30, at_hour: 9 }, conditions: { logic: "and", conditions: [{ field: "status", op: "eq", value: "ACTIVE" }] }, actions: [{ type: "notify", to: "owner,legal", title: "Revisar renovación de {{number}}", body: "El preaviso vence dentro de 30 días." }, { type: "update_field", field: "custom.estado_renovacion", value: "En revisión" }] }] },
+  { code: "R11", category: "CLM", title: "Preaviso hoy y sin decidir → manager y Legal", description: "El día del límite de preaviso, si la renovación sigue En revisión, avisa al manager y a Legal.", estimate: "1 acción",
+    fields: [{ object: "contract", key: "estado_renovacion", label: "Estado de renovación", type: "status", settings: L(["Sin revisar", "En revisión", "Decidido"], "Decidido") }],
+    workflows: [{ name: "R11 · Preaviso hoy", trigger: { type: "date_arrives", object: "contract", field: "notice_deadline", offset_days: 0, at_hour: 8 }, conditions: { logic: "and", conditions: [{ field: "custom.estado_renovacion", op: "eq", value: "En revisión" }] }, actions: [{ type: "notify", to: "manager,legal", title: "Preaviso HOY: {{number}}" }] }] },
+  { code: "R12", category: "CLM", title: "Preaviso pasado sin decidir → renovación por inacción", description: "Si pasó el preaviso y la renovación no está Decidida, publica una actualización «renovación por inacción» y avisa a Dirección. Se marca como Decidido para no repetirse.", estimate: "3 acciones",
+    fields: [{ object: "contract", key: "estado_renovacion", label: "Estado de renovación", type: "status", settings: L(["Sin revisar", "En revisión", "Decidido"], "Decidido") }],
+    workflows: [{ name: "R12 · Renovación por inacción", trigger: { type: "date_passed", object: "contract", field: "notice_deadline" }, conditions: { logic: "and", conditions: [{ field: "status", op: "eq", value: "ACTIVE" }, { field: "custom.estado_renovacion", op: "neq", value: "Decidido" }] }, actions: [{ type: "log_note", title: "Renovación por inacción", body: "Se superó el plazo de preaviso de {{number}} sin decisión." }, { type: "notify", to: "admins", title: "Renovación por inacción: {{number}}" }, { type: "update_field", field: "custom.estado_renovacion", value: "Decidido" }] }] },
+  { code: "R13", category: "CLM", title: "Contrato activo → actualizar el negocio conectado", description: "Crea «Estado del contrato» en Negocios. Cuando un contrato pasa a Activo, lo marca Firmado en su negocio (actualizar elemento conectado) y avisa al comercial.", estimate: "2 acciones",
+    fields: [{ object: "deal", key: "estado_contrato", label: "Estado del contrato", type: "status", settings: L(["Sin contrato", "En curso", "Firmado"], "Firmado") }],
+    workflows: [{ name: "R13 · Activo → negocio Firmado", trigger: { type: "field_changed", object: "contract", field: "status", value: "ACTIVE" }, actions: [{ type: "update_related", relation: "deal", field: "custom.estado_contrato", value: "Firmado" }, { type: "notify", to: "owner", title: "Contrato {{number}} firmado y activo" }] }] },
+  { code: "R15", category: "CLM", title: "Obligación incumplida → contrato con incumplimiento", description: "Crea «Cumplimiento». Cuando una obligación (subelemento) se incumple, marca el contrato y avisa a Legal.", estimate: "2 acciones",
+    fields: [{ object: "contract", key: "cumplimiento", label: "Cumplimiento", type: "status", settings: L(["Al día", "Con incumplimiento"], "Al día") }],
+    workflows: [{ name: "R15 · Obligación incumplida", trigger: { type: "subitem_completed", object: "contract" }, conditions: { logic: "and", conditions: [{ field: "_subitem.status", op: "eq", value: "breached" }] }, actions: [{ type: "update_field", field: "custom.cumplimiento", value: "Con incumplimiento" }, { type: "notify", to: "legal", title: "Incumplimiento en {{number}}: {{subelemento.title}}" }] }] },
+  { code: "R16", category: "CLM", title: "Todas las obligaciones cumplidas → Al día", description: "Cuando se cumple la última obligación pendiente, marca el contrato Al día.", estimate: "1 acción",
+    fields: [{ object: "contract", key: "cumplimiento", label: "Cumplimiento", type: "status", settings: L(["Al día", "Con incumplimiento"], "Al día") }],
+    workflows: [{ name: "R16 · Todo cumplido", trigger: { type: "all_subitems_done", object: "contract" }, actions: [{ type: "update_field", field: "custom.cumplimiento", value: "Al día" }] }] },
+  { code: "R17", category: "CLM", title: "Solicitud de contrato → clasificar área y SLA en días hábiles", description: "Crea «Área» y «SLA legal». Clasifica la solicitud por palabras clave (IA local) y fija el SLA a hoy + 2 días hábiles.", estimate: "2 acciones por solicitud",
+    fields: [{ object: "contract", key: "area", label: "Área", type: "status", settings: L(["Comercial", "Compras", "Datos", "Laboral", "Otros"]) }, { object: "contract", key: "sla_legal", label: "SLA legal", type: "date" }],
+    workflows: [{ name: "R17 · Clasificar y SLA", trigger: { type: "record_created", object: "contract" }, actions: [{ type: "ai_categorize", source_fields: ["title", "description"], target_field: "custom.area", default_label: "Otros", rules: [{ label: "Comercial", keywords: "venta, cliente, servicios, saas, suscripción, marco" }, { label: "Compras", keywords: "proveedor, compra, suministro, arrendamiento" }, { label: "Datos", keywords: "datos, rgpd, tratamiento, dpa, confidencialidad, nda" }, { label: "Laboral", keywords: "empleado, laboral, contratación, consultor" }] }, { type: "set_date", field: "custom.sla_legal", mode: "today", days: 2, business_days: true }] }] },
+  { code: "R18", category: "CLM", title: "Terminado → fecha de retención a 6 años", description: "Crea «Conservar hasta». Al terminar un contrato fija la fecha de retención = fin + 6 años y publica una nota.", estimate: "2 acciones",
+    fields: [{ object: "contract", key: "conservar_hasta", label: "Conservar hasta", type: "date" }],
+    workflows: [{ name: "R18 · Retención 6 años", trigger: { type: "field_changed", object: "contract", field: "status", value: "TERMINATED" }, actions: [{ type: "set_date", field: "custom.conservar_hasta", mode: "today", days: 2191 }, { type: "log_note", title: "Retención fijada", body: "Conservar la documentación de {{number}} durante 6 años." }] }] },
+  { code: "R19", category: "Operaciones", title: "Ticket urgente → al responsable del equipo y checklist", description: "Ticket urgente: lo asigna al manager del equipo y crea los pasos de respuesta.", estimate: "≈ 3 acciones",
+    workflows: [{ name: "R19 · Ticket urgente", trigger: { type: "ticket_created" }, conditions: { logic: "and", conditions: [{ field: "priority", op: "eq", value: "urgent" }] }, actions: [{ type: "assign", mode: "team_manager" }, { type: "create_subitems", titles: "Responder en 1 h\nDiagnóstico\nComunicar solución", due_in_days: 0 }] }] },
+  { code: "R20", category: "Operaciones", title: "Cada día 1 del mes → revisión de cuenta de clientes", description: "El día 1 de cada mes crea una tarea de revisión para cada empresa cliente.", estimate: "1 acción por cliente y mes",
+    workflows: [{ name: "R20 · Revisión mensual de clientes", trigger: { type: "every_period", object: "company", period: "month", monthday: 1, at_hour: 8 }, conditions: { logic: "and", conditions: [{ field: "type", op: "eq", value: "customer" }] }, actions: [{ type: "create_subitems", titles: "Revisión mensual de la cuenta {{name}}", due_in_days: 5 }] }] },
+  { code: "R21", category: "Operaciones", title: "Actualización con «@soporte» → ticket", description: "Si una nota de un contacto menciona @soporte, crea un ticket conectado con el texto.", estimate: "1 acción por mención",
+    workflows: [{ name: "R21 · @soporte → ticket", trigger: { type: "note_created", object: "contact" }, conditions: { logic: "and", conditions: [{ field: "_activity.body", op: "contains", value: "@soporte" }] }, actions: [{ type: "create_record", object: "ticket", values: { subject: "Desde nota: {{actividad.subject}}", description: "{{actividad.body}}" } }] }] },
+  { code: "R22", category: "Operaciones", title: "Botón «Generar informe» → webhook a tu sistema", description: "Crea un botón en Negocios; al pulsarlo envía el negocio por webhook (cambia la URL por la de tu sistema).", estimate: "1 acción por pulsación",
+    fields: [{ object: "deal", key: "generar_informe", label: "Generar informe", type: "button", settings: { label: "Generar informe", color: "#0073ea" } }],
+    workflows: [{ name: "R22 · Botón → webhook", trigger: { type: "button_clicked", object: "deal", button: "generar_informe" }, actions: [{ type: "call_webhook", url: "https://example.com/hooks/informe" }, { type: "log_note", title: "Informe solicitado" }] }] },
+];
+
+export function installRecipe(ctx: Ctx, code: string, opts: { active?: boolean } = {}) {
+  const r = RECIPES.find((x) => x.code === code); if (!r) throw notFound("Receta");
+  const createdFields: string[] = [];
+  for (const f of r.fields ?? []) {
+    if (fieldDefs(ctx, f.object).some((d) => d.key === f.key)) continue;
+    const pos = ctx.db.get<{ n: number }>("SELECT COUNT(*) n FROM custom_fields WHERE workspace_id=? AND object=?", ctx.ws, f.object)?.n ?? 0;
+    ctx.db.insert("custom_fields", { id: id(), workspace_id: ctx.ws, object: f.object, key: f.key, label: f.label, type: f.type, options: f.options ?? [], settings: validateFieldSettings(ctx, f.object, f.type, f.settings ?? {}, f.key), required: 0, position: pos, section: "Automatizaciones" });
+    createdFields.push(f.label);
+  }
+  const ids: string[] = [];
+  for (const raw of r.workflows) {
+    const parsed = workflowSchema.safeParse({ conditions: { logic: "and", conditions: [] }, ...raw });
+    if (!parsed.success) throw badRequest(`Receta mal definida: ${parsed.error.issues[0]?.message}`);
+    const w = parsed.data;
+    const wid = id();
+    ctx.db.insert("workflows", { id: wid, workspace_id: ctx.ws, name: w.name, description: r.description, trigger: w.trigger, conditions: w.conditions, actions: w.actions, active: opts.active === false ? 0 : 1, allow_reenroll: ["date_arrives", "every_period", "status_unchanged", "date_passed", "field_changed", "button_clicked", "note_created", "subitem_completed", "all_subitems_done"].includes(w.trigger.type) ? 1 : 0, owner_id: null, priority: 100, recipe: r.code, created_by: ctx.user.id, created_at: now(), updated_at: now() });
+    planWorkflow(ctx, parseJson(ctx.db.get<Row>("SELECT * FROM workflows WHERE id=?", wid), ["trigger", "conditions", "actions"]) as Row);
+    ids.push(wid);
+  }
+  return { recipe: r.code, workflows: ids, fields_created: createdFields };
+}
+export function labelExists(ctx: Ctx, object: string, key: string, label: string) { const d = fieldDefs(ctx, object).find((x) => x.key === key); return !!d && statusLabels(ctx, d).some((l) => norm(l.label) === norm(label)); }

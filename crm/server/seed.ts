@@ -1,4 +1,5 @@
 /** Bootstrap (first run) + optional demo data. Idempotent: only runs on an empty database. */
+import { ensureServiceUser } from "./services/workflows.js";
 import { Db, type Row } from "./db.js";
 import { id, now, hashPassword, addDays } from "./lib/util.js";
 import { PRESET_ROLES } from "./lib/permissions.js";
@@ -65,6 +66,7 @@ export function bootstrap(db: Db, opts: { demo?: boolean; adminEmail?: string; a
     db.insert("forms", { id: id(), workspace_id: ws, name: "Solicitud de información", slug: "contacto", fields: [{ key: "name", label: "Nombre y apellidos", type: "text", required: true }, { key: "email", label: "Email de trabajo", type: "email", required: true }, { key: "phone", label: "Teléfono", type: "phone", required: false }, { key: "company", label: "Empresa", type: "text", required: false }, { key: "custom.interes", label: "¿Qué te interesa?", type: "select", required: false, options: ["CRM", "Consultoría", "Formación", "Soporte"] }, { key: "message", label: "Cuéntanos qué necesitas", type: "textarea", required: false }], settings: { assignment: { mode: "round_robin", team_id: null }, create_deal: false, create_task: true, task_title: "Llamar al nuevo lead en 1 h", thank_you: "¡Gracias! Te contactaremos en menos de 24 horas.", consent_text: "Acepto recibir comunicaciones comerciales.", require_consent: false, tags: ["web"], source: "web", lifecycle_stage: "lead", notify_assignee: true, button_text: "Enviar solicitud", title: "¿Hablamos?", description: "Déjanos tus datos y te llamamos." }, active: 1, submissions: 0, created_at: now() });
   });
   let seededDemo = false;
+  ensureServiceUser(db, ws);
   seedClmCatalog(db, ws);
   if (opts.demo) { seedDemo(db, ws); seededDemo = true; }
   return { createdAdmin: true, seededDemo, adminEmail, adminPassword, workspaceId: ws };

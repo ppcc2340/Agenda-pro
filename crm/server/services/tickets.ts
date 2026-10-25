@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { applyDefaults, checkRequired } from "./columns.js";
 import type { Ctx } from "../context.js";
 import type { Row } from "../db.js";
 import { id, now } from "../lib/util.js";
@@ -49,6 +50,7 @@ function slaDue(ctx: Ctx, priority: string, from = now()) {
 
 export function createTicket(ctx: Ctx, input: TicketInput, opts: { depth?: number } = {}): Row {
   assert(ctx, "ticket", "create");
+  input = applyDefaults(ctx, "ticket", input);
   const priority = input.priority ?? "normal";
   const row = { id: id(), workspace_id: ctx.ws, number: nextCounter(ctx.db, ctx.ws, "ticket"), subject: input.subject, description: input.description ?? null, contact_id: input.contact_id ?? null, company_id: input.company_id ?? null, deal_id: input.deal_id ?? null, channel: input.channel ?? "manual", status: input.status ?? "new", priority, category: input.category ?? null, assignee_id: input.assignee_id === undefined ? ctx.user.id : input.assignee_id, sla_due_at: slaDue(ctx, priority), tags: input.tags ?? [], created_by: ctx.user.id, created_at: now(), updated_at: now() };
   if (!row.company_id && row.contact_id) row.company_id = ctx.db.get<{ company_id: string | null }>("SELECT company_id FROM contacts WHERE id=?", row.contact_id)?.company_id ?? null;
@@ -67,6 +69,7 @@ export function updateTicket(ctx: Ctx, tid: string, patch: Partial<TicketInput>,
   if (patch.priority && patch.priority !== prev.priority) data.sla_due_at = slaDue(ctx, patch.priority, prev.created_at as string);
   if (patch.status === "resolved" && prev.status !== "resolved") data.resolved_at = now();
   if (patch.status && patch.status !== "resolved" && patch.status !== "closed") data.resolved_at = null;
+  checkRequired(ctx, "ticket", prev, data);
   const changes = diff(prev, data);
   if (!Object.keys(changes).length) return prev;
   ctx.db.update("tickets", tid, { ...data, updated_at: now() });

@@ -1,3 +1,4 @@
+import { fieldDefs, coerceCustom, COMPUTED_TYPES, enrichList } from "./columns.js";
 /** Shared helpers: listing with filters/sort/pagination, custom field validation, JSON parsing. */
 import { z } from "zod";
 import type { Ctx } from "../context.js";
@@ -73,6 +74,7 @@ export function listRecords<T extends Row>(ctx: Ctx, object: string, q: ListQuer
   const total = ctx.db.get<{ n: number }>(`SELECT COUNT(*) n FROM ${table} t ${extra?.joins ?? ""} WHERE ${w}`, ...params)?.n ?? 0;
   const items = ctx.db.all<T>(`SELECT t.*${extra?.select ? ", " + extra.select : ""} FROM ${table} t ${extra?.joins ?? ""} WHERE ${w} ORDER BY ${sort} ${dir} NULLS LAST, t.id LIMIT ? OFFSET ?`, ...params, q.page_size, (q.page - 1) * q.page_size);
   for (const it of items) parseJson(it, JSON_COLS[object] ?? []);
+  enrichList(ctx, object, items as unknown as Row[]);
   return { items, total, page: q.page, page_size: q.page_size };
 }
 
@@ -86,8 +88,19 @@ export function validateCustom(ctx: Ctx, object: string, input: unknown, existin
   const inObj = (input && typeof input === "object" ? input : {}) as Record<string, unknown>;
   const out: Record<string, unknown> = { ...existing };
   const errors: string[] = [];
+  const full = fieldDefs(ctx, object);
   for (const d of defs) {
     const has = Object.prototype.hasOwnProperty.call(inObj, d.key);
+    const fd = full.find((x) => x.key === d.key)!;
+    if (COMPUTED_TYPES.includes(d.type) || d.type === "button") { delete out[d.key]; continue; }
+    if (["status", "rating", "timeline"].includes(d.type)) {
+      let v0 = has ? inObj[d.key] : out[d.key];
+      if ((v0 === undefined || v0 === null || v0 === "") && d.default_value && !has && !(d.key in out)) v0 = d.default_value;
+      const r = coerceCustom(ctx, fd, v0);
+      if (r && !r.ok) errors.push(r.error); else out[d.key] = r ? r.value : null;
+      if (d.required && (out[d.key] === null || out[d.key] === undefined) && !(partial && !has)) errors.push(`${d.label} es obligatorio`);
+      continue;
+    }
     let v = has ? inObj[d.key] : out[d.key];
     if ((v === undefined || v === null || v === "") && d.default_value && !has && !(d.key in out)) v = coerce(d.type, d.default_value);
     if (v === "" || v === undefined) v = null;

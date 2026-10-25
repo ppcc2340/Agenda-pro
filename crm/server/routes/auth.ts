@@ -18,7 +18,7 @@ export function authRoutes(db: Db) {
     const { email, password } = parse(loginSchema, req.body);
     const user = db.get<Row>("SELECT * FROM users WHERE email=?", email.toLowerCase().trim());
     const fail = () => { throw new HttpError(401, "Email o contraseña incorrectos"); };
-    if (!user || !user.active) fail();
+    if (!user || !user.active || user.is_service) fail();
     const u = user as Row;
     if (u.locked_until && (u.locked_until as string) > now()) throw new HttpError(423, "Cuenta bloqueada temporalmente por intentos fallidos. Espera 15 minutos");
     if (!verifyPassword(password, u.password_hash as string)) {

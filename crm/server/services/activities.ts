@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { emit } from "./events.js";
 import type { Ctx } from "../context.js";
 import { parseJson, type Row } from "../db.js";
 import { id, now } from "../lib/util.js";
@@ -33,6 +34,10 @@ export function logActivity(ctx: Ctx, input: ActivityInput, userId: string | nul
   if (!a.company_id && a.contact_id) a.company_id = ctx.db.get<{ company_id: string | null }>("SELECT company_id FROM contacts WHERE id=?", a.contact_id)?.company_id ?? null;
   if (!a.company_id && a.deal_id) a.company_id = ctx.db.get<{ company_id: string | null }>("SELECT company_id FROM deals WHERE id=?", a.deal_id)?.company_id ?? null;
   ctx.db.insert("activities", a);
+  if (input.type !== "system") {
+    const parent = a.deal_id ? { object: "deal", id: a.deal_id } : a.ticket_id ? { object: "ticket", id: a.ticket_id } : a.contact_id ? { object: "contact", id: a.contact_id } : a.company_id ? { object: "company", id: a.company_id } : null;
+    if (parent) emit(ctx, { type: "activity.created", object: parent.object as "deal", record: { id: parent.id }, meta: { activity: { id: a.id, type: a.type, subject: a.subject, body: a.body, user_id: a.user_id } } });
+  }
   if (input.type !== "system") {
     const touch = ["call", "email", "meeting", "sms", "whatsapp", "chat"].includes(input.type) && input.direction !== "inbound";
     if (a.contact_id) {

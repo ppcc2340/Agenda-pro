@@ -1,9 +1,11 @@
+import { CUSTOM_TYPES } from "../services/columns.js";
+import { validateFieldSettings, fieldDependents } from "../services/columnAdmin.js";
 import { Router } from "express";
 import { z } from "zod";
 import { h, parse, param } from "./_helpers.js";
 import { assertAdmin, assert, PRESET_ROLES, OBJECTS, ACTIONS } from "../lib/permissions.js";
 import { id, now, hashPassword, token, sha256 } from "../lib/util.js";
-import { badRequest, notFound } from "../lib/errors.js";
+import { badRequest, notFound, conflict } from "../lib/errors.js";
 import { audit } from "../services/audit.js";
 import { publicUser } from "./auth.js";
 import { DEFAULT_SETTINGS, type Ctx } from "../context.js";
@@ -89,8 +91,8 @@ export function adminRoutes() {
   r.delete("/teams/:id", h(async (req) => { assertAdmin(req.ctx); req.ctx.db.run("UPDATE users SET team_id=NULL WHERE team_id=?", param(req, "id")); req.ctx.db.run("DELETE FROM teams WHERE id=? AND workspace_id=?", param(req, "id"), req.ctx.ws); return { ok: true }; }));
 
   // ---------- custom fields ----------
-  r.get("/custom-fields", h(async (req) => ({ items: req.ctx.db.all<Row>("SELECT * FROM custom_fields WHERE workspace_id=? ORDER BY object, position", req.ctx.ws).map((f) => parseJson(f, ["options", "show_if"])) })));
-  const cfSchema = z.object({ object: z.enum(["contact", "company", "deal", "ticket", "contract"]), key: z.string().regex(/^[a-z][a-z0-9_]*$/, "Clave en minúsculas, sin espacios"), label: z.string().trim().min(1), type: z.enum(["text", "textarea", "number", "currency", "percent", "date", "datetime", "boolean", "select", "multiselect", "user", "url", "email", "phone"]), options: z.array(z.string()).optional(), required: z.boolean().optional(), default_value: z.string().nullable().optional(), position: z.number().int().optional(), section: z.string().nullable().optional(), show_if: z.object({ field: z.string(), value: z.string() }).nullable().optional() });
+  r.get("/custom-fields", h(async (req) => ({ items: req.ctx.db.all<Row>("SELECT * FROM custom_fields WHERE workspace_id=? ORDER BY object, position", req.ctx.ws).map((f) => parseJson(f, ["options", "show_if", "settings"])) })));
+  const cfSchema = z.object({ object: z.enum(["contact", "company", "deal", "ticket", "contract"]), key: z.string().regex(/^[a-z][a-z0-9_]*$/, "Clave en minúsculas, sin espacios"), label: z.string().trim().min(1), type: z.enum(CUSTOM_TYPES), options: z.array(z.string()).optional(), settings: z.record(z.unknown()).optional(), required: z.boolean().optional(), default_value: z.string().nullable().optional(), position: z.number().int().optional(), section: z.string().nullable().optional(), show_if: z.object({ field: z.string(), value: z.string() }).nullable().optional() });
   const canEditFields = (ctx: Ctx, object: string) => { if (!ctx.role.permissions.admin) assert(ctx, object, "update"); };
   r.post("/custom-fields", h(async (req) => {
     const b = parse(cfSchema, req.body);
@@ -98,19 +100,22 @@ export function adminRoutes() {
     if (req.ctx.db.get("SELECT id FROM custom_fields WHERE workspace_id=? AND object=? AND key=?", req.ctx.ws, b.object, b.key)) throw badRequest("Ya existe un campo con esa clave");
     const fid = id();
     const pos = req.ctx.db.get<{ n: number }>("SELECT COUNT(*) n FROM custom_fields WHERE workspace_id=? AND object=?", req.ctx.ws, b.object)?.n ?? 0;
-    req.ctx.db.insert("custom_fields", { id: fid, workspace_id: req.ctx.ws, object: b.object, key: b.key, label: b.label, type: b.type, options: b.options ?? [], required: b.required ? 1 : 0, default_value: b.default_value ?? null, position: b.position ?? pos, section: b.section ?? null, show_if: b.show_if ?? null });
+    req.ctx.db.insert("custom_fields", { id: fid, workspace_id: req.ctx.ws, object: b.object, key: b.key, label: b.label, type: b.type, options: b.options ?? [], settings: validateFieldSettings(req.ctx, b.object, b.type, b.settings ?? {}, b.key), required: b.required ? 1 : 0, default_value: b.default_value ?? null, position: b.position ?? pos, section: b.section ?? null, show_if: b.show_if ?? null });
     audit(req.ctx, "custom_field", fid, "create", { object: b.object, key: b.key });
-    return parseJson(req.ctx.db.get<Row>("SELECT * FROM custom_fields WHERE id=?", fid), ["options", "show_if"]);
+    return parseJson(req.ctx.db.get<Row>("SELECT * FROM custom_fields WHERE id=?", fid), ["options", "show_if", "settings"]);
   }));
   r.put("/custom-fields/:id", h(async (req) => {
     const cur = req.ctx.db.get<Row>("SELECT * FROM custom_fields WHERE id=? AND workspace_id=?", param(req, "id"), req.ctx.ws);
     if (!cur) throw notFound("Campo");
     canEditFields(req.ctx, String(cur.object));
     const b = parse(cfSchema.partial().omit({ object: true, key: true }), req.body);
-    req.ctx.db.update("custom_fields", param(req, "id"), { ...b, required: b.required === undefined ? undefined : b.required ? 1 : 0 });
-    return parseJson(req.ctx.db.get<Row>("SELECT * FROM custom_fields WHERE id=?", param(req, "id")), ["options", "show_if"]);
+    const type = b.type ?? String(cur.type);
+    const settings = b.settings !== undefined ? validateFieldSettings(req.ctx, String(cur.object), type, b.settings, String(cur.key), String(cur.id)) : undefined;
+    req.ctx.db.update("custom_fields", param(req, "id"), { ...b, settings, required: b.required === undefined ? undefined : b.required ? 1 : 0 });
+    audit(req.ctx, "custom_field", param(req, "id"), "update", { label: b.label, type: b.type });
+    return parseJson(req.ctx.db.get<Row>("SELECT * FROM custom_fields WHERE id=?", param(req, "id")), ["options", "show_if", "settings"]);
   }));
-  r.delete("/custom-fields/:id", h(async (req) => { const cur = req.ctx.db.get<Row>("SELECT * FROM custom_fields WHERE id=? AND workspace_id=?", param(req, "id"), req.ctx.ws); if (!cur) throw notFound("Campo"); canEditFields(req.ctx, String(cur.object)); req.ctx.db.run("DELETE FROM custom_fields WHERE id=? AND workspace_id=?", param(req, "id"), req.ctx.ws); return { ok: true }; }));
+  r.delete("/custom-fields/:id", h(async (req) => { const cur = req.ctx.db.get<Row>("SELECT * FROM custom_fields WHERE id=? AND workspace_id=?", param(req, "id"), req.ctx.ws); if (!cur) throw notFound("Campo"); canEditFields(req.ctx, String(cur.object)); const deps = fieldDependents(req.ctx, String(cur.object), String(cur.key), String(cur.label)); if (deps.length && req.query.force !== "1") throw conflict(`La columna «${cur.label}» se usa en ${deps.length} sitio(s); bórrala igualmente solo si ya los has revisado`, { dependents: deps }); audit(req.ctx, "custom_field", String(cur.id), "delete", { key: cur.key }); req.ctx.db.run("DELETE FROM custom_fields WHERE id=? AND workspace_id=?", param(req, "id"), req.ctx.ws); return { ok: true }; }));
 
   // ---------- settings ----------
   r.get("/settings", h(async (req) => ({ settings: req.ctx.settings, email_mode: emailMode(), public_url: process.env.PUBLIC_URL ?? "http://localhost:3000" })));
@@ -121,7 +126,7 @@ export function adminRoutes() {
       internal_domains: z.array(z.string()).optional(), fiscal_year_start: z.number().int().min(1).max(12).optional(), stale_deal_days: z.number().int().min(1).optional(), inactive_deal_days: z.number().int().min(1).optional(), lead_sla_hours: z.number().min(1).optional(),
       mql_threshold: z.number().optional(), sql_threshold: z.number().optional(), retention_months: z.number().int().min(1).optional(), retention_enabled: z.boolean().optional(), quote_prefix: z.string().max(10).optional(), quote_accept_stage_id: z.string().nullable().optional(), ticket_sla_hours: z.record(z.number()).optional(), logo_url: z.string().optional(), brand_color: z.string().optional(),
     });
-    const b = parse(schema, req.body);
+    const b = { ...parse(schema, req.body), ...parse(z.object({ automation_budget: z.number().int().min(0).optional(), automation_budget_mode: z.enum(["block_edit", "pause_all"]).optional(), automation_history_days: z.number().int().min(0).optional(), automation_max_depth: z.number().int().min(2).max(25).optional() }), req.body) };
     const merged = { ...DEFAULT_SETTINGS, ...req.ctx.settings, ...b };
     req.ctx.db.update("workspaces", req.ctx.ws, { settings: merged, name: merged.company_name });
     audit(req.ctx, "workspace", req.ctx.ws, "update", b);

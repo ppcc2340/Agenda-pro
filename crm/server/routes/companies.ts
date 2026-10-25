@@ -1,3 +1,4 @@
+import { enrichOne } from "../services/columns.js";
 import { Router } from "express";
 import { z } from "zod";
 import { h, parse, param } from "./_helpers.js";
@@ -24,7 +25,8 @@ export function companyRoutes() {
   }));
   r.post("/", h(async (req) => createCompany(req.ctx, parse(companySchema, req.body), { force: req.query.force === "1" || req.body?.force === true })));
   r.get("/:id", h(async (req) => {
-    const c = getCompany(req.ctx, param(req, "id"));
+    const c = getCompany(req.ctx, param(req, "id"))
+    enrichOne(req.ctx, "company", c);
     const db = req.ctx.db;
     return {
       ...c,

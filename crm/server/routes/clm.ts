@@ -1,3 +1,4 @@
+import { enrichOne } from "../services/columns.js";
 import { Router } from "express";
 import { z } from "zod";
 import { h, parse, param } from "./_helpers.js";
@@ -41,7 +42,7 @@ export function clmRoutes() {
   r.get("/contracts", h(async (req) => clm.listContracts(req.ctx, parse(listQuery, req.query), extraQ(req.query as Record<string, unknown>))));
   r.get("/contracts/export", h(async (req, res) => { assert(req.ctx, "contract", "export"); const q = parse(listQuery, req.query); const all: Row[] = []; for (let page = 1; page <= 100; page++) { const r2 = clm.listContracts(req.ctx, { ...q, page, page_size: 500 }, extraQ(req.query as Record<string, unknown>)); all.push(...r2.items); if (r2.items.length < 500) break; } audit(req.ctx, "contract", null, "export", { rows: all.length }); res.setHeader("content-type", "text/csv; charset=utf-8"); res.setHeader("content-disposition", `attachment; filename="contratos-${new Date().toISOString().slice(0, 10)}.csv"`); res.send("\ufeff" + toCsv(all, ["number", "title", "type_name", "status", "counterparty_name", "owner_name", "total_value", "annual_value", "currency", "effective_date", "end_date", "notice_deadline", "renewal_type", "risk_level", "risk_score", "signed_at"])); }));
   r.post("/contracts", h(async (req) => clm.createContract(req.ctx, parse(clm.contractSchema, req.body))));
-  r.get("/contracts/:id", h(async (req) => clm.contractDetail(req.ctx, param(req, "id"))));
+  r.get("/contracts/:id", h(async (req) => { const d = clm.contractDetail(req.ctx, param(req, "id")) as Record<string, unknown>; const c = (d.contract ?? d) as Record<string, unknown>; enrichOne(req.ctx, "contract", c); return d; }));
   r.patch("/contracts/:id", h(async (req) => clm.updateContract(req.ctx, param(req, "id"), parse(clm.contractSchema.partial(), req.body))));
   r.put("/contracts/:id", h(async (req) => clm.updateContract(req.ctx, param(req, "id"), parse(clm.contractSchema.partial(), req.body))));
   r.delete("/contracts/:id", h(async (req) => { clm.deleteContract(req.ctx, param(req, "id")); return { ok: true }; }));

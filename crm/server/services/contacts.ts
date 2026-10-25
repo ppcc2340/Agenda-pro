@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { applyDefaults, checkRequired } from "./columns.js";
 import type { Ctx } from "../context.js";
 import { parseJson, type Row } from "../db.js";
 import { id, now, normalizeEmail, normalizePhone, capitalizeName, domainFromEmail, FREE_EMAIL_DOMAINS } from "../lib/util.js";
@@ -109,6 +110,7 @@ function resolveCompany(ctx: Ctx, input: Partial<ContactInput>, email: string | 
 
 export function createContact(ctx: Ctx, input: ContactInput, opts: { force?: boolean; autoCreateCompany?: boolean; source?: string; depth?: number } = {}): Row {
   assert(ctx, "contact", "create");
+  input = applyDefaults(ctx, "contact", input);
   const data = normalize(input, ctx);
   const email = (data.email as string | null) ?? null;
   if (email && ctx.settings.internal_domains.includes(domainFromEmail(email) ?? "")) throw badRequest("Ese email pertenece a un dominio interno de tu empresa; no se crean contactos de compañeros");
@@ -144,6 +146,7 @@ export function updateContact(ctx: Ctx, cid: string, patch: Partial<ContactInput
   const data = normalize(patch, ctx);
   if (patch.company_name && !patch.company_id) data.company_id = resolveCompany(ctx, patch, (data.email as string | null) ?? (prev.email as string | null), true);
   if (patch.custom) data.custom = validateCustom(ctx, "contact", patch.custom, prev.custom as Record<string, unknown>, true);
+  checkRequired(ctx, "contact", prev, data);
   if (patch.consent_marketing !== undefined && !!patch.consent_marketing !== !!prev.consent_marketing) data.consent_date = now();
   if (data.email && data.email !== prev.email) {
     const dup = ctx.db.get<Row>("SELECT id FROM contacts WHERE workspace_id=? AND email=? AND id!=? AND deleted_at IS NULL", ctx.ws, data.email, cid);

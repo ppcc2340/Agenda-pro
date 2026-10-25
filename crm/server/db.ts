@@ -14,6 +14,29 @@ export class Db {
     this.sql = new DatabaseSync(file);
     const schema = fs.readFileSync(path.join(here, "schema.sql"), "utf8");
     this.sql.exec(schema);
+    this.migrate();
+  }
+  /** Idempotent additive migrations for databases created with an older schema. */
+  private migrate() {
+    const add = (table: string, col: string, def: string) => {
+      const cols = this.all<{ name: string }>(`PRAGMA table_info(${table})`).map((c) => c.name);
+      if (cols.length && !cols.includes(col)) this.sql.exec(`ALTER TABLE ${table} ADD COLUMN ${col} ${def}`);
+    };
+    add("custom_fields", "settings", "TEXT NOT NULL DEFAULT '{}'");
+    add("users", "is_service", "INTEGER NOT NULL DEFAULT 0");
+    add("workflows", "owner_id", "TEXT");
+    add("workflows", "priority", "INTEGER NOT NULL DEFAULT 100");
+    add("workflows", "atomic", "INTEGER NOT NULL DEFAULT 0");
+    add("workflows", "review_at", "TEXT");
+    add("workflows", "paused_reason", "TEXT");
+    add("workflows", "recipe", "TEXT");
+    add("workflows", "last_period_key", "TEXT");
+    add("workflow_runs", "actions_count", "INTEGER NOT NULL DEFAULT 0");
+    add("workflow_runs", "trigger_desc", "TEXT");
+    add("workflow_runs", "origin", "TEXT");
+    add("workflow_runs", "depth", "INTEGER NOT NULL DEFAULT 0");
+    add("workflow_runs", "error", "TEXT");
+    add("workflow_runs", "duration_ms", "INTEGER");
   }
   run(q: string, ...params: unknown[]) {
     return this.sql.prepare(q).run(...(params as never[]));
@@ -24,14 +47,18 @@ export class Db {
   all<T = Row>(q: string, ...params: unknown[]): T[] {
     return this.sql.prepare(q).all(...(params as never[])) as T[];
   }
+  private sp = 0;
+  /** Nestable transaction (SAVEPOINT based): inner failures roll back only their own work. */
   transaction<T>(fn: () => T): T {
-    this.sql.exec("BEGIN");
+    const name = `sp${++this.sp}`;
+    this.sql.exec(`SAVEPOINT ${name}`);
     try {
       const r = fn();
-      this.sql.exec("COMMIT");
+      this.sql.exec(`RELEASE ${name}`);
       return r;
     } catch (e) {
-      this.sql.exec("ROLLBACK");
+      this.sql.exec(`ROLLBACK TO ${name}`);
+      this.sql.exec(`RELEASE ${name}`);
       throw e;
     }
   }
@@ -41,8 +68,9 @@ export class Db {
     const vals = keys.map((k) => serialize(data[k]));
     this.run(`INSERT INTO ${table} (${keys.join(",")}) VALUES (${keys.map(() => "?").join(",")})`, ...vals);
   }
+  /** Update: keys with value `undefined` are left untouched (use null to clear). */
   update(table: string, id: string, data: Row) {
-    const keys = Object.keys(data);
+    const keys = Object.keys(data).filter((k) => data[k] !== undefined);
     if (!keys.length) return;
     const vals = keys.map((k) => serialize(data[k]));
     this.run(`UPDATE ${table} SET ${keys.map((k) => `${k}=?`).join(",")} WHERE id=?`, ...vals, id);

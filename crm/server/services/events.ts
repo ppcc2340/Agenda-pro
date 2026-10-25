@@ -21,10 +21,13 @@ export function onEvent(h: Handler) {
 /** Emit a domain event. Handlers (workflows, webhooks) run synchronously in order; errors are logged, never thrown. */
 export function emit(ctx: Ctx, ev: CrmEvent) {
   const depth = ev.depth ?? 0;
-  if (depth > 6) {
-    console.warn(`[events] bucle detectado, se detiene ${ev.type}`);
+  const max = ctx.settings?.automation_max_depth ?? 10;
+  if (depth > max) {
+    console.warn(`[events] cadena demasiado profunda (${depth}), se detiene ${ev.type}`);
     return;
   }
+  const meta = { ...(ev.meta ?? {}), origin: ev.meta?.origin ?? ctx.origin ?? (ctx.via === "apikey" ? "api" : "ui"), actor: ev.meta?.actor ?? ctx.user?.id ?? null, automation_id: ev.meta?.automation_id ?? ctx.automation?.id ?? null };
+  ev = { ...ev, meta };
   for (const h of handlers) {
     try {
       const r = h(ctx, { ...ev, depth });

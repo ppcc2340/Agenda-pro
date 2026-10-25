@@ -708,3 +708,42 @@ CREATE TABLE IF NOT EXISTS contract_timeline (
   id TEXT PRIMARY KEY, workspace_id TEXT NOT NULL, contract_id TEXT NOT NULL, type TEXT NOT NULL, title TEXT NOT NULL, body TEXT, actor_id TEXT, actor_name TEXT, actor_type TEXT NOT NULL DEFAULT 'user', meta TEXT NOT NULL DEFAULT '{}', at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_ctimeline ON contract_timeline(contract_id, at);
+
+-- ===================== Modelo de columnas y motor de automatizaciones v2 =====================
+CREATE TABLE IF NOT EXISTS label_sets (
+  id TEXT PRIMARY KEY,
+  workspace_id TEXT NOT NULL,
+  name TEXT NOT NULL,
+  labels TEXT NOT NULL DEFAULT '[]', -- [{id,label,color,done}] (ids estables: el valor guardado es el id)
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS automation_schedule (
+  id TEXT PRIMARY KEY,
+  workspace_id TEXT NOT NULL,
+  workflow_id TEXT NOT NULL,
+  object TEXT NOT NULL,
+  record_id TEXT NOT NULL,
+  basis TEXT NOT NULL,      -- valor de la fecha que originó la programación
+  fire_at TEXT NOT NULL,
+  fired_at TEXT,
+  UNIQUE(workflow_id, record_id, basis)
+);
+CREATE INDEX IF NOT EXISTS idx_asched_due ON automation_schedule(fired_at, fire_at);
+CREATE TABLE IF NOT EXISTS automation_approvals (
+  id TEXT PRIMARY KEY,
+  workspace_id TEXT NOT NULL,
+  workflow_id TEXT NOT NULL,
+  object TEXT NOT NULL,
+  record_id TEXT NOT NULL,
+  approver_id TEXT,
+  title TEXT NOT NULL,
+  body TEXT,
+  status TEXT NOT NULL DEFAULT 'pending', -- pending|approved|rejected|expired
+  payload TEXT NOT NULL DEFAULT '{}',      -- {then, else, rest, depth}
+  comment TEXT,
+  decided_by TEXT,
+  created_at TEXT NOT NULL,
+  decided_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_aappr_user ON automation_approvals(approver_id, status);

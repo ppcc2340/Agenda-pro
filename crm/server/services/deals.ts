@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { applyDefaults, checkRequired } from "./columns.js";
 import type { Ctx } from "../context.js";
 import { parseJson, type Row } from "../db.js";
 import { id, now, round2, daysBetween, monthKey } from "../lib/util.js";
@@ -79,6 +80,7 @@ export function getStage(ctx: Ctx, stageId: string): Row {
 
 export function createDeal(ctx: Ctx, input: DealInput, opts: { depth?: number } = {}): Row {
   assert(ctx, "deal", "create");
+  input = applyDefaults(ctx, "deal", input);
   const pipeline = input.pipeline_id ? ctx.db.get<Row>("SELECT * FROM pipelines WHERE id=? AND workspace_id=?", input.pipeline_id, ctx.ws) : defaultPipeline(ctx);
   if (!pipeline) throw notFound("Pipeline");
   const stage = input.stage_id ? getStage(ctx, input.stage_id) : firstStage(ctx, pipeline.id as string);
@@ -111,6 +113,7 @@ export function updateDeal(ctx: Ctx, did: string, patch: Partial<DealInput>, opt
   delete data.contact_ids; delete data.contacts; delete data.stage_id; delete data.pipeline_id;
   if (patch.expected_close_date && prev.status === "open" && patch.expected_close_date < now().slice(0, 10)) throw badRequest("La fecha de cierre prevista no puede ser anterior a hoy");
   if (patch.custom) data.custom = validateCustom(ctx, "deal", patch.custom, prev.custom as Record<string, unknown>, true);
+  checkRequired(ctx, "deal", prev, data);
   if (patch.amount !== undefined && (prev.products as Row[]).length) throw badRequest("El importe se calcula a partir de las líneas de producto");
   const changes = diff(prev, data);
   ctx.db.transaction(() => {
@@ -139,6 +142,7 @@ export function moveStage(ctx: Ctx, did: string, stageId: string, opts: { depth?
   if (stage.pipeline_id !== prev.pipeline_id) throw badRequest("La etapa pertenece a otro pipeline");
   if (stage.kind === "won") return closeDeal(ctx, did, { status: "won" }, opts);
   if (stage.kind === "lost") throw badRequest("Para marcar como perdido indica el motivo (usa la acción Marcar perdido)");
+  if (!opts.skipValidation) checkRequired(ctx, "deal", prev, { stage_id: stageId });
   if (!opts.skipValidation) {
     const missing = ((stage.required_fields as string[]) ?? []).filter((f) => {
       if (f === "contacts") return !(prev.contacts as Row[]).length;

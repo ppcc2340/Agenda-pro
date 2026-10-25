@@ -1,3 +1,4 @@
+import { enrichOne } from "../services/columns.js";
 import { Router } from "express";
 import { z } from "zod";
 import { h, parse, param } from "./_helpers.js";
@@ -11,7 +12,8 @@ export function ticketRoutes() {
   r.get("/", h(async (req) => listTickets(req.ctx, parse(listQuery, req.query))));
   r.post("/", h(async (req) => createTicket(req.ctx, parse(ticketSchema, req.body))));
   r.get("/:id", h(async (req) => {
-    const t = getTicket(req.ctx, param(req, "id"));
+    const t = getTicket(req.ctx, param(req, "id"))
+    enrichOne(req.ctx, "ticket", t);
     return { ...t, tasks: req.ctx.db.all("SELECT t.*, (SELECT name FROM users WHERE id=t.assignee_id) assignee_name FROM tasks t WHERE t.ticket_id=? AND t.completed_at IS NULL", t.id) };
   }));
   r.get("/:id/timeline", h(async (req) => ({ items: timeline(req.ctx, { ticket_id: param(req, "id") }) })));

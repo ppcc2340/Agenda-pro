@@ -1,3 +1,4 @@
+import { enrichOne } from "../services/columns.js";
 import { Router } from "express";
 import { z } from "zod";
 import { h, parse, param } from "./_helpers.js";
@@ -29,7 +30,8 @@ export function dealRoutes() {
   }));
   r.post("/", h(async (req) => createDeal(req.ctx, parse(dealSchema, req.body))));
   r.get("/:id", h(async (req) => {
-    const d = getDeal(req.ctx, param(req, "id"));
+    const d = getDeal(req.ctx, param(req, "id"))
+    enrichOne(req.ctx, "deal", d);
     const db = req.ctx.db;
     return { ...d, tasks: db.all("SELECT t.*, (SELECT name FROM users WHERE id=t.assignee_id) assignee_name FROM tasks t WHERE t.deal_id=? AND t.completed_at IS NULL ORDER BY t.due_at", d.id), quotes: db.all("SELECT id, number, version, status, total, date, valid_until, views, token FROM quotes WHERE deal_id=? ORDER BY created_at DESC", d.id) };
   }));

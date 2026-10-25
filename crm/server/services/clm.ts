@@ -5,6 +5,7 @@
  * pagos, enmiendas, renovaciones, terminación, retención e informes.
  */
 import { z } from "zod";
+import { applyDefaults, checkRequired } from "./columns.js";
 import type { Ctx } from "../context.js";
 import { parseJson as parseJsonRaw, type Row } from "../db.js";
 const parseJson = (row: Row | undefined, cols: string[]): Row => (parseJsonRaw(row ?? {}, cols) ?? {}) as Row;
@@ -492,6 +493,7 @@ export function generateFromTemplate(ctx: Ctx, cid: string, templateId: string, 
 }
 export function createContract(ctx: Ctx, input: ContractInput, opts: { source?: string } = {}): Row {
   assert(ctx, "contract", "create");
+  input = applyDefaults(ctx, "contract", input);
   const t = getType(ctx, input.type_id);
   if ((input.payment_terms_days ?? 30) > 60 && !input.justification) throw badRequest("Plazo de pago superior a 60 días (Ley 3/2004): indica una justificación o reduce el plazo");
   const cpId = ensureCompany(ctx, input);
@@ -531,6 +533,7 @@ export function updateContract(ctx: Ctx, cid: string, patch: Partial<ContractInp
   if (patch.counterparty_name && !patch.counterparty_company_id) data.counterparty_company_id = ensureCompany(ctx, patch as ContractInput);
   for (const k of ["arbitration", "contains_personal_data", "international_transfer", "dora_in_scope", "public_sector", "counterparty_outside_eea"]) if (k in data) data[k] = data[k] ? 1 : 0;
   if (patch.custom) data.custom = validateCustom(ctx, "contract", patch.custom, (prev.custom as Record<string, unknown>) ?? {}, true);
+  checkRequired(ctx, "contract", prev, data);
   if (locked) { const allowed = ["tags", "custom", "description", "department", "owner_id", "legal_owner_id", "confidentiality"]; for (const k of Object.keys(data)) if (!allowed.includes(k)) throw conflict("El contrato está en firma: solo se pueden editar etiquetas, descripción y responsables"); }
   if (prev.status === "ACTIVE" && ["total_value", "annual_value", "end_date", "notice_period_days", "renewal_type", "term_months"].some((k) => k in data)) throw conflict("El contrato está activo: los cambios de condiciones se hacen mediante una enmienda");
   const merged = { ...prev, ...data };
@@ -661,6 +664,7 @@ export function delegateApproval(ctx: Ctx, approvalId: string, toUser: string, r
 /* ---------- máquina de estados ---------- */
 function setStatus(ctx: Ctx, cid: string, to: string, note?: string | null, actorType: "user" | "system" | "external" | "agent" = "user") {
   const c = ctx.db.get<Row>("SELECT * FROM contracts WHERE id=?", cid) as Row;
+  if (actorType === "user") checkRequired(ctx, "contract", { ...c, custom: typeof c.custom === "string" ? JSON.parse(c.custom || "{}") : c.custom }, { status: to });
   const from = String(c.status);
   if (from === to) return;
   ctx.db.update("contracts", cid, { status: to, prev_status: from, substatus: null, sla_paused: ["NEGOTIATION", "ON_HOLD"].includes(to) ? 1 : 0, updated_at: now() });
@@ -1131,7 +1135,7 @@ export function dailyContractChecks(ctx: Ctx) {
   }
   // 3. obligaciones: recordatorios T-7 e incumplimientos
   for (const o of ctx.db.all<Row>("SELECT o.*, c.number FROM obligations o JOIN contracts c ON c.id=o.contract_id WHERE o.workspace_id=? AND o.status IN ('pending','in_progress') AND o.due_date IS NOT NULL", ctx.ws)) {
-    if (String(o.due_date) < td) { ctx.db.update("obligations", String(o.id), { status: "breached", breached_at: now(), updated_at: now() }); sysNotify(o.owner_id as string, `Obligación incumplida: ${o.title}`, `${o.number} · vencía el ${o.due_date}`, `/contratos/${o.contract_id}?tab=obligations`); const mgr = managerOf(ctx, o.owner_id as string); if (mgr) sysNotify(mgr, `Escalado · obligación incumplida ${o.number}`, String(o.title), `/contratos/${o.contract_id}?tab=obligations`); tlog(ctx, String(o.contract_id), "obligation", `Obligación incumplida: ${o.title}`, null, {}, "system"); emit(ctx, { type: "obligation.breached", object: "contract", record: getContractRaw(ctx, String(o.contract_id)), meta: { obligation_id: o.id } }); }
+    if (String(o.due_date) < td) { ctx.db.update("obligations", String(o.id), { status: "breached", breached_at: now(), updated_at: now() }); emit(ctx, { type: "obligation.breached", object: "contract", record: getContractRaw(ctx, String(o.contract_id)), meta: { obligation_id: o.id, obligation: o.title } }); sysNotify(o.owner_id as string, `Obligación incumplida: ${o.title}`, `${o.number} · vencía el ${o.due_date}`, `/contratos/${o.contract_id}?tab=obligations`); const mgr = managerOf(ctx, o.owner_id as string); if (mgr) sysNotify(mgr, `Escalado · obligación incumplida ${o.number}`, String(o.title), `/contratos/${o.contract_id}?tab=obligations`); tlog(ctx, String(o.contract_id), "obligation", `Obligación incumplida: ${o.title}`, null, {}, "system"); emit(ctx, { type: "obligation.breached", object: "contract", record: getContractRaw(ctx, String(o.contract_id)), meta: { obligation_id: o.id } }); }
     else if (!o.reminded_at && String(o.due_date) <= addD(td, 7)) { ctx.db.update("obligations", String(o.id), { reminded_at: now() }); sysNotify(o.owner_id as string, `Obligación próxima: ${o.title}`, `${o.number} · vence el ${o.due_date}`, `/contratos/${o.contract_id}?tab=obligations`); }
   }
   // 4. pagos vencidos

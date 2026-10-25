@@ -5,7 +5,7 @@ import { now, addDays } from "../lib/util.js";
 import { systemCtx } from "./system.js";
 import { notify } from "./notifications.js";
 import { emit } from "./events.js";
-import { resumeActions, runScheduledDaily } from "./workflows.js";
+import { resumeActions, runScheduledDaily, runDueSchedules } from "./workflows.js";
 import { retryDueDeliveries } from "./webhooks.js";
 import { withRelated as dealWithRelated } from "./deals.js";
 import { anonymizeContact } from "./contacts.js";
@@ -40,6 +40,8 @@ export async function tick(db: Db, opts: { forceDaily?: boolean } = {}) {
           db.update("scheduled_jobs", job.id as string, { attempts: (job.attempts as number) + 1, error: (e as Error).message, done_at: (job.attempts as number) >= 3 ? now() : null, run_at: addDays(now(), 1 / 24) });
         }
       }
+      // 1b. automatizaciones de fecha (planificador al minuto) y periódicas
+      try { runDueSchedules(ctx); } catch (e) { console.error("[automation schedule]", e); }
       // 2. task reminders (due within 60 min) and overdue tasks
       for (const t of db.all<Row>("SELECT * FROM tasks WHERE workspace_id=? AND completed_at IS NULL AND reminded_at IS NULL AND due_at IS NOT NULL AND due_at <= datetime('now', '+60 minutes') AND due_at > datetime('now', '-1 day')", w.id)) {
         notify(db, w.id, t.assignee_id as string | null, { type: "task_due", title: `Tarea próxima: ${t.title}`, body: `Vence ${new Date(t.due_at as string).toLocaleString("es-ES")}`, link: `/tareas?task=${t.id}` });

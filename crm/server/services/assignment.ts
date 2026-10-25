@@ -6,7 +6,7 @@ export interface AssignmentRule { mode: "fixed" | "round_robin" | "least_loaded"
 export function pickAssignee(db: Db, ws: string, rule: AssignmentRule | undefined, counterKey: string): string | null {
   if (!rule || rule.mode === "none") return null;
   if (rule.mode === "fixed") return rule.user_id ?? null;
-  const users = db.all<{ id: string }>(`SELECT id FROM users WHERE workspace_id=? AND active=1${rule.team_id ? " AND team_id=?" : ""} ORDER BY created_at`, ...(rule.team_id ? [ws, rule.team_id] : [ws]));
+  const users = db.all<{ id: string }>(`SELECT id FROM users WHERE workspace_id=? AND active=1 AND is_service=0${rule.team_id ? " AND team_id=?" : ""} ORDER BY created_at`, ...(rule.team_id ? [ws, rule.team_id] : [ws]));
   if (!users.length) return null;
   if (rule.mode === "least_loaded") {
     const loads = users.map((u) => ({ id: u.id, n: db.get<{ n: number }>("SELECT COUNT(*) n FROM contacts WHERE owner_id=? AND deleted_at IS NULL AND lifecycle_stage IN ('lead','mql','sql') AND lead_status IN ('new','contacted')", u.id)?.n ?? 0 }));

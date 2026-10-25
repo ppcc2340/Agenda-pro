@@ -18,9 +18,9 @@ export function buildCtx(db: Db, user: Row, via: "session" | "apikey", ip = ""):
 
 /** Context acting as the workspace's first active admin (scheduler, public forms, tracking). */
 export function systemCtx(db: Db, ws: string): Ctx {
-  const u = db.get<Row>("SELECT u.* FROM users u JOIN roles r ON r.id=u.role_id WHERE u.workspace_id=? AND u.active=1 AND r.key='admin' ORDER BY u.created_at LIMIT 1", ws);
+  const u = db.get<Row>("SELECT u.* FROM users u JOIN roles r ON r.id=u.role_id WHERE u.workspace_id=? AND u.active=1 AND r.key='admin' ORDER BY u.is_service, u.created_at LIMIT 1", ws);
   if (!u) throw new Error("No hay administrador en el workspace");
-  return buildCtx(db, u, "session", "system");
+  return { ...buildCtx(db, u, "session", "system"), origin: "system" };
 }
 
 /** Context impersonating a given user (used by workflows to act as the record owner when needed). */
