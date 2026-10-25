@@ -44,7 +44,7 @@ npm run verify       # typecheck + 29 tests de integración + build
 | 5. Productos y presupuestos | Productos, líneas de producto en el negocio (importe calculado), presupuestos con numeración, versión, enlace público con seguimiento de vistas, aceptación con firma simple (nombre + IP + fecha), avance de etapa automático |
 | 6. Tareas, notas, calendario | Tareas (tipos, prioridad, recurrencia, recordatorios), Mi día, notas fijadas, agenda de reuniones |
 | 7. Email | Envío desde la ficha con plantillas y variables, seguimiento de aperturas y clics, firma por usuario, modo SMTP/fake. Sincronización de buzón Gmail/Microsoft = integración externa pendiente (ver más abajo) |
-| 8. Workflows | Ajustes → Workflows: 18 disparadores, 13 acciones, condiciones, retrasos, reinscripción, historial, simulación, webhook entrante. 6 automatizaciones predefinidas |
+| 8. Workflows | Ajustes → Automatizaciones: frases «Cuando… y solo si… entonces…» con disparadores de cambio, fecha, periodo, botón y subelementos; condiciones Y/O anidadas; ramas, esperas y aprobaciones; recetas; historial, uso y gobierno (ver «Celdas y automatizaciones») |
 | 9. Formularios | Constructor de formularios, captcha ligero (honeypot), consentimiento, redirección |
 | 10. Tickets | Tickets con estados, prioridad, SLA por prioridad, respuesta por email / nota interna, CSAT |
 | 11. Informes y dashboards | Inicio (dashboard por rol/equipo/usuario) e Informes: ventas, pipeline, embudo, actividad, leads, emails, soporte, calidad de datos |
@@ -92,6 +92,34 @@ Tablero **Contratos** en `/contratos`, con el mismo principio que el resto (colu
 - **Informes**: activos, valor anual, vencimientos a 12 meses, tiempo de ciclo, desviaciones de playbook.
 
 Configuración en `/contratos/configuracion` (tipos, cláusulas, plantillas, playbooks, poderes de firma). API: `/api/clm/*` (contratos, versiones, aprobaciones, sobres de firma, obligaciones, hitos, informes) y firma pública en `/s/:token`.
+
+## Celdas y automatizaciones (modelo monday)
+
+Sigue el manual de automatizaciones y valores:
+
+- **Celda = valor + texto**: `GET/PUT /api/cells/:object/:id` devuelve cada columna como `{id, type, value, text}`. Las automatizaciones y las fórmulas trabajan siempre con el valor.
+- **Estados por ID**: las etiquetas tienen un ID estable. Renombrarlas no reescribe datos y no se puede borrar una etiqueta en uso (409). Los **conjuntos de etiquetas compartidos** (Ajustes → Etiquetas) reparten las mismas etiquetas e IDs entre tableros.
+- **Nuevos tipos de columna**:
+  - estado, línea temporal, valoración y botón;
+  - fórmula, con funciones lógicas, numéricas, de texto y de fechas (`WORKDAYS`, `ADD_WORKDAYS`) y referencias `{Columna}` / `{Columna#Start}`;
+  - reflejo (*mirror*) sobre relaciones, con agregación (suma, media, mediana, mín/máx, contar, lista, fechas, TODOS/ALGUNO/NINGUNO = valor, % = valor);
+  - autonumeración, registro de creación y última actualización.
+
+  Fórmulas y reflejos **sí disparan y condicionan** automatizaciones. Antes de borrar una columna se avisa de lo que depende de ella.
+- **Reglas del tablero** (Ajustes → Reglas de tablero): valores por defecto al crear y columnas obligatorias según el estado. Bloquean a las personas, no a las automatizaciones.
+- **Motor de automatizaciones**:
+  - Disparadores: de X a Y, cualquier columna, persona asignada, sin cambios en N días, botón, nota y subelementos, fecha ± días a una hora (planificador exacto con zona horaria y días laborables), fecha pasada y periódicos.
+  - Condiciones Y/O anidadas, incluidos origen, autor y empresa.
+  - Acciones: ramas si/si no, esperas, aprobaciones con decisión humana y más de 25 tipos de acción.
+- **Identidad y gobierno**:
+  - Cada regla se ejecuta como su propietario o como el usuario de servicio «Automatizaciones». Si el propietario se desactiva, la regla se pausa; se puede reasignar.
+  - Prioridad y ejecución atómica.
+  - Protección de bucles: profundidad máxima configurable y 5 ejecuciones/min por elemento.
+  - Contabilidad de acciones con presupuesto mensual, avisos al 60/80/100 % y bloqueo o pausa al agotarse.
+  - Historial con exportación CSV y simulación.
+- **Recetas** R1–R22 del manual, instalables con un clic: crean las columnas auxiliares y la automatización.
+
+La demo HTML incluye todo lo anterior (columnas de ejemplo, inspector de celdas, editor con ramas, recetas, reloj virtual para probar disparadores de fecha, aprobaciones, uso y gobierno) y un capítulo «Celdas y automatizaciones» de diez pasos en el tutorial.
 
 ## Integraciones externas (puntos de extensión)
 

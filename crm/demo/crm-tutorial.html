@@ -144,6 +144,22 @@ mark.hl-minor{background:#fff3c4}mark.hl-major{background:#ffd9b3}mark.hl-prohib
 .gdot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:4px}
 .head .pill{height:auto}.steps button[disabled]{cursor:default}
 @media (max-width:700px){.doc-view{padding:14px}.tlrow .num{width:80px}}
+
+/* ---------- Celdas y automatizaciones v2 ---------- */
+.err{color:var(--c-red);font-weight:700;font-size:12px;cursor:help}
+.rate{display:inline-flex;gap:1px}.rate b{cursor:pointer;color:#d0d4e4;font-size:16px;line-height:1}.rate b::before{content:"★"}.rate b.on{color:#ffcb00}
+.tlb{position:relative;display:block;height:22px;border-radius:11px;background:var(--line2);overflow:hidden;cursor:pointer;min-width:90px}.tlb i{position:absolute;inset:0 auto 0 0;background:var(--primary)}.tlb span{position:relative;display:block;text-align:center;font-size:11.5px;line-height:22px;color:#fff;mix-blend-mode:difference}
+.cbtn{border:0;border-radius:4px;color:#fff;font-size:12px;font-weight:600;padding:4px 10px;cursor:pointer}.cbtn:hover{filter:brightness(1.08)}
+.typegrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px;margin:10px 0}.tbtn{text-align:left;border:1px solid var(--line);background:#fff;border-radius:6px;padding:7px 9px;cursor:pointer;font-size:13px}.tbtn span{display:block;font-size:11px;color:var(--ink2);margin-top:2px}.tbtn.on{border-color:var(--primary);background:var(--primary-s)}
+.sentence{background:var(--primary-s);border-radius:8px;padding:10px 12px;font-size:14px;margin-bottom:12px}.sentence b{color:var(--primary)}
+.wstep{border:1px solid var(--line2);border-radius:8px;padding:10px 12px;margin-bottom:10px}.wstep>h3,.wstep>h4{display:flex;align-items:center;gap:6px;margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink2)}.wstep>h3 svg{width:15px;height:15px;color:var(--primary);flex:none}.wstep>summary{cursor:pointer}
+.ctree{border-left:3px solid var(--primary);padding:6px 0 6px 10px;display:flex;flex-direction:column;gap:6px}.ctree.nest{border-left-color:var(--c-orange);margin-left:6px;background:var(--hover);border-radius:0 6px 6px 0}
+.acard{border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:#fff;margin-bottom:6px}.acard.fl{border-left:4px solid var(--c-purple,#a25ddc)}
+.an{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--primary);color:#fff;font-size:11px;font-weight:700;margin-right:6px}
+.bbox{border:1px dashed var(--c-green);border-radius:6px;padding:6px 8px}.bbox.no{border-color:var(--c-red)}.bbox.yes{border-color:var(--c-green)}
+.rgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}.recipe{background:#fff;border-radius:8px;padding:12px 14px;box-shadow:0 1px 3px rgba(0,0,0,.06);display:flex;flex-direction:column;gap:6px}
+.meterb{height:8px;border-radius:4px;background:var(--line2);overflow:hidden;margin-top:6px}.meterb i{display:block;height:100%}
+.auto.off{opacity:.6}
 </style>
 </head>
 <body>
@@ -1707,6 +1723,545 @@ if (route.page === 'contratos') render(); else renderSide();
 
 <script>
 /* ============================================================
+   Celdas y automatizaciones v2 (manual «monday a fondo»)
+   - Celda = {id estable, tipo, valor (verdad), texto (presentación)}
+   - Estados por ID de etiqueta: renombrar no reescribe los datos
+   - Fórmulas por fila y reflejos (mirror) con agregación declarada,
+     que SÍ disparan y condicionan automatizaciones
+   - Valoración, línea temporal, botón, autonumeración, registros
+   - Valores por defecto y columnas obligatorias por estado
+   - Motor: disparadores de X a Y, cualquier columna, sin cambios en
+     N días, fecha ± días a una hora (planificador), periódicos,
+     botón, subelementos, actualizaciones; condiciones Y/O anidadas;
+     ramas, aprobaciones y esperas; propietario y usuario de servicio;
+     protección de bucles; contabilidad de acciones y presupuesto;
+     historial con exportación; recetas; gobierno.
+   ============================================================ */
+'use strict';
+const NOW_V = () => Date.now() + ((S.autoV2 && S.autoV2.clock) || 0) * 864e5;
+const vDay = () => new Date(NOW_V()).toISOString().slice(0, 10);
+const monthKey = () => new Date(NOW_V()).toISOString().slice(0, 7);
+const nrm = (s) => norm(s).trim();
+function ensureAutoV2() {
+  S.autoV2 = S.autoV2 || { budget: 1000, mode: 'block_edit', maxDepth: 10, usage: {}, alerts: {}, schedule: [], approvals: [], clock: 0, fcache: {} };
+  S.boardRules = S.boardRules || {};
+  for (const [obj, cols] of Object.entries(S.customCols)) for (const c of cols) {
+    if (c.type !== 'status' || (c.options || []).every((o) => o.id)) continue;
+    c.options = (c.options || []).map((o, i) => ({ id: i + 1, label: o.label, color: o.color, done: !!o.done }));
+    for (const it of S[obj] || []) { const v = (it.custom || {})[c.key]; if (v != null && v !== '') { const hit = c.options.find((o) => o.label === v); it.custom[c.key] = hit ? hit.id : null; } }
+  }
+  if (!S.autoV2.seeded) { seedAutoV2(); S.autoV2.seeded = true; }
+}
+
+/* ---------------------------------------------------------------- fórmulas */
+const FX = {
+  IF: (a) => (truthyV(a[0]) ? a[1] : a[2] ?? ''), AND: (a) => a.every(truthyV), OR: (a) => a.some(truthyV), NOT: (a) => !truthyV(a[0]), ISBLANK: (a) => a[0] == null || a[0] === '',
+  SWITCH: (a) => { for (let i = 1; i + 1 < a.length; i += 2) if (String(a[0]) === String(a[i])) return a[i + 1]; return a.length % 2 === 0 ? a[a.length - 1] : ''; },
+  SUM: (a) => a.reduce((s, x) => s + numV(x), 0), AVERAGE: (a) => (a.length ? a.reduce((s, x) => s + numV(x), 0) / a.length : 0), MIN: (a) => Math.min(...a.map(numV)), MAX: (a) => Math.max(...a.map(numV)),
+  ROUND: (a) => { const d = Math.pow(10, numV(a[1])); return Math.round(numV(a[0]) * d) / d; }, ABS: (a) => Math.abs(numV(a[0])), DIVIDE: (a) => (numV(a[1]) ? numV(a[0]) / numV(a[1]) : 0),
+  CONCATENATE: (a) => a.map(strV).join(''), LEN: (a) => strV(a[0]).length, UPPER: (a) => strV(a[0]).toUpperCase(), LOWER: (a) => strV(a[0]).toLowerCase(), LEFT: (a) => strV(a[0]).slice(0, numV(a[1])), RIGHT: (a) => strV(a[0]).slice(-numV(a[1])),
+  TODAY: () => vDay(), DAYS: (a) => Math.round((dV(a[0]) - dV(a[1])) / 864e5), ADD_DAYS: (a) => new Date(dV(a[0]) + numV(a[1]) * 864e5).toISOString().slice(0, 10), SUBTRACT_DAYS: (a) => new Date(dV(a[0]) - numV(a[1]) * 864e5).toISOString().slice(0, 10),
+  WORKDAYS: (a) => { let s = Math.min(dV(a[0]), dV(a[1])), e = Math.max(dV(a[0]), dV(a[1])), n = 0; for (let t = s; t <= e; t += 864e5) { const w = new Date(t).getUTCDay(); if (w && w !== 6) n++; } return dV(a[0]) >= dV(a[1]) ? n : -n; },
+  FORMAT_DATE: (a) => { const d = new Date(dV(a[0])); const p = (n) => String(n).padStart(2, '0'); return strV(a[1] || 'DD/MM/YYYY').replace('YYYY', d.getUTCFullYear()).replace('MM', p(d.getUTCMonth() + 1)).replace('DD', p(d.getUTCDate())); },
+  YEAR: (a) => new Date(dV(a[0])).getUTCFullYear(), MONTH: (a) => new Date(dV(a[0])).getUTCMonth() + 1, TEXT: (a) => numV(a[0]).toFixed((strV(a[1]).split('.')[1] || '').length),
+};
+const numV = (v) => { if (v === '' || v == null) return 0; if (typeof v === 'boolean') return v ? 1 : 0; const n = Number(v); if (isNaN(n)) throw new Error(`«${v}» no es un número`); return n; };
+const strV = (v) => (v == null ? '' : typeof v === 'boolean' ? (v ? 'TRUE' : 'FALSE') : String(v));
+const truthyV = (v) => !(v === false || v === 0 || v == null || v === '' || v === 'false');
+const dV = (v) => { const s = strV(v); if (!s) throw new Error('fecha vacía'); const t = Date.parse(s.length === 10 ? s + 'T00:00:00Z' : s); if (isNaN(t)) throw new Error(`«${s}» no es una fecha`); return t; };
+function fxEval(src, ref) {
+  let i = 0; const toks = [];
+  while (i < src.length) { const c = src[i]; if (/\s/.test(c)) { i++; continue; } if (/[0-9.]/.test(c)) { let j = i; while (j < src.length && /[0-9.]/.test(src[j])) j++; toks.push(['n', src.slice(i, j)]); i = j; continue; } if (c === '"' || c === "'") { const j = src.indexOf(c, i + 1); if (j < 0) throw new Error('Comillas sin cerrar'); toks.push(['s', src.slice(i + 1, j)]); i = j + 1; continue; } if (c === '{') { const j = src.indexOf('}', i); if (j < 0) throw new Error('Llave sin cerrar'); toks.push(['r', src.slice(i + 1, j).trim()]); i = j + 1; continue; } if (/[A-Za-z_]/.test(c)) { let j = i; while (j < src.length && /[A-Za-z0-9_]/.test(src[j])) j++; toks.push(['i', src.slice(i, j).toUpperCase()]); i = j; continue; } const two = src.slice(i, i + 2); if (['<=', '>=', '<>', '!='].includes(two)) { toks.push(['o', two === '!=' ? '<>' : two]); i += 2; continue; } if ('+-*/&=<>(),;'.includes(c)) { toks.push([c === ';' ? ',' : '+-*/&=<>'.includes(c) ? 'o' : c, c === ';' ? ',' : c]); i++; continue; } throw new Error(`Carácter no válido: ${c}`); }
+  let p = 0; const PR = { '=': 1, '<>': 1, '<': 1, '>': 1, '<=': 1, '>=': 1, '&': 2, '+': 3, '-': 3, '*': 4, '/': 4 };
+  const prim = () => { const t = toks[p++]; if (!t) throw new Error('Fórmula incompleta'); if (t[0] === 'o' && t[1] === '-') return -numV(prim()); if (t[0] === 'n') return Number(t[1]); if (t[0] === 's') return t[1]; if (t[0] === 'r') return ref(t[1]); if (t[0] === '(') { const v = ex(0); if (toks[p++]?.[0] !== ')') throw new Error('Falta «)»'); return v; } if (t[0] === 'i') { if (t[1] === 'TRUE' || t[1] === 'FALSE') return t[1] === 'TRUE'; if (toks[p++]?.[0] !== '(') throw new Error('Falta «(»'); const args = []; if (toks[p]?.[0] !== ')') { args.push(ex(0)); while (toks[p]?.[0] === ',') { p++; args.push(ex(0)); } } if (toks[p++]?.[0] !== ')') throw new Error('Falta «)»'); const f = FX[t[1]]; if (!f) throw new Error(`Función desconocida: ${t[1]}`); return f(args); } throw new Error(`Inesperado: ${t[1]}`); };
+  const cmp = (a, b) => (!isNaN(Number(a)) && !isNaN(Number(b)) && a !== '' && b !== '' ? Number(a) - Number(b) : String(a).localeCompare(String(b)));
+  const ex = (min) => { let l = prim(); for (;;) { const t = toks[p]; if (!t || t[0] !== 'o' || PR[t[1]] < min) break; p++; const r = ex(PR[t[1]] + 1); const o = t[1]; l = o === '+' ? numV(l) + numV(r) : o === '-' ? numV(l) - numV(r) : o === '*' ? numV(l) * numV(r) : o === '/' ? (numV(r) ? numV(l) / numV(r) : 0) : o === '&' ? strV(l) + strV(r) : o === '=' ? cmp(l, r) === 0 : o === '<>' ? cmp(l, r) !== 0 : o === '<' ? cmp(l, r) < 0 : o === '>' ? cmp(l, r) > 0 : o === '<=' ? cmp(l, r) <= 0 : cmp(l, r) >= 0; } return l; };
+  const v = ex(0); if (p < toks.length) throw new Error(`Sobra «${toks[p][1]}»`); return typeof v === 'number' ? Math.round(v * 100) / 100 : v;
+}
+const FX_LIST = Object.keys(FX);
+
+/* ---------------------------------------------------------------- relaciones y reflejos */
+const RELS = {
+  deals: { company: { label: 'Empresa', obj: 'companies', rows: (it) => [byId('companies', it.companyId)].filter(Boolean) }, contacts: { label: 'Contactos', obj: 'contacts', rows: (it) => (it.contactIds || []).map((id) => byId('contacts', id)).filter(Boolean) }, tasks: { label: 'Tareas (subelementos)', obj: 'tasks', rows: (it) => S.tasks.filter((t) => t.dealId === it.id) }, contracts: { label: 'Contratos', obj: 'contracts', rows: (it) => (S.contracts || []).filter((c) => c.dealId === it.id) } },
+  companies: { deals: { label: 'Negocios', obj: 'deals', rows: (it) => S.deals.filter((d) => d.companyId === it.id) }, contacts: { label: 'Contactos', obj: 'contacts', rows: (it) => S.contacts.filter((c) => c.companyId === it.id) }, tickets: { label: 'Tickets', obj: 'tickets', rows: (it) => S.tickets.filter((t) => t.companyId === it.id) }, contracts: { label: 'Contratos', obj: 'contracts', rows: (it) => (S.contracts || []).filter((c) => c.companyId === it.id) } },
+  contacts: { company: { label: 'Empresa', obj: 'companies', rows: (it) => [byId('companies', it.companyId)].filter(Boolean) }, deals: { label: 'Negocios', obj: 'deals', rows: (it) => S.deals.filter((d) => (d.contactIds || []).includes(it.id)) }, tasks: { label: 'Tareas (subelementos)', obj: 'tasks', rows: (it) => S.tasks.filter((t) => t.contactId === it.id) } },
+  tickets: { contact: { label: 'Contacto', obj: 'contacts', rows: (it) => [byId('contacts', it.contactId)].filter(Boolean) }, company: { label: 'Empresa', obj: 'companies', rows: (it) => [byId('companies', it.companyId)].filter(Boolean) } },
+  contracts: { company: { label: 'Contraparte', obj: 'companies', rows: (it) => [byId('companies', it.companyId)].filter(Boolean) }, deal: { label: 'Negocio', obj: 'deals', rows: (it) => [byId('deals', it.dealId)].filter(Boolean) }, obligations: { label: 'Obligaciones (subelementos)', obj: 'obligations', rows: (it) => it.obligations || [] } },
+};
+const REL_FIELDS = { companies: ['name', 'type', 'sector', 'size', 'city'], deals: ['name', 'amount', 'prob', 'status', 'stageId', 'close', 'priority'], contacts: ['firstName', 'lifecycle', 'leadStatus', 'score', 'source'], tasks: ['title', 'status', 'priority', 'due'], tickets: ['subject', 'status', 'priority', 'csat'], contracts: ['number', 'status', 'value', 'risk', 'endDate'], obligations: ['title', 'status', 'due'] };
+const AGGS = { sum: 'Suma', avg: 'Media', min: 'Mínimo', max: 'Máximo', count: 'Contar', list: 'Lista', first: 'Primero', all_eq: 'TODOS = valor', any_eq: 'ALGUNO = valor', pct_eq: '% = valor (progreso)' };
+function aggV(vals, agg, cmpv) {
+  const ne = vals.filter((v) => v != null && v !== ''); const nums = ne.map(Number).filter((n) => !isNaN(n)); const eq = (v) => nrm(v) === nrm(cmpv);
+  switch (agg) { case 'sum': return nums.reduce((a, b) => a + b, 0); case 'avg': return nums.length ? Math.round((nums.reduce((a, b) => a + b, 0) / nums.length) * 100) / 100 : null; case 'min': return nums.length ? Math.min(...nums) : null; case 'max': return nums.length ? Math.max(...nums) : null; case 'count': return vals.length; case 'first': return ne[0] ?? null; case 'all_eq': return vals.length > 0 && vals.every(eq); case 'any_eq': return vals.some(eq); case 'pct_eq': return vals.length ? Math.round((100 * vals.filter(eq).length) / vals.length) : 0; default: return ne.map(String).join(', '); }
+}
+
+/* ---------------------------------------------------------------- valores de celda */
+const COMPUTED_T = ['formula', 'mirror', 'autonumber', 'created', 'updated'];
+function colDefs(obj) { return S.customCols[obj] || []; }
+function rawCustom(obj, it, c, depth = 0) {
+  if (c.type === 'formula') { try { return fxEval(c.expr || '', (name) => refValue(obj, it, name, depth + 1)); } catch (e) { return { __err: e.message }; } }
+  if (c.type === 'mirror') { const r = RELS[obj]?.[c.rel]; if (!r) return null; const rows = r.rows(it); return aggV(rows.map((x) => (c.field === 'done' ? (x.status === 'done' || x.status === 'fulfilled' ? 'true' : 'false') : x[c.field])), c.agg || 'list', c.cmp); }
+  if (c.type === 'autonumber') { const sorted = [...S[obj]].sort((a, b) => String(a.createdAt).localeCompare(String(b.createdAt))); const n = sorted.findIndex((x) => x.id === it.id) + 1; return `${c.prefix || ''}${String(n).padStart(c.pad || 0, '0')}`; }
+  if (c.type === 'created') return (it.createdAt || '').slice(0, 10); if (c.type === 'updated') return (it.updatedAt || it.createdAt || '').slice(0, 10);
+  return (it.custom || {})[c.key];
+}
+function refValue(obj, it, name, depth = 0) {
+  if (depth > 8) throw new Error('Referencia circular');
+  const [n0, part] = name.split('#'); const n = nrm(n0);
+  const c = colDefs(obj).find((x) => nrm(x.key) === n || nrm(x.label) === n);
+  if (c) { let v = rawCustom(obj, it, c, depth); if (v && v.__err) throw new Error(v.__err); if (c.type === 'status') v = c.options.find((o) => o.id === Number(v))?.label ?? ''; if (c.type === 'timeline' && v) v = nrm(part) === 'end' ? v.to : v.from; return v ?? ''; }
+  const b = (COLS[obj] ? COLS[obj]() : []).find((x) => nrm(x.label) === n || x.key === n0);
+  if (b) { const v = it[b.key]; return v ?? ''; }
+  if (n0 in it) return it[n0] ?? '';
+  throw new Error(`Columna desconocida: {${n0}}`);
+}
+/** Valor de cualquier columna para condiciones/plantillas (incluye calculadas y especiales). */
+function cellRaw(obj, it, field) {
+  if (!field) return undefined;
+  if (field === '_origin') return S._origin || 'ui';
+  if (field.startsWith('_activity.')) return (S._ev?.activity || {})[field.slice(10)];
+  if (field.startsWith('company.')) return byId('companies', it.companyId)?.[field.slice(8)];
+  if (field.startsWith('custom.')) { const c = colDefs(obj).find((x) => x.key === field.slice(7)); if (!c) return undefined; const v = rawCustom(obj, it, c); return v && v.__err ? null : v; }
+  return it[field];
+}
+function cellText(obj, it, field) {
+  const v = cellRaw(obj, it, field);
+  if (field.startsWith('custom.')) { const c = colDefs(obj).find((x) => x.key === field.slice(7)); if (c?.type === 'status') return c.options.find((o) => o.id === Number(v))?.label ?? ''; if (c?.type === 'timeline' && v) return `${v.from} – ${v.to}`; if (c?.type === 'rating') return '★'.repeat(Number(v) || 0); if (c?.type === 'person') return user(v)?.name || ''; }
+  const col = (COLS[obj] ? COLS[obj]() : []).find((x) => x.key === field); if (col?.type === 'status') return col.opt[v]?.label ?? (v ?? ''); if (col?.type === 'person') return user(v)?.name || '';
+  return v == null ? '' : typeof v === 'boolean' ? (v ? 'Sí' : 'No') : typeof v === 'object' ? JSON.stringify(v) : String(v);
+}
+
+/* ---------------------------------------------------------------- columnas en el tablero */
+customCols = function (obj) {
+  return colDefs(obj).map((c) => {
+    const key = 'custom.' + c.key; const base = { key, label: c.label, custom: true, cdef: c, w: 130 };
+    const get = (it) => (it.custom || {})[c.key]; const set = (it, v) => { it.custom = it.custom || {}; it.custom[c.key] = v; };
+    switch (c.type) {
+      case 'status': return { ...base, type: 'status', w: 140, opt: Object.fromEntries((c.options || []).map((o) => [String(o.id), { label: o.label, color: o.color }])), get: (it) => (get(it) == null ? '' : String(get(it))), set: (it, v) => set(it, v === '' || v == null ? null : Number(v)) };
+      case 'formula': case 'mirror': { const num = c.type === 'formula' ? c.result === 'number' : ['sum', 'avg', 'min', 'max', 'count', 'pct_eq'].includes(c.agg); return { ...base, type: num ? 'number' : 'calc', readonly: true, align: num ? 'r' : undefined, suffix: c.agg === 'pct_eq' ? '%' : undefined, get: (it) => { const v = rawCustom(c.objOf || CURRENT_OBJ_FOR(c), it, c); if (v && v.__err) return num ? null : `<span class="err" title="${esc(v.__err)}">#ERROR</span>`; return typeof v === 'boolean' ? (num ? Number(v) : v ? '✓ Sí' : '✗ No') : v; } }; }
+      case 'rating': return { ...base, type: 'calc', w: 110, get: (it) => `<span class="rate">${Array.from({ length: c.max || 5 }, (_, i) => `<b class="${i < (get(it) || 0) ? 'on' : ''}" data-act="cell-rate" data-arg='${JSON.stringify({ k: c.key, id: it.id, n: i + 1 })}'>★</b>`).join('')}</span>` };
+      case 'timeline': return { ...base, type: 'calc', w: 170, get: (it) => { const v = get(it); if (!v) return `<span class="muted" data-act="cell-tl" data-arg='${JSON.stringify({ k: c.key, id: it.id })}' style="cursor:pointer">+ rango</span>`; const a = dV(v.from), b2 = dV(v.to), pc = Math.max(0, Math.min(100, ((NOW_V() - a) / Math.max(864e5, b2 - a)) * 100)); return `<span class="tlb" data-act="cell-tl" data-arg='${JSON.stringify({ k: c.key, id: it.id })}'><i style="width:${pc}%"></i><span>${fdate(v.from)} – ${fdate(v.to)}</span></span>`; } };
+      case 'button': return { ...base, type: 'calc', w: 120, get: (it) => `<button class="cbtn" style="background:${c.color || C.blue}" data-act="cell-button" data-arg='${JSON.stringify({ k: c.key, id: it.id })}'>${esc(c.btn || c.label)}</button>` };
+      case 'autonumber': case 'created': case 'updated': return { ...base, type: 'calc', readonly: true, get: (it) => esc(rawCustom(null, it, c) ?? '') };
+      case 'person': return { ...base, type: 'person', w: 110, get, set };
+      default: return { ...base, type: c.type, w: c.type === 'status' ? 140 : 130, get, set };
+    }
+  });
+};
+const CURRENT_OBJ_FOR = (c) => Object.keys(S.customCols).find((o) => S.customCols[o].includes(c));
+const _cellEdit = ACT['cell-edit']; ACT['cell-edit'] = (arg, el) => { const col = findCol(arg.key); if (col?.readonly) return toast('Columna calculada: solo lectura', 'err'); return _cellEdit(arg, el); };
+ACT['cell-rate'] = ({ k, id, n }) => { const obj = CURRENT.obj; const it = byId(obj, id); if (!it) return; const cur = (it.custom || {})[k] || 0; setCustomV2(obj, it, k, cur === n ? 0 : n); };
+ACT['cell-tl'] = ({ k, id }) => { const obj = CURRENT.obj; const it = byId(obj, id); const v = (it.custom || {})[k] || {}; const m = modal({ title: 'Línea temporal', body: `<div class="fgrid"><div class="fld"><label>Inicio</label><input class="inp" type="date" id="tf" value="${v.from || vDay()}"/></div><div class="fld"><label>Fin</label><input class="inp" type="date" id="tt" value="${v.to || dayISO(addDays(14))}"/></div></div>`, footer: `<button class="btn outline" id="cl">Vaciar</button><button class="btn primary" id="ok">Guardar</button>` }); m.querySelector('#ok').onclick = () => { const f = m.querySelector('#tf').value, t = m.querySelector('#tt').value; if (!f || !t || t < f) return toast('El fin no puede ser anterior al inicio', 'err'); m.close(); setCustomV2(obj, it, k, { from: f, to: t }); }; m.querySelector('#cl').onclick = () => { m.close(); setCustomV2(obj, it, k, null); }; };
+ACT['cell-button'] = ({ k, id }) => { const obj = CURRENT.obj; const it = byId(obj, id); audit(obj, id, 'button', { botón: k }); toast('Botón pulsado', 'ok'); emit('button', obj, it, { field: 'custom.' + k }); refresh(); };
+function setCustomV2(obj, it, k, v) { const col = findCol('custom.' + k) || customCols(obj).find((c) => c.key === 'custom.' + k); if (col) setVal(obj, it, col, v); }
+/* setVal: comprobar obligatorias y emitir el cambio (también de columnas personalizadas) */
+const _setVal = setVal; setVal = function (obj, it, col, v) {
+  if (!col.set) return _setVal(obj, it, col, v);
+  const from = colVal(col, it); const field = col.key;
+  if (!checkRequiredV2(obj, it, field, v)) return;
+  const snap = computedSnapshot(obj, it);
+  _setVal(obj, it, col, v);
+  it.updatedAt = nowISO();
+  afterChange(obj, it, field, from, v, snap);
+};
+const _setFieldV2 = setField; setField = function (obj, item, key, value, opts = {}) {
+  if (!checkRequiredV2(obj, item, key, value)) return false;
+  const from = item[key]; const snap = computedSnapshot(obj, item);
+  const r = _setFieldV2(obj, item, key, value, opts);
+  if (r !== false && JSON.stringify(from) !== JSON.stringify(item[key])) afterChange(obj, item, key, from, item[key], snap);
+  return r;
+};
+function computedSnapshot(obj, it) { const out = {}; for (const c of colDefs(obj)) if (['formula', 'mirror'].includes(c.type)) out[c.key] = JSON.stringify(rawCustom(obj, it, c)); return out; }
+function afterChange(obj, it, field, from, to, snap) {
+  emit('changed', obj, it, { field, from, to });
+  if (['owner', 'assignee'].includes(field) && to) emit('assigned', obj, it, { field, to });
+  for (const c of colDefs(obj)) if (['formula', 'mirror'].includes(c.type) && snap && c.key in snap) { const now = JSON.stringify(rawCustom(obj, it, c)); if (now !== snap[c.key]) emit('changed', obj, it, { field: 'custom.' + c.key, from: JSON.parse(snap[c.key] || 'null'), to: JSON.parse(now || 'null'), computed: true }); }
+  // reflejos de registros conectados (p. ej. suma de negocios en la empresa)
+  if (obj === 'deals' && it.companyId) { const co = byId('companies', it.companyId); if (co) for (const c of colDefs('companies').filter((x) => x.type === 'mirror' && x.rel === 'deals')) emit('changed', 'companies', co, { field: 'custom.' + c.key, computed: true }); }
+  planItem(obj, it);
+}
+
+/* ---------------------------------------------------------------- valores por defecto y obligatorias */
+function checkRequiredV2(obj, it, field, value) {
+  const rules = (S.boardRules[obj]?.required || []).filter((r) => r.when === field && r.values.map(String).includes(String(value)));
+  const missing = []; for (const r of rules) for (const f of r.fields) { const v = cellRaw(obj, it, f); if (v == null || v === '' || (Array.isArray(v) && !v.length)) missing.push(f); }
+  if (missing.length) { toast(`Faltan columnas obligatorias: ${[...new Set(missing)].map((f) => colLabel(obj, f)).join(', ')}`, 'err'); return false; }
+  return true;
+}
+const colLabel = (obj, f) => (f.startsWith('custom.') ? colDefs(obj).find((c) => c.key === f.slice(7))?.label : (COLS[obj] ? COLS[obj]() : []).find((c) => c.key === f)?.label) || f;
+function applyDefaultsV2(obj, d) { const def = S.boardRules[obj]?.defaults || {}; for (const [k, v] of Object.entries(def)) { if (v === '' || v == null || k.startsWith('custom.')) continue; if (d[k] == null || d[k] === '') d[k] = v === '@me' ? S.me : v === '@today' ? vDay() : coerce(String(v)); } return d; }
+function applyCustomDefaults(obj, it) { const def = S.boardRules[obj]?.defaults || {}; for (const [k, v] of Object.entries(def)) { if (!k.startsWith('custom.') || v === '' || v == null) continue; it.custom = it.custom || {}; const key = k.slice(7); if (it.custom[key] == null || it.custom[key] === '') { const c = colDefs(obj).find((x) => x.key === key); it.custom[key] = c?.type === 'status' ? (c.options.find((o) => nrm(o.label) === nrm(v))?.id ?? null) : coerce(String(v)); } } return it; }
+{ const wrap = (name, obj) => { const orig = window[name] || eval(name); return function (d, ...rest) { const it = orig(applyDefaultsV2(obj, { ...d }), ...rest); if (it) applyCustomDefaults(obj, it); return it; }; };
+  createContact = wrap('createContact', 'contacts'); createCompany = wrap('createCompany', 'companies'); createDeal = wrap('createDeal', 'deals'); createTask = wrap('createTask', 'tasks'); createTicket = wrap('createTicket', 'tickets'); }
+ACT['b-boardrules'] = (obj) => {
+  if (!can('admin')) return toast('Solo un administrador cambia las reglas del tablero', 'err');
+  const r = (S.boardRules[obj] = S.boardRules[obj] || { defaults: {}, required: [] });
+  const cols = [...(COLS[obj] ? COLS[obj]() : []).filter((c) => ['status', 'text', 'number', 'money', 'date', 'person'].includes(c.type)), ...customCols(obj).filter((c) => !c.readonly && ['status', 'text', 'number', 'date', 'person'].includes(c.type))];
+  const statusCols = cols.filter((c) => c.type === 'status');
+  const m = modal({ title: `Reglas del tablero · ${OBJ_LABEL[obj] || obj}s`, size: 'lg', body: '<div id="br"></div>', footer: `<button class="btn primary" id="ok">Hecho</button>` });
+  const draw = () => {
+    m.querySelector('#br').innerHTML = `<h3 style="font-size:15px">Valores por defecto</h3><p class="xs muted">El elemento nace con ellos: no generan evento de cambio ni gastan acciones (más barato que «cuando se crea, establecer…»). Usa @me y @today.</p>${Object.entries(r.defaults).map(([k, v]) => `<div class="row mb8"><span style="width:180px">${esc(colLabel(obj, k))}</span>${(() => { const c = cols.find((x) => x.key === k); return c?.type === 'status' ? `<select class="inp" data-def="${k}">${Object.entries(c.opt).map(([kk, o]) => `<option value="${c.custom ? esc(o.label) : kk}" ${String(v) === (c.custom ? o.label : kk) ? 'selected' : ''}>${esc(o.label)}</option>`).join('')}</select>` : `<input class="inp" data-def="${k}" value="${esc(v)}"/>`; })()}<button class="ibtn" data-xd="${k}">${ico.trash}</button></div>`).join('')}<div class="row"><select class="inp" id="nd" style="width:auto"><option value="">Añadir columna…</option>${cols.filter((c) => !(c.key in r.defaults)).map((c) => `<option value="${c.key}">${esc(c.label)}</option>`).join('')}</select></div>
+    <h3 class="mt12" style="font-size:15px">Columnas obligatorias por estado</h3><p class="xs muted">Impide pasar a ciertos estados si faltan datos (también cuando el cambio lo hace una automatización).</p>${r.required.map((q, i) => `<div class="card mb8" style="box-shadow:none;border:1px solid var(--line)"><div class="row wrap"><span>Cuando</span><select class="inp" data-rq="${i}" data-k="when" style="width:auto">${statusCols.map((c) => `<option value="${c.key}" ${q.when === c.key ? 'selected' : ''}>${esc(c.label)}</option>`).join('')}</select><span>pase a</span>${Object.entries(statusCols.find((c) => c.key === q.when)?.opt || {}).map(([k, o]) => `<label class="chk xs"><input type="checkbox" data-rqv="${i}" value="${esc(k)}" ${q.values.includes(k) ? 'checked' : ''}/>${esc(o.label)}</label>`).join('')}<button class="ibtn right" data-xr="${i}">${ico.trash}</button></div><div class="row wrap mt8"><span class="xs muted">exigir:</span>${cols.map((c) => `<label class="chk xs"><input type="checkbox" data-rqf="${i}" value="${c.key}" ${q.fields.includes(c.key) ? 'checked' : ''}/>${esc(c.label)}</label>`).join('')}</div></div>`).join('')}<button class="btn sm outline" id="nr">${ico.plus}Nueva regla</button>`;
+    m.querySelectorAll('[data-def]').forEach((el) => (el.onchange = () => { r.defaults[el.dataset.def] = el.value; save(); }));
+    m.querySelectorAll('[data-xd]').forEach((b) => (b.onclick = () => { delete r.defaults[b.dataset.xd]; draw(); }));
+    m.querySelector('#nd').onchange = (e) => { if (e.target.value) { r.defaults[e.target.value] = ''; draw(); } };
+    m.querySelectorAll('[data-rq]').forEach((el) => (el.onchange = () => { r.required[el.dataset.rq].when = el.value; r.required[el.dataset.rq].values = []; draw(); }));
+    m.querySelectorAll('[data-rqv]').forEach((el) => (el.onchange = () => { const q = r.required[el.dataset.rqv]; q.values = el.checked ? [...q.values, el.value] : q.values.filter((x) => x !== el.value); save(); }));
+    m.querySelectorAll('[data-rqf]').forEach((el) => (el.onchange = () => { const q = r.required[el.dataset.rqf]; q.fields = el.checked ? [...q.fields, el.value] : q.fields.filter((x) => x !== el.value); save(); }));
+    m.querySelectorAll('[data-xr]').forEach((b) => (b.onclick = () => { r.required.splice(b.dataset.xr, 1); draw(); }));
+    m.querySelector('#nr').onclick = () => { if (!statusCols.length) return toast('Este tablero no tiene columnas de estado', 'err'); r.required.push({ when: statusCols[0].key, values: [], fields: [] }); draw(); };
+  };
+  draw(); m.querySelector('#ok').onclick = () => { save(); m.close(); refresh(); toast('Reglas guardadas', 'ok'); };
+};
+const _boardToolbar = boardToolbar; boardToolbar = function (obj, cols, o) { return _boardToolbar(obj, cols, o) + (['contacts', 'companies', 'deals', 'tasks', 'tickets', 'contracts'].includes(obj) ? `<button class="btn" data-act="b-boardrules" data-arg="${obj}">${ico.shield}Reglas</button>` : ''); };
+
+/* ---------------------------------------------------------------- nueva columna y etiquetas por ID */
+const COLTYPES_V2 = [['status', 'Estado', 'Etiquetas con ID estable'], ['text', 'Texto', ''], ['number', 'Número', ''], ['date', 'Fecha', ''], ['person', 'Persona', ''], ['bool', 'Casilla', ''], ['rating', 'Valoración', 'Estrellas'], ['timeline', 'Línea temporal', 'Inicio–fin'], ['formula', 'Fórmula', 'Calculada; dispara reglas'], ['mirror', 'Reflejo', 'De registros conectados'], ['button', 'Botón', 'Dispara una regla'], ['autonumber', 'Autonumeración', ''], ['created', 'Registro de creación', 'Solo lectura'], ['updated', 'Última actualización', 'Solo lectura']];
+ACT['add-col'] = (obj) => {
+  if (!can('admin')) return toast('Solo un administrador añade columnas', 'err');
+  const d = { label: '', type: 'status', options: 'Pendiente\nEn curso\nHecho', expr: '', result: 'number', rel: Object.keys(RELS[obj] || {})[0] || '', field: '', agg: 'sum', cmp: '', max: 5, btn: 'Pulsar', prefix: '', pad: 3 };
+  const m = modal({ title: 'Nueva columna', size: 'lg', body: '<div id="nc"></div>', footer: `<button class="btn outline" data-x>Cancelar</button><button class="btn primary" id="ok">Añadir</button>` });
+  const draw = () => {
+    const rel = RELS[obj]?.[d.rel]; const fields = rel ? [...(REL_FIELDS[rel.obj] || []), ...(rel.obj === 'tasks' ? ['done'] : []), ...colDefs(rel.obj).map((c) => 'custom.' + c.key)] : [];
+    const refs = [...(COLS[obj] ? COLS[obj]() : []).filter((c) => !['timeline', 'rel'].includes(c.type)).map((c) => c.label), ...colDefs(obj).map((c) => c.label)];
+    m.querySelector('#nc').innerHTML = `<div class="fld mb12"><label>Nombre</label><input class="inp" id="l" value="${esc(d.label)}" placeholder="Ej. Ponderado"/></div><div class="typegrid">${COLTYPES_V2.map(([k, l, h]) => `<button class="tbtn ${d.type === k ? 'on' : ''}" data-t="${k}"><b>${l}</b>${h ? `<span>${h}</span>` : ''}</button>`).join('')}</div>
+    <div class="mt12">${d.type === 'status' ? `<div class="fld"><label>Etiquetas (una por línea; cada una recibe un ID estable)</label><textarea class="inp" id="o">${esc(d.options)}</textarea></div>` : ''}
+    ${d.type === 'formula' ? `<div class="fld"><label>Fórmula · columnas entre llaves</label><textarea class="inp" id="fx" style="font-family:monospace" placeholder="ROUND({Importe} * {Prob.} / 100, 0)">${esc(d.expr)}</textarea></div><div class="row wrap mt8">${refs.map((r) => `<button class="tag" data-ins="{${esc(r)}}">${esc(r)}</button>`).join('')}</div><div class="row wrap mt8">${FX_LIST.map((f) => `<button class="tag" style="background:var(--line2);color:var(--ink)" data-ins="${f}(">${f}</button>`).join('')}</div><div class="row mt8"><select class="inp" id="res" style="width:auto"><option value="number" ${d.result === 'number' ? 'selected' : ''}>Resultado numérico (suma en el pie)</option><option value="text" ${d.result === 'text' ? 'selected' : ''}>Texto</option></select><button class="btn sm outline" id="prev">Probar con el primer elemento</button><span id="pv" class="small"></span></div>` : ''}
+    ${d.type === 'mirror' ? `<div class="fgrid"><div class="fld"><label>Relación (connect)</label><select class="inp" id="rel">${Object.entries(RELS[obj] || {}).map(([k, r]) => `<option value="${k}" ${d.rel === k ? 'selected' : ''}>${r.label}</option>`).join('')}</select></div><div class="fld"><label>Columna a reflejar</label><select class="inp" id="fld">${fields.map((f) => `<option ${d.field === f ? 'selected' : ''}>${f}</option>`).join('')}</select></div><div class="fld"><label>Agregación</label><select class="inp" id="agg">${Object.entries(AGGS).map(([k, v]) => `<option value="${k}" ${d.agg === k ? 'selected' : ''}>${v}</option>`).join('')}</select></div><div class="fld"><label>Valor a comparar (TODOS/ALGUNO/%)</label><input class="inp" id="cmp" value="${esc(d.cmp)}" placeholder="done, won, true…"/></div></div><p class="xs muted mt8">A diferencia de monday, el resultado sirve como condición y como disparador (p. ej. «cuando TODAS las tareas estén hechas»).</p>` : ''}
+    ${d.type === 'rating' ? `<div class="fld"><label>Máximo</label><input class="inp" id="mx" type="number" value="${d.max}"/></div>` : ''}${d.type === 'button' ? `<div class="fld"><label>Texto del botón</label><input class="inp" id="bt" value="${esc(d.btn)}"/></div><p class="xs muted mt8">Crea después una automatización «Cuando se pulsa el botón».</p>` : ''}${d.type === 'autonumber' ? `<div class="fgrid"><div class="fld"><label>Prefijo</label><input class="inp" id="px" value="${esc(d.prefix)}"/></div><div class="fld"><label>Dígitos</label><input class="inp" id="pd" type="number" value="${d.pad}"/></div></div>` : ''}</div>`;
+    const sync = () => { const q = (s) => m.querySelector(s); d.label = q('#l').value; if (q('#o')) d.options = q('#o').value; if (q('#fx')) d.expr = q('#fx').value; if (q('#res')) d.result = q('#res').value; if (q('#rel')) { d.rel = q('#rel').value; d.field = q('#fld')?.value || d.field; d.agg = q('#agg').value; d.cmp = q('#cmp').value; } if (q('#mx')) d.max = Number(q('#mx').value); if (q('#bt')) d.btn = q('#bt').value; if (q('#px')) { d.prefix = q('#px').value; d.pad = Number(q('#pd').value); } };
+    m.querySelectorAll('[data-t]').forEach((b) => (b.onclick = () => { sync(); d.type = b.dataset.t; draw(); }));
+    m.querySelectorAll('[data-ins]').forEach((b) => (b.onclick = () => { sync(); d.expr += b.dataset.ins; draw(); }));
+    if (m.querySelector('#rel')) m.querySelector('#rel').onchange = () => { sync(); d.field = ''; draw(); };
+    if (m.querySelector('#prev')) m.querySelector('#prev').onclick = () => { sync(); const it = S[obj][0]; try { m.querySelector('#pv').innerHTML = `<b style="color:var(--c-green)">= ${esc(String(fxEval(d.expr, (n) => refValue(obj, it, n))))}</b> <span class="muted">(${esc(it.name || it.title || it.subject || contactName(it))})</span>`; } catch (e) { m.querySelector('#pv').innerHTML = `<b style="color:var(--c-red)">Error: ${esc(e.message)}</b>`; } };
+    m.querySelector('#ok').onclick = () => {
+      sync(); if (!d.label.trim()) return toast('Pon un nombre', 'err');
+      if (d.type === 'formula') { try { fxEval(d.expr, () => 0); } catch (e) { if (!/número|fecha/.test(e.message)) return toast('Fórmula no válida: ' + e.message, 'err'); } }
+      const key = norm(d.label).replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '') || 'col_' + uid().slice(0, 4);
+      const col = { key, label: d.label.trim(), type: d.type };
+      if (d.type === 'status') col.options = d.options.split('\n').map((s) => s.trim()).filter(Boolean).map((l, i) => ({ id: i + 1, label: l, color: [C.grey, C.orange, C.green, C.red, C.blue, C.purple][i % 6], done: /hecho|complet|firmad|aprobad/i.test(l) }));
+      if (d.type === 'formula') Object.assign(col, { expr: d.expr, result: d.result }); if (d.type === 'mirror') Object.assign(col, { rel: d.rel, field: d.field || fields[0], agg: d.agg, cmp: d.cmp }); if (d.type === 'rating') col.max = d.max; if (d.type === 'button') Object.assign(col, { btn: d.btn, color: C.green }); if (d.type === 'autonumber') Object.assign(col, { prefix: d.prefix, pad: d.pad });
+      S.customCols[obj] = S.customCols[obj] || []; if (S.customCols[obj].some((c) => c.key === key)) return toast('Ya existe una columna con ese ID', 'err'); S.customCols[obj].push(col); audit(obj, null, 'column', { columna: col.label, tipo: col.type }); m.close(); refresh(); toast('Columna añadida', 'ok');
+    };
+    m.querySelector('[data-x]').onclick = m.close;
+  };
+  draw();
+};
+const _editLabels = ACT['edit-labels']; ACT['edit-labels'] = (arg) => {
+  const custom = (S.customCols[arg.obj] || []).find((c) => 'custom.' + c.key === arg.key);
+  if (!custom || custom.type !== 'status') return _editLabels(arg);
+  const opts = custom.options.map((o) => ({ ...o }));
+  const used = new Set(S[arg.obj].map((it) => (it.custom || {})[custom.key]).filter((v) => v != null));
+  const m = modal({ title: `Etiquetas de «${esc(custom.label)}»`, body: `<p class="xs muted mb8">Cada etiqueta tiene un <b>ID estable</b>: el elemento guarda el ID, así que renombrar o recolorear no toca los datos ni rompe las automatizaciones. No se puede quitar una etiqueta en uso.</p><div id="ll"></div><button class="btn sm outline mt8" id="add">${ico.plus}Añadir etiqueta</button>`, footer: `<button class="btn primary" id="ok">Guardar</button>` });
+  const draw = () => { m.querySelector('#ll').innerHTML = opts.map((o, i) => `<div class="lab"><input type="color" value="${o.color}" data-c="${i}" style="width:30px;height:28px;border:0;background:none"/><input class="inp grow" data-i="${i}" value="${esc(o.label)}"/><label class="chk xs"><input type="checkbox" data-d="${i}" ${o.done ? 'checked' : ''}/>hecho</label><span class="xs muted" style="width:44px">id ${o.id}</span><button class="ibtn" data-x="${i}" ${used.has(o.id) ? 'disabled title="En uso"' : ''}>${ico.trash}</button></div>`).join(''); m.querySelectorAll('[data-i]').forEach((el) => (el.oninput = () => (opts[el.dataset.i].label = el.value))); m.querySelectorAll('[data-c]').forEach((el) => (el.oninput = () => (opts[el.dataset.c].color = el.value))); m.querySelectorAll('[data-d]').forEach((el) => (el.onchange = () => (opts[el.dataset.d].done = el.checked))); m.querySelectorAll('[data-x]').forEach((b) => (b.onclick = () => { opts.splice(b.dataset.x, 1); draw(); })); };
+  draw(); m.querySelector('#add').onclick = () => { opts.push({ id: Math.max(0, ...opts.map((o) => o.id)) + 1, label: 'Nueva', color: C.blue, done: false }); draw(); };
+  m.querySelector('#ok').onclick = () => { if (opts.some((o) => !o.label.trim())) return toast('Hay una etiqueta vacía', 'err'); custom.options = opts; audit(arg.obj, null, 'labels', { columna: custom.label }); m.close(); refresh(); toast('Etiquetas guardadas: ningún elemento se ha reescrito', 'ok'); };
+};
+/* inspector de celdas desde el menú de fila */
+const _rowMenu = ACT['row-menu']; ACT['row-menu'] = (arg, el) => { _rowMenu(arg, el); if (!ddEl) return; const b = document.createElement('button'); b.innerHTML = `${ico.table}Ver celdas (valor y texto)`; b.onclick = () => { closeDd(); cellInspector(arg.obj, arg.id); }; ddEl.insertBefore(b, ddEl.children[1] || null); };
+function cellInspector(obj, id) {
+  const it = byId(obj, id); const cols = [...(COLS[obj] ? COLS[obj]() : []).filter((c) => !['timeline', 'calc', 'rel'].includes(c.type)), ...customCols(obj)];
+  modal({ title: 'Celdas del elemento (column_values)', size: 'lg', body: `<p class="xs muted mb8">Como en monday: cada celda tiene un <b>id</b> de columna estable, un <b>tipo</b>, el <b>valor</b> guardado (la verdad) y el <b>texto</b> derivado que ves en pantalla. Los estados guardan el ID de etiqueta.</p><table class="t"><thead><tr><th>id</th><th>tipo</th><th>valor (JSON)</th><th>texto</th></tr></thead><tbody>${cols.map((c) => { const raw = c.key.startsWith('custom.') ? cellRaw(obj, it, c.key) : it[c.key]; return `<tr><td><code class="xs">${esc(c.key)}</code></td><td class="xs">${esc(c.cdef?.type || c.type)}</td><td><code class="xs">${esc(JSON.stringify(raw ?? null))}</code></td><td class="small">${esc(cellText(obj, it, c.key))}</td></tr>`; }).join('')}</tbody></table>` });
+}
+
+/* ---------------------------------------------------------------- motor v2 */
+Object.assign(TRIGGERS, {
+  field: { label: 'Cuando {field} cambia de {from} a {value}', objs: ['contacts', 'companies', 'deals', 'tasks', 'tickets', 'contracts'], v2: true, group: 'Columna' },
+  any_change: { label: 'Cuando cambia cualquier columna', objs: ['contacts', 'companies', 'deals', 'tasks', 'tickets', 'contracts'], v2: true, group: 'Columna' },
+  assigned: { label: 'Cuando se asigna una persona', objs: ['contacts', 'companies', 'deals', 'tasks', 'tickets'], v2: true, group: 'Columna' },
+  unchanged: { label: 'Cuando {field} no cambia en {days} días', objs: ['contacts', 'deals', 'tickets', 'contracts'], v2: true, group: 'Columna' },
+  button: { label: 'Cuando se pulsa el botón {field}', objs: ['contacts', 'companies', 'deals', 'tickets', 'contracts'], v2: true, group: 'Manual' },
+  note: { label: 'Cuando se registra una actualización', objs: ['contacts', 'deals', 'companies', 'tickets'], v2: true, group: 'Elemento' },
+  subitems_done: { label: 'Cuando todas sus tareas (subelementos) están hechas', objs: ['deals', 'contacts', 'companies'], v2: true, group: 'Subelementos' },
+  date_arrives: { label: 'Cuando llega {field} {offset} (a las {hour}:00)', objs: ['contacts', 'deals', 'tasks', 'tickets', 'contracts'], v2: true, group: 'Tiempo' },
+  date_passed: { label: 'Cuando {field} ya pasó (se reevalúa cada día)', objs: ['deals', 'tasks', 'tickets', 'contracts'], v2: true, group: 'Tiempo' },
+  period: { label: 'Cada {period} a las {hour}:00', objs: ['contacts', 'companies', 'deals', 'tickets', 'contracts'], v2: true, group: 'Tiempo' },
+});
+TRIGGERS.created.objs.push('tasks');
+const ACT_V2 = { notify: 'Notificar', email: 'Enviar email', note: 'Publicar actualización', webhook: 'Enviar webhook', set: 'Establecer columna', set_date: 'Establecer fecha (± días, hábiles)', set_number: 'Número: fijar / sumar', tag: 'Añadir etiqueta', untag: 'Quitar etiqueta', owner: 'Asignar persona', stage: 'Mover a etapa', task: 'Crear tarea', subitems: 'Crear subelementos (checklist)', complete_subitems: 'Completar subelementos', deal: 'Crear negocio', create_ticket: 'Crear ticket conectado', update_related: 'Actualizar elemento conectado', ai_categorize: 'Clasificar texto (IA local)', branch: 'Si… entonces / si no', approval: 'Pedir aprobación (sí / no)', delay: 'Esperar N días' };
+const ACT_GROUP = { notify: 'Comunicar', email: 'Comunicar', note: 'Comunicar', webhook: 'Comunicar', set: 'Datos', set_date: 'Datos', set_number: 'Datos', tag: 'Datos', untag: 'Datos', owner: 'Personas', stage: 'Organizar', task: 'Crear', subitems: 'Crear', complete_subitems: 'Subelementos', deal: 'Crear', create_ticket: 'Crear', update_related: 'Tableros cruzados', ai_categorize: 'IA', branch: 'Flujo', approval: 'Flujo', delay: 'Flujo' };
+let AUTO_DEPTH = 0;
+const evIs = (event, t) => (t.type === 'field' || t.type === 'any_change') ? event === 'changed' : t.type === 'assigned' ? event === 'assigned' : t.type === 'button' ? event === 'button' : t.type === 'note' ? event === 'note' : t.type === 'subitems_done' ? event === 'subitems_done' : t.type === event;
+function valMatch(obj, it, field, raw, expected) { if (expected == null || expected === '') return true; if (nrm(raw) === nrm(expected)) return true; const tmp = { ...it }; if (field.startsWith('custom.')) { tmp.custom = { ...(it.custom || {}), [field.slice(7)]: raw }; } else tmp[field] = raw; return nrm(cellText(obj, tmp, field)) === nrm(expected); }
+function matchV2(a, event, obj, item, extra) {
+  const t = a.trigger; if (!evIs(event, t)) return false; if (t.obj && t.obj !== obj) return false;
+  switch (t.type) {
+    case 'status_to': return t.field === extra.field && String(t.value) === String(extra.to);
+    case 'stage_to': return t.value === item.stageId;
+    case 'inactive': return (extra.days ?? 0) >= (t.days || 7);
+    case 'score': return (extra.from ?? 0) < (t.value || 50) && (extra.to ?? 0) >= (t.value || 50);
+    case 'field': return t.field === extra.field && valMatch(obj, item, t.field, extra.from, t.from) && valMatch(obj, item, t.field, extra.to, t.value);
+    case 'any_change': return !(t.exclude || []).includes(extra.field);
+    case 'assigned': return !t.value || t.value === extra.to;
+    case 'button': return !t.field || t.field === extra.field;
+    default: return true;
+  }
+}
+emit = function (event, obj, item, extra = {}) {
+  if (!item) return;
+  const list = S.automations.filter((x) => x.on && !x.paused).sort((a, b) => (a.priority || 100) - (b.priority || 100));
+  for (const a of list) { if (!matchV2(a, event, obj, item, extra)) continue; runAuto(a, obj, item, { event, extra }); }
+};
+const ownerOf = (a) => (a.owner && a.owner !== 'service' ? user(a.owner) : { id: 'service', name: 'Automatizaciones', active: true });
+function pauseAuto(a, why) { a.on = false; a.pausedReason = why; for (const u of S.users.filter((x) => x.role === 'admin' && x.active)) notify(u.id, `Automatización pausada: ${a.name}`, why, '#/automatizaciones', 'warn'); }
+function logRun(a, obj, it, status, log, count, extra = {}) { S.autolog.unshift({ id: uid(), at: new Date(NOW_V()).toISOString(), autoId: a.id, rid: it?.id, obj, ok: status === 'ok' || status === 'waiting', status, log: log.join(' · '), count, depth: AUTO_DEPTH, origin: S._origin || 'ui', ...extra }); if (S.autolog.length > 2000) S.autolog.length = 2000; }
+function usedThisMonth() { return S.autoV2.usage[monthKey()] || 0; }
+function budgetAlert() { const b = S.autoV2.budget; if (!b) return; const used = usedThisMonth(); for (const th of [60, 80, 100]) { const k = `${monthKey()}:${th}`; if (used >= (b * th) / 100 && !S.autoV2.alerts[k]) { S.autoV2.alerts[k] = true; notify(S.users.find((u) => u.role === 'admin')?.id || S.me, `Acciones de automatización al ${th} %`, `${used} de ${b} este mes${th >= 100 ? (S.autoV2.mode === 'pause_all' ? ' · automatizaciones en pausa' : ' · no se pueden crear ni editar hasta el mes que viene') : ''}`, '#/automatizaciones', 'warn'); } } }
+function runAuto(a, obj, item, ctx = {}) {
+  const log = []; let count = 0;
+  if (S.autoV2.mode === 'pause_all' && S.autoV2.budget && usedThisMonth() >= S.autoV2.budget) return logRun(a, obj, item, 'skipped', ['Presupuesto agotado: automatizaciones en pausa'], 0);
+  const owner = ownerOf(a); if (!owner || !owner.active) { const why = `El propietario (${owner?.name || 'desconocido'}) está desactivado: reasígnalo`; logRun(a, obj, item, 'error', [why], 0); return pauseAuto(a, why); }
+  if (AUTO_DEPTH >= S.autoV2.maxDepth) { logRun(a, obj, item, 'error', [`Cadena cortada en profundidad ${AUTO_DEPTH + 1}: posible bucle`], 0, { error: 'Bucle (profundidad)' }); return pauseAuto(a, `Bucle detectado: la cadena superó ${S.autoV2.maxDepth} niveles. Añade una condición de corte.`); }
+  const recent = S.autolog.filter((l) => l.autoId === a.id && l.rid === item.id && NOW_V() - Date.parse(l.at) < 60000 && l.status !== 'skipped').length;
+  if (recent >= 5) { logRun(a, obj, item, 'error', ['5 ejecuciones en un minuto sobre el mismo elemento: posible bucle'], 0, { error: 'Bucle (frecuencia)' }); return pauseAuto(a, 'Bucle detectado: 5 ejecuciones en un minuto sobre el mismo elemento.'); }
+  if (!a.reenroll && S.autolog.some((l) => l.autoId === a.id && l.rid === item.id && l.ok)) return;
+  S._ev = ctx.extra || {};
+  const condOk1 = a.conds ? evalCondV2(obj, item, a.conds) : !(a.cond && a.cond.field) || condOk(fieldValue(obj, item, a.cond.field), a.cond.op, a.cond.value);
+  if (!condOk1) return logRun(a, obj, item, 'skipped', ['No cumple las condiciones'], 0);
+  const prevOrigin = S._origin; S._origin = 'automation'; AUTO_DEPTH++;
+  let status = 'ok';
+  try { const r = execActions(a, obj, item, a.actions, log); count = r.count; status = r.status; }
+  catch (e) { status = 'error'; log.push('Error: ' + e.message); }
+  finally { AUTO_DEPTH--; S._origin = prevOrigin; }
+  a.runs = (a.runs || 0) + 1; a.lastRun = nowISO();
+  S.autoV2.usage[monthKey()] = usedThisMonth() + count; budgetAlert();
+  logRun(a, obj, item, status, log, count);
+}
+function execActions(a, obj, item, actions, log) {
+  let count = 0;
+  for (let i = 0; i < actions.length; i++) {
+    const x = actions[i];
+    if (x.type === 'branch') { const yes = evalCondV2(obj, item, x.conds || { logic: 'and', conditions: [] }); log.push(`Rama: ${yes ? 'entonces' : 'si no'}`); const r = execActions(a, obj, item, (yes ? x.then : x.else) || [], log); count += r.count; if (r.status !== 'ok') return { count, status: r.status }; continue; }
+    if (x.type === 'approval') { const ap = who(x.who || 'manager', item) || S.me; S.autoV2.approvals.unshift({ id: uid(), at: nowISO(), autoId: a.id, obj, rid: item.id, approver: ap, title: tpl(x.title || 'Aprobar {{name}}', obj, item), status: 'pending', then: x.then || [], else: x.else || [], rest: actions.slice(i + 1) }); notify(ap, `Aprobación pendiente: ${tpl(x.title || 'Aprobar {{name}}', obj, item)}`, `Automatización «${a.name}»`, '#/automatizaciones', 'warn'); count++; log.push(`Aprobación pedida a ${user(ap)?.name || '—'}; el flujo espera la decisión`); return { count, status: 'waiting' }; }
+    if (x.type === 'delay') { const rest = actions.slice(i + 1); S.autoV2.schedule.push({ id: uid(), kind: 'resume', autoId: a.id, obj, rid: item.id, fire: NOW_V() + (Number(x.days) || 1) * 864e5, actions: rest }); log.push(`Esperar ${x.days || 1} día(s); ${rest.length} acción(es) programadas`); return { count, status: 'ok' }; }
+    count += runActionV2(x, obj, item, log);
+  }
+  return { count, status: 'ok' };
+}
+const _runAction = runAction;
+function runActionV2(x, obj, item, log) {
+  const links = obj === 'contacts' ? { contactId: item.id, companyId: item.companyId } : obj === 'deals' ? { dealId: item.id, companyId: item.companyId, contactId: item.contactIds?.[0] } : obj === 'companies' ? { companyId: item.id } : obj === 'tickets' ? { ticketId: item.id, contactId: item.contactId, companyId: item.companyId } : {};
+  switch (x.type) {
+    case 'notify': { const us = String(x.who || 'owner').split(',').map((w) => who(w.trim(), item)).filter(Boolean); for (const u of [...new Set(us)]) notify(u, tpl(x.title || 'Aviso', obj, item), tpl(x.body || '', obj, item), linkOf(obj, item.id), 'auto'); log.push(`Aviso a ${[...new Set(us)].map((u) => user(u)?.name || u).join(', ') || '—'}`); return 1; }
+    case 'subitems': { const titles = String(x.titles || '').split('\n').map((s) => s.trim()).filter(Boolean); for (const t of titles) S.tasks.unshift({ id: uid(), title: tpl(t, obj, item), type: 'todo', priority: 'normal', status: 'todo', due: dayISO(addDays(Number(x.days) || 1)), assignee: who(x.who, item), ...links, createdAt: nowISO(), auto: true }); log.push(`${titles.length} subelemento(s)`); return titles.length; }
+    case 'complete_subitems': { const key = obj === 'deals' ? 'dealId' : obj === 'contacts' ? 'contactId' : 'companyId'; const open = S.tasks.filter((t) => t[key] === item.id && t.status !== 'done'); open.forEach((t) => { t.status = 'done'; t.doneAt = nowISO(); }); log.push(`${open.length} subelemento(s) completados`); return Math.max(1, open.length); }
+    case 'set': { if (!x.field) throw new Error('Falta la columna'); const v = tpl(String(x.value ?? ''), obj, item); writeField(obj, item, x.field, v); log.push(`${colLabel(obj, x.field)} = ${v}`); return 1; }
+    case 'set_date': { if (!x.field) throw new Error('Falta la columna'); let base = x.mode === 'field' ? cellRaw(obj, item, x.source) : vDay(); if (base && typeof base === 'object') base = base.to; if (!base) throw new Error('La fecha origen está vacía'); let d = new Date(dV(base)); const n = Number(x.days) || 0; if (x.business) { let left = Math.abs(n); const st = n < 0 ? -1 : 1; while (left) { d = new Date(d.getTime() + st * 864e5); if (d.getUTCDay() % 6) left--; } } else d = new Date(d.getTime() + n * 864e5); const v = d.toISOString().slice(0, 10); writeField(obj, item, x.field, v); log.push(`${colLabel(obj, x.field)} = ${v}${x.business ? ' (hábiles)' : ''}`); return 1; }
+    case 'set_number': { const cur = Number(cellRaw(obj, item, x.field)) || 0; const v = x.mode === 'inc' ? cur + Number(x.value) : Number(x.value); writeField(obj, item, x.field, v); log.push(`${colLabel(obj, x.field)} = ${v}`); return 1; }
+    case 'untag': { item.tags = (item.tags || []).filter((t) => t !== x.value); log.push(`Etiqueta quitada: ${x.value}`); return 1; }
+    case 'owner': { const u = x.who === 'rr' ? roundRobin() : x.who === 'manager' ? who('manager', item) : x.who === 'creator' ? item.createdBy || S.me : x.who; if (!u) throw new Error('No hay a quién asignar'); writeField(obj, item, obj === 'tasks' || obj === 'tickets' ? 'assignee' : 'owner', u); log.push(`Asignado a ${user(u)?.name}`); return 1; }
+    case 'create_ticket': { const t = createTicket({ subject: tpl(x.title || 'Desde actualización: {{name}}', obj, item), description: S._ev?.activity?.body || '', contactId: links.contactId, companyId: links.companyId, priority: 'normal' }); log.push(`Ticket #${t.number} creado y conectado`); return 1; }
+    case 'update_related': { const r = RELS[obj]?.[x.rel]; if (!r) throw new Error('Relación no válida'); const rows = r.rows(item); for (const row of rows) writeField(r.obj, row, x.field, tpl(String(x.value ?? ''), obj, item)); log.push(`${rows.length} conectado(s) (${r.label}): ${colLabel(r.obj, x.field)} = ${x.value}`); return Math.max(1, rows.length); }
+    case 'webhook': { log.push(`POST ${x.url || 'https://…'} con el elemento en JSON (simulado en la demo)`); return 1; }
+    case 'ai_categorize': { const src = String(cellRaw(obj, item, x.source) ?? '') + ' ' + String(S._ev?.activity?.body || ''); let best = { l: x.fallback || '', n: 0 }; for (const line of String(x.rules || '').split('\n')) { const [l, kw] = line.split(':'); if (!kw) continue; const n = kw.split(',').map((k) => nrm(k)).filter(Boolean).reduce((s, k) => s + (nrm(src).split(k).length - 1), 0); if (n > best.n) best = { l: l.trim(), n }; } if (best.l) writeField(obj, item, x.field, best.l); log.push(`Clasificado como «${best.l || '—'}» (IA local por reglas)`); return 1; }
+    default: { const before = log.length; _runAction(x, obj, item, log); if (log.length === before) log.push(ACT_V2[x.type] || x.type); return 1; }
+  }
+}
+function writeField(obj, item, field, v) {
+  if (field.startsWith('custom.')) { const c = colDefs(obj).find((cc) => cc.key === field.slice(7)); if (!c) throw new Error('Columna no encontrada'); let val = v; if (c.type === 'status') { val = c.options.find((o) => nrm(o.label) === nrm(v) || String(o.id) === String(v))?.id; if (val == null) throw new Error(`Etiqueta desconocida: ${v}`); } else if (c.type === 'number' || c.type === 'rating') val = Number(v); const col = customCols(obj).find((cc) => cc.key === field); if (!checkRequiredV2(obj, item, field, val)) throw new Error('Faltan columnas obligatorias'); const from = (item.custom || {})[c.key]; const snap = computedSnapshot(obj, item); item.custom = item.custom || {}; item.custom[c.key] = val; audit(obj, item.id, 'update', { [c.label]: [from, val] }); afterChange(obj, item, field, from, val, snap); void col; return; }
+  const ok = setField(obj, item, field, typeof v === 'string' ? coerce(v) : v, { silent: true }); if (ok === false && !['owner', 'assignee'].includes(field)) throw new Error(`No se pudo cambiar ${colLabel(obj, field)}`);
+}
+function evalCondV2(obj, it, g) {
+  if (g.conditions) { const r = g.conditions.map((c) => evalCondV2(obj, it, c)); return !r.length || (g.logic === 'or' ? r.some(Boolean) : r.every(Boolean)); }
+  if (!g.field) return true; const raw = cellRaw(obj, it, g.field); const txt = cellText(obj, it, g.field); const v = g.value;
+  const eq = (x) => nrm(raw) === nrm(x) || nrm(txt) === nrm(x) || (raw !== '' && raw != null && !isNaN(Number(raw)) && Number(raw) === Number(x) && x !== '');
+  switch (g.op) { case 'eq': return eq(v); case 'neq': return !eq(v); case 'contains': return nrm(txt).includes(nrm(v)) || nrm(raw).includes(nrm(v)); case 'gt': return Number(raw) > Number(v); case 'lt': return Number(raw) < Number(v); case 'empty': return raw == null || raw === '' || (Array.isArray(raw) && !raw.length); case 'not_empty': return !(raw == null || raw === '' || (Array.isArray(raw) && !raw.length)); case 'past': return !!raw && String(raw).slice(0, 10) < vDay(); case 'next_days': return !!raw && dV(String(raw).slice(0, 10)) >= dV(vDay()) && dV(String(raw).slice(0, 10)) <= dV(vDay()) + Number(v) * 864e5; case 'is_true': return raw === true || raw === 'true' || raw === 1; default: return true; }
+}
+/* subelementos y actualizaciones */
+const _completeTask = completeTask; completeTask = function (t, outcome, note) { const r = _completeTask(t, outcome, note); for (const [obj, key] of [['deals', 'dealId'], ['contacts', 'contactId'], ['companies', 'companyId']]) { if (!t[key]) continue; const parent = byId(obj, t[key]); if (parent && !S.tasks.some((x) => x[key] === parent.id && x.status !== 'done')) emit('subitems_done', obj, parent, { task: t }); } return r; };
+const _logActivity = logActivity; logActivity = function (a) { const act = _logActivity(a); if (act.type !== 'system' && !(a.meta && a.meta.auto)) { const p = act.dealId ? ['deals', act.dealId] : act.ticketId ? ['tickets', act.ticketId] : act.contactId ? ['contacts', act.contactId] : act.companyId ? ['companies', act.companyId] : null; if (p) emit('note', p[0], byId(p[0], p[1]), { activity: act }); } return act; };
+/* planificador de fechas y tareas periódicas (reloj virtual para la demo) */
+function dateBasis(obj, it, field) { let v = cellRaw(obj, it, field); if (v && typeof v === 'object') v = v.to; return v ? String(v).slice(0, 10) : null; }
+function fireAt(t, basis) { let d = dV(basis); const n = Number(t.offset) || 0; if (t.business) { let left = Math.abs(n); const st = n < 0 ? -1 : 1; while (left) { d += st * 864e5; if (new Date(d).getUTCDay() % 6) left--; } } else d += n * 864e5; return d + (Number(t.hour ?? 8) - 1) * 36e5; }
+function planItem(obj, it) {
+  for (const a of S.automations.filter((x) => x.on && x.trigger.type === 'date_arrives' && x.trigger.obj === obj)) {
+    const basis = dateBasis(obj, it, a.trigger.field);
+    S.autoV2.schedule = S.autoV2.schedule.filter((s) => !(s.kind === 'date' && s.autoId === a.id && s.rid === it.id && !s.fired && s.basis !== basis));
+    if (!basis) continue; const f = fireAt(a.trigger, basis); if (f <= NOW_V()) continue;
+    if (!S.autoV2.schedule.some((s) => s.kind === 'date' && s.autoId === a.id && s.rid === it.id && s.basis === basis)) S.autoV2.schedule.push({ id: uid(), kind: 'date', autoId: a.id, obj, rid: it.id, basis, fire: f });
+  }
+}
+function planAuto(a) { S.autoV2.schedule = S.autoV2.schedule.filter((s) => !(s.kind === 'date' && s.autoId === a.id && !s.fired)); if (a.on && a.trigger.type === 'date_arrives') for (const it of S[a.trigger.obj] || []) planItem(a.trigger.obj, it); }
+function tickV2() {
+  const now = NOW_V(); const day = vDay();
+  for (const s of S.autoV2.schedule.filter((x) => !x.fired && x.fire <= now)) {
+    s.fired = true; const a = S.automations.find((x) => x.id === s.autoId); const it = byId(s.obj, s.rid); if (!a || !it || !a.on) continue;
+    if (s.kind === 'resume') { const log = ['Continuación tras la espera']; AUTO_DEPTH++; S._origin = 'automation'; try { const r = execActions(a, s.obj, it, s.actions, log); S.autoV2.usage[monthKey()] = usedThisMonth() + r.count; logRun(a, s.obj, it, r.status, log, r.count); } finally { AUTO_DEPTH--; S._origin = 'ui'; } continue; }
+    if (dateBasis(s.obj, it, a.trigger.field) !== s.basis) { planItem(s.obj, it); continue; }
+    runAuto(a, s.obj, it, { event: 'date_arrives' });
+  }
+  S.autoV2.schedule = S.autoV2.schedule.filter((s) => !s.fired || now - s.fire < 30 * 864e5);
+  for (const a of S.automations.filter((x) => x.on && ['date_passed', 'unchanged', 'period'].includes(x.trigger.type))) {
+    const t = a.trigger; const local = new Date(now);
+    if (t.type === 'period') { if (local.getUTCHours() + 1 < (t.hour ?? 8)) continue; if (t.period === 'week' && local.getUTCDay() !== (t.weekday ?? 1)) continue; const key = t.period === 'week' ? 'w' + day : t.period === 'month' ? 'm' + day.slice(0, 7) : 'd' + day; if (t.period === 'month' && local.getUTCDate() !== 1) continue; if (a.lastPeriod === key) continue; a.lastPeriod = key; }
+    for (const it of S[t.obj] || []) {
+      if (S.autolog.some((l) => l.autoId === a.id && l.rid === it.id && l.at.slice(0, 10) === day && l.status !== 'skipped')) continue;
+      if (t.type === 'date_passed') { const b = dateBasis(t.obj, it, t.field); if (!b || b >= day) continue; }
+      if (t.type === 'unchanged') { const last = S.audit.find((x) => x.obj === t.obj && x.rid === it.id && x.changes && Object.keys(x.changes).some((k) => k === t.field || k === colLabel(t.obj, t.field)))?.at || it.updatedAt || it.createdAt; if (now - Date.parse(last) < (t.days || 7) * 864e5) continue; if (S.autolog.some((l) => l.autoId === a.id && l.rid === it.id && l.ok && l.at > last)) continue; }
+      runAuto(a, t.obj, it, { event: t.type });
+    }
+  }
+}
+const _dailyChecks = dailyChecks; dailyChecks = function () { _dailyChecks(); try { tickV2(); } catch (e) { console.error(e); } save(); };
+ACT['clock-advance'] = (n) => { S.autoV2.clock += Number(n) || 1; tickV2(); refresh(); toast(`Reloj de la demo: ${fdate(vDay(), { day: 'numeric', month: 'long', year: 'numeric' })}`, 'ok'); };
+ACT['clock-reset'] = () => { S.autoV2.clock = 0; refresh(); };
+
+/* ---------------------------------------------------------------- frase */
+autoSentence = function (a) {
+  const t = a.trigger; const fl = t.field ? colLabel(t.obj, t.field) : '';
+  const trig = (TRIGGERS[t.type]?.label || t.type).replace('{obj}', OBJ_LABEL[t.obj] || 'elemento').replace('{field}', `<b>${esc(fl)}</b>`).replace('{from}', `<b>${esc(t.from || 'cualquiera')}</b>`).replace('{value}', `<b>${esc(t.type === 'stage_to' ? stage(t.value)?.name || '' : t.type === 'status_to' ? labelOf(t.field, t.value) : t.value || 'cualquiera')}</b>`).replace('{days}', `<b>${t.days || 7}</b>`).replace('{offset}', `<b>${(t.offset || 0) < 0 ? `${-t.offset} días antes` : t.offset ? `${t.offset} días después` : 'el mismo día'}${t.business ? ' (hábiles)' : ''}</b>`).replace('{hour}', `<b>${t.hour ?? 8}</b>`).replace('{period}', `<b>${({ day: 'día', week: 'lunes', month: 'día 1 del mes' })[t.period || 'day']}</b>`);
+  const cnt = (g) => (g?.conditions || []).reduce((s, c) => s + (c.conditions ? cnt(c) : 1), 0);
+  const cond = a.conds && cnt(a.conds) ? ` <span class="muted">y solo si se cumplen ${cnt(a.conds)} condición(es)</span>` : a.cond?.field ? ` <span class="muted">si ${esc(a.cond.field)} ${esc(a.cond.op)} ${esc(a.cond.value ?? '')}</span>` : '';
+  const acts = a.actions.map((x) => x.type === 'branch' ? `si… entonces (${(x.then || []).length}) / si no (${(x.else || []).length})` : x.type === 'approval' ? 'pedir aprobación' : (ACT_V2[x.type] || x.type).toLowerCase() + (x.title ? ` «${esc(x.title)}»` : x.field ? ` <b>${esc(colLabel(t.obj, x.field))}</b>` : '')).join(', luego ');
+  return `${trig}${cond}, entonces ${acts}.`;
+};
+
+/* ---------------------------------------------------------------- editor */
+function getPath(o, p) { return p.split('.').reduce((a, k) => (a == null ? a : a[k]), o); }
+function setPath(o, p, v) { const ks = p.split('.'); const last = ks.pop(); const tgt = ks.reduce((a, k) => a[k], o); tgt[last] = v; }
+const OPS_V2 = { eq: 'es', neq: 'no es', contains: 'contiene', gt: 'mayor que', lt: 'menor que', empty: 'está vacía', not_empty: 'no está vacía', past: 'ya pasó', next_days: 'en los próximos N días', is_true: 'es sí' };
+function fieldOptions(obj, sel, filter) {
+  const b = (COLS[obj] ? COLS[obj]() : []).filter((c) => !['timeline', 'rel'].includes(c.type) && (!filter || filter(c.type, c)));
+  const cu = customCols(obj).filter((c) => !filter || filter(c.cdef?.type || c.type, c));
+  const sp = filter ? [] : [['_origin', 'Origen del cambio (ui, automation…)'], ['_activity.body', 'Texto de la actualización'], ['company.sector', 'Empresa · sector'], ['company.type', 'Empresa · tipo']];
+  return `<option value="">— columna —</option><optgroup label="Columnas">${b.map((c) => `<option value="${c.key}" ${sel === c.key ? 'selected' : ''}>${esc(c.label)}</option>`).join('')}</optgroup>${cu.length ? `<optgroup label="Personalizadas">${cu.map((c) => `<option value="${c.key}" ${sel === c.key ? 'selected' : ''}>${esc(c.label)}${c.readonly ? ' (calculada)' : ''}</option>`).join('')}</optgroup>` : ''}${sp.length ? `<optgroup label="Especiales">${sp.map(([k, l]) => `<option value="${k}" ${sel === k ? 'selected' : ''}>${l}</option>`).join('')}</optgroup>` : ''}`;
+}
+function valueOptions(obj, field) { if (!field) return null; const col = [...(COLS[obj] ? COLS[obj]() : []), ...customCols(obj)].find((c) => c.key === field); if (col?.type === 'status') return Object.values(col.opt).map((o) => o.label); if (col?.type === 'person') return null; if (field === '_origin') return ['ui', 'automation', 'form', 'import']; return null; }
+function valueInput(obj, field, path, v) { const o = valueOptions(obj, field); return o ? `<select class="inp" data-p="${path}" style="width:auto"><option value="">— cualquiera —</option>${o.map((x) => `<option ${nrm(v) === nrm(x) ? 'selected' : ''}>${esc(x)}</option>`).join('')}</select>` : `<input class="inp" data-p="${path}" value="${esc(v ?? '')}" placeholder="valor" style="width:150px"/>`; }
+function condHtml(obj, g, path, depth = 0) {
+  return `<div class="ctree ${depth ? 'nest' : ''}">${(g.conditions || []).length > 1 ? `<div class="row mb8 xs"><span>Se deben cumplir</span><select class="inp" data-p="${path}.logic" style="width:auto"><option value="and" ${g.logic !== 'or' ? 'selected' : ''}>TODAS (Y)</option><option value="or" ${g.logic === 'or' ? 'selected' : ''}>ALGUNA (O)</option></select></div>` : ''}${(g.conditions || []).map((c, i) => c.conditions ? `<div class="row" style="align-items:flex-start"><div class="grow">${condHtml(obj, c, `${path}.conditions.${i}`, depth + 1)}</div><button class="ibtn" data-rm="${path}.conditions.${i}">${ico.trash}</button></div>` : `<div class="row wrap mb8">${i ? `<b class="xs" style="width:18px">${g.logic === 'or' ? 'O' : 'Y'}</b>` : ''}<select class="inp" data-p="${path}.conditions.${i}.field" data-redraw style="width:auto">${fieldOptions(obj, c.field)}</select><select class="inp" data-p="${path}.conditions.${i}.op" data-redraw style="width:auto">${Object.entries(OPS_V2).map(([k, v]) => `<option value="${k}" ${c.op === k ? 'selected' : ''}>${v}</option>`).join('')}</select>${['empty', 'not_empty', 'past', 'is_true'].includes(c.op) ? '' : valueInput(obj, c.field, `${path}.conditions.${i}.value`, c.value)}<button class="ibtn" data-rm="${path}.conditions.${i}">${ico.trash}</button></div>`).join('')}<div class="row"><button class="btn sm outline" data-addc="${path}">${ico.plus}Condición</button>${depth < 2 ? `<button class="btn sm outline" data-addg="${path}">${ico.plus}Grupo Y/O</button>` : ''}</div></div>`;
+}
+function whoSel(path, v) { return `<select class="inp" data-p="${path}" style="width:auto"><option value="owner" ${!v || v === 'owner' ? 'selected' : ''}>el propietario</option><option value="manager" ${v === 'manager' ? 'selected' : ''}>el manager</option><option value="owner,manager" ${v === 'owner,manager' ? 'selected' : ''}>propietario y manager</option><option value="me" ${v === 'me' ? 'selected' : ''}>yo</option><option value="rr" ${v === 'rr' ? 'selected' : ''}>round-robin</option>${S.users.filter((u) => u.active).map((u) => `<option value="${u.id}" ${v === u.id ? 'selected' : ''}>${esc(u.name)}</option>`).join('')}</select>`; }
+function actHtml(obj, list, path, depth = 0) {
+  return `<div class="col" style="gap:8px">${list.map((x, i) => { const p = `${path}.${i}`; return `<div class="acard ${['branch', 'approval'].includes(x.type) ? 'fl' : ''}"><div class="row mb8"><span class="an">${i + 1}</span><b class="small">${ACT_V2[x.type] || x.type}</b><span class="right"></span>${i ? `<button class="ibtn" data-up="${p}">↑</button>` : ''}<button class="ibtn" data-rm="${p}">${ico.trash}</button></div><div class="row wrap">${actFields(obj, x, p, depth)}</div></div>`; }).join('')}<div class="row wrap"><select class="inp" data-adda="${path}" style="width:auto"><option value="">+ Añadir acción…</option>${Object.entries(ACT_GROUP).filter(([k]) => depth < 2 || !['branch', 'approval'].includes(k)).map(([k, g]) => `<option value="${k}">${g} · ${ACT_V2[k]}</option>`).join('')}</select></div></div>`;
+}
+function actFields(obj, x, p, depth) {
+  const inp = (k, ph, w = 200) => `<input class="inp" data-p="${p}.${k}" value="${esc(x[k] ?? '')}" placeholder="${ph}" style="width:${w}px"/>`;
+  const num = (k, ph) => `<input class="inp" type="number" data-p="${p}.${k}" value="${x[k] ?? ''}" placeholder="${ph}" style="width:80px"/>`;
+  switch (x.type) {
+    case 'notify': return `${whoSel(p + '.who', x.who)}${inp('title', 'título ({{name}}, {{empresa}})', 240)}${inp('body', 'texto', 200)}`;
+    case 'email': case 'note': return `${inp('title', 'asunto / título', 240)}${inp('body', 'cuerpo', 260)}`;
+    case 'webhook': return inp('url', 'https://tu-sistema/hook', 300);
+    case 'set': return `<select class="inp" data-p="${p}.field" data-redraw style="width:auto">${fieldOptions(obj, x.field, (t, c) => !c.readonly && t !== 'calc' && t !== 'button')}</select><span>=</span>${valueInput(obj, x.field, p + '.value', x.value)}`;
+    case 'set_date': return `<select class="inp" data-p="${p}.field" style="width:auto">${fieldOptions(obj, x.field, (t) => t === 'date')}</select><span>=</span><select class="inp" data-p="${p}.mode" data-redraw style="width:auto"><option value="today" ${x.mode !== 'field' ? 'selected' : ''}>hoy</option><option value="field" ${x.mode === 'field' ? 'selected' : ''}>otra columna</option></select>${x.mode === 'field' ? `<select class="inp" data-p="${p}.source" style="width:auto">${fieldOptions(obj, x.source, (t) => ['date', 'timeline', 'created', 'updated'].includes(t))}</select>` : ''}<span>±</span>${num('days', 'días')}<label class="chk xs"><input type="checkbox" data-pb="${p}.business" ${x.business ? 'checked' : ''}/>hábiles</label>`;
+    case 'set_number': return `<select class="inp" data-p="${p}.field" style="width:auto">${fieldOptions(obj, x.field, (t) => ['number', 'money', 'rating'].includes(t))}</select><select class="inp" data-p="${p}.mode" style="width:auto"><option value="set" ${x.mode !== 'inc' ? 'selected' : ''}>fijar</option><option value="inc" ${x.mode === 'inc' ? 'selected' : ''}>sumar</option></select>${num('value', 'valor')}`;
+    case 'tag': case 'untag': return inp('value', 'etiqueta', 160);
+    case 'owner': return whoSel(p + '.who', x.who);
+    case 'stage': return `<select class="inp" data-p="${p}.value" style="width:auto">${S.pipeline.stages.map((s) => `<option value="${s.id}" ${x.value === s.id ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}</select>`;
+    case 'task': return `${inp('title', 'título', 240)}${whoSel(p + '.who', x.who)}<span>en</span>${num('days', 'días')}<span>días</span>`;
+    case 'subitems': return `<textarea class="inp" data-p="${p}.titles" placeholder="uno por línea" style="width:280px;min-height:54px">${esc(x.titles || '')}</textarea>${whoSel(p + '.who', x.who)}<span class="xs muted">cuenta 1 acción por subelemento</span>`;
+    case 'deal': case 'create_ticket': return inp('title', 'nombre ({{name}})', 260);
+    case 'update_related': return `<select class="inp" data-p="${p}.rel" data-redraw style="width:auto"><option value="">— conectados —</option>${Object.entries(RELS[obj] || {}).map(([k, r]) => `<option value="${k}" ${x.rel === k ? 'selected' : ''}>${r.label}</option>`).join('')}</select>${x.rel ? `<select class="inp" data-p="${p}.field" style="width:auto">${fieldOptions(RELS[obj][x.rel].obj, x.field, (t, c) => !c.readonly)}</select><span>=</span>${inp('value', 'valor', 140)}` : ''}`;
+    case 'ai_categorize': return `<select class="inp" data-p="${p}.source" style="width:auto">${fieldOptions(obj, x.source, (t) => ['text', 'name'].includes(t))}</select><span>→</span><select class="inp" data-p="${p}.field" style="width:auto">${fieldOptions(obj, x.field, (t, c) => t === 'status' && c.custom)}</select><textarea class="inp" data-p="${p}.rules" placeholder="Etiqueta: palabra, palabra" style="width:260px;min-height:54px">${esc(x.rules || '')}</textarea>`;
+    case 'delay': return `${num('days', 'días')}<span>día(s); después siguen las acciones</span>`;
+    case 'branch': return `<div class="col grow" style="gap:6px"><div class="bbox"><b class="xs">SI</b>${condHtml(obj, x.conds || (x.conds = { logic: 'and', conditions: [] }), p + '.conds')}</div><div class="bbox yes"><b class="xs">ENTONCES</b>${actHtml(obj, x.then || (x.then = []), p + '.then', depth + 1)}</div><div class="bbox no"><b class="xs">SI NO</b>${actHtml(obj, x.else || (x.else = []), p + '.else', depth + 1)}</div></div>`;
+    case 'approval': return `<div class="col grow" style="gap:6px"><div class="row wrap"><span>Aprobador</span>${whoSel(p + '.who', x.who || 'manager')}${inp('title', 'qué se aprueba', 260)}</div><div class="bbox yes"><b class="xs">SI SE APRUEBA (y luego las acciones siguientes)</b>${actHtml(obj, x.then || (x.then = []), p + '.then', depth + 1)}</div><div class="bbox no"><b class="xs">SI SE RECHAZA</b>${actHtml(obj, x.else || (x.else = []), p + '.else', depth + 1)}</div></div>`;
+    default: return '';
+  }
+}
+const ACT_DEFAULTS = { notify: { who: 'owner', title: 'Aviso: {{name}}' }, task: { title: 'Seguimiento de {{name}}', who: 'owner', days: 1 }, subitems: { titles: 'Paso 1\nPaso 2', who: 'owner' }, set_date: { mode: 'today', days: 0 }, set_number: { mode: 'set', value: 0 }, branch: { conds: { logic: 'and', conditions: [] }, then: [], else: [] }, approval: { who: 'manager', title: 'Aprobar {{name}}', then: [], else: [] }, delay: { days: 1 }, ai_categorize: { rules: 'Comercial: venta, precio, cliente\nSoporte: error, fallo, incidencia' } };
+autoForm = function (a) {
+  if (a === null && S.autoV2.budget && usedThisMonth() >= S.autoV2.budget && S.autoV2.mode === 'block_edit') return toast('Presupuesto mensual de acciones agotado: no se pueden crear ni editar automatizaciones hasta el mes que viene (o amplíalo en Uso)', 'err');
+  const d = a ? JSON.parse(JSON.stringify(a)) : { name: '', trigger: { type: 'field', obj: 'deals' }, conds: { logic: 'and', conditions: [] }, actions: [{ type: 'notify', who: 'owner', title: 'Aviso: {{name}}' }], on: true, reenroll: true, owner: 'service', priority: 100 };
+  if (!d.conds) d.conds = { logic: 'and', conditions: d.cond?.field ? [{ field: d.cond.field, op: d.cond.op, value: d.cond.value }] : [] };
+  const m = modal({ title: a ? 'Editar automatización' : 'Nueva automatización', size: 'lg', body: '<div id="af"></div>', footer: `${a ? '<button class="btn danger" id="del">Borrar</button>' : ''}<button class="btn outline" id="sim">Simular con un elemento</button><button class="btn primary" id="ok">Guardar</button>` });
+  const draw = () => {
+    const t = d.trigger; const obj = t.obj || TRIGGERS[t.type].objs[0]; t.obj = obj; const objs = TRIGGERS[t.type].objs;
+    const groups = {}; for (const [k, v] of Object.entries(TRIGGERS)) (groups[v.group || 'CRM'] = groups[v.group || 'CRM'] || []).push([k, v.label.replace(/\{\w+\}/g, '…')]);
+    m.querySelector('#af').innerHTML = `<div class="sentence">${autoSentence(d)}</div><div class="fld mb12"><label>Nombre</label><input class="inp" data-p="name" value="${esc(d.name)}" placeholder="Ej. Importe > 50.000 → aprobación"/></div>
+    <div class="wstep"><h3>${ico.bolt} Cuando</h3><div class="row wrap"><select class="inp" data-p="trigger.type" data-redraw style="width:auto">${Object.entries(groups).map(([g, items]) => `<optgroup label="${g}">${items.map(([k, l]) => `<option value="${k}" ${t.type === k ? 'selected' : ''}>${l}</option>`).join('')}</optgroup>`).join('')}</select>${objs.length > 1 ? `<select class="inp" data-p="trigger.obj" data-redraw style="width:auto">${objs.map((o) => `<option value="${o}" ${obj === o ? 'selected' : ''}>${OBJ_LABEL[o]}s</option>`).join('')}</select>` : ''}
+      ${['field', 'unchanged', 'date_arrives', 'date_passed', 'status_to'].includes(t.type) ? `<select class="inp" data-p="trigger.field" data-redraw style="width:auto">${fieldOptions(obj, t.field, ['date_arrives', 'date_passed'].includes(t.type) ? (ty, c) => ['date', 'timeline', 'created', 'updated'].includes(c.cdef?.type || ty) || (c.cdef?.type === 'formula') : null)}</select>` : ''}
+      ${t.type === 'field' ? `<span>de</span>${valueInput(obj, t.field, 'trigger.from', t.from)}<span>a</span>${valueInput(obj, t.field, 'trigger.value', t.value)}` : ''}${t.type === 'status_to' ? valueInput(obj, t.field, 'trigger.value', t.value) : ''}
+      ${t.type === 'unchanged' ? `<input class="inp" type="number" data-p="trigger.days" value="${t.days || 7}" style="width:70px"/><span>días</span>` : ''}${t.type === 'inactive' ? `<input class="inp" type="number" data-p="trigger.days" value="${t.days || 7}" style="width:70px"/><span>días</span>` : ''}
+      ${t.type === 'date_arrives' ? `<input class="inp" type="number" data-p="trigger.offset" value="${t.offset || 0}" style="width:70px" title="negativo = antes"/><span>días (negativo = antes) a las</span><input class="inp" type="number" min="0" max="23" data-p="trigger.hour" value="${t.hour ?? 8}" style="width:60px"/><span>h</span><label class="chk xs"><input type="checkbox" data-pb="trigger.business" ${t.business ? 'checked' : ''}/>hábiles</label>` : ''}
+      ${t.type === 'period' ? `<select class="inp" data-p="trigger.period" style="width:auto"><option value="day" ${t.period !== 'week' && t.period !== 'month' ? 'selected' : ''}>cada día</option><option value="week" ${t.period === 'week' ? 'selected' : ''}>cada lunes</option><option value="month" ${t.period === 'month' ? 'selected' : ''}>cada día 1</option></select><span>a las</span><input class="inp" type="number" min="0" max="23" data-p="trigger.hour" value="${t.hour ?? 8}" style="width:60px"/>` : ''}
+      ${t.type === 'button' ? `<select class="inp" data-p="trigger.field" style="width:auto"><option value="">cualquier botón</option>${colDefs(obj).filter((c) => c.type === 'button').map((c) => `<option value="custom.${c.key}" ${t.field === 'custom.' + c.key ? 'selected' : ''}>${esc(c.label)}</option>`).join('')}</select>` : ''}
+      ${t.type === 'stage_to' ? `<select class="inp" data-p="trigger.value" style="width:auto">${S.pipeline.stages.map((s) => `<option value="${s.id}" ${t.value === s.id ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}</select>` : ''}</div>
+      <p class="xs muted mt8">${t.type === 'date_arrives' ? 'El planificador calcula la hora exacta al guardar o al cambiar la fecha del elemento (sin fecha auxiliar). Para probarlo, avanza el reloj de la demo en «Programadas».' : t.type === 'field' ? 'Funciona también con fórmulas y reflejos: monday no lo permite.' : ''}</p></div>
+    <div class="wstep"><h3>${ico.filter} Y solo si <span class="muted small">(opcional)</span></h3>${condHtml(obj, d.conds, 'conds')}</div>
+    <div class="wstep"><h3>${ico.check} Entonces</h3>${actHtml(obj, d.actions, 'actions')}</div>
+    <details class="wstep"><summary class="b small">Ejecución y gobierno</summary><div class="row wrap mt8"><span>Se ejecuta como</span><select class="inp" data-p="owner" style="width:auto"><option value="service" ${!d.owner || d.owner === 'service' ? 'selected' : ''}>Automatizaciones (usuario de servicio)</option>${S.users.map((u) => `<option value="${u.id}" ${d.owner === u.id ? 'selected' : ''}>${esc(u.name)}${u.active ? '' : ' (inactivo)'}</option>`).join('')}</select><span>prioridad</span><input class="inp" type="number" data-p="priority" value="${d.priority || 100}" style="width:80px"/><label class="chk xs"><input type="checkbox" data-pb="reenroll" ${d.reenroll ? 'checked' : ''}/>puede repetirse sobre el mismo elemento</label></div></details>`;
+  };
+  const root = m.querySelector('.mb') || m;
+  const onChange = (e) => { const el = e.target; if (el.dataset.p) { setPath(d, el.dataset.p, el.type === 'number' ? Number(el.value) : el.value); if (el.dataset.p === 'trigger.type') { d.trigger = { type: el.value, obj: TRIGGERS[el.value].objs.includes(d.trigger.obj) ? d.trigger.obj : TRIGGERS[el.value].objs[0] }; } if (el.dataset.redraw !== undefined || el.tagName === 'SELECT') draw(); else m.querySelector('.sentence').innerHTML = autoSentence(d); } if (el.dataset.pb) { setPath(d, el.dataset.pb, el.checked); draw(); } if (el.dataset.adda && el.value) { getPath(d, el.dataset.adda).push({ type: el.value, ...JSON.parse(JSON.stringify(ACT_DEFAULTS[el.value] || {})) }); draw(); } };
+  root.addEventListener('change', onChange); root.addEventListener('input', (e) => { if (e.target.dataset.p && e.target.tagName !== 'SELECT') { setPath(d, e.target.dataset.p, e.target.type === 'number' ? Number(e.target.value) : e.target.value); const s = m.querySelector('.sentence'); if (s) s.innerHTML = autoSentence(d); } });
+  root.addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; const pth = b.dataset.rm || b.dataset.addc || b.dataset.addg || b.dataset.up; if (!pth) return; e.preventDefault(); if (b.dataset.rm) { const ks = b.dataset.rm.split('.'); const idx = Number(ks.pop()); getPath(d, ks.join('.')).splice(idx, 1); } if (b.dataset.addc) getPath(d, b.dataset.addc).conditions.push({ field: '', op: 'eq', value: '' }); if (b.dataset.addg) getPath(d, b.dataset.addg).conditions.push({ logic: 'or', conditions: [{ field: '', op: 'eq', value: '' }] }); if (b.dataset.up) { const ks = b.dataset.up.split('.'); const idx = Number(ks.pop()); const arr = getPath(d, ks.join('.')); [arr[idx - 1], arr[idx]] = [arr[idx], arr[idx - 1]]; } draw(); });
+  draw();
+  m.querySelector('#sim').onclick = () => { const obj = d.trigger.obj; const it = (S[obj] || [])[0]; if (!it) return toast('No hay elementos', 'err'); const ok = evalCondV2(obj, it, d.conds); const steps = []; const walk = (list) => list.forEach((x) => { steps.push(`${ACT_V2[x.type] || x.type}${x.title ? ` «${tpl(x.title, obj, it)}»` : ''}`); if (x.type === 'branch') { const y = evalCondV2(obj, it, x.conds || {}); steps.push(`  → rama ${y ? 'ENTONCES' : 'SI NO'}`); walk((y ? x.then : x.else) || []); } }); if (ok) walk(d.actions); modal({ title: 'Simulación (dry run)', body: `<p><b>${esc(it.name || it.title || it.subject || contactName(it))}</b>: ${ok ? '<span style="color:var(--c-green)">cumple las condiciones</span>' : '<span style="color:var(--c-red)">no cumple las condiciones</span>'}</p>${ok ? `<ol class="small">${steps.map((s) => `<li>${esc(s)}</li>`).join('')}</ol>` : ''}<p class="xs muted">No se ha ejecutado nada ni se han gastado acciones.</p>` }); };
+  m.querySelector('#ok').onclick = () => { if (!d.name.trim()) return toast('Pon un nombre', 'err'); if (!d.actions.length) return toast('Añade al menos una acción', 'err'); delete d.cond; d.paused = false; d.pausedReason = null; if (a) Object.assign(a, d); else { d.id = uid(); d.runs = 0; S.automations.unshift(d); } planAuto(a || d); audit('automations', d.id || a.id, a ? 'update' : 'create', { nombre: d.name }); m.close(); toast('Automatización guardada', 'ok'); refresh(); };
+  if (a) m.querySelector('#del').onclick = async () => { if (await ask('¿Borrar la automatización?', '', 'Borrar', true)) { S.automations = S.automations.filter((x) => x.id !== a.id); m.close(); refresh(); } };
+};
+ACT['auto-toggle'] = (id) => { const a = S.automations.find((x) => x.id === id); a.on = !a.on; if (a.on) a.pausedReason = null; planAuto(a); refresh(); };
+
+/* ---------------------------------------------------------------- centro de automatizaciones */
+const RECIPES_V2 = [
+  { code: 'R1', cat: 'CRM', t: 'Lead de formulario → asignar, avisar y checklist', a: () => ({ name: 'R1 · Lead de formulario', trigger: { type: 'form', obj: 'contacts' }, actions: [{ type: 'owner', who: 'rr' }, { type: 'notify', who: 'owner', title: 'Nuevo lead: {{name}}' }, { type: 'subitems', titles: 'Llamar en 1 h\nEnviar presentación', who: 'owner' }] }) },
+  { code: 'R2', cat: 'CRM', t: 'Lead cualificado → crear negocio', a: () => ({ name: 'R2 · Cualificado → negocio', trigger: { type: 'field', obj: 'contacts', field: 'leadStatus', value: 'Cualificado' }, actions: [{ type: 'deal', title: 'Negocio {{empresa}}' }, { type: 'notify', who: 'owner', title: 'Negocio creado para {{name}}' }] }) },
+  { code: 'R3', cat: 'CRM', t: 'Próximo seguimiento: aviso el día y escalado a los 3 días', col: { obj: 'deals', key: 'proximo_seguimiento', label: 'Próximo seguimiento', type: 'date' }, a: () => [{ name: 'R3 · Seguimiento hoy', trigger: { type: 'date_arrives', obj: 'deals', field: 'custom.proximo_seguimiento', offset: 0, hour: 9 }, conds: { logic: 'and', conditions: [{ field: 'status', op: 'eq', value: 'open' }] }, actions: [{ type: 'notify', who: 'owner', title: 'Hoy toca seguimiento: {{name}}' }] }, { name: 'R3b · Seguimiento atrasado → manager', trigger: { type: 'date_arrives', obj: 'deals', field: 'custom.proximo_seguimiento', offset: 3, hour: 9 }, conds: { logic: 'and', conditions: [{ field: 'status', op: 'eq', value: 'open' }] }, actions: [{ type: 'notify', who: 'manager', title: 'Seguimiento atrasado: {{name}}' }] }] },
+  { code: 'R4', cat: 'CRM', t: 'Etapa sin cambiar 14 días → estancado', a: () => ({ name: 'R4 · 14 días sin avanzar', trigger: { type: 'unchanged', obj: 'deals', field: 'stageId', days: 14 }, conds: { logic: 'and', conditions: [{ field: 'status', op: 'eq', value: 'open' }] }, actions: [{ type: 'tag', value: 'estancado' }, { type: 'notify', who: 'owner', title: '{{name}} lleva 14 días sin avanzar' }] }) },
+  { code: 'R5', cat: 'CRM', t: 'Ganado → onboarding y aviso a finanzas', a: () => ({ name: 'R5 · Ganado → onboarding', trigger: { type: 'deal_won', obj: 'deals' }, actions: [{ type: 'subitems', titles: 'Kickoff con el cliente\nAlta en facturación\nFormación', who: 'owner' }, { type: 'notify', who: 'manager', title: 'Ganado {{name}}: avisa a finanzas' }] }) },
+  { code: 'R7', cat: 'CRM', t: 'Cada lunes: negocios que cierran esta semana', a: () => ({ name: 'R7 · Lunes: cierres de la semana', trigger: { type: 'period', obj: 'deals', period: 'week', hour: 8 }, conds: { logic: 'and', conditions: [{ field: 'status', op: 'eq', value: 'open' }, { field: 'close', op: 'next_days', value: 7 }] }, actions: [{ type: 'notify', who: 'owner', title: 'Cierra esta semana: {{name}}' }] }) },
+  { code: 'R8', cat: 'CRM', t: 'Importe > 50.000 € → aprobación del manager', col: { obj: 'deals', key: 'aprobacion', label: 'Aprobación', type: 'status', options: ['Pendiente', 'Aprobado', 'Rechazado'] }, a: () => ({ name: 'R8 · Importe > 50.000 → aprobación', trigger: { type: 'field', obj: 'deals', field: 'amount' }, conds: { logic: 'and', conditions: [{ field: 'amount', op: 'gt', value: 50000 }] }, actions: [{ type: 'set', field: 'custom.aprobacion', value: 'Pendiente' }, { type: 'approval', who: 'manager', title: 'Aprobar {{name}} ({{importe}})', then: [{ type: 'set', field: 'custom.aprobacion', value: 'Aprobado' }], else: [{ type: 'set', field: 'custom.aprobacion', value: 'Rechazado' }, { type: 'notify', who: 'owner', title: 'Rechazado: {{name}}' }] }] }) },
+  { code: 'R9', cat: 'CRM', t: 'Fórmula «Días hasta cierre» que dispara un aviso', col: { obj: 'deals', key: 'dias_cierre', label: 'Días hasta cierre', type: 'formula', expr: 'DAYS({Cierre}, TODAY())', result: 'number' }, a: () => ({ name: 'R9 · Cierre en 3 días o menos', trigger: { type: 'period', obj: 'deals', period: 'day', hour: 8 }, conds: { logic: 'and', conditions: [{ field: 'status', op: 'eq', value: 'open' }, { field: 'custom.dias_cierre', op: 'lt', value: 4 }] }, actions: [{ type: 'notify', who: 'owner', title: '{{name}} cierra en pocos días' }] }) },
+  { code: 'R10', cat: 'CLM', t: '30 días antes del fin de un contrato → aviso a propietario y legal', a: () => ({ name: 'R10 · Contrato vence en 30 días', trigger: { type: 'date_arrives', obj: 'contracts', field: 'endDate', offset: -30, hour: 9 }, conds: { logic: 'and', conditions: [{ field: 'status', op: 'eq', value: 'active' }] }, actions: [{ type: 'notify', who: 'owner,manager', title: 'Revisar renovación de {{name}}' }] }) },
+  { code: 'R13', cat: 'CLM', t: 'Contrato activo → marcar el negocio conectado', col: { obj: 'deals', key: 'estado_contrato', label: 'Estado del contrato', type: 'status', options: ['Sin contrato', 'En curso', 'Firmado'] }, a: () => ({ name: 'R13 · Contrato activo → negocio Firmado', trigger: { type: 'field', obj: 'contracts', field: 'status', value: 'Activo' }, actions: [{ type: 'update_related', rel: 'deal', field: 'custom.estado_contrato', value: 'Firmado' }, { type: 'notify', who: 'owner', title: 'Contrato firmado: {{name}}' }] }) },
+  { code: 'R16', cat: 'CRM', t: 'Todas las tareas del negocio hechas → checklist completa', col: { obj: 'deals', key: 'checklist', label: 'Checklist', type: 'status', options: ['Pendiente', 'Completa'] }, a: () => ({ name: 'R16 · Subelementos hechos', trigger: { type: 'subitems_done', obj: 'deals' }, actions: [{ type: 'set', field: 'custom.checklist', value: 'Completa' }] }) },
+  { code: 'R19', cat: 'Operaciones', t: 'Ticket urgente → manager y checklist', a: () => ({ name: 'R19 · Ticket urgente', trigger: { type: 'created', obj: 'tickets' }, conds: { logic: 'and', conditions: [{ field: 'priority', op: 'eq', value: 'Urgente' }] }, actions: [{ type: 'notify', who: 'manager', title: 'Ticket urgente: {{name}}' }, { type: 'subitems', titles: 'Responder en 1 h\nDiagnóstico', who: 'owner' }] }) },
+  { code: 'R21', cat: 'Operaciones', t: 'Nota con «@soporte» → ticket conectado', a: () => ({ name: 'R21 · @soporte → ticket', trigger: { type: 'note', obj: 'contacts' }, conds: { logic: 'and', conditions: [{ field: '_activity.body', op: 'contains', value: '@soporte' }] }, actions: [{ type: 'create_ticket', title: 'Desde nota de {{name}}' }] }) },
+  { code: 'R22', cat: 'Operaciones', t: 'Botón «Generar informe» → webhook', col: { obj: 'deals', key: 'generar_informe', label: 'Generar informe', type: 'button', btn: 'Generar informe' }, a: () => ({ name: 'R22 · Botón → webhook', trigger: { type: 'button', obj: 'deals', field: 'custom.generar_informe' }, actions: [{ type: 'webhook', url: 'https://tu-sistema/informes' }, { type: 'note', title: 'Informe solicitado' }] }) },
+];
+function installRecipeV2(code) {
+  const r = RECIPES_V2.find((x) => x.code === code); if (!r) return;
+  if (r.col && !colDefs(r.col.obj).some((c) => c.key === r.col.key)) { const c = { ...r.col }; delete c.obj; if (c.options) c.options = c.options.map((l, i) => ({ id: i + 1, label: l, color: [C.grey, C.green, C.red][i % 3], done: i === 1 })); S.customCols[r.col.obj] = S.customCols[r.col.obj] || []; S.customCols[r.col.obj].push(c); }
+  const list = [].concat(r.a()); for (const a of list) { const auto = { id: uid(), runs: 0, on: true, reenroll: true, owner: 'service', priority: 100, conds: { logic: 'and', conditions: [] }, recipe: r.code, ...a }; S.automations.unshift(auto); planAuto(auto); }
+  toast(`Receta ${code} instalada${r.col ? ` · columna «${r.col.label}»` : ''}`, 'ok'); refresh();
+}
+function seedAutoV2() {
+  // columnas de ejemplo: fórmula, reflejo, valoración y estado por ID
+  const add = (obj, c) => { S.customCols[obj] = S.customCols[obj] || []; if (!S.customCols[obj].some((x) => x.key === c.key)) S.customCols[obj].push(c); };
+  add('deals', { key: 'ponderado_f', label: 'Ponderado (fórmula)', type: 'formula', expr: 'ROUND({Importe} * {Prob.} / 100, 0)', result: 'number' });
+  add('deals', { key: 'tareas_hechas', label: '% tareas hechas', type: 'mirror', rel: 'tasks', field: 'done', agg: 'pct_eq', cmp: 'true' });
+  add('companies', { key: 'pipeline_total', label: 'Pipeline (reflejo)', type: 'mirror', rel: 'deals', field: 'amount', agg: 'sum' });
+  add('deals', { key: 'interes', label: 'Interés', type: 'rating', max: 5 });
+  S.deals.slice(0, 8).forEach((d, i) => { d.custom = d.custom || {}; d.custom.interes = (i % 5) + 1; });
+  installRecipeV2('R8'); installRecipeV2('R16');
+  S.autoV2.seeded = true; S.notifs = S.notifs.filter((n) => !/Receta/.test(n.title));
+}
+PAGES.automatizaciones = () => {
+  const view = S.ui.view.automatizaciones || 'list';
+  const pend = S.autoV2.approvals.filter((x) => x.status === 'pending').length; const used = usedThisMonth(); const b = S.autoV2.budget;
+  setHead({ title: 'Centro de automatizaciones', desc: `Frases «Cuando… y solo si… entonces…» con ramas, aprobaciones y esperas · ${used} de ${b || '∞'} acciones este mes · reloj de la demo: ${fdate(vDay(), { day: 'numeric', month: 'short', year: 'numeric' })}`, views: [{ key: 'list', label: 'Automatizaciones', icon: 'bolt' }, { key: 'recipes', label: 'Recetas', icon: 'star' }, { key: 'log', label: 'Historial', icon: 'list' }, { key: 'sched', label: 'Programadas', icon: 'cal' }, { key: 'usage', label: 'Uso y presupuesto', icon: 'chart' }, { key: 'approvals', label: `Aprobaciones${pend ? ' · ' + pend : ''}`, icon: 'check' }, { key: 'gov', label: 'Gobierno', icon: 'shield' }], view, toolbar: `<button class="btn primary" data-act="auto-new">${ico.plus}Nueva automatización</button><span class="muted small right">${S.automations.filter((a) => a.on).length} activas · ${S.autolog.length} ejecuciones</span>` });
+  const el = document.getElementById('content'); const autoName = (id) => esc(S.automations.find((a) => a.id === id)?.name || '(borrada)');
+  const badge = (s) => `<span class="pill" style="display:inline-flex;width:auto;min-height:20px;padding:0 7px;border-radius:4px;font-size:11px;background:${({ ok: C.green, error: C.red, skipped: C.grey, waiting: C.orange })[s] || C.grey}">${({ ok: 'Correcta', error: 'Error', skipped: 'No cumplía', waiting: 'En espera' })[s] || s}</span>`;
+  if (view === 'list') { el.innerHTML = `<div class="mt12">${S.automations.map((a) => `<div class="auto ${a.on ? '' : 'off'}"><span class="ic">${ico.bolt}</span><div class="grow"><div class="sent">${autoSentence(a)}</div><div class="meta">${esc(a.name)}${a.recipe ? ` · <b>${a.recipe}</b>` : ''} · ${a.runs || 0} ejecuciones · ${S.autolog.filter((l) => l.autoId === a.id).reduce((s, l) => s + (l.count || 0), 0)} acciones · se ejecuta como ${esc(ownerOf(a)?.name || '—')}${a.lastRun ? ' · última ' + rel(a.lastRun) : ''}</div>${a.pausedReason ? `<div class="xs" style="color:var(--c-red)">${esc(a.pausedReason)}</div>` : ''}</div><button class="btn sm outline" data-act="auto-edit" data-arg="${a.id}">Editar</button><button class="switch ${a.on ? 'on' : ''}" data-act="auto-toggle" data-arg="${a.id}" title="${a.on ? 'Activa' : 'Pausada'}"></button></div>`).join('')}</div>`; return; }
+  if (view === 'recipes') { el.innerHTML = `<div class="rgrid mt12">${RECIPES_V2.map((r) => `<div class="recipe"><div class="row"><span class="tag">${r.code}</span><span class="xs muted">${r.cat}</span>${S.automations.some((a) => a.recipe === r.code) ? '<span class="tag right" style="background:#dcf7e9;color:#037f4c">Instalada</span>' : ''}</div><b>${esc(r.t)}</b>${r.col ? `<p class="xs muted">Crea la columna «${esc(r.col.label)}»</p>` : ''}<button class="btn sm outline" data-act="recipe-install" data-arg="${r.code}">${ico.plus}Usar receta</button></div>`).join('')}</div>`; return; }
+  if (view === 'log') { const f = S.ui.logf || ''; const rows = S.autolog.filter((l) => !f || l.status === f).slice(0, 300); el.innerHTML = `<div class="row mt12 mb8"><select class="inp" id="lf" style="width:auto"><option value="">Todos</option>${['ok', 'error', 'skipped', 'waiting'].map((s) => `<option value="${s}" ${f === s ? 'selected' : ''}>${({ ok: 'Correctas', error: 'Errores', skipped: 'No cumplían', waiting: 'En espera' })[s]}</option>`).join('')}</select><button class="btn sm outline right" data-act="log-csv">${ico.down}Exportar CSV</button></div><div class="card"><table class="t"><thead><tr><th>Fecha</th><th>Automatización</th><th>Elemento</th><th>Estado</th><th class="r">Acciones</th><th>Origen</th><th>Detalle</th></tr></thead><tbody>${rows.map((l) => `<tr><td class="small">${fdt(l.at)}</td><td>${autoName(l.autoId)}</td><td class="small">${l.rid ? `<a href="${linkOf(l.obj, l.rid)}">${esc(itemName(l.obj, l.rid))}</a>` : '—'}</td><td>${badge(l.status || (l.ok ? 'ok' : 'skipped'))}</td><td class="r num">${l.count ?? 0}</td><td class="xs muted">${esc(l.origin || 'ui')}${l.depth > 1 ? ' · cadena ' + l.depth : ''}</td><td class="small" style="${l.status === 'error' ? 'color:var(--c-red)' : ''}">${esc(l.log)}</td></tr>`).join('') || '<tr><td colspan="7" class="empty">Sin ejecuciones</td></tr>'}</tbody></table></div>`; el.querySelector('#lf').onchange = (e) => { S.ui.logf = e.target.value; render(); }; return; }
+  if (view === 'sched') { const list = S.autoV2.schedule.filter((s) => !s.fired).sort((a, b2) => a.fire - b2.fire); el.innerHTML = `<div class="card mt12"><p class="small">El planificador calcula la hora exacta de cada disparador de fecha en cuanto cambias la fecha (monday las evalúa una vez al día y obliga a usar columnas auxiliares). Para probarlo sin esperar, adelanta el reloj de la demo:</p><div class="row wrap mt8"><button class="btn sm primary" data-act="clock-advance" data-arg="1">+1 día</button><button class="btn sm outline" data-act="clock-advance" data-arg="7">+7 días</button><button class="btn sm outline" data-act="clock-advance" data-arg="30">+30 días</button><button class="btn sm outline" data-act="clock-reset">Volver a hoy</button><span class="small muted">Reloj: <b>${fdate(vDay(), { day: 'numeric', month: 'long', year: 'numeric' })}</b></span></div></div><div class="card mt12"><table class="t"><thead><tr><th>Se ejecutará</th><th>Automatización</th><th>Elemento</th><th>Basada en</th></tr></thead><tbody>${list.map((s) => `<tr><td class="small">${fdt(new Date(s.fire).toISOString())}</td><td>${autoName(s.autoId)}</td><td class="small"><a href="${linkOf(s.obj, s.rid)}">${esc(itemName(s.obj, s.rid))}</a></td><td class="small">${s.kind === 'resume' ? 'continuación tras «esperar»' : 'fecha ' + fdate(s.basis)}</td></tr>`).join('') || '<tr><td colspan="4" class="empty">Nada programado. Instala la receta R3 y pon una fecha de «Próximo seguimiento» en un negocio.</td></tr>'}</tbody></table></div>`; return; }
+  if (view === 'usage') { const pct = b ? Math.round((100 * used) / b) : 0; const per = {}; S.autolog.filter((l) => l.at.slice(0, 7) === monthKey()).forEach((l) => (per[l.autoId] = (per[l.autoId] || 0) + (l.count || 0))); el.innerHTML = `<div class="kpis"><div class="kpi"><div class="l">Acciones este mes</div><div class="v num">${used}</div><div class="s">de ${b || '∞'} · ${pct} %</div><div class="meterb"><i style="width:${Math.min(100, pct)}%;background:${pct >= 100 ? C.red : pct >= 80 ? C.orange : pct >= 60 ? C.sun : C.green}"></i></div></div><div class="kpi"><div class="l">Al agotarse</div><div class="v" style="font-size:16px">${S.autoV2.mode === 'pause_all' ? 'Se pausan' : 'Bloqueo de edición'}</div><div class="s">avisos al 60, 80 y 100 %</div></div><div class="kpi"><div class="l">Protección de bucles</div><div class="v num">${S.autoV2.maxDepth}</div><div class="s">niveles de cadena · 5 ejecuciones/min por elemento</div></div><div class="kpi"><div class="l">Errores</div><div class="v num">${S.autolog.filter((l) => l.status === 'error').length}</div><div class="s">en el historial</div></div></div><div class="charts"><div class="chart"><h3>Acciones por automatización (mes)</h3>${barsHtml(Object.entries(per).map(([k, v]) => ({ label: (S.automations.find((a) => a.id === k)?.name || '—').slice(0, 14), v, color: C.blue })))}</div><div class="chart"><h3>Presupuesto</h3><div class="fgrid"><div class="fld"><label>Acciones al mes (0 = sin límite)</label><input class="inp" type="number" id="bud" value="${b}"/></div><div class="fld"><label>Al agotarse</label><select class="inp" id="bmode"><option value="block_edit" ${S.autoV2.mode !== 'pause_all' ? 'selected' : ''}>Siguen funcionando; bloqueo de edición</option><option value="pause_all" ${S.autoV2.mode === 'pause_all' ? 'selected' : ''}>Se pausan todas</option></select></div><div class="fld"><label>Profundidad máxima de cadena</label><input class="inp" type="number" id="bdep" value="${S.autoV2.maxDepth}"/></div></div><button class="btn sm primary mt8" data-act="budget-save">Guardar</button><p class="xs muted mt8">Cómo se cuenta: cada acción ejecutada = 1 (crear 3 subelementos = 3). Disparadores y condiciones no cuentan; una ejecución que no cumple las condiciones no gasta.</p></div></div>`; return; }
+  if (view === 'approvals') { el.innerHTML = `<div class="card mt12"><p class="small muted">Aprobaciones pedidas por automatizaciones (human in the loop). Al decidir, el flujo sigue por la rama sí o no.</p><table class="t"><thead><tr><th>Solicitud</th><th>Automatización</th><th>Aprobador</th><th>Estado</th><th></th></tr></thead><tbody>${S.autoV2.approvals.map((p) => `<tr><td><b>${esc(p.title)}</b><div class="xs"><a href="${linkOf(p.obj, p.rid)}">Abrir elemento</a> · ${rel(p.at)}</div></td><td class="small">${autoName(p.autoId)}</td><td>${avatarOf(p.approver, 'sm')} ${esc(user(p.approver)?.name || '')}</td><td>${badge(p.status === 'pending' ? 'waiting' : p.status === 'approved' ? 'ok' : 'error').replace('En espera', 'Pendiente').replace('Correcta', 'Aprobada').replace('Error', 'Rechazada')}</td><td>${p.status === 'pending' ? `<button class="btn sm primary" data-act="ap-decide" data-arg='${JSON.stringify({ id: p.id, d: 'approved' })}'>Aprobar</button> <button class="btn sm outline" data-act="ap-decide" data-arg='${JSON.stringify({ id: p.id, d: 'rejected' })}'>Rechazar</button>` : ''}</td></tr>`).join('') || '<tr><td colspan="5" class="empty">Sin aprobaciones. La receta R8 pide una al subir un negocio por encima de 50.000 €.</td></tr>'}</tbody></table></div>`; return; }
+  if (view === 'gov') { el.innerHTML = `<div class="card mt12"><table class="t"><thead><tr><th>Automatización</th><th>Tablero</th><th>Se ejecuta como</th><th class="r">Acciones/ejecución</th><th class="r">Usadas (mes)</th><th class="r">Errores</th><th class="r">Prioridad</th></tr></thead><tbody>${S.automations.map((a) => `<tr class="${a.on ? '' : 'muted'}"><td><b>${esc(a.name)}</b>${a.pausedReason ? `<div class="xs" style="color:var(--c-red)">${esc(a.pausedReason)}</div>` : ''}</td><td class="small">${OBJ_LABEL[a.trigger.obj] || '—'}</td><td class="small">${esc(ownerOf(a)?.name || '—')}${ownerOf(a)?.active === false ? ' <span class="tag" style="background:#fde4e7;color:#bb3354">inactivo</span>' : ''}</td><td class="r num">${a.actions.length}</td><td class="r num">${S.autolog.filter((l) => l.autoId === a.id && l.at.slice(0, 7) === monthKey()).reduce((s, l) => s + (l.count || 0), 0)}</td><td class="r num">${S.autolog.filter((l) => l.autoId === a.id && l.status === 'error').length}</td><td class="r num">${a.priority || 100}</td></tr>`).join('')}</tbody></table></div><div class="card mt12 small"><b>Buenas prácticas</b><ul><li>Propietario: el usuario de servicio «Automatizaciones». Si el propietario se desactiva, la automatización se pausa con un error legible.</li><li>Una automatización, una responsabilidad. Estados terminales y condiciones de corte para evitar bucles (la demo corta a ${S.autoV2.maxDepth} niveles o 5 ejecuciones por minuto).</li><li>Usa «Origen del cambio ≠ automation» para no reaccionar a tus propias acciones.</li><li>Valores por defecto (botón «Reglas» de cada tablero) en lugar de «cuando se crea, establecer»: no gastan acciones.</li></ul><button class="btn sm outline" data-act="reassign-service">Reasignar todas al usuario de servicio y reactivar</button></div>`; }
+};
+ACT['recipe-install'] = (code) => installRecipeV2(code);
+ACT['budget-save'] = () => { S.autoV2.budget = Number(document.getElementById('bud').value) || 0; S.autoV2.mode = document.getElementById('bmode').value; S.autoV2.maxDepth = Math.max(2, Number(document.getElementById('bdep').value) || 10); refresh(); toast('Guardado', 'ok'); };
+ACT['reassign-service'] = () => { S.automations.forEach((a) => { if (a.owner && a.owner !== 'service' && !user(a.owner)?.active) { a.owner = 'service'; a.on = true; a.pausedReason = null; } }); refresh(); toast('Reasignadas', 'ok'); };
+ACT['log-csv'] = () => { const rows = S.autolog.map((l) => [l.at, S.automations.find((a) => a.id === l.autoId)?.name || '', l.obj, l.rid, l.status, l.count, l.origin, l.depth, l.log].map((v) => `"${String(v ?? '').replace(/"/g, '""')}"`).join(';')); download('historial-automatizaciones.csv', '﻿fecha;automatización;objeto;elemento;estado;acciones;origen;profundidad;detalle\n' + rows.join('\n'), 'text/csv'); };
+ACT['ap-decide'] = ({ id, d }) => {
+  const p = S.autoV2.approvals.find((x) => x.id === id); if (!p || p.status !== 'pending') return;
+  if (p.approver !== S.me && !can('admin')) return toast('Solo el aprobador o un administrador', 'err');
+  p.status = d; p.decidedBy = S.me; p.decidedAt = nowISO();
+  const a = S.automations.find((x) => x.id === p.autoId); const it = byId(p.obj, p.rid);
+  if (a && it) { const log = [`${d === 'approved' ? 'Aprobado' : 'Rechazado'} por ${me().name}`]; AUTO_DEPTH++; S._origin = 'automation'; try { const r = execActions(a, p.obj, it, d === 'approved' ? [...p.then, ...p.rest] : p.else, log); S.autoV2.usage[monthKey()] = usedThisMonth() + r.count; logRun(a, p.obj, it, r.status, log, r.count); } finally { AUTO_DEPTH--; S._origin = 'ui'; } }
+  toast(d === 'approved' ? 'Aprobado: el flujo continúa' : 'Rechazado: se ejecuta la rama «si se rechaza»', 'ok'); refresh();
+};
+/* detalles de la ficha: celdas personalizadas con su texto */
+const _panelDetails = panelDetails; panelDetails = function (obj, it) { const html = _panelDetails(obj, { ...it, custom: {} }); const extra = colDefs(obj).map((c) => `<dt>${esc(c.label)}</dt><dd>${c.type === 'status' ? (() => { const o = c.options.find((x) => x.id === Number((it.custom || {})[c.key])); return o ? `<span class="pill" style="display:inline-flex;width:auto;min-height:24px;padding:0 9px;border-radius:4px;background:${o.color}">${esc(o.label)}</span>` : '<span class="muted">—</span>'; })() : esc(cellText(obj, it, 'custom.' + c.key)) || '<span class="muted">—</span>'}${COMPUTED_T.includes(c.type) ? ' <span class="xs muted">(calculada)</span>' : ''}</dd>`).join(''); return html.replace(/<dt>Etiquetas<\/dt>/, extra + '<dt>Etiquetas</dt>'); };
+
+ensureAutoV2(); S.automations.forEach((a) => a.trigger.type === 'date_arrives' && planAuto(a)); save();
+if (route.page === 'automatizaciones') render();
+</script>
+
+<script>
+/* ============================================================
    Tutorial guiado · pasos con resaltado en pantalla
    ============================================================ */
 'use strict';
@@ -1750,6 +2305,16 @@ const STEPS = [
   { id: 'clm-cal', t: 'Vencimientos y renovación', s: 'Contratos', go: () => goView('contratos', 'calendar'), sel: '.kpis', b: 'La vista de vencimientos reúne hitos, obligaciones, pagos y sobres que caducan por mes. En la ficha, «Decidir renovación» registra la decisión: renovar crea un contrato hijo (-R01), no renovar genera la carta y renegociar abre una nueva ronda. Si pasa el preaviso sin decisión, el contrato se renueva tácitamente y queda registrado.' },
   { id: 'clm-family', t: 'Enmiendas y terminación', s: 'Contratos', go: () => { const c = (S.contracts || []).find((x) => x.kind === 'master' && (S.contracts || []).some((k) => k.parentId === x.id)); if (c) location.hash = `#/contratos/${c.id}/family`; }, sel: '.chart', b: 'Las enmiendas son contratos hijo (-A01) con su propio ciclo hasta la firma; al activarse, sus valores efectivos (precio, fecha de fin, preaviso) se consolidan en el principal con historial. «Terminar» pide causa y fecha, genera la carta y añade las obligaciones de salida.' },
   { id: 'clm-config', t: 'Configuración del CLM', s: 'Contratos', go: () => { location.hash = '#/contratos/configuracion/playbooks'; }, sel: '.group', b: 'Tipos de contrato con numeración, SLA y plantilla; biblioteca de cláusulas por categoría con variantes estándar, alternativa, mínimo aceptable y prohibida; plantillas con variables y cláusulas; playbooks con reglas en frases (debe existir, máximo, patrón prohibido, ley aplicable) que se reanalizan al guardarlas; aprobadores por rol y poderes de firma.', try: 'Desactiva una regla con el interruptor y vuelve a analizar un contrato.' },
+  { id: 'v2-celda', t: 'Valor y texto de cada celda', s: 'Celdas y automatizaciones', go: () => goView('negocios', 'table'), sel: '.group', b: 'Cada celda guarda un valor (la verdad: un número, una fecha ISO, el ID de una etiqueta) y un texto (cómo se ve). Las automatizaciones y fórmulas trabajan con el valor, nunca con el texto. En el menú «…» de una fila, «Ver celdas» muestra ambos para cada columna.', try: 'Abre el menú de una fila y pulsa «Ver celdas (valor y texto)».' },
+  { id: 'v2-estado', t: 'Estados guardados por ID', s: 'Celdas y automatizaciones', go: () => goView('negocios', 'table'), sel: '.group', b: 'Las etiquetas de estado se guardan por su ID estable: si renombras «Pendiente» a «Por hacer», los datos y las reglas que la usan siguen funcionando. No puedes borrar una etiqueta que esté en uso. Marca las etiquetas que cuentan como «hecho» para los reflejos de progreso.' },
+  { id: 'v2-formula', t: 'Fórmulas, reflejos y valoración', s: 'Celdas y automatizaciones', go: () => goView('negocios', 'table'), sel: '.group', b: 'La columna «Ponderado (fórmula)» calcula ROUND({Importe} * {Prob.} / 100, 0) por fila; «% tareas hechas» es un reflejo con agregación «% = valor» sobre las tareas conectadas, y «Interés» es una valoración con estrellas. Al contrario que en monday, fórmulas y reflejos SÍ disparan y condicionan automatizaciones. Si una fórmula falla verás #ERROR con el motivo.', try: 'Cambia el importe de un negocio y mira cómo se recalcula el ponderado.' },
+  { id: 'v2-columnas', t: 'Nuevos tipos de columna', s: 'Celdas y automatizaciones', go: () => goView('negocios', 'table'), sel: '.group', b: 'Al añadir una columna eliges entre estado, fórmula, reflejo, línea temporal, valoración, botón, autonumeración, registro de creación y última actualización, además de los básicos. Las calculadas son de solo lectura y avisan de qué depende de ellas antes de borrarlas.' },
+  { id: 'v2-reglas', t: 'Valores por defecto y obligatorias', s: 'Celdas y automatizaciones', go: () => goView('negocios', 'table'), sel: '[data-act="b-boardrules"]', b: 'Con «Reglas» defines valores por defecto al crear elementos y columnas obligatorias según el estado (p. ej. no se puede pasar a Ganado sin importe ni fecha de cierre). Las personas reciben un aviso; las automatizaciones no se bloquean pero dejan constancia.', try: 'Pulsa «Reglas» en la barra del tablero.' },
+  { id: 'v2-editor', t: 'Editor «Cuando… solo si… entonces…»', s: 'Celdas y automatizaciones', go: () => goView('automatizaciones', 'list'), sel: '[data-act="auto-new"]', b: 'Cada automatización es una frase: un disparador (de X a Y, cualquier columna, fecha ± días a una hora, sin cambios en N días, periódico, botón, subelementos, notas), condiciones Y/O anidadas y una lista de acciones con ramas si/si no, esperas y aprobaciones. Elige propietario o el usuario de servicio «Automatizaciones», prioridad y si se ejecuta de forma atómica. «Simular» indica qué haría con el primer elemento y cuántas acciones gastaría.', try: 'Crea una automatización nueva y añade una rama.' },
+  { id: 'v2-recetas', t: 'Recetas listas para usar', s: 'Celdas y automatizaciones', go: () => goView('automatizaciones', 'recipes'), sel: '.rgrid', b: 'Las recetas del manual (R1–R22) se instalan con un clic: crean las columnas auxiliares que necesiten y la automatización ya configurada, que luego puedes editar. Ejemplos: recordatorio antes del vencimiento, escalado si no cambia en N días, aprobación por importe o cierre cuando todas las subtareas están hechas.', try: 'Instala una receta y ábrela en el editor.' },
+  { id: 'v2-fechas', t: 'Disparadores de fecha y reloj', s: 'Celdas y automatizaciones', go: () => goView('automatizaciones', 'sched'), sel: '.card', b: 'El planificador calcula la hora exacta de cada disparador de fecha (con días laborables y zona horaria) en cuanto cambia la fecha, y lo reprograma si la mueves. Para probarlo sin esperar, adelanta el reloj de la demo: las automatizaciones vencidas se ejecutan y aparecen en el historial.', try: 'Pulsa «+7 días» y revisa el Historial.' },
+  { id: 'v2-aprob', t: 'Aprobaciones en el flujo', s: 'Celdas y automatizaciones', go: () => goView('automatizaciones', 'approvals'), sel: '.card', b: 'La acción «Pedir aprobación» detiene la automatización y crea una solicitud para el aprobador. Al aprobar o rechazar, el flujo continúa por la rama correspondiente y ejecuta el resto de acciones.' },
+  { id: 'v2-uso', t: 'Uso, presupuesto y bucles', s: 'Celdas y automatizaciones', go: () => goView('automatizaciones', 'usage'), sel: '.kpis', b: 'Cada acción ejecutada cuenta contra el presupuesto mensual, con avisos al 60, 80 y 100 %. Al agotarse puedes bloquear la edición o pausar todo. La protección de bucles corta cadenas más profundas que el límite (10 por defecto) o más de 5 ejecuciones por minuto sobre el mismo elemento, y pausa la regla responsable. En Gobierno ves quién ejecuta cada regla y reasignas las de usuarios desactivados.' },
   { id: 'fin', t: '¡Listo!', s: 'Fin', go: () => goView('inicio'), sel: '#tutBtn', b: 'Ya conoces el CRM. Vuelve a este tutorial cuando quieras desde el botón flotante; cada capítulo te lleva a la pantalla y la resalta. Todo lo que cambies se queda guardado en este navegador.' },
 ];
 let TUT = { idx: -1, done: [] };
