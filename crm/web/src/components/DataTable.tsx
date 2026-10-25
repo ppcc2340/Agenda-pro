@@ -4,7 +4,8 @@ import { Filter, Download, Columns3, Save, ChevronUp, ChevronDown, X, Bookmark, 
 import { api, qs, downloadFile } from "../api";
 import { FilterBuilder, describeFilters, type FilterGroup } from "./FilterBuilder";
 import { Modal, Pager, Spinner, Empty, Field, useToast, useDebounce, errorMessage, Menu, Avatar, useConfirm } from "./ui";
-import { useApp, type CustomField } from "../lib/app";
+import { useApp, type CustomField, type StatusLabel } from "../lib/app";
+import { ColumnSettings, StatusLabelsEditor } from "./ColumnSettings";
 import { fmtMoney, fmtDate, fmtNum } from "../lib/format";
 import { PALETTE, applyBoard, type Board } from "../lib/board";
 import { BoardRules } from "./BoardRules";
@@ -428,20 +429,36 @@ const slug = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCa
 function AddColumnDialog({ object, onClose, onCreated }: { object: string; onClose: () => void; onCreated: (f: CustomField) => Promise<void> }) {
   const toast = useToast();
   const [label, setLabel] = useState("");
-  const [type, setType] = useState<CustomField["type"]>("select");
+  const [type, setType] = useState<CustomField["type"]>("status");
   const [options, setOptions] = useState<string[]>(["Pendiente", "En curso", "Hecho"]);
   const [busy, setBusy] = useState(false);
+  const [settings, setSettings] = useState<Record<string, unknown>>({});
   const save = async () => {
     if (!label.trim()) return; setBusy(true);
-    try { const f = await api.post<CustomField>("admin/custom-fields", { object, key: slug(label), label: label.trim(), type, options: type === "select" || type === "multiselect" ? options.filter(Boolean) : undefined }); toast("Columna añadida", "ok"); await onCreated(f); onClose(); } catch (e) { toast(errorMessage(e), "error"); } finally { setBusy(false); }
+    try { const f = await api.post<CustomField>("admin/custom-fields", { object, key: slug(label), label: label.trim(), type, options: type === "select" || type === "multiselect" ? options.filter(Boolean) : undefined, settings }); toast("Columna añadida", "ok"); await onCreated(f); onClose(); } catch (e) { toast(errorMessage(e), "error"); } finally { setBusy(false); }
   };
   return (
     <Modal title="Nueva columna" onClose={onClose} footer={<><button className="btn" onClick={onClose}>Cancelar</button><button className="btn primary" disabled={busy || !label.trim()} onClick={save}>Crear columna</button></>}>
       <div className="col" style={{ gap: 14 }}>
         <Field label="Nombre de la columna"><input className="input" autoFocus value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Ej. Prioridad interna" onKeyDown={(e) => e.key === "Enter" && save()} /></Field>
-        <Field label="Tipo"><div className="type-grid">{COL_TYPES.map((t) => <button key={t.key} className={`type-btn ${type === t.key ? "active" : ""}`} onClick={() => setType(t.key)}><b>{t.label}</b>{t.help && <span>{t.help}</span>}</button>)}</div></Field>
+        <Field label="Tipo"><div className="type-grid">{COL_TYPES.map((t) => <button key={t.key} className={`type-btn ${type === t.key ? "active" : ""}`} onClick={() => { setType(t.key); setSettings({}); }}><b>{t.label}</b>{t.help && <span>{t.help}</span>}</button>)}</div></Field>
+        <div className="form-grid" style={{ padding: 0 }}><ColumnSettings object={object} type={type} settings={settings} onChange={setSettings} /></div>
         {(type === "select" || type === "multiselect") && <Field label="Opciones"><div className="col" style={{ gap: 6 }}>{options.map((o, i) => <div key={i} className="row"><span className="gdot" style={{ background: PALETTE[(i * 3) % PALETTE.length] }} /><input className="input sm" value={o} onChange={(e) => setOptions(options.map((x, j) => (j === i ? e.target.value : x)))} /><button className="iconbtn" onClick={() => setOptions(options.filter((_, j) => j !== i))}><X size={14} /></button></div>)}<button className="btn ghost sm" onClick={() => setOptions([...options, ""])}><Plus />Añadir opción</button></div></Field>}
       </div>
+    </Modal>
+  );
+}
+
+function StatusLabelsDialog({ field, onClose, onChanged }: { field: CustomField; onClose: () => void; onChanged: () => Promise<void> }) {
+  const toast = useToast();
+  const st = (field.settings ?? {}) as { labels?: StatusLabel[]; label_set_id?: string };
+  const [labels, setLabels] = useState<StatusLabel[]>(st.labels ?? []);
+  const save = async () => { try { await api.put(`admin/custom-fields/${field.id}`, { settings: { ...st, labels } }); toast("Etiquetas guardadas", "ok"); await onChanged(); onClose(); } catch (e) { toast(errorMessage(e), "error"); } };
+  if (st.label_set_id) return <Modal title={`Etiquetas de «${field.label}»`} onClose={onClose}><p className="small">Esta columna usa un conjunto de etiquetas compartido. Edítalo en Ajustes → Etiquetas compartidas: el cambio se aplica a todos los tableros que lo usan.</p></Modal>;
+  return (
+    <Modal title={`Etiquetas de «${field.label}»`} onClose={onClose} footer={<><button className="btn" onClick={onClose}>Cancelar</button><button className="btn primary" onClick={save}>Guardar</button></>}>
+      <p className="xs muted mb8">Cada etiqueta tiene un ID estable: el registro guarda el ID, así que renombrar o recolorear no cambia los datos ni rompe las automatizaciones. No se puede quitar una etiqueta que esté en uso.</p>
+      <StatusLabelsEditor labels={labels} onChange={setLabels} />
     </Modal>
   );
 }
@@ -453,6 +470,7 @@ function LabelsDialog<T>({ col, board, onClose, onChanged }: { col: Column<T>; b
   const [pick, setPick] = useState<string | null>(null);
   const [newOpt, setNewOpt] = useState("");
   const custom = col.custom;
+  if (custom?.type === "status") return <StatusLabelsDialog field={custom} onClose={onClose} onChanged={onChanged} />;
   const save = async () => {
     board.update((c) => ({ ...c, labels: { ...(c.labels ?? {}), [col.key]: Object.fromEntries(opts.map((o) => [o.key, { label: o.label, color: o.color }])) } }));
     toast("Etiquetas guardadas", "ok"); onClose();

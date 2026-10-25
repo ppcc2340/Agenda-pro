@@ -5,7 +5,9 @@ import { QRCodeSVG } from "qrcode.react";
 import { api } from "../api";
 import { useApp, type Pipeline, type Stage, type CustomField } from "../lib/app";
 import { Modal, Field, useToast, useConfirm, errorMessage, TagInput, Spinner } from "../components/ui";
-import { WorkflowsAdmin, FormsAdmin, TemplatesAdmin, ScoringAdmin } from "./SettingsAutomation";
+import { FormsAdmin, TemplatesAdmin, ScoringAdmin } from "./SettingsAutomation";
+import { AutomationCenter } from "./AutomationCenter";
+import { CustomFieldsAdmin, LabelSetsAdmin, BoardRulesAdmin } from "./SettingsColumns";
 import { ApiKeysAdmin, WebhooksAdmin, OutboxAdmin, AuditAdmin, UsageAdmin, RecycleBin, QualityGdpr, ImportPage } from "./SettingsIntegrations";
 import { fmtDateTime } from "../lib/format";
 
@@ -17,10 +19,10 @@ export function SettingsPage() {
       <nav className="settings-nav">
         <div className="section">Mi cuenta</div><S to="perfil" label="Perfil y seguridad" />
         {isAdmin && <><div className="section">Empresa</div><S to="general" label="General" /><S to="usuarios" label="Usuarios" /><S to="roles" label="Roles y permisos" /><S to="equipos" label="Equipos" />
-          <div className="section">Datos</div><S to="pipelines" label="Pipelines y etapas" /><S to="campos" label="Campos personalizados" /><S to="productos" label="Productos" /><S to="importar" label="Importar CSV" /><S to="papelera" label="Papelera" /><S to="calidad" label="Calidad y RGPD" />
-          <div className="section">Automatización</div><S to="workflows" label="Workflows" /><S to="formularios" label="Formularios web" /><S to="plantillas" label="Plantillas de email" /><S to="scoring" label="Lead scoring" />
+          <div className="section">Datos</div><S to="pipelines" label="Pipelines y etapas" /><S to="campos" label="Columnas personalizadas" /><S to="etiquetas" label="Etiquetas compartidas" /><S to="reglas-tablero" label="Por defecto y obligatorias" /><S to="productos" label="Productos" /><S to="importar" label="Importar CSV" /><S to="papelera" label="Papelera" /><S to="calidad" label="Calidad y RGPD" />
+          <div className="section">Automatización</div><S to="automatizaciones" label="Centro de automatizaciones" /><S to="formularios" label="Formularios web" /><S to="plantillas" label="Plantillas de email" /><S to="scoring" label="Lead scoring" />
           <div className="section">Plataforma</div><S to="api" label="API keys" /><S to="webhooks" label="Webhooks" /><S to="emails" label="Emails enviados" /><S to="auditoria" label="Auditoría" /><S to="uso" label="Uso del sistema" /></>}
-        {!isAdmin && <><div className="section">Datos</div><S to="importar" label="Importar CSV" /><S to="plantillas" label="Plantillas de email" /></>}
+        {!isAdmin && <><div className="section">Automatización</div><S to="automatizaciones" label="Mis aprobaciones" /><div className="section">Datos</div><S to="importar" label="Importar CSV" /><S to="plantillas" label="Plantillas de email" /></>}
       </nav>
       <div>
         <Routes>
@@ -36,7 +38,10 @@ export function SettingsPage() {
           <Route path="importar" element={<ImportPage />} />
           <Route path="papelera" element={<RecycleBin />} />
           <Route path="calidad" element={<QualityGdpr />} />
-          <Route path="workflows" element={<WorkflowsAdmin />} />
+          <Route path="workflows" element={<Navigate to="/ajustes/automatizaciones" replace />} />
+          <Route path="automatizaciones" element={<AutomationCenter />} />
+          <Route path="etiquetas" element={<LabelSetsAdmin />} />
+          <Route path="reglas-tablero" element={<BoardRulesAdmin />} />
           <Route path="formularios" element={<FormsAdmin />} />
           <Route path="plantillas" element={<TemplatesAdmin />} />
           <Route path="scoring" element={<ScoringAdmin />} />
@@ -227,34 +232,3 @@ function PipelinesAdmin() {
   );
 }
 
-function CustomFieldsAdmin() {
-  const { customFields, refresh } = useApp();
-  const toast = useToast();
-  const confirm = useConfirm();
-  const [editing, setEditing] = useState<Partial<CustomField> | null>(null);
-  const TYPES: Record<string, string> = { text: "Texto corto", textarea: "Texto largo", number: "Número", currency: "Moneda", percent: "Porcentaje", date: "Fecha", datetime: "Fecha y hora", boolean: "Sí/No", select: "Lista desplegable", multiselect: "Selección múltiple", user: "Usuario", url: "URL", email: "Email", phone: "Teléfono" };
-  const OBJ: Record<string, string> = { contact: "Contactos", company: "Empresas", deal: "Negocios", ticket: "Tickets" };
-  const save = async () => { if (!editing) return; try { const body = { ...editing, options: editing.options ?? [], required: !!editing.required, show_if: editing.show_if?.field ? editing.show_if : null }; if (editing.id) await api.put(`admin/custom-fields/${editing.id}`, body); else await api.post("admin/custom-fields", body); toast("Campo guardado", "ok"); setEditing(null); refresh(); } catch (e) { toast(errorMessage(e), "error"); } };
-  return (
-    <div className="card tight">
-      <div className="row between" style={{ padding: "12px 16px" }}><div><h2>Campos personalizados</h2><p className="small muted">Aparecen en formularios, fichas, filtros, columnas, importación y API (<code>custom.clave</code>).</p></div><button className="btn primary sm" onClick={() => setEditing({ object: "contact", type: "text", key: "", label: "", options: [], required: 0 })}><Plus />Nuevo campo</button></div>
-      <table className="table"><thead><tr><th>Objeto</th><th>Etiqueta</th><th>Clave</th><th>Tipo</th><th>Opciones</th><th>Sección</th><th>Oblig.</th><th></th></tr></thead><tbody>
-        {customFields.map((f) => <tr key={f.id}><td>{OBJ[f.object]}</td><td className="bold">{f.label}</td><td><code>{f.key}</code></td><td>{TYPES[f.type]}</td><td className="small muted">{f.options.join(", ")}</td><td>{f.section}</td><td>{f.required ? "sí" : ""}</td><td className="r row" style={{ justifyContent: "flex-end" }}><button className="iconbtn" onClick={() => setEditing({ ...f })}><Pencil size={15} /></button><button className="iconbtn" onClick={async () => { if (await confirm({ title: `¿Borrar el campo ${f.label}?`, text: "Los valores guardados dejarán de mostrarse.", danger: true, confirmText: "Borrar" })) { await api.del(`admin/custom-fields/${f.id}`); refresh(); } }}><Trash2 size={15} /></button></td></tr>)}
-        {customFields.length === 0 && <tr><td colSpan={8} className="muted">Sin campos personalizados.</td></tr>}
-      </tbody></table>
-      {editing && <Modal title={editing.id ? "Editar campo" : "Nuevo campo"} onClose={() => setEditing(null)} footer={<><button className="btn" onClick={() => setEditing(null)}>Cancelar</button><button className="btn primary" onClick={save}>Guardar</button></>}>
-        <div className="form-grid">
-          <Field label="Objeto"><select className="input" disabled={!!editing.id} value={editing.object} onChange={(e) => setEditing({ ...editing, object: e.target.value })}>{Object.entries(OBJ).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></Field>
-          <Field label="Tipo"><select className="input" value={editing.type} onChange={(e) => setEditing({ ...editing, type: e.target.value })}>{Object.entries(TYPES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></Field>
-          <Field label="Etiqueta"><input className="input" value={editing.label ?? ""} onChange={(e) => setEditing({ ...editing, label: e.target.value, key: editing.id ? editing.key : e.target.value.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "") })} /></Field>
-          <Field label="Clave" hint="minúsculas, sin espacios"><input className="input" disabled={!!editing.id} value={editing.key ?? ""} onChange={(e) => setEditing({ ...editing, key: e.target.value })} /></Field>
-          {(editing.type === "select" || editing.type === "multiselect") && <Field label="Opciones" full><TagInput value={editing.options ?? []} onChange={(v) => setEditing({ ...editing, options: v })} placeholder="Escribe y pulsa Enter" /></Field>}
-          <Field label="Sección (agrupación en la ficha)"><input className="input" value={editing.section ?? ""} onChange={(e) => setEditing({ ...editing, section: e.target.value })} /></Field>
-          <Field label="Valor por defecto"><input className="input" value={editing.default_value ?? ""} onChange={(e) => setEditing({ ...editing, default_value: e.target.value })} /></Field>
-          <Field label="Mostrar solo si (campo = valor)" full hint="Ej. lifecycle_stage = customer, o custom.otro_campo = Sí"><div className="row"><input className="input" placeholder="campo" value={editing.show_if?.field ?? ""} onChange={(e) => setEditing({ ...editing, show_if: { field: e.target.value, value: editing.show_if?.value ?? "" } })} /><input className="input" placeholder="valor" value={editing.show_if?.value ?? ""} onChange={(e) => setEditing({ ...editing, show_if: { field: editing.show_if?.field ?? "", value: e.target.value } })} /></div></Field>
-          <label className="checkbox full"><input type="checkbox" checked={!!editing.required} onChange={(e) => setEditing({ ...editing, required: e.target.checked ? 1 : 0 })} />Obligatorio</label>
-        </div>
-      </Modal>}
-    </div>
-  );
-}

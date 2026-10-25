@@ -1,3 +1,4 @@
+import { RecordAutomations } from "./AutomationCenter";
 import { useEffect, useState, useCallback, type ReactNode } from "react";
 import { useParams, useNavigate, Link, useSearchParams } from "react-router-dom";
 import { Pencil, MoreHorizontal, Send, FileText, GitCompare, ShieldAlert, ClipboardCheck, PenTool, CalendarClock, GitBranch, MessageSquare, History as HistoryIcon, Sparkles, Plus, Trash2, Lock, Unlock, RefreshCw, Bell, XCircle, Check, ExternalLink, Copy } from "lucide-react";
@@ -34,7 +35,7 @@ export function ContractDetailPage() {
   const T = meta?.transitions ?? {};
   const quick = (ev: string) => { if (["cancel", "put_on_hold", "return_to_requester", "send_to_counterparty", "counterparty_version_received", "terminate"].includes(ev)) setModal({ kind: ev }); else if (ev === "send_for_signature") setTab("signature"); else if (ev === "request_approval") act(() => api.post(`clm/contracts/${c.id}/approvals/request`), "Aprobación solicitada"); else transition(ev); };
   const nd = daysUntil(c.notice_deadline);
-  const tabs = [{ key: "summary", label: "Resumen" }, { key: "document", label: "Documento" }, { key: "versions", label: "Versiones", count: c.versions.length }, { key: "clauses", label: "Cláusulas y playbook", count: c.clauses.filter((x) => x.deviation_level !== "none").length }, { key: "approvals", label: "Aprobaciones", count: c.approvals.filter((a) => a.status === "pending").length }, { key: "signature", label: "Firma" }, { key: "obligations", label: "Obligaciones", count: c.obligations.filter((o) => ["pending", "in_progress", "breached"].includes(String(o.status))).length }, { key: "milestones", label: "Hitos y pagos", count: c.milestones.filter((m) => m.status !== "passed").length }, { key: "family", label: "Enmiendas y familia", count: c.children.length }, { key: "activity", label: "Actividad" }, { key: "audit", label: "Auditoría" }];
+  const tabs = [{ key: "summary", label: "Resumen" }, { key: "document", label: "Documento" }, { key: "versions", label: "Versiones", count: c.versions.length }, { key: "clauses", label: "Cláusulas y playbook", count: c.clauses.filter((x) => x.deviation_level !== "none").length }, { key: "approvals", label: "Aprobaciones", count: c.approvals.filter((a) => a.status === "pending").length }, { key: "signature", label: "Firma" }, { key: "obligations", label: "Obligaciones", count: c.obligations.filter((o) => ["pending", "in_progress", "breached"].includes(String(o.status))).length }, { key: "milestones", label: "Hitos y pagos", count: c.milestones.filter((m) => m.status !== "passed").length }, { key: "family", label: "Enmiendas y familia", count: c.children.length }, { key: "activity", label: "Actividad" }, { key: "audit", label: "Auditoría" }, { key: "auto", label: "Automatizaciones" }];
   return (
     <div>
       <div className="row small muted mb8"><Link to="/contratos">Contratos</Link><span>/</span>{c.parent_id && <><Link to={`/contratos/${c.parent_id}`}>{c.parent_number}</Link><span>/</span></>}<span>{c.number}</span></div>
@@ -80,6 +81,7 @@ export function ContractDetailPage() {
         {tab === "milestones" && <MilestonesTab c={c} reload={load} editable={editable} />}
         {tab === "family" && <FamilyTab c={c} reload={load} onAmend={() => setModal({ kind: "amendment" })} onRenew={() => setModal({ kind: "renewal" })} onTerminate={() => setModal({ kind: "terminate" })} />}
         {tab === "activity" && <ActivityTab c={c} reload={load} />}
+        {tab === "auto" && <div className="card"><RecordAutomations object="contract" id={String(c.id)} /></div>}
         {tab === "audit" && <div className="card tight"><table className="table"><thead><tr><th>Fecha</th><th>Usuario</th><th>Acción</th><th>Cambios</th></tr></thead><tbody>{c.audits.map((a) => <tr key={String(a.id)}><td className="small num">{fmtDateTime(String(a.created_at))}</td><td className="small">{String(a.user_name ?? "sistema")}</td><td><span className="badge">{String(a.action)}</span></td><td className="small muted" style={{ fontFamily: "ui-monospace, monospace", fontSize: 11.5 }}>{JSON.stringify(a.changes).slice(0, 180)}</td></tr>)}</tbody></table></div>}
       </div>
       {modal?.kind === "edit" && <EditContract c={c} onClose={() => setModal(null)} onSaved={load} />}

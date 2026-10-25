@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { api } from "../api";
-import { useApp, type CustomField } from "./app";
+import { useApp, type CustomField, type StatusLabel } from "./app";
 import type { Column, StatusOption } from "../components/DataTable";
 import { fmtDate } from "./format";
 
@@ -41,7 +41,33 @@ export function customColumns<T extends { id: string; custom?: Record<string, un
     const value = (r: T) => r.custom?.[f.key];
     const onEdit = patch ? (r: T, v: unknown) => patch(r, f.key, v) : undefined;
     const base: Column<T> = { key, label: f.label, sortable: true, default: true, value, onEdit, custom: f };
+    const st = (f.settings ?? {}) as Record<string, unknown>;
+    const err = (r: T) => ((r as unknown as { _computed_errors?: Record<string, string> })._computed_errors ?? {})[f.key];
+    const ro = (fmt: (v: unknown) => ReactNode, extra: Partial<Column<T>> = {}): Column<T> => ({ ...base, onEdit: undefined, className: "l", render: (r) => { const e = err(r); if (e) return <span className="risk small" title={e}>#ERROR</span>; const v = value(r); return v === null || v === undefined || v === "" ? <span className="muted">—</span> : fmt(v); }, ...extra });
     switch (f.type) {
+      case "status": {
+        const labels = (st.labels as StatusLabel[] | undefined) ?? [];
+        const options: Record<string, StatusOption> = Object.fromEntries(labels.map((l) => [String(l.id), { label: l.label, color: l.color }]));
+        return { ...base, type: "status", options, value: (r) => (value(r) == null ? null : String(value(r))), onEdit: patch ? (r, v) => patch(r, f.key, v == null || v === "" ? null : Number(v)) : undefined };
+      }
+      case "rating": {
+        const max = Number(st.max ?? 5);
+        return { ...base, onEdit: undefined, render: (r) => <span className="rating" onClick={(e) => e.stopPropagation()}>{Array.from({ length: max }, (_, i) => <button key={i} className={i < Number(value(r) ?? 0) ? "on" : ""} title={`${i + 1}`} onClick={() => patch?.(r, f.key, Number(value(r) ?? 0) === i + 1 ? 0 : i + 1)}>★</button>)}</span> };
+      }
+      case "timeline": return { ...base, sortable: false, onEdit: undefined, render: (r) => { const v = value(r) as { from?: string; to?: string } | null; if (!v?.from) return <span className="muted">—</span>; const a = new Date(v.from).getTime(), b = new Date(v.to ?? v.from).getTime(), now = Date.now(); const p = b > a ? Math.max(0, Math.min(100, ((now - a) / (b - a)) * 100)) : now >= b ? 100 : 0; return <span className="tlbar" title={`${v.from} – ${v.to}`}><i style={{ width: `${p}%` }} /><span>{fmtDate(v.from, { day: "2-digit", month: "short" })} – {fmtDate(v.to, { day: "2-digit", month: "short" })}</span></span>; } };
+      case "button": return { ...base, sortable: false, onEdit: undefined, render: (r) => <button className="cellbtn" style={{ background: String(st.color ?? "#0073ea") }} onClick={async (e) => { e.stopPropagation(); const b = e.currentTarget; const t = b.textContent; b.disabled = true; try { await api.post(`cells/${object}/${r.id}/button/${f.key}`, {}); b.textContent = "✓ Hecho"; } catch { b.textContent = "Error"; } setTimeout(() => { b.textContent = t; b.disabled = false; }, 1600); }}>{String(st.label ?? f.label)}</button> };
+      case "formula": {
+        const isNum = st.result === "number";
+        if (isNum) return { ...base, type: "number", onEdit: undefined, render: (r) => { const e = err(r); return e ? <span className="risk small" title={e}>#ERROR</span> : value(r) == null || value(r) === "" ? <span className="muted">—</span> : <span className="num">{new Intl.NumberFormat("es-ES", { maximumFractionDigits: 2 }).format(Number(value(r)))}</span>; } };
+        return ro((v) => (typeof v === "boolean" ? (v ? "Sí" : "No") : String(v)), { custom: f });
+      }
+      case "mirror": {
+        const numeric = ["sum", "avg", "median", "min", "max", "count", "count_not_empty", "pct_eq"].includes(String(st.agg));
+        if (numeric) return { ...base, type: "number", agg: ["avg", "median", "pct_eq", "min", "max"].includes(String(st.agg)) ? "avg" : "sum", onEdit: undefined, render: (r) => (value(r) == null ? <span className="muted">—</span> : <span className="num" title="Reflejo">{new Intl.NumberFormat("es-ES", { maximumFractionDigits: 2 }).format(Number(value(r)))}{st.agg === "pct_eq" ? " %" : ""}</span>) };
+        return ro((v) => (typeof v === "boolean" ? <span className={`badge ${v ? "ok" : ""}`}>{v ? "Sí" : "No"}</span> : Array.isArray(v) ? (v.length ? v.join(", ") : <span className="muted">—</span>) : String(v)));
+      }
+      case "autonumber": return ro((v) => <code>{String(v)}</code>);
+      case "creation_log": case "last_updated": return ro((v) => fmtDate(String(v), { day: "2-digit", month: "short", year: "numeric" }));
       case "select": {
         const overrides = board.config.labels?.[key] ?? {};
         const options: Record<string, StatusOption> = Object.fromEntries(f.options.map((o, i) => [o, { label: overrides[o]?.label ?? o, color: overrides[o]?.color ?? PALETTE[(i * 3) % PALETTE.length]! }]));

@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { api } from "../api";
 import { useApp } from "../lib/app";
 import { Drawer, Modal, useToast, useConfirm, errorMessage, Spinner } from "./ui";
-import { WorkflowEditor } from "../pages/SettingsAutomation";
+import { WorkflowEditor } from "../pages/AutomationCenter";
 import type { Column } from "./DataTable";
 import { relTime } from "../lib/format";
 

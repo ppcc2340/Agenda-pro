@@ -122,7 +122,7 @@ export function publicUser(db: Db, u: Row) {
   const role = db.get<Row>("SELECT key, name, visibility, permissions FROM roles WHERE id=?", u.role_id);
   parseJson(role, ["permissions"]);
   const team = u.team_id ? db.get<Row>("SELECT id, name FROM teams WHERE id=?", u.team_id) : null;
-  return { id: u.id, name: u.name, email: u.email, role_id: u.role_id, role, team, team_id: u.team_id, totp_enabled: !!u.totp_enabled, email_signature: u.email_signature, notification_prefs: u.notification_prefs ?? {}, quota: u.quota, last_login_at: u.last_login_at, active: !!u.active, created_at: u.created_at };
+  return { id: u.id, name: u.name, email: u.email, role_id: u.role_id, role, team, team_id: u.team_id, totp_enabled: !!u.totp_enabled, email_signature: u.email_signature, notification_prefs: u.notification_prefs ?? {}, quota: u.quota, last_login_at: u.last_login_at, active: !!u.active, is_service: !!u.is_service, created_at: u.created_at };
 }
 
 export { buildCtx };

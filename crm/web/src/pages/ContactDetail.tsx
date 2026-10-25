@@ -1,3 +1,4 @@
+import { RecordAutomations } from "./AutomationCenter";
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { Phone, Mail, StickyNote, CheckSquare, Pencil, Trash2, ArrowRightLeft, Shield, Download, MoreHorizontal, Building2, ExternalLink } from "lucide-react";
@@ -96,11 +97,12 @@ export function ContactDetailPage() {
         <section>
           <Composer link={{ contact_id: c.id }} contactEmail={c.email} onDone={refreshAll} initial={composerTab} key={composerTab} />
           <div className="mt16">
-            <Tabs items={[{ key: "timeline", label: "Línea temporal" }, { key: "tasks", label: "Tareas", count: c.tasks.length }, { key: "forms", label: "Formularios", count: c.submissions.length }, { key: "history", label: "Historial de cambios" }]} value={tab} onChange={setTab} />
+            <Tabs items={[{ key: "timeline", label: "Línea temporal" }, { key: "tasks", label: "Tareas", count: c.tasks.length }, { key: "forms", label: "Formularios", count: c.submissions.length }, { key: "history", label: "Historial de cambios" }, { key: "auto", label: "Automatizaciones" }]} value={tab} onChange={setTab} />
             {tab === "timeline" && <Timeline link={{ contact_id: c.id }} refreshKey={tl} onChanged={load} />}
             {tab === "tasks" && <div>{c.tasks.length === 0 ? <p className="muted">Sin tareas pendientes.</p> : c.tasks.map((t) => <TaskRow key={t.id} task={t} onChanged={refreshAll} onEdit={(x) => setTaskForm(x)} showLinks={false} />)}<button className="btn sm mt12" onClick={() => setTaskForm("new")}>+ Nueva tarea</button></div>}
             {tab === "forms" && <div>{c.submissions.length === 0 ? <p className="muted">No ha enviado ningún formulario.</p> : c.submissions.map((s) => <div key={s.id} className="card mb8"><div className="row between"><strong>{s.form_name}</strong><span className="muted small">{fmtDateTime(s.created_at)}</span></div><pre className="mt8 small">{(() => { try { return Object.entries(JSON.parse(s.data) as Rec).map(([k, v]) => `${k}: ${v}`).join("\n"); } catch { return s.data; } })()}</pre></div>)}</div>}
             {tab === "history" && <HistoryList items={history} />}
+            {tab === "auto" && <RecordAutomations object="contact" id={id!} />}
           </div>
         </section>
         <aside className="side r">

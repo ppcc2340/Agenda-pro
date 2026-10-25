@@ -1,3 +1,4 @@
+import { RecordAutomations } from "./AutomationCenter";
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams, Link, useSearchParams } from "react-router-dom";
 import { Plus, Upload, Pencil, Trash2, MoreHorizontal, Globe, Phone, MapPin, Building2, StickyNote, CheckSquare, Handshake, Users } from "lucide-react";
@@ -123,13 +124,14 @@ export function CompanyDetailPage() {
         <section>
           <Composer link={{ company_id: c.id }} onDone={refreshAll} />
           <div className="mt16">
-            <Tabs items={[{ key: "timeline", label: "Línea temporal" }, { key: "contacts", label: "Contactos", count: c.contacts.length }, { key: "deals", label: "Negocios", count: c.deals.length }, { key: "tasks", label: "Tareas", count: c.tasks.length }, ...(c.parent_id || c.children.length ? [{ key: "tree", label: "Grupo" }] : []), { key: "history", label: "Historial" }]} value={tab} onChange={setTab} />
+            <Tabs items={[{ key: "timeline", label: "Línea temporal" }, { key: "contacts", label: "Contactos", count: c.contacts.length }, { key: "deals", label: "Negocios", count: c.deals.length }, { key: "tasks", label: "Tareas", count: c.tasks.length }, ...(c.parent_id || c.children.length ? [{ key: "tree", label: "Grupo" }] : []), { key: "history", label: "Historial" }, { key: "auto", label: "Automatizaciones" }]} value={tab} onChange={setTab} />
             {tab === "timeline" && <Timeline link={{ company_id: c.id }} refreshKey={tl} onChanged={load} />}
             {tab === "contacts" && <div className="card tight"><table className="table"><thead><tr><th>Nombre</th><th>Cargo</th><th>Email</th><th>Teléfono</th><th>Etapa</th></tr></thead><tbody>{c.contacts.map((p) => <tr key={p.id} className="clickable" onClick={() => nav(`/contactos/${p.id}`)}><td className="bold">{p.first_name} {p.last_name}</td><td>{p.job_title}</td><td>{p.email}</td><td>{p.phone}</td><td><span className="badge">{LIFECYCLE[p.lifecycle_stage]}</span></td></tr>)}{c.contacts.length === 0 && <tr><td colSpan={5} className="muted">Sin contactos. <button className="btn xs" onClick={() => setNewContact(true)}>Añadir</button></td></tr>}</tbody></table></div>}
             {tab === "deals" && <div className="card tight"><table className="table"><thead><tr><th>Negocio</th><th>Etapa</th><th className="r">Importe</th><th>Cierre</th><th>Propietario</th></tr></thead><tbody>{c.deals.map((d) => <tr key={d.id} className="clickable" onClick={() => nav(`/negocios/${d.id}`)}><td className="bold">{d.name}</td><td><span className="badge dot" style={{ color: d.stage_color }}>{d.status === "open" ? d.stage_name : d.status === "won" ? "Ganado" : "Perdido"}</span></td><td className="r num">{fmtMoney(d.amount, d.currency)}</td><td>{fmtDate(d.expected_close_date)}</td><td>{d.owner_name}</td></tr>)}{c.deals.length === 0 && <tr><td colSpan={5} className="muted">Sin negocios. <button className="btn xs" onClick={() => setNewDeal(true)}>Crear</button></td></tr>}</tbody></table></div>}
             {tab === "tasks" && <div>{c.tasks.length === 0 ? <p className="muted">Sin tareas pendientes.</p> : c.tasks.map((t) => <TaskRow key={t.id} task={t} onChanged={refreshAll} onEdit={(x) => setTaskForm(x)} />)}<button className="btn sm mt12" onClick={() => setTaskForm("new")}>+ Nueva tarea</button></div>}
             {tab === "tree" && (tree ? <div className="card"><Tree node={tree} current={c.id} /></div> : <Spinner />)}
             {tab === "history" && <HistoryList items={history} />}
+            {tab === "auto" && <RecordAutomations object="company" id={id!} />}
           </div>
         </section>
         <aside className="side r">
