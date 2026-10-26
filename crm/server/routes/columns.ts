@@ -40,7 +40,7 @@ export function columnRoutes() {
   }));
   /** Vista previa de un cambio de tipo: cuántos valores se convierten, cuántos se pierden y ejemplos. */
   r.post("/convert-preview", h(async (req) => {
-    const b = parse(z.object({ object: OBJ, key: z.string(), type: z.string(), settings: z.record(z.unknown()).optional() }), req.body);
+    const b = parse(z.object({ object: OBJ, key: z.string(), type: z.string(), settings: z.record(z.string(), z.unknown()).optional() }), req.body);
     if (!COLUMN_TYPES[b.type]) throw badRequest("Tipo no válido");
     return convertField(req.ctx, b.object, b.key, b.type, b.settings ?? {}, false);
   }));
@@ -92,7 +92,7 @@ export function cellRoutes() {
   /** change_column_value / change_multiple_column_values: { column_id, value } o { values: {col: valor} }. Borrar con null. */
   r.put("/:object/:id", h(async (req) => {
     const object = parse(OBJ, req.params.object);
-    const b = parse(z.object({ column_id: z.string().optional(), value: z.unknown().optional(), values: z.record(z.unknown()).optional() }), req.body);
+    const b = parse(z.object({ column_id: z.string().optional(), value: z.unknown().optional(), values: z.record(z.string(), z.unknown()).optional() }), req.body);
     const values = b.values ?? (b.column_id ? { [b.column_id]: b.value ?? null } : null);
     if (!values || !Object.keys(values).length) throw badRequest("Indica column_id y value, o values");
     const ro = new Set([...builtinColumns(object).filter((c) => ["creation_log", "last_updated"].includes(c.type)).map((c) => c.id), "id", "workspace_id"]);

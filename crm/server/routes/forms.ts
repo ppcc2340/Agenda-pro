@@ -30,7 +30,7 @@ const formSchema = z.object({
     consent_text: z.string().default("Acepto recibir comunicaciones comerciales."), require_consent: z.boolean().default(false),
     tags: z.array(z.string()).default([]), source: z.string().default("web"), lifecycle_stage: z.string().default("lead"),
     notify_assignee: z.boolean().default(true), button_text: z.string().default("Enviar"), title: z.string().optional(), description: z.string().optional(),
-  }).default({}),
+  }).prefault({}),
   active: z.boolean().optional(),
 });
 

@@ -1,11 +1,11 @@
-@import url("https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap");
+/* Figtree se sirve desde el propio servidor (@fontsource-variable/figtree, importada en main.tsx): funciona sin red y cumple la CSP */
 :root {
   --bg: #f6f7fb; --panel: #f5f6f8; --raised: #ffffff; --ink: #323338; --ink2: #676879; --ink3: #9699a6; --rule: #d0d4e4; --rule2: #e6e9ef;
   --sea: #0073ea; --sea-soft: #e6f1fd; --risk: #e2445c; --risk-soft: #fdecef; --warn: #fdab3d; --warn-soft: #fff5e6; --ok: #00c875; --ok-soft: #e6f8ef; --info: #579bfc; --info-soft: #e9f0fc;
   --side: #ffffff; --side-ink: #323338; --side-active: #e6f1fd;
   --c-blue: #579bfc; --c-purple: #a25ddc; --c-green: #00c875; --c-red: #e2445c; --c-orange: #fdab3d; --c-dark: #323338; --c-teal: #66ccff; --c-grey: #c4c4c4; --c-indigo: #5559df; --c-violet: #784bd1; --c-lime: #9cd326; --c-pink: #ff158a;
   --radius: 8px; --radius-sm: 6px; --shadow: 0 1px 3px rgba(0, 0, 0, 0.06); --shadow-lg: 0 6px 20px rgba(0, 0, 0, 0.14);
-  --font: "Figtree", Roboto, "Segoe UI", system-ui, -apple-system, Helvetica, Arial, sans-serif;
+  --font: "Figtree Variable", "Figtree", Roboto, "Segoe UI", system-ui, -apple-system, Helvetica, Arial, sans-serif;
   --sidebar-w: 240px;
 }
 @media (prefers-color-scheme: dark) {

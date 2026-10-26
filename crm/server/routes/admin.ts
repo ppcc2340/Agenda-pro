@@ -16,7 +16,7 @@ import { parseJson, type Row } from "../db.js";
 import { emailMode, sentLog } from "../services/email.js";
 import { attemptDelivery } from "../services/webhooks.js";
 
-const permSchema = z.record(z.union([z.array(z.string()), z.boolean()]));
+const permSchema = z.record(z.string(), z.union([z.array(z.string()), z.boolean()]));
 
 export function adminRoutes() {
   const r = Router();
@@ -95,7 +95,7 @@ export function adminRoutes() {
 
   // ---------- custom fields ----------
   r.get("/custom-fields", h(async (req) => ({ items: req.ctx.db.all<Row>("SELECT * FROM custom_fields WHERE workspace_id=? ORDER BY object, position", req.ctx.ws).map((f) => parseJson(f, ["options", "show_if", "settings"])) })));
-  const cfSchema = z.object({ object: z.enum(["contact", "company", "deal", "ticket", "contract"]), key: z.string().regex(/^[a-z][a-z0-9_]*$/, "Clave en minúsculas, sin espacios"), label: z.string().trim().min(1), type: z.enum(CUSTOM_TYPES), options: z.array(z.string()).optional(), settings: z.record(z.unknown()).optional(), required: z.boolean().optional(), default_value: z.string().nullable().optional(), position: z.number().int().optional(), section: z.string().nullable().optional(), show_if: z.object({ field: z.string(), value: z.string() }).nullable().optional() });
+  const cfSchema = z.object({ object: z.enum(["contact", "company", "deal", "ticket", "contract"]), key: z.string().regex(/^[a-z][a-z0-9_]*$/, "Clave en minúsculas, sin espacios"), label: z.string().trim().min(1), type: z.enum(CUSTOM_TYPES), options: z.array(z.string()).optional(), settings: z.record(z.string(), z.unknown()).optional(), required: z.boolean().optional(), default_value: z.string().nullable().optional(), position: z.number().int().optional(), section: z.string().nullable().optional(), show_if: z.object({ field: z.string(), value: z.string() }).nullable().optional() });
   const canEditFields = (ctx: Ctx, object: string) => { if (!ctx.role.permissions.admin) assert(ctx, object, "update"); };
   r.post("/custom-fields", h(async (req) => {
     const b = parse(cfSchema, req.body);
@@ -135,7 +135,7 @@ export function adminRoutes() {
     const schema = z.object({
       company_name: z.string().trim().min(1).optional(), currency: z.string().length(3).optional(), timezone: z.string().optional(), date_format: z.string().optional(), default_country_code: z.string().regex(/^\+\d{1,4}$/).optional(),
       internal_domains: z.array(z.string()).optional(), fiscal_year_start: z.number().int().min(1).max(12).optional(), stale_deal_days: z.number().int().min(1).optional(), inactive_deal_days: z.number().int().min(1).optional(), lead_sla_hours: z.number().min(1).optional(),
-      mql_threshold: z.number().optional(), sql_threshold: z.number().optional(), retention_months: z.number().int().min(1).optional(), retention_enabled: z.boolean().optional(), quote_prefix: z.string().max(10).optional(), quote_accept_stage_id: z.string().nullable().optional(), ticket_sla_hours: z.record(z.number()).optional(), logo_url: z.string().optional(), brand_color: z.string().optional(),
+      mql_threshold: z.number().optional(), sql_threshold: z.number().optional(), retention_months: z.number().int().min(1).optional(), retention_enabled: z.boolean().optional(), quote_prefix: z.string().max(10).optional(), quote_accept_stage_id: z.string().nullable().optional(), ticket_sla_hours: z.record(z.string(), z.number()).optional(), logo_url: z.string().optional(), brand_color: z.string().optional(),
     });
     const b = { ...parse(schema, req.body), ...parse(z.object({ automation_budget: z.number().int().min(0).optional(), automation_budget_mode: z.enum(["block_edit", "pause_all"]).optional(), automation_history_days: z.number().int().min(0).optional(), automation_max_depth: z.number().int().min(2).max(25).optional(), mfa_required_roles: z.array(z.string().max(40)).max(20).optional(), score_decay_per_week: z.number().min(0).max(20).optional(), csat_enabled: z.boolean().optional() }), req.body) };
     const merged = { ...DEFAULT_SETTINGS, ...req.ctx.settings, ...b };

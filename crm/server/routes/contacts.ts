@@ -32,7 +32,7 @@ export function contactRoutes() {
   r.get("/duplicates", h(async (req) => ({ groups: duplicateGroups(req.ctx) })));
   r.post("/check-duplicates", h(async (req) => ({ duplicates: findDuplicateCandidates(req.ctx, req.body ?? {}, typeof req.body?.exclude_id === "string" ? req.body.exclude_id : undefined) })));
   r.post("/merge", h(async (req) => {
-    const b = parse(z.object({ survivor_id: z.string(), merged_id: z.string(), choices: z.record(z.enum(["a", "b"])).optional() }), req.body);
+    const b = parse(z.object({ survivor_id: z.string(), merged_id: z.string(), choices: z.record(z.string(), z.enum(["a", "b"])).optional() }), req.body);
     return mergeContacts(req.ctx, b.survivor_id, b.merged_id, b.choices);
   }));
   r.post("/merges/:id/undo", h(async (req) => { undoMerge(req.ctx, param(req, "id")); return { ok: true }; }));

@@ -28,7 +28,7 @@ export const companySchema = z.object({
   type: z.enum(COMPANY_TYPES).optional(),
   status: z.string().optional(),
   tags: tagsSchema.optional(),
-  custom: z.record(z.unknown()).optional(),
+  custom: z.record(z.string(), z.unknown()).optional(),
 });
 export type CompanyInput = z.infer<typeof companySchema>;
 

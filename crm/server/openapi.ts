@@ -12,30 +12,14 @@ import { taskSchema } from "./services/tasks.js";
 import { contractSchema } from "./services/clm.js";
 
 type Json = Record<string, unknown>;
-/** Conversión mínima zod → JSON Schema para los tipos que usan nuestros esquemas. */
+/** JSON Schema de un esquema zod (conversión nativa de zod 4; lo no representable se deja abierto). */
 export function zodToJson(s: ZodTypeAny): Json {
-  const d = (s as unknown as { _def: Json & { typeName: string } })._def;
-  switch (d.typeName) {
-    case "ZodString": { const out: Json = { type: "string" }; for (const c of (d.checks as { kind: string; value?: number }[]) ?? []) { if (c.kind === "email") out.format = "email"; if (c.kind === "min") out.minLength = c.value; if (c.kind === "max") out.maxLength = c.value; if (c.kind === "url") out.format = "uri"; } return out; }
-    case "ZodNumber": { const int = ((d.checks as { kind: string }[]) ?? []).some((c) => c.kind === "int"); return { type: int ? "integer" : "number" }; }
-    case "ZodBoolean": return { type: "boolean" };
-    case "ZodEnum": return { type: "string", enum: d.values };
-    case "ZodLiteral": return { const: d.value };
-    case "ZodArray": return { type: "array", items: zodToJson(d.type as ZodTypeAny) };
-    case "ZodRecord": return { type: "object", additionalProperties: zodToJson(d.valueType as ZodTypeAny) };
-    case "ZodNullable": return { ...zodToJson(d.innerType as ZodTypeAny), nullable: true };
-    case "ZodOptional": case "ZodDefault": case "ZodEffects": case "ZodCatch": return zodToJson((d.innerType ?? d.schema) as ZodTypeAny);
-    case "ZodUnion": return { anyOf: (d.options as ZodTypeAny[]).map(zodToJson) };
-    case "ZodObject": {
-      const shape = (s as z.AnyZodObject).shape as Record<string, ZodTypeAny>;
-      const required = Object.entries(shape).filter(([, v]) => !v.isOptional()).map(([k]) => k);
-      return { type: "object", properties: Object.fromEntries(Object.entries(shape).map(([k, v]) => [k, zodToJson(v)])), ...(required.length ? { required } : {}) };
-    }
-    default: return {};
-  }
+  const out = z.toJSONSchema(s, { unrepresentable: "any", io: "input" }) as Json;
+  delete out.$schema;
+  return out;
 }
 
-const OBJECTS: Record<string, { schema: z.AnyZodObject; name: string; label: string }> = {
+const OBJECTS: Record<string, { schema: z.ZodObject; name: string; label: string }> = {
   "/contacts": { schema: contactSchema, name: "Contact", label: "Contactos" },
   "/companies": { schema: companySchema, name: "Company", label: "Empresas" },
   "/deals": { schema: dealSchema, name: "Deal", label: "Negocios" },

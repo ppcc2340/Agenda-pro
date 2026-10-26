@@ -1,6 +1,10 @@
 import { ensureServiceUser } from "./services/workflows.js";
 import { columnRoutes, cellRoutes } from "./routes/columns.js";
 import express, { type Request, type Response, type NextFunction } from "express";
+import { z } from "zod";
+
+// mensajes de validación en español (los propios de cada esquema tienen prioridad)
+z.config(z.locales.es());
 import cookieParser from "cookie-parser";
 import path from "node:path";
 import fs from "node:fs";

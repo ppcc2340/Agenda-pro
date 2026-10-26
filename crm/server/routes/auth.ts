@@ -73,7 +73,7 @@ export function authRoutes(db: Db) {
 
   r.put("/me", auth, h(async (req) => {
     const ctx = req.ctx;
-    const body = parse(z.object({ name: z.string().trim().min(1).max(100).optional(), email_signature: z.string().max(2000).nullable().optional(), notification_prefs: z.record(z.unknown()).optional() }), req.body);
+    const body = parse(z.object({ name: z.string().trim().min(1).max(100).optional(), email_signature: z.string().max(2000).nullable().optional(), notification_prefs: z.record(z.string(), z.unknown()).optional() }), req.body);
     db.update("users", ctx.user.id, body);
     return { user: publicUser(db, db.get<Row>("SELECT * FROM users WHERE id=?", ctx.user.id)!) };
   }));

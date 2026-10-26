@@ -29,7 +29,7 @@ export const dealSchema = z.object({
   contact_ids: z.array(z.string()).optional(),
   contacts: z.array(z.object({ contact_id: z.string(), role: z.string().default("decision_maker") })).optional(),
   tags: tagsSchema.optional(),
-  custom: z.record(z.unknown()).optional(),
+  custom: z.record(z.string(), z.unknown()).optional(),
 });
 export type DealInput = z.infer<typeof dealSchema>;
 

@@ -4,7 +4,7 @@ import { id, now } from "../lib/util.js";
 
 export interface MailInput { to: string; subject: string; html: string; text?: string; contactId?: string | null; userId?: string | null; activityId?: string | null; track?: boolean; fromName?: string; attachments?: { filename: string; content: string; contentType?: string }[] }
 
-let transporter: nodemailer.Transporter | null = null;
+let transporter: ReturnType<typeof nodemailer.createTransport> | null = null;
 export function emailMode(): "fake" | "smtp" {
   return process.env.EMAIL_MODE === "smtp" ? "smtp" : "fake";
 }

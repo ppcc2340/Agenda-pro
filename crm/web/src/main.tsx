@@ -1,6 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
+import "@fontsource-variable/figtree/wght.css";
 import "./styles.css";
 import "./components/pro.css";
 import { MfaGate } from "./components/MfaGate";

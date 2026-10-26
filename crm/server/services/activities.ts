@@ -21,7 +21,7 @@ export const activitySchema = z.object({
   deal_id: z.string().nullable().optional(),
   ticket_id: z.string().nullable().optional(),
   pinned: z.boolean().optional(),
-  meta: z.record(z.unknown()).optional(),
+  meta: z.record(z.string(), z.unknown()).optional(),
 });
 export type ActivityInput = z.infer<typeof activitySchema>;
 
