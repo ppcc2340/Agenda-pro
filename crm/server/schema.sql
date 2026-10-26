@@ -747,3 +747,81 @@ CREATE TABLE IF NOT EXISTS automation_approvals (
   decided_at TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_aappr_user ON automation_approvals(approver_id, status);
+
+-- ---------------------------------------------------------------- analítica: informes, paneles, programación, alertas, cuotas
+CREATE TABLE IF NOT EXISTS saved_reports (
+  id TEXT PRIMARY KEY,
+  workspace_id TEXT NOT NULL,
+  owner_id TEXT,
+  team_id TEXT,
+  role_key TEXT,
+  name TEXT NOT NULL,
+  description TEXT,
+  object TEXT NOT NULL,
+  config TEXT NOT NULL DEFAULT '{}',
+  visibility TEXT NOT NULL DEFAULT 'private', -- private|team|all|role
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_sreports_ws ON saved_reports(workspace_id, owner_id);
+CREATE TABLE IF NOT EXISTS dashboards (
+  id TEXT PRIMARY KEY,
+  workspace_id TEXT NOT NULL,
+  owner_id TEXT,
+  team_id TEXT,
+  role_key TEXT,
+  name TEXT NOT NULL,
+  visibility TEXT NOT NULL DEFAULT 'private', -- private|team|all|role
+  is_default INTEGER NOT NULL DEFAULT 0,
+  widgets TEXT NOT NULL DEFAULT '[]',
+  filters TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_dash_ws ON dashboards(workspace_id);
+CREATE TABLE IF NOT EXISTS report_schedules (
+  id TEXT PRIMARY KEY,
+  workspace_id TEXT NOT NULL,
+  report_id TEXT NOT NULL,
+  created_by TEXT NOT NULL,
+  frequency TEXT NOT NULL, -- daily|weekly|monthly
+  hour INTEGER NOT NULL DEFAULT 8,
+  weekday INTEGER NOT NULL DEFAULT 1,
+  monthday INTEGER NOT NULL DEFAULT 1,
+  recipients TEXT NOT NULL DEFAULT '[]',
+  period_days INTEGER NOT NULL DEFAULT 0,
+  active INTEGER NOT NULL DEFAULT 1,
+  last_period_key TEXT,
+  last_run_at TEXT,
+  last_error TEXT,
+  created_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS metric_alerts (
+  id TEXT PRIMARY KEY,
+  workspace_id TEXT NOT NULL,
+  created_by TEXT NOT NULL,
+  name TEXT NOT NULL,
+  metric TEXT NOT NULL,
+  report_id TEXT,
+  period TEXT NOT NULL DEFAULT 'week',
+  op TEXT NOT NULL,
+  threshold REAL NOT NULL,
+  notify_user_ids TEXT NOT NULL DEFAULT '[]',
+  active INTEGER NOT NULL DEFAULT 1,
+  last_value REAL,
+  last_checked_at TEXT,
+  last_triggered_key TEXT,
+  last_triggered_at TEXT,
+  last_error TEXT,
+  created_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS user_quotas (
+  id TEXT PRIMARY KEY,
+  workspace_id TEXT NOT NULL,
+  user_id TEXT NOT NULL,
+  month TEXT NOT NULL,
+  amount REAL NOT NULL,
+  updated_by TEXT,
+  updated_at TEXT NOT NULL,
+  UNIQUE(user_id, month)
+);

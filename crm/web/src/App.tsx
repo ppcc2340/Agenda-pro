@@ -17,6 +17,7 @@ import { TicketsPage, TicketDetailPage } from "./pages/Tickets";
 import { ListsPage, ListDetailPage } from "./pages/Lists";
 import { ProductsPage, QuotesPage } from "./pages/Products";
 import { ReportsPage } from "./pages/Reports";
+import { AnalyticsPage } from "./pages/Analytics";
 import { SettingsPage } from "./pages/Settings";
 import { ContractsPage } from "./pages/Contracts";
 import { ContractDetailPage } from "./pages/ContractDetail";
@@ -63,6 +64,7 @@ export default function App() {
                   <Route path="/productos" element={<ProductsPage />} />
                   <Route path="/presupuestos" element={<QuotesPage />} />
                   <Route path="/informes" element={<ReportsPage />} />
+                  <Route path="/analitica" element={<AnalyticsPage />} />
                   <Route path="/ajustes/*" element={<SettingsPage />} />
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>

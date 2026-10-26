@@ -22,6 +22,7 @@ import { workflowRoutes } from "./routes/workflows.js";
 import { formAdminRoutes, formPublicRoutes } from "./routes/forms.js";
 import { publicRoutes } from "./routes/public.js";
 import { reportRoutes } from "./routes/reports.js";
+import { analyticsRoutes } from "./routes/analytics.js";
 import { clmRoutes } from "./routes/clm.js";
 import { signRoutes } from "./routes/sign.js";
 import { registerWorkflowEngine } from "./services/workflows.js";
@@ -62,6 +63,7 @@ export function createApp(db: Db) {
   api.use("/workflows", workflowRoutes());
   api.use("/forms", formAdminRoutes());
   api.use("/reports", reportRoutes());
+  api.use("/analytics", analyticsRoutes());
   api.use("/clm", clmRoutes());
   api.use("/columns", columnRoutes());
   api.use("/cells", cellRoutes());

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { NavLink, Link, useNavigate, useLocation } from "react-router-dom";
-import { Home, Sun, Users, Building2, Handshake, LifeBuoy, BarChart3, Settings, Search, Bell, LogOut, Package, FileText, Menu as MenuIcon, X } from "lucide-react";
+import { Home, Sun, Users, Building2, Handshake, LifeBuoy, BarChart3, LayoutDashboard, Settings, Search, Bell, LogOut, Package, FileText, Menu as MenuIcon, X } from "lucide-react";
 import { useApp } from "../lib/app";
 import { api } from "../api";
 import { Avatar, Menu } from "./ui";
@@ -22,6 +22,7 @@ const BOARDS = [
 const TOOLS = [
   { to: "/productos", label: "Productos", icon: Package },
   { to: "/presupuestos", label: "Presupuestos", icon: FileText },
+  { to: "/analitica", label: "Analítica", icon: LayoutDashboard },
   { to: "/informes", label: "Informes", icon: BarChart3 },
 ];
 

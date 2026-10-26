@@ -26,17 +26,18 @@ export function Lines({ data, x, lines, height = 220, money }: { data: Record<st
         <XAxis dataKey={x} tick={axis} axisLine={false} tickLine={false} />
         <YAxis tick={axis} axisLine={false} tickLine={false} width={money ? 64 : 44} tickFormatter={(v) => (money ? fmtMoney(v) : fmtNum(v))} />
         <Tooltip formatter={(v: number) => (money ? fmtMoney(v) : fmtNum(v))} contentStyle={{ borderRadius: 8, border: "1px solid var(--rule)", background: "var(--raised)", color: "var(--ink)" }} />
+        {lines.length > 1 && <Legend wrapperStyle={{ fontSize: 12 }} />}
         {lines.map((l, i) => <Line key={l.key} type="monotone" dataKey={l.key} name={l.label} stroke={l.color ?? PALETTE[i % PALETTE.length]} strokeWidth={2} dot={false} />)}
       </LineChart>
     </ResponsiveContainer>
   );
 }
-export function Donut({ data, nameKey, valueKey, height = 220 }: { data: Record<string, unknown>[]; nameKey: string; valueKey: string; height?: number }) {
+export function Donut({ data, nameKey, valueKey, height = 220, pie, money }: { data: Record<string, unknown>[]; nameKey: string; valueKey: string; height?: number; /** tarta completa en lugar de anillo */ pie?: boolean; money?: boolean }) {
   return (
     <ResponsiveContainer width="100%" height={height}>
       <PieChart>
-        <Pie data={data} dataKey={valueKey} nameKey={nameKey} innerRadius={50} outerRadius={80} paddingAngle={2}>{data.map((_, i) => <Cell key={i} fill={PALETTE[i % PALETTE.length]} />)}</Pie>
-        <Tooltip contentStyle={{ borderRadius: 8, border: "1px solid var(--rule)", background: "var(--raised)", color: "var(--ink)" }} />
+        <Pie data={data} dataKey={valueKey} nameKey={nameKey} innerRadius={pie ? 0 : Math.round(height * 0.23)} outerRadius={Math.round(height * 0.36)} paddingAngle={pie ? 0 : 2}>{data.map((_, i) => <Cell key={i} fill={PALETTE[i % PALETTE.length]} />)}</Pie>
+        <Tooltip formatter={(v: number) => (money ? fmtMoney(v) : fmtNum(v))} contentStyle={{ borderRadius: 8, border: "1px solid var(--rule)", background: "var(--raised)", color: "var(--ink)" }} />
         <Legend wrapperStyle={{ fontSize: 12 }} />
       </PieChart>
     </ResponsiveContainer>
