@@ -7,7 +7,7 @@ export interface Settings { company_name: string; currency: string; timezone: st
 export interface UserLite { id: string; name: string; email: string; active: boolean; team_id: string | null; role: { key: string; name: string } | null }
 export interface Stage { id: string; pipeline_id: string; name: string; position: number; probability: number; color: string; expected_days: number; required_fields: string[]; kind: "open" | "won" | "lost" }
 export interface Pipeline { id: string; name: string; is_default: number; position: number; stages: Stage[] }
-export interface CustomField { id: string; object: string; key: string; label: string; type: string; options: string[]; required: number; default_value: string | null; position: number; section: string | null; show_if: { field: string; value: string } | null; settings?: Record<string, unknown> }
+export interface CustomField { id: string; object: string; key: string; label: string; type: string; options: string[]; required: number; default_value: string | null; position: number; section: string | null; show_if: { field: string; value: string } | null; settings?: Record<string, unknown>; contract_type_id?: string | null }
 export interface StatusLabel { id: number; label: string; color: string; done?: boolean }
 export interface LabelSet { id: string; name: string; labels: StatusLabel[]; used_by?: number }
 

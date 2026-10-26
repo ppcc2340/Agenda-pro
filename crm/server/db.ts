@@ -54,6 +54,13 @@ export class Db {
     add("tickets", "csat_token", "TEXT");
     add("tickets", "csat_comment", "TEXT");
     add("tickets", "csat_sent_at", "TEXT");
+    // CLM configurable
+    for (const [c, d] of [["intake_form", "TEXT NOT NULL DEFAULT '[]'"], ["number_format", "TEXT"], ["default_obligations", "TEXT NOT NULL DEFAULT '[]'"], ["default_milestones", "TEXT NOT NULL DEFAULT '[]'"], ["alert_config", "TEXT NOT NULL DEFAULT '{}'"]] as const) add("contract_types", c, d);
+    for (const c of ["state_key", "state_entered_at", "state_due_at", "state_escalated_at"]) add("contracts", c, "TEXT");
+    for (const c of ["approver_group", "group_mode", "expires_at", "rule_id", "substitute_for"]) add("contract_approvals", c, "TEXT");
+    for (const c of ["acknowledged_at", "acknowledged_by", "first_alerted_at", "escalated_at"]) add("milestones", c, "TEXT");
+    add("obligations", "alerted", "TEXT NOT NULL DEFAULT '[]'");
+    add("custom_fields", "contract_type_id", "TEXT");
   }
   run(q: string, ...params: unknown[]) {
     return this.sql.prepare(q).run(...(params as never[]));

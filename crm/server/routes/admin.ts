@@ -95,7 +95,7 @@ export function adminRoutes() {
 
   // ---------- custom fields ----------
   r.get("/custom-fields", h(async (req) => ({ items: req.ctx.db.all<Row>("SELECT * FROM custom_fields WHERE workspace_id=? ORDER BY object, position", req.ctx.ws).map((f) => parseJson(f, ["options", "show_if", "settings"])) })));
-  const cfSchema = z.object({ object: z.enum(["contact", "company", "deal", "ticket", "contract"]), key: z.string().regex(/^[a-z][a-z0-9_]*$/, "Clave en minúsculas, sin espacios"), label: z.string().trim().min(1), type: z.enum(CUSTOM_TYPES), options: z.array(z.string()).optional(), settings: z.record(z.string(), z.unknown()).optional(), required: z.boolean().optional(), default_value: z.string().nullable().optional(), position: z.number().int().optional(), section: z.string().nullable().optional(), show_if: z.object({ field: z.string(), value: z.string() }).nullable().optional() });
+  const cfSchema = z.object({ object: z.enum(["contact", "company", "deal", "ticket", "contract"]), key: z.string().regex(/^[a-z][a-z0-9_]*$/, "Clave en minúsculas, sin espacios"), label: z.string().trim().min(1), type: z.enum(CUSTOM_TYPES), options: z.array(z.string()).optional(), settings: z.record(z.string(), z.unknown()).optional(), required: z.boolean().optional(), default_value: z.string().nullable().optional(), position: z.number().int().optional(), section: z.string().nullable().optional(), show_if: z.object({ field: z.string(), value: z.string() }).nullable().optional(), contract_type_id: z.string().nullable().optional() });
   const canEditFields = (ctx: Ctx, object: string) => { if (!ctx.role.permissions.admin) assert(ctx, object, "update"); };
   r.post("/custom-fields", h(async (req) => {
     const b = parse(cfSchema, req.body);
@@ -103,7 +103,7 @@ export function adminRoutes() {
     if (req.ctx.db.get("SELECT id FROM custom_fields WHERE workspace_id=? AND object=? AND key=?", req.ctx.ws, b.object, b.key)) throw badRequest("Ya existe un campo con esa clave");
     const fid = id();
     const pos = req.ctx.db.get<{ n: number }>("SELECT COUNT(*) n FROM custom_fields WHERE workspace_id=? AND object=?", req.ctx.ws, b.object)?.n ?? 0;
-    req.ctx.db.insert("custom_fields", { id: fid, workspace_id: req.ctx.ws, object: b.object, key: b.key, label: b.label, type: b.type, options: b.options ?? [], settings: validateFieldSettings(req.ctx, b.object, b.type, b.settings ?? {}, b.key), required: b.required ? 1 : 0, default_value: b.default_value ?? null, position: b.position ?? pos, section: b.section ?? null, show_if: b.show_if ?? null });
+    req.ctx.db.insert("custom_fields", { id: fid, workspace_id: req.ctx.ws, object: b.object, key: b.key, label: b.label, type: b.type, options: b.options ?? [], settings: validateFieldSettings(req.ctx, b.object, b.type, b.settings ?? {}, b.key), required: b.required ? 1 : 0, default_value: b.default_value ?? null, position: b.position ?? pos, section: b.section ?? null, show_if: b.show_if ?? null, contract_type_id: b.object === "contract" ? (b.contract_type_id ?? null) : null });
     audit(req.ctx, "custom_field", fid, "create", { object: b.object, key: b.key });
     return parseJson(req.ctx.db.get<Row>("SELECT * FROM custom_fields WHERE id=?", fid), ["options", "show_if", "settings"]);
   }));
