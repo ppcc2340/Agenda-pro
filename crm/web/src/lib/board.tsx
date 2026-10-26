@@ -5,6 +5,7 @@ import type { Column, StatusOption } from "../components/DataTable";
 import { fmtDate } from "./format";
 import { locale } from "./prefs";
 import type { CondRule, NumFormat } from "./grid";
+import { picklistFor, columnOptions, resolveOption } from "./picklists";
 
 /** monday-like colour palette for labels, groups and stages */
 export const PALETTE = ["#0073ea", "#579bfc", "#66ccff", "#a25ddc", "#784bd1", "#5559df", "#00c875", "#9cd326", "#cab641", "#fdab3d", "#ff642e", "#e2445c", "#ff158a", "#bb3354", "#7f5347", "#c4c4c4", "#808080", "#323338", "#175a63", "#037f4c"];
@@ -115,6 +116,17 @@ export function applyBoard<T>(columns: Column<T>[], board: Board): Column<T>[] {
     if (cc?.label) out.label = cc.label;
     if (cc?.width) out.width = cc.width;
     if (cc?.hidden !== undefined) out.default = !cc.hidden;
+    // listas del sistema: las etiquetas vienen de «Listas y etiquetas» (todas editables, cada una con su comportamiento)
+    const pl = c.type === "status" && !c.saveLabels ? picklistFor(board.object, (c.field ?? c.key).replace(/^custom\./, "#")) : undefined;
+    if (pl) {
+      const field = pl.field;
+      out.options = columnOptions(pl);
+      out.picklist = pl.key;
+      if (c.field === field) out.extraOf = field;
+      const baseValue = c.value ?? ((r: T) => (r as Record<string, unknown>)[c.key]);
+      out.value = (r: T) => resolveOption(pl, baseValue(r), ((r as { custom?: Record<string, unknown> }).custom ?? {})[`_lbl_${field}`])?.id ?? (baseValue(r) as string | null);
+      return out;
+    }
     if (c.type === "status" && c.options) {
       const ov = cfg.labels?.[c.key] ?? {};
       let opts = Object.entries(c.options).map(([k, o]) => [k, { label: ov[k]?.label ?? o.label, color: ov[k]?.color ?? o.color, hidden: ov[k]?.hidden }] as [string, StatusOption]);

@@ -825,3 +825,17 @@ CREATE TABLE IF NOT EXISTS user_quotas (
   updated_at TEXT NOT NULL,
   UNIQUE(user_id, month)
 );
+
+-- Listas de valores personalizadas (etiquetas de los campos del sistema con su comportamiento)
+CREATE TABLE IF NOT EXISTS picklist_options (
+  workspace_id TEXT NOT NULL,
+  picklist TEXT NOT NULL,
+  id TEXT NOT NULL,
+  label TEXT NOT NULL,
+  color TEXT NOT NULL DEFAULT '#c4c4c4',
+  role TEXT NOT NULL,
+  position INTEGER NOT NULL DEFAULT 0,
+  hidden INTEGER NOT NULL DEFAULT 0,
+  updated_at TEXT,
+  PRIMARY KEY (workspace_id, picklist, id)
+);

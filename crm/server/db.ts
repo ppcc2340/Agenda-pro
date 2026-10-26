@@ -52,6 +52,8 @@ export class Db {
     add("tasks", "recurrence_days", "TEXT");
     add("tasks", "duration_min", "INTEGER");
     add("tickets", "csat_token", "TEXT");
+    add("tickets", "custom", "TEXT NOT NULL DEFAULT '{}'");
+    add("tasks", "custom", "TEXT NOT NULL DEFAULT '{}'");
     add("tickets", "csat_comment", "TEXT");
     add("tickets", "csat_sent_at", "TEXT");
   }

@@ -12,8 +12,8 @@ export const JSON_COLS: Record<string, string[]> = {
   contact: ["tags", "custom", "utm", "qualification", "emails", "phones"],
   company: ["tags", "custom"],
   deal: ["tags", "custom"],
-  ticket: ["tags"],
-  task: [],
+  ticket: ["tags", "custom"],
+  task: ["custom"],
   contract: ["tags", "custom", "effective_values", "intake", "risk_factors"],
 };
 export const TABLES: Record<string, string> = { contact: "contacts", company: "companies", deal: "deals", ticket: "tickets", task: "tasks", contract: "contracts" };

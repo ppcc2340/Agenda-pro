@@ -1,3 +1,4 @@
+import { PicklistSelect, picklistPatch } from "../components/PicklistSelect";
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { Send } from "lucide-react";
@@ -111,8 +112,8 @@ export function TicketDetailPage() {
         </section>
         <aside className="side r">
           <div className="card"><dl className="kv">
-            <dt>Estado</dt><dd><select aria-label="Estado" className="input sm" value={t.status} onChange={(e) => patch({ status: e.target.value })}>{Object.entries(TICKET_STATUS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></dd>
-            <dt>Prioridad</dt><dd><select aria-label="Prioridad" className="input sm" value={t.priority} onChange={(e) => patch({ priority: e.target.value })}>{["low", "normal", "high", "urgent"].map((k) => <option key={k} value={k}>{PRIORITY[k]}</option>)}</select></dd>
+            <dt>Estado</dt><dd><PicklistSelect pkey="ticket.status" label="Estado" value={t.status} custom={(t as unknown as { custom?: Record<string, unknown> }).custom} onChange={(role, lbl) => patch(picklistPatch("status", role, lbl))} /></dd>
+            <dt>Prioridad</dt><dd><PicklistSelect pkey="ticket.priority" label="Prioridad" value={t.priority} custom={(t as unknown as { custom?: Record<string, unknown> }).custom} onChange={(role, lbl) => patch(picklistPatch("priority", role, lbl))} /></dd>
             <dt>Asignado</dt><dd><select aria-label="Asignado" className="input sm" value={t.assignee_id ?? ""} onChange={(e) => patch({ assignee_id: e.target.value || null })}><option value="">Sin asignar</option>{users.filter((u) => u.active).map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}</select></dd>
             <dt>Categoría</dt><dd><input aria-label="Categoría" className="input sm" defaultValue={t.category ?? ""} key={t.category} onBlur={(e) => e.target.value !== (t.category ?? "") && patch({ category: e.target.value })} /></dd>
             <dt>Contacto</dt><dd>{t.contact_id ? <Link to={`/contactos/${t.contact_id}`}>{t.contact_name}</Link> : "—"}</dd>

@@ -9,7 +9,8 @@ import { assert, canSeeRecord } from "../lib/permissions.js";
 import { audit, diff } from "./audit.js";
 import { emit } from "./events.js";
 import { notify } from "./notifications.js";
-import { nullableStr, tagsSchema, listRecords, type ListQuery } from "./records.js";
+import { nullableStr, tagsSchema, listRecords, validateCustom, type ListQuery } from "./records.js";
+import { parseJson } from "../db.js";
 import { logActivity } from "./activities.js";
 import { nextCounter } from "./counters.js";
 
@@ -27,13 +28,14 @@ export const ticketSchema = z.object({
   assignee_id: z.string().nullable().optional(),
   tags: tagsSchema.optional(),
   csat: z.number().int().min(1).max(5).nullable().optional(),
+  custom: z.record(z.string(), z.unknown()).optional(),
 });
 export type TicketInput = z.infer<typeof ticketSchema>;
 
 const SELECT = `t.*, (SELECT name FROM users WHERE id=t.assignee_id) assignee_name, (SELECT first_name||' '||last_name FROM contacts WHERE id=t.contact_id) contact_name, (SELECT email FROM contacts WHERE id=t.contact_id) contact_email, (SELECT name FROM companies WHERE id=t.company_id) company_name`;
 
 export function getTicket(ctx: Ctx, tid: string): Row {
-  const t = ctx.db.get<Row>(`SELECT ${SELECT} FROM tickets t WHERE t.id=? AND t.workspace_id=?`, tid, ctx.ws);
+  const t = parseJson(ctx.db.get<Row>(`SELECT ${SELECT} FROM tickets t WHERE t.id=? AND t.workspace_id=?`, tid, ctx.ws), ["tags", "custom"]);
   if (!t) throw notFound("Ticket");
   if (!canSeeRecord(ctx, t.assignee_id as string | null)) throw forbidden("Este ticket es de otro equipo");
   try { t.tags = JSON.parse(t.tags as string); } catch { t.tags = []; }
@@ -53,7 +55,7 @@ export function createTicket(ctx: Ctx, input: TicketInput, opts: { depth?: numbe
   assert(ctx, "ticket", "create");
   input = applyDefaults(ctx, "ticket", input);
   const priority = input.priority ?? "normal";
-  const row = { id: id(), workspace_id: ctx.ws, number: nextCounter(ctx.db, ctx.ws, "ticket"), subject: input.subject, description: input.description ?? null, contact_id: input.contact_id ?? null, company_id: input.company_id ?? null, deal_id: input.deal_id ?? null, channel: input.channel ?? "manual", status: input.status ?? "new", priority, category: input.category ?? null, assignee_id: input.assignee_id === undefined ? ctx.user.id : input.assignee_id, sla_due_at: slaDue(ctx, priority), tags: input.tags ?? [], created_by: ctx.user.id, created_at: now(), updated_at: now() };
+  const row = { custom: validateCustom(ctx, "ticket", input.custom ?? {}), id: id(), workspace_id: ctx.ws, number: nextCounter(ctx.db, ctx.ws, "ticket"), subject: input.subject, description: input.description ?? null, contact_id: input.contact_id ?? null, company_id: input.company_id ?? null, deal_id: input.deal_id ?? null, channel: input.channel ?? "manual", status: input.status ?? "new", priority, category: input.category ?? null, assignee_id: input.assignee_id === undefined ? ctx.user.id : input.assignee_id, sla_due_at: slaDue(ctx, priority), tags: input.tags ?? [], created_by: ctx.user.id, created_at: now(), updated_at: now() };
   if (!row.company_id && row.contact_id) row.company_id = ctx.db.get<{ company_id: string | null }>("SELECT company_id FROM contacts WHERE id=?", row.contact_id)?.company_id ?? null;
   ctx.db.insert("tickets", row);
   audit(ctx, "ticket", row.id, "create", { subject: row.subject });
@@ -68,6 +70,7 @@ export function updateTicket(ctx: Ctx, tid: string, patch: Partial<TicketInput>,
   const prev = getTicket(ctx, tid);
   const data: Record<string, unknown> = { ...patch };
   if (patch.priority && patch.priority !== prev.priority) data.sla_due_at = slaDue(ctx, patch.priority, prev.created_at as string);
+  if (patch.custom) data.custom = validateCustom(ctx, "ticket", patch.custom, (prev.custom as Record<string, unknown>) ?? {}, true);
   if (patch.status === "resolved" && prev.status !== "resolved") data.resolved_at = now();
   if (patch.status && patch.status !== "resolved" && patch.status !== "closed") data.resolved_at = null;
   checkRequired(ctx, "ticket", prev, data);

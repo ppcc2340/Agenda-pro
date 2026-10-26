@@ -11,6 +11,7 @@ import type { Ctx } from "../context.js";
 import { parseJson, type Row } from "../db.js";
 import { badRequest } from "../lib/errors.js";
 import { OBJECT_FIELDS } from "../lib/filters.js";
+import { picklistText } from "./picklists.js";
 
 /* ------------------------------------------------------------------ catálogo de tipos */
 export interface ColumnTypeDef { label: string; stores: string; write: string; read: string; filter: string[]; trigger: boolean; condition: boolean; writable: boolean; formula: boolean; schema: Record<string, unknown>; notes?: string }
@@ -419,7 +420,7 @@ export function cellsOf(ctx: Ctx, object: string, rec: Row) {
   const custom = (rec.custom as Row) ?? {};
   const cfg = boardConfig(ctx, object);
   return [
-    ...builtinColumns(object).map((b) => ({ id: b.id, title: b.title, type: b.type, value: rec[b.id] ?? null, text: b.type === "status" ? builtinLabel(cfg, b.id, rec[b.id], custom) : cellText(ctx, b.type, rec[b.id]), builtin: true, ...(b.type === "status" && sublabel(cfg, b.id, rec[b.id], custom) ? { sublabel: sublabel(cfg, b.id, rec[b.id], custom)!.id } : {}) })),
+    ...builtinColumns(object).map((b) => ({ id: b.id, title: b.title, type: b.type, value: rec[b.id] ?? null, text: b.type === "status" ? (picklistText(ctx, object, b.id, rec[b.id], custom) ?? builtinLabel(cfg, b.id, rec[b.id], custom)) : cellText(ctx, b.type, rec[b.id]), builtin: true, ...(b.type === "status" && sublabel(cfg, b.id, rec[b.id], custom) ? { sublabel: sublabel(cfg, b.id, rec[b.id], custom)!.id } : {}) })),
     ...defs.map((d) => {
       const v = custom[d.key] ?? null;
       const extra = d.type === "status" ? (() => { const l = statusLabels(ctx, d).find((x) => x.id === Number(v)); return { label: l?.label ?? null, color: l?.color ?? null, is_done: !!l?.done }; })() : d.type === "button" ? { label: d.settings.label ?? d.label, color: d.settings.color ?? null } : {};

@@ -58,7 +58,7 @@ describe("tabla tipo Excel", () => {
     // si el estado base cambia, la subetiqueta deja de aplicarse
     await admin.put(`/api/companies/${ids[0]}`).send({ type: "partner" });
     cells = (await admin.get(`/api/cells/company/${ids[0]}`)).body.column_values;
-    expect(cells.find((c) => c.id === "type")!.text).toBe("partner");
+    expect(cells.find((c) => c.id === "type")!.text).toBe("Partner");
     await admin.put(`/api/companies/${ids[0]}`).send({ type: "customer", custom: { _lbl_type: null } });
     cells = (await admin.get(`/api/cells/company/${ids[0]}`)).body.column_values;
     expect(cells.find((c) => c.id === "type")!.text).toBe("Cliente activo");

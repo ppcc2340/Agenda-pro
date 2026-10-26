@@ -1,3 +1,4 @@
+import { PicklistSelect, picklistPatch } from "../components/PicklistSelect";
 import { ChannelList, type Channel } from "../components/ChannelList";
 import { RecordAutomations } from "./AutomationCenter";
 import { useEffect, useState, useCallback, Fragment } from "react";
@@ -74,8 +75,8 @@ export function ContactDetailPage() {
             <dl className="kv mt16">
               <dt>Email</dt><dd><ChannelList kind="email" items={c.emails as Channel[] | undefined} fallback={c.email} onSave={(list) => patch({ emails: list })} /></dd>
               <dt>Teléfono</dt><dd><ChannelList kind="phone" items={c.phones as Channel[] | undefined} fallback={c.phone} onSave={(list) => patch({ phones: list })} /></dd>
-              <dt>Etapa</dt><dd><select aria-label="Etapa" className="input sm" value={c.lifecycle_stage} onChange={(e) => patch({ lifecycle_stage: e.target.value })}>{Object.entries(LIFECYCLE).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></dd>
-              <dt>Estado lead</dt><dd><select aria-label="Estado lead" className="input sm" value={c.lead_status} onChange={(e) => { if (e.target.value === "unqualified") { const r = prompt("Motivo de descalificación"); if (!r) return; patch({ lead_status: "unqualified", disqualify_reason: r }); } else patch({ lead_status: e.target.value }); }}>{Object.entries(LEAD_STATUS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select>{c.disqualify_reason && c.lead_status === "unqualified" && <div className="xs muted">{c.disqualify_reason}</div>}</dd>
+              <dt>Etapa</dt><dd><PicklistSelect pkey="contact.lifecycle_stage" label="Etapa" value={c.lifecycle_stage} custom={c.custom as Record<string, unknown>} onChange={(role, lbl) => patch(picklistPatch("lifecycle_stage", role, lbl))} /></dd>
+              <dt>Estado lead</dt><dd><PicklistSelect pkey="contact.lead_status" label="Estado lead" value={c.lead_status} custom={c.custom as Record<string, unknown>} onChange={(role, lbl) => { if (role === "unqualified" && c.lead_status !== "unqualified") { const r = prompt("Motivo de descalificación"); if (!r) return; patch(picklistPatch("lead_status", role, lbl, { disqualify_reason: r })); } else patch(picklistPatch("lead_status", role, lbl)); }} />{c.disqualify_reason && c.lead_status === "unqualified" && <div className="xs muted">{c.disqualify_reason}</div>}</dd>
               <dt>Puntuación</dt><dd><ScoreBar value={c.score} /></dd>
               <dt>Propietario</dt><dd><select aria-label="Propietario" className="input sm" value={c.owner_id ?? ""} onChange={(e) => patch({ owner_id: e.target.value || null })}><option value="">Sin asignar</option>{users.filter((u) => u.active).map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}</select></dd>
               <dt>Origen</dt><dd>{SOURCES[c.source ?? ""] ?? c.source ?? "—"}{Object.keys(c.utm ?? {}).length > 0 && <div className="xs muted">{Object.entries(c.utm).map(([k, v]) => `${k.replace("utm_", "")}: ${v}`).join(" · ")}</div>}</dd>

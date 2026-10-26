@@ -14,6 +14,7 @@ import { HttpError } from "./lib/errors.js";
 import { requireAuth } from "./auth.js";
 import { buildOpenApi, DOCS_HTML, DOCS_CSS, DOCS_JS } from "./openapi.js";
 import { liveRoutes } from "./live.js";
+import { picklistRoutes } from "./routes/picklists.js";
 import { requestLog, securityHeaders, optimisticConcurrency } from "./http.js";
 import { authRoutes } from "./routes/auth.js";
 import { contactRoutes } from "./routes/contacts.js";
@@ -77,6 +78,7 @@ export function createApp(db: Db) {
     ["/clm", clmRoutes()],
     ["/columns", columnRoutes()],
     ["/cells", cellRoutes()],
+    ["/picklists", picklistRoutes()],
     ["", miscRoutes()],
     ["", liveRoutes()],
   ];

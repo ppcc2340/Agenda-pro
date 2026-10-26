@@ -1,6 +1,7 @@
 /** Global app data: current user, settings, users, pipelines, custom fields. */
 import { createContext, useContext, useEffect, useState, type ReactNode, useCallback } from "react";
 import { api } from "../api";
+import { loadPicklists } from "./picklists";
 
 export interface Me { id: string; name: string; email: string; role_id: string; role: { key: string; name: string; visibility: string; permissions: Record<string, string[] | boolean | undefined> }; team: { id: string; name: string } | null; totp_enabled: boolean; email_signature: string | null; notification_prefs: Record<string, unknown>; quota: number | null }
 export interface Settings { company_name: string; currency: string; timezone: string; default_country_code: string; internal_domains: string[]; stale_deal_days: number; inactive_deal_days: number; lead_sla_hours: number; mql_threshold: number; sql_threshold: number; retention_months: number; retention_enabled: boolean; quote_prefix: string; quote_accept_stage_id: string | null; ticket_sla_hours: Record<string, number>; logo_url: string; brand_color: string; date_format: string; fiscal_year_start: number }
@@ -23,6 +24,7 @@ export function AppProvider({ me, settings, onLogout, children }: { me: Me; sett
   const [labelSets, setLabelSets] = useState<LabelSet[]>([]);
   const [st, setSt] = useState(settings);
   const refresh = useCallback(async () => {
+    void loadPicklists();
     const [u, p, c, t, s, ls] = await Promise.all([
       api.get<{ items: UserLite[] }>("admin/users"), api.get<{ items: Pipeline[] }>("pipelines"), api.get<{ items: CustomField[] }>("admin/custom-fields"), api.get<{ items: AppData["teams"] }>("admin/teams"), api.get<{ settings: Settings }>("admin/settings"), api.get<{ items: LabelSet[] }>("columns/label-sets").catch(() => ({ items: [] as LabelSet[] })),
     ]);

@@ -1,3 +1,15 @@
 /* Estilos de las funciones añadidas a partir del informe técnico (2FA obligatoria, varios emails/teléfonos…) */
 .mfa-gate { position: fixed; inset: 0; z-index: 300; background: color-mix(in srgb, var(--bg, #f6f7fb) 92%, transparent); display: grid; place-items: center; padding: 16px; }
 .chlist { display: flex; flex-direction: column; gap: 2px; position: relative; } .chlist > .iconbtn { position: absolute; right: 0; top: -2px; width: 24px; height: 24px; opacity: 0; } dd:hover .chlist > .iconbtn, .chlist > .iconbtn:focus-visible { opacity: 1; } .iconbtn.on { color: #e2a400; }
+/* editor de listas de valores */
+.pledit { display: flex; flex-direction: column; gap: 4px; }
+.pledit .pl-head, .pledit .pl-row { display: grid; grid-template-columns: 52px minmax(120px, 1fr) minmax(120px, 0.9fr) 36px 60px; gap: 6px; align-items: center; }
+.pledit .pl-row { padding: 2px; border-radius: 6px; } .pledit .pl-row.drag { background: var(--sea-soft); } .pledit .pl-row.off input { opacity: .55; }
+.pledit .grip { color: var(--ink3); cursor: grab; } .pledit .input.bad { border-color: var(--risk); }
+.pledit .swatch { width: 24px; height: 24px; border: 0; border-radius: 4px; cursor: pointer; }
+.pledit .pl-moves { border-top: 1px dashed var(--rule); padding-top: 6px; margin-top: 4px; display: flex; flex-direction: column; gap: 6px; }
+.pledit .pl-preview { display: flex; flex-wrap: wrap; gap: 2px; margin-top: 6px; }
+.cdd .pledit button { height: auto; font-weight: 400; } .cdd .pledit .iconbtn { color: var(--ink2); width: 28px; height: 28px; } .cdd .pledit .btn:not(.primary) { color: var(--ink); } .cdd .pledit .btn.ghost { color: var(--sea); }
+.cdd .pledit .swatch { width: 24px; height: 24px; }
+@media (max-width: 720px) { .pledit .pl-head { display: none; } .pledit .pl-row { grid-template-columns: 44px 1fr 1fr 52px; } .pledit .pl-row > .r { display: none; } }
+.pl-toggle { display: flex; align-items: center; gap: 10px; width: 100%; border: 0; background: transparent; padding: 10px 16px; cursor: pointer; color: inherit; font: inherit; flex-wrap: wrap; } .pl-toggle:hover { background: var(--panel); }

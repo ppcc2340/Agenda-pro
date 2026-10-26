@@ -8,7 +8,8 @@ import { audit, diff } from "./audit.js";
 import { emit } from "./events.js";
 import { logActivity } from "./activities.js";
 import { notify } from "./notifications.js";
-import { nullableStr } from "./records.js";
+import { nullableStr, validateCustom } from "./records.js";
+import { parseJson } from "../db.js";
 
 export const TASK_TYPES = ["call", "email", "meeting", "followup", "todo"] as const;
 export const taskSchema = z.object({
@@ -28,6 +29,7 @@ export const taskSchema = z.object({
   /** semanal: días concretos (0 = domingo … 6 = sábado) */
   recurrence_days: z.array(z.number().int().min(0).max(6)).max(7).nullable().optional(),
   duration_min: z.number().int().min(0).max(24 * 60).nullable().optional(),
+  custom: z.record(z.string(), z.unknown()).optional(),
 });
 export type TaskInput = z.infer<typeof taskSchema>;
 
@@ -69,7 +71,7 @@ const SELECT = `t.*, (SELECT name FROM users WHERE id=t.assignee_id) assignee_na
   (SELECT name FROM deals WHERE id=t.deal_id) deal_name`;
 
 export function getTask(ctx: Ctx, tid: string): Row {
-  const t = ctx.db.get<Row>(`SELECT ${SELECT} FROM tasks t WHERE t.id=? AND t.workspace_id=?`, tid, ctx.ws);
+  const t = parseJson(ctx.db.get<Row>(`SELECT ${SELECT} FROM tasks t WHERE t.id=? AND t.workspace_id=?`, tid, ctx.ws), ["custom"]);
   if (!t) throw notFound("Tarea");
   if (!canSeeRecord(ctx, t.assignee_id as string | null)) throw forbidden("Esta tarea es de otro equipo");
   return t;
@@ -77,7 +79,7 @@ export function getTask(ctx: Ctx, tid: string): Row {
 
 export function createTask(ctx: Ctx, input: TaskInput, opts: { silent?: boolean } = {}): Row {
   assert(ctx, "task", "create");
-  const row = { id: id(), workspace_id: ctx.ws, title: input.title, type: input.type ?? "todo", due_at: input.due_at ?? null, priority: input.priority ?? "normal", assignee_id: input.assignee_id === undefined ? ctx.user.id : input.assignee_id, contact_id: input.contact_id ?? null, company_id: input.company_id ?? null, deal_id: input.deal_id ?? null, ticket_id: input.ticket_id ?? null, description: input.description ?? null, recurrence: input.recurrence ?? null, recurrence_interval: input.recurrence_interval ?? 1, recurrence_days: input.recurrence_days ?? null, duration_min: input.duration_min ?? null, created_by: ctx.user.id, created_at: now(), updated_at: now() };
+  const row = { custom: validateCustom(ctx, "task", input.custom ?? {}), id: id(), workspace_id: ctx.ws, title: input.title, type: input.type ?? "todo", due_at: input.due_at ?? null, priority: input.priority ?? "normal", assignee_id: input.assignee_id === undefined ? ctx.user.id : input.assignee_id, contact_id: input.contact_id ?? null, company_id: input.company_id ?? null, deal_id: input.deal_id ?? null, ticket_id: input.ticket_id ?? null, description: input.description ?? null, recurrence: input.recurrence ?? null, recurrence_interval: input.recurrence_interval ?? 1, recurrence_days: input.recurrence_days ?? null, duration_min: input.duration_min ?? null, created_by: ctx.user.id, created_at: now(), updated_at: now() };
   if (!row.company_id && row.contact_id) row.company_id = ctx.db.get<{ company_id: string | null }>("SELECT company_id FROM contacts WHERE id=?", row.contact_id)?.company_id ?? null;
   ctx.db.insert("tasks", row);
   refreshNextActivity(ctx, row.deal_id);
@@ -91,6 +93,7 @@ export function createTask(ctx: Ctx, input: TaskInput, opts: { silent?: boolean 
 export function updateTask(ctx: Ctx, tid: string, patch: Partial<TaskInput>): Row {
   assert(ctx, "task", "update");
   const prev = getTask(ctx, tid);
+  if (patch.custom) patch = { ...patch, custom: validateCustom(ctx, "task", patch.custom, (prev.custom as Record<string, unknown>) ?? {}, true) };
   const changes = diff(prev, patch as Record<string, unknown>);
   if (!Object.keys(changes).length) return prev;
   ctx.db.update("tasks", tid, { ...patch, updated_at: now(), overdue_notified_at: patch.due_at && patch.due_at !== prev.due_at ? null : undefined });

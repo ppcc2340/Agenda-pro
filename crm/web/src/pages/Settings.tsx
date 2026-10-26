@@ -1,3 +1,4 @@
+import { PicklistsAdmin } from "./SettingsPicklists";
 import { useEffect, useState } from "react";
 import { NavLink, Routes, Route, Navigate } from "react-router-dom";
 import { Plus, Trash2, Pencil, KeyRound, ShieldCheck } from "lucide-react";
@@ -19,7 +20,7 @@ export function SettingsPage() {
       <nav className="settings-nav">
         <div className="section">Mi cuenta</div><S to="perfil" label="Perfil y seguridad" />
         {isAdmin && <><div className="section">Empresa</div><S to="general" label="General" /><S to="usuarios" label="Usuarios" /><S to="roles" label="Roles y permisos" /><S to="equipos" label="Equipos" />
-          <div className="section">Datos</div><S to="pipelines" label="Pipelines y etapas" /><S to="campos" label="Columnas personalizadas" /><S to="etiquetas" label="Etiquetas compartidas" /><S to="reglas-tablero" label="Por defecto y obligatorias" /><S to="productos" label="Productos" /><S to="importar" label="Importar CSV" /><S to="papelera" label="Papelera" /><S to="calidad" label="Calidad y RGPD" />
+          <div className="section">Datos</div><S to="pipelines" label="Pipelines y etapas" /><S to="campos" label="Columnas personalizadas" /><S to="listas" label="Listas y etiquetas" /><S to="etiquetas" label="Etiquetas compartidas" /><S to="reglas-tablero" label="Por defecto y obligatorias" /><S to="productos" label="Productos" /><S to="importar" label="Importar CSV" /><S to="papelera" label="Papelera" /><S to="calidad" label="Calidad y RGPD" />
           <div className="section">Automatización</div><S to="automatizaciones" label="Centro de automatizaciones" /><S to="formularios" label="Formularios web" /><S to="plantillas" label="Plantillas de email" /><S to="scoring" label="Lead scoring" />
           <div className="section">Plataforma</div><S to="api" label="API keys" /><S to="webhooks" label="Webhooks" /><S to="emails" label="Emails enviados" /><S to="auditoria" label="Auditoría" /><S to="uso" label="Uso del sistema" /></>}
         {!isAdmin && <><div className="section">Automatización</div><S to="automatizaciones" label="Mis aprobaciones" /><div className="section">Datos</div><S to="importar" label="Importar CSV" /><S to="plantillas" label="Plantillas de email" /></>}
@@ -41,6 +42,7 @@ export function SettingsPage() {
           <Route path="workflows" element={<Navigate to="/ajustes/automatizaciones" replace />} />
           <Route path="automatizaciones" element={<AutomationCenter />} />
           <Route path="etiquetas" element={<LabelSetsAdmin />} />
+          <Route path="listas" element={<PicklistsAdmin />} />
           <Route path="reglas-tablero" element={<BoardRulesAdmin />} />
           <Route path="formularios" element={<FormsAdmin />} />
           <Route path="plantillas" element={<TemplatesAdmin />} />

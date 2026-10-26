@@ -1,3 +1,4 @@
+import { PicklistSelect, picklistPatch } from "../components/PicklistSelect";
 import { RecordAutomations } from "./AutomationCenter";
 import { useState, useEffect, useCallback, Fragment } from "react";
 import { useNavigate, useParams, Link, useSearchParams } from "react-router-dom";
@@ -107,7 +108,7 @@ export function CompanyDetailPage() {
               {c.domain && <><dt><Globe size={13} /></dt><dd><a href={`https://${c.domain}`} target="_blank" rel="noreferrer">{c.domain}</a></dd></>}
               {c.phone && <><dt><Phone size={13} /></dt><dd><a href={`tel:${c.phone}`}>{c.phone}</a></dd></>}
               {(c.address || c.city) && <><dt><MapPin size={13} /></dt><dd>{[c.address, c.city, c.country].filter(Boolean).join(", ")}</dd></>}
-              <dt>Tipo</dt><dd><select aria-label="Tipo" className="input sm" value={c.type} onChange={(e) => patch({ type: e.target.value })}>{Object.entries(COMPANY_TYPES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></dd>
+              <dt>Tipo</dt><dd><PicklistSelect pkey="company.type" label="Tipo" value={c.type} custom={c.custom as Record<string, unknown>} onChange={(role, lbl) => patch(picklistPatch("type", role, lbl))} /></dd>
               <dt>Propietario</dt><dd><select aria-label="Propietario" className="input sm" value={c.owner_id ?? ""} onChange={(e) => patch({ owner_id: e.target.value || null })}><option value="">Sin asignar</option>{users.filter((u) => u.active).map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}</select></dd>
               {c.size != null && <><dt>Empleados</dt><dd>{fmtNum(c.size)}</dd></>}
               {c.revenue != null && <><dt>Facturación</dt><dd>{fmtMoney(c.revenue)}</dd></>}

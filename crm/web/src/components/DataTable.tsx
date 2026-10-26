@@ -16,6 +16,8 @@ import { fmtMoney, fmtDate, fmtNum } from "../lib/format";
 import { PALETTE, applyBoard, type Board } from "../lib/board";
 import { BoardRules } from "./BoardRules";
 import { onLive } from "../lib/live";
+import { usePicklists } from "../lib/picklists";
+import { PicklistEditor } from "./PicklistEditor";
 import { ColorPicker, LabelEditor, CondFormatDialog, NumFormatDialog, ChangeTypeDialog, Pop, TagsEditor, LongTextEditor, RangeEditor, RelationPicker, SHORTCUTS, type LabelItem, type LabelCaps } from "./GridDialogs";
 import { norm, parseNumber, parseDate, parseBool, parseTSV, toTSV, fmtIsoDate, formatNumber, ruleMatches, SUMMARY_FNS, summaryKind, numericStats, fillSeries, type CondRule, type NumFormat } from "../lib/grid";
 import { pillStyle, readable } from "../lib/colors";
@@ -42,6 +44,8 @@ export interface Column<T> {
   out?: (v: unknown) => unknown;
   /** base field for board-added labels (set by applyBoard) */
   extraOf?: string;
+  /** lista de valores del sistema que da las etiquetas (set by applyBoard) */
+  picklist?: string;
   /** custom label editor (e.g. pipeline stages) */
   saveLabels?: (items: LabelItem[], removed: LabelItem[]) => Promise<void>;
   relation?: { endpoint: string; labelOf: (r: Record<string, unknown>) => string };
@@ -149,7 +153,8 @@ export function DataTable<T extends { id: string }>({ object, endpoint, columns:
   const cfg = board.config;
   const narrow = useNarrow();
 
-  const columns = useMemo(() => applyBoard(rawColumns, board), [rawColumns, board.config]);
+  const picklists = usePicklists();
+  const columns = useMemo(() => applyBoard(rawColumns, board), [rawColumns, board.config, picklists]); // eslint-disable-line react-hooks/exhaustive-deps
   const [visible, setVisible] = useState<string[] | null>(() => { try { const s = localStorage.getItem(storageKey); if (s) return JSON.parse(s); } catch { /* ignore */ } return null; });
   const visibleKeys = useMemo(() => visible ?? columns.filter((c) => c.default !== false).map((c) => c.key), [visible, columns]);
 
@@ -360,7 +365,7 @@ export function DataTable<T extends { id: string }>({ object, endpoint, columns:
     if (c.type === "status" && c.options) {
       const opts = Object.entries(c.options);
       const bases = opts.filter(([, o]) => !o.base).map(([k, o]) => ({ key: k, label: o.label }));
-      return { items: opts.map(([k, o]) => ({ key: k, label: o.label, color: o.color, hidden: o.hidden, kind: o.base ? "extra" : "builtin", base: o.base })), caps: { canAdd: !!c.extraOf, canDelete: (it) => it.kind === "extra", canHide: true, bases, newKind: "extra", note: c.extraOf ? "Las etiquetas del CRM no se borran (las usan informes y automatizaciones), pero puedes renombrarlas, recolorearlas, ordenarlas u ocultarlas. Las nuevas «se comportan como» la etiqueta que elijas." : "Puedes renombrar, recolorear, ordenar y ocultar estas etiquetas." } };
+      return { items: opts.map(([k, o]) => ({ key: k, label: o.label, color: o.color, hidden: o.hidden, kind: o.base ? "extra" : "builtin", base: o.base })), caps: { canAdd: !!c.extraOf, canDelete: (it) => it.kind === "extra", canHide: true, bases, newKind: "extra", note: "Aquí cambias cómo se ven en este tablero. Los valores en sí se gestionan en su configuración (p. ej. los tipos de contrato en Ajustes del CLM)." } };
     }
     return null;
   };
@@ -606,7 +611,7 @@ export function DataTable<T extends { id: string }>({ object, endpoint, columns:
         {c.sortable && <button onClick={() => setSort({ field: c.key, dir: "asc" })}><ChevronUp />Ordenar ascendente</button>}
         {c.sortable && <button onClick={() => setSort({ field: c.key, dir: "desc" })}><ChevronDown />Ordenar descendente</button>}
         {canEdit && <button onClick={() => setRenaming(c)}><Pencil />Renombrar</button>}
-        {canEdit && lm && <button onClick={(e) => { const r = (e.currentTarget.closest("th") as HTMLElement | null)?.getBoundingClientRect(); setLabelPop({ col: c, at: { x: r?.left ?? 200, y: (r?.bottom ?? 100) + 4 } }); }}><Tag />Editar etiquetas</button>}
+        {canEdit && (lm || c.picklist) && <button onClick={(e) => { const r = (e.currentTarget.closest("th") as HTMLElement | null)?.getBoundingClientRect(); setLabelPop({ col: c, at: { x: r?.left ?? 200, y: (r?.bottom ?? 100) + 4 } }); }}><Tag />Editar etiquetas</button>}
         {canEdit && <button onClick={() => setFmtFor(c)}><Hash />Formato…</button>}
         {canEdit && c.custom && !["formula", "mirror", "autonumber", "creation_log", "last_updated", "button"].includes(c.custom.type) && <button onClick={() => setTypeFor(c.custom!)}><Repeat />Cambiar tipo…</button>}
         {canEdit && c.custom && ["formula", "mirror"].includes(c.custom.type) && <button onClick={() => setTypeFor(c.custom!)}><Repeat />Convertir en valores…</button>}
@@ -723,7 +728,7 @@ export function DataTable<T extends { id: string }>({ object, endpoint, columns:
                           return <GridCell key={c.key} ci={i + 1} col={c} type={typeOf(c)} row={row} raw={rawVal(c, row)} edVal={editorVal(c, row)} editable={isEditable(c)} active={isAct} inRange={inR && !isAct} inFill={inFill} editing={isEdit} seed={isEdit ? editing?.seed : undefined} handle={handle} style={style} frozenLast={i === freeze - 1} numFmt={nf} showNum={showNum}
                             onOpen={onRowClick} onClickCell={(e) => cellClick(e, row, c)} onMouseDown={(e) => cellDown(e, row, c)} onMouseEnter={() => cellEnter(row, c)} onDouble={() => startEdit({ r: row.id, c: c.key })} onStartEdit={() => { setAnchor(null); setActive({ r: row.id, c: c.key }); startEdit({ r: row.id, c: c.key }); }}
                             onCommit={(v, mv) => editCommit(row, c, v, mv)} onCancel={() => afterEdit(null)} onFillStart={(e) => { e.preventDefault(); e.stopPropagation(); filling.current = true; setFillTo(rng?.r1 ?? null); }}
-                            labelModel={() => labelModel(c)} onSaveLabels={(items, removed) => saveLabels(c, items, removed)} canEditLabels={canEdit && !!labelModel(c)} suggestions={typeOf(c) === "tags" ? Array.from(new Set((data?.items ?? []).flatMap((r) => (Array.isArray(rawVal(c, r)) ? (rawVal(c, r) as string[]) : [])))).concat(c.custom?.options ?? []) : []} />;
+                            labelModel={() => labelModel(c)} onSaveLabels={(items, removed) => saveLabels(c, items, removed)} canEditLabels={canEdit && (!!labelModel(c) || !!c.picklist)} onLabelsSaved={() => load(true)} suggestions={typeOf(c) === "tags" ? Array.from(new Set((data?.items ?? []).flatMap((r) => (Array.isArray(rawVal(c, r)) ? (rawVal(c, r) as string[]) : [])))).concat(c.custom?.options ?? []) : []} />;
                         })}
                         <td className="menu">
                           <Menu fixed trigger={<button className="menu-dot" aria-label={t("grid.rowActions")}>⋯</button>}>
@@ -774,7 +779,8 @@ export function DataTable<T extends { id: string }>({ object, endpoint, columns:
       )}
       {saveView && <SaveViewDialog object={object} filters={filters} columns={visibleKeys} sort={sort} onClose={() => setSaveView(false)} onSaved={(v) => { loadViews().then(() => setViewId(v.id)); }} />}
       {addCol && <AddColumnDialog object={object} onClose={() => setAddCol(false)} onCreated={async (f) => { await refresh(); saveCols([...visibleKeys, `custom.${f.key}`]); reload(); }} />}
-      {labelPop && (() => { const m = labelModel(labelPop.col); return m ? <Pop at={labelPop.at} width={340} onClose={() => setLabelPop(null)}><b className="small">Etiquetas de «{labelPop.col.label}»</b><LabelEditor items={m.items} caps={m.caps} onCancel={() => setLabelPop(null)} onSave={async (items, removed) => { if (await saveLabels(labelPop.col, items, removed)) setLabelPop(null); }} /></Pop> : null; })()}
+      {labelPop && labelPop.col.picklist && <Pop at={labelPop.at} width={420} onClose={() => setLabelPop(null)}><b className="small">Etiquetas de «{labelPop.col.label}»</b><PicklistEditor pkey={labelPop.col.picklist} compact onCancel={() => setLabelPop(null)} onSaved={() => { setLabelPop(null); load(true); }} /></Pop>}
+      {labelPop && !labelPop.col.picklist && (() => { const m = labelModel(labelPop.col); return m ? <Pop at={labelPop.at} width={340} onClose={() => setLabelPop(null)}><b className="small">Etiquetas de «{labelPop.col.label}»</b><LabelEditor items={m.items} caps={m.caps} onCancel={() => setLabelPop(null)} onSave={async (items, removed) => { if (await saveLabels(labelPop.col, items, removed)) setLabelPop(null); }} /></Pop> : null; })()}
       {renaming && <RenameDialog title="Renombrar columna" value={renaming.label} onClose={() => setRenaming(null)} onSave={(l) => { setColCfg(renaming.key, { label: l }); setRenaming(null); }} />}
       {rules && <BoardRules object={object} columns={columns as Column<unknown>[]} onClose={() => setRules(false)} />}
       {condOpen && <CondFormatDialog columns={columns.map((c, i) => ({ key: c.key, label: c.label, type: types.get(c.key) ?? colType(c, i), options: c.options }))} rules={cfg.cond_formats ?? []} onClose={() => setCondOpen(false)} onSave={(r) => board.update((b) => ({ ...b, cond_formats: r }))} />}
@@ -799,7 +805,7 @@ interface CellProps<T> {
   ci: number;
   col: Column<T>; type: ColumnType; row: T; raw: unknown; edVal: unknown; editable: boolean; active: boolean; inRange: boolean; inFill: boolean; editing: boolean; seed?: string; handle: boolean; style: React.CSSProperties; frozenLast: boolean; numFmt?: NumFormat; showNum: (c: Column<T>, n: number) => string;
   onOpen?: (row: T) => void; onMouseDown: (e: React.MouseEvent) => void; onMouseEnter: () => void; onDouble: () => void; onStartEdit: () => void; onCommit: (v: unknown, move: Move) => void; onCancel: () => void; onFillStart: (e: React.MouseEvent) => void; onClickCell: (e: React.MouseEvent) => void;
-  labelModel: () => { items: LabelItem[]; caps: LabelCaps } | null; onSaveLabels: (items: LabelItem[], removed: LabelItem[]) => Promise<boolean>; canEditLabels: boolean; suggestions: string[];
+  labelModel: () => { items: LabelItem[]; caps: LabelCaps } | null; onSaveLabels: (items: LabelItem[], removed: LabelItem[]) => Promise<boolean>; canEditLabels: boolean; onLabelsSaved?: () => void; suggestions: string[];
 }
 function GridCell<T extends { id: string }>(p: CellProps<T>) {
   const { col: c, type, row, raw } = p;
@@ -826,12 +832,14 @@ function GridCell<T extends { id: string }>(p: CellProps<T>) {
   }
   if (type === "status") {
     const opt = c.options?.[String(raw ?? "")];
-    const model = labelEdit ? p.labelModel() : null;
+    const model = labelEdit && !c.picklist ? p.labelModel() : null;
+    const plEdit = labelEdit && !!c.picklist;
     return (
       <td {...common} className={`status ${cls} ${c.className ?? ""}`} onClick={(e) => p.editable && !p.editing && p.onClickCell(e)} style={{ ...p.style, ...(!p.editable ? { cursor: "default" } : {}) }}>
         <div className="pill" style={pillStyle(opt?.color ?? "#c4c4c4")}>{opt?.label ?? (raw ? String(raw) : "—")}</div>
         {handle}
-        {p.editing && at && (model ? <div className="cdd ledit-wrap" style={{ left: Math.min(at.x, window.innerWidth - 360), top: Math.min(at.y, window.innerHeight - 380) }} onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}><LabelEditor items={model.items} caps={model.caps} onCancel={() => setLabelEdit(false)} onSave={async (items, removed) => { if (await p.onSaveLabels(items, removed)) setLabelEdit(false); }} /></div>
+        {p.editing && at && plEdit && <div className="cdd ledit-wrap" style={{ left: Math.min(at.x, window.innerWidth - 420), top: Math.max(8, Math.min(at.y, window.innerHeight - 520)), width: 410 }} onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}><PicklistEditor pkey={c.picklist!} compact onCancel={() => setLabelEdit(false)} onSaved={() => { setLabelEdit(false); p.onCancel(); p.onLabelsSaved?.(); }} /></div>}
+        {p.editing && at && !plEdit && (model ? <div className="cdd ledit-wrap" style={{ left: Math.min(at.x, window.innerWidth - 360), top: Math.min(at.y, window.innerHeight - 380) }} onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}><LabelEditor items={model.items} caps={model.caps} onCancel={() => setLabelEdit(false)} onSave={async (items, removed) => { if (await p.onSaveLabels(items, removed)) setLabelEdit(false); }} /></div>
           : <Dropdown at={at} onClose={p.onCancel} footer={p.canEditLabels ? <button className="btn ghost sm" style={{ width: "100%" }} onClick={() => setLabelEdit(true)}><Pencil />Editar etiquetas</button> : undefined}>{Object.entries(c.options ?? {}).filter(([k, o]) => !o.hidden || k === String(raw ?? "")).map(([k, o]) => <button key={k} style={pillStyle(o.color)} title={o.base ? `Se comporta como «${c.options?.[o.base]?.label ?? o.base}»` : undefined} onClick={() => p.onCommit(k, null)}>{o.label}</button>)}{!c.fixedOptions && c.custom && <button style={{ background: "var(--panel)", color: "var(--ink2)", border: "1px dashed var(--rule)" }} onClick={() => p.onCommit(null, null)}>— vacío —</button>}</Dropdown>)}
       </td>
     );
