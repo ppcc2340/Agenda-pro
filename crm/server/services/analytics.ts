@@ -9,6 +9,7 @@ import type { Db, Row } from "../db.js";
 import { parseJson } from "../db.js";
 import { buildWhere, OBJECT_FIELDS, type FilterGroup } from "../lib/filters.js";
 import { ownerScope, assert, can, isAdmin } from "../lib/permissions.js";
+import { isCustomObjectKey } from "../lib/objectKeys.js";
 import { badRequest, forbidden, notFound } from "../lib/errors.js";
 import { id, now } from "../lib/util.js";
 import { fieldDefs, statusLabels } from "./columns.js";
@@ -19,11 +20,15 @@ import { ctxAs, systemCtx } from "./system.js";
 
 /* ------------------------------------------------------------------ definición */
 export const REPORT_OBJECTS = ["contact", "company", "deal", "ticket", "task", "contract", "activity"] as const;
-const TABLE: Record<string, string> = { contact: "contacts", company: "companies", deal: "deals", ticket: "tickets", task: "tasks", contract: "contracts", activity: "activities" };
-const OWNER_COL: Record<string, string> = { contact: "owner_id", company: "owner_id", deal: "owner_id", ticket: "assignee_id", task: "assignee_id", contract: "owner_id", activity: "user_id" };
+// los objetos personalizados (o_<slug>) se resuelven con los valores comunes de custom_records
+const withCustom = (core: Record<string, string>, custom: string): Record<string, string> => new Proxy(core, { get: (t, p) => (typeof p === "string" && isCustomObjectKey(p) ? custom : (t as Record<string | symbol, never>)[p]) });
+const TABLE: Record<string, string> = withCustom({ contact: "contacts", company: "companies", deal: "deals", ticket: "tickets", task: "tasks", contract: "contracts", activity: "activities" }, "custom_records");
+const OWNER_COL: Record<string, string> = withCustom({ contact: "owner_id", company: "owner_id", deal: "owner_id", ticket: "assignee_id", task: "assignee_id", contract: "owner_id", activity: "user_id" }, "owner_id");
 const PERM_OBJ: Record<string, string> = { activity: "activity" };
-const SOFT_DELETE = new Set(["contact", "company", "deal", "contract"]);
-export const DATE_FIELD: Record<string, string> = { contact: "created_at", company: "created_at", deal: "created_at", ticket: "created_at", task: "due_at", contract: "created_at", activity: "occurred_at" };
+const SOFT_DELETE = { has: (o: string) => ["contact", "company", "deal", "contract"].includes(o) || isCustomObjectKey(o) };
+export const DATE_FIELD: Record<string, string> = withCustom({ contact: "created_at", company: "created_at", deal: "created_at", ticket: "created_at", task: "due_at", contract: "created_at", activity: "occurred_at" }, "created_at");
+/** Informes sobre objetos nativos o sobre cualquier objeto personalizado que exista en la cuenta. */
+export const isReportObject = (ctx: Ctx, o: string) => (REPORT_OBJECTS as readonly string[]).includes(o) || (isCustomObjectKey(o) && !!ctx.db.get("SELECT id FROM custom_objects WHERE workspace_id=? AND key=?", ctx.ws, o));
 const USER_FIELDS = new Set(["owner_id", "assignee_id", "user_id", "legal_owner_id"]);
 export const BUCKETS = ["day", "week", "month", "quarter", "year"] as const;
 export const METRIC_FNS = ["count", "sum", "avg", "min", "max"] as const;
@@ -73,6 +78,7 @@ function bucketExpr(col: string, b: string): string {
 function baseWhere(ctx: Ctx, object: string, filters: FilterGroup | undefined, g: GlobalFilters, dateField?: string): { sql: string; params: unknown[] } {
   const where = ["t.workspace_id = ?"]; const params: unknown[] = [ctx.ws];
   if (SOFT_DELETE.has(object)) where.push("t.deleted_at IS NULL");
+  if (isCustomObjectKey(object)) { where.push("t.object_key = ?"); params.push(object); }
   const owner = `t.${OWNER_COL[object]}`;
   const s = ownerScope(ctx, owner); where.push(s.sql); params.push(...s.params);
   const f = buildWhere(object, filters, "t"); where.push(f.sql); params.push(...f.params);
@@ -113,6 +119,7 @@ function labeler(ctx: Ctx, object: string, field: string): (v: unknown) => strin
     return (v) => (v == null || v === "" ? "(vacío)" : String(v));
   }
   if (USER_FIELDS.has(field)) return lookup("SELECT id, name n FROM users WHERE workspace_id=?");
+  if (isCustomObjectKey(object) && field === "status") { const st = parseJson(db.get<Row>("SELECT statuses FROM custom_objects WHERE workspace_id=? AND key=?", ctx.ws, object), ["statuses"])?.statuses as { id: number; label: string }[] | undefined; return (v) => (v == null || v === "" ? "(vacío)" : st?.find((s) => String(s.id) === String(v))?.label ?? String(v)); }
   if (field === "stage_id") return lookup("SELECT id, name n FROM stages WHERE workspace_id=?");
   if (field === "pipeline_id") return lookup("SELECT id, name n FROM pipelines WHERE workspace_id=?");
   if (field === "company_id" || field === "counterparty_company_id" || field === "parent_id") return lookup("SELECT id, name n FROM companies WHERE workspace_id=?");
@@ -125,7 +132,7 @@ function labeler(ctx: Ctx, object: string, field: string): (v: unknown) => strin
 }
 
 export function runReport(ctx: Ctx, object: string, rawConfig: unknown, g: GlobalFilters = {}): ReportResult {
-  if (!REPORT_OBJECTS.includes(object as never)) throw badRequest("Objeto no válido para informes");
+  if (!isReportObject(ctx, object)) throw badRequest("Objeto no válido para informes");
   assert(ctx, PERM_OBJ[object] ?? object, "read");
   const cfg = reportConfigSchema.parse(rawConfig ?? {});
   const w = baseWhere(ctx, object, cfg.filters as FilterGroup, g, cfg.date_field);
@@ -174,7 +181,7 @@ export function toCsv(res: ReportResult): string {
 }
 
 /* ------------------------------------------------------------------ informes guardados */
-export const savedReportSchema = z.object({ name: z.string().trim().min(1).max(120), description: z.string().max(500).nullable().optional(), object: z.enum(REPORT_OBJECTS), config: reportConfigSchema, visibility: z.enum(["private", "team", "all"]).default("private") });
+export const savedReportSchema = z.object({ name: z.string().trim().min(1).max(120), description: z.string().max(500).nullable().optional(), object: z.string().refine((o) => (REPORT_OBJECTS as readonly string[]).includes(o) || isCustomObjectKey(o), "Objeto no válido para informes"), config: reportConfigSchema, visibility: z.enum(["private", "team", "all"]).default("private") });
 const visibleSql = (ctx: Ctx, alias = "") => {
   const p = alias ? `${alias}.` : "";
   if (isAdmin(ctx)) return { sql: "1=1", params: [] as unknown[] };

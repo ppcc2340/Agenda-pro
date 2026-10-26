@@ -69,7 +69,7 @@ function convertOne(ctx: Ctx, from: FieldDef, raw: unknown, to: string, plan: Pl
 /** Valores actuales (los calculados se materializan) de todos los registros. */
 function currentValues(ctx: Ctx, object: string, d: FieldDef): { id: string; value: unknown }[] {
   const t = OBJECT_TABLE[object]; if (!t) throw badRequest("Objeto no válido");
-  const rows = ctx.db.all<Row>(`SELECT * FROM ${t} WHERE workspace_id=?${["tasks", "tickets"].includes(t) ? "" : " AND deleted_at IS NULL"}`, ctx.ws).map((r) => parseJson(r, ["custom", "tags"]) as Row);
+  const rows = ctx.db.all<Row>(`SELECT * FROM ${t} WHERE workspace_id=?${["tasks", "tickets"].includes(t) ? "" : " AND deleted_at IS NULL"}${t === "custom_records" ? " AND object_key=?" : ""}`, ...(t === "custom_records" ? [ctx.ws, object] : [ctx.ws])).map((r) => parseJson(r, ["custom", "tags"]) as Row);
   if (!COMPUTED_TYPES.includes(d.type)) return rows.map((r) => ({ id: String(r.id), value: ((r.custom as Row) ?? {})[d.key] }));
   const defs = fieldDefs(ctx, object);
   return rows.map((r) => ({ id: String(r.id), value: computeFields(ctx, object, r, defs).values[d.key] }));

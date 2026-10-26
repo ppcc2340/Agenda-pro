@@ -1,3 +1,4 @@
+import type { BoardObject } from "../lib/board";
 import { useEffect, useState } from "react";
 import { Plus, Trash2, Pencil, Zap, ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -23,7 +24,7 @@ function belongs(w: WF, object: string) {
   return false;
 }
 
-export function BoardRules({ object, columns, onClose }: { object: "contact" | "company" | "deal" | "ticket" | "contract"; columns: Column<unknown>[]; onClose: () => void }) {
+export function BoardRules({ object, columns, onClose }: { object: BoardObject; columns: Column<unknown>[]; onClose: () => void }) {
   const toast = useToast();
   const confirm = useConfirm();
   const [items, setItems] = useState<WF[] | null>(null);

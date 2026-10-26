@@ -56,6 +56,11 @@ export class Db {
     add("tasks", "custom", "TEXT NOT NULL DEFAULT '{}'");
     add("tickets", "csat_comment", "TEXT");
     add("tickets", "csat_sent_at", "TEXT");
+    // actividades y tareas vinculadas a registros de objetos personalizados
+    add("activities", "record_object", "TEXT");
+    add("activities", "record_id", "TEXT");
+    add("tasks", "record_object", "TEXT");
+    add("tasks", "record_id", "TEXT");
   }
   run(q: string, ...params: unknown[]) {
     return this.sql.prepare(q).run(...(params as never[]));

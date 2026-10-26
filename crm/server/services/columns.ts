@@ -12,6 +12,7 @@ import { parseJson, type Row } from "../db.js";
 import { badRequest } from "../lib/errors.js";
 import { OBJECT_FIELDS } from "../lib/filters.js";
 import { picklistText } from "./picklists.js";
+import { isCustomObjectKey } from "../lib/objectKeys.js";
 
 /* ------------------------------------------------------------------ catálogo de tipos */
 export interface ColumnTypeDef { label: string; stores: string; write: string; read: string; filter: string[]; trigger: boolean; condition: boolean; writable: boolean; formula: boolean; schema: Record<string, unknown>; notes?: string }
@@ -165,6 +166,16 @@ export const RELATIONS: Record<string, Record<string, RelationDef>> = {
     parent: { label: "Contrato principal", target: "contract", many: false, rows: (c, r) => one(c, "contracts", r.parent_id) },
   },
 };
+/** Proveedores de relaciones dinámicas (objetos personalizados) que se suman a las nativas. */
+type RelationProvider = (ctx: Ctx, object: string) => Record<string, RelationDef>;
+const relationProviders: RelationProvider[] = [];
+export function registerRelationProvider(p: RelationProvider) { if (!relationProviders.includes(p)) relationProviders.push(p); }
+/** Relaciones de un objeto: las nativas más las de objetos personalizados (propias e inversas). */
+export function relationsFor(ctx: Ctx, object: string): Record<string, RelationDef> {
+  const out: Record<string, RelationDef> = { ...(RELATIONS[object] ?? {}) };
+  for (const p of relationProviders) Object.assign(out, p(ctx, object));
+  return out;
+}
 /** Campos útiles de los objetos destino que no están en OBJECT_FIELDS. */
 export const EXTRA_TARGET_FIELDS: Record<string, string[]> = {
   task: ["title", "type", "priority", "assignee_id", "due_at", "completed_at", "done"],
@@ -206,7 +217,7 @@ function targetValue(row: Row, field: string): unknown {
   return row[field];
 }
 export function mirrorValue(ctx: Ctx, object: string, rec: Row, s: Record<string, unknown>): { value: unknown; items: { id: unknown; value: unknown }[] } {
-  const rel = RELATIONS[object]?.[String(s.relation ?? "")];
+  const rel = relationsFor(ctx, object)[String(s.relation ?? "")];
   if (!rel) return { value: null, items: [] };
   const rows = rel.rows(ctx, rec);
   const field = String(s.field ?? "id");
@@ -388,13 +399,13 @@ export function computeFields(ctx: Ctx, object: string, rec: Row, defs = fieldDe
 }
 function castResult(v: unknown, kind: string): unknown { if (v === null || v === undefined) return null; if (kind === "number") { const n = Number(v); return Number.isNaN(n) ? null : n; } if (kind === "text") return toStr(v); if (kind === "boolean") return truthy(v); return typeof v === "boolean" ? v : v; }
 const TABLE: Record<string, string> = { contact: "contacts", company: "companies", deal: "deals", ticket: "tickets", contract: "contracts", task: "tasks" };
-function autonumberOf(ctx: Ctx, object: string, rec: Row): number | null { const t = TABLE[object]; if (!t || !rec.created_at) return null; return (ctx.db.get<{ n: number }>(`SELECT COUNT(*) n FROM ${t} WHERE workspace_id=? AND (created_at < ? OR (created_at = ? AND id <= ?))`, ctx.ws, rec.created_at, rec.created_at, rec.id)?.n ?? 0) || null; }
+function autonumberOf(ctx: Ctx, object: string, rec: Row): number | null { if (isCustomObjectKey(object)) { if (!rec.created_at) return null; return (ctx.db.get<{ n: number }>("SELECT COUNT(*) n FROM custom_records WHERE workspace_id=? AND object_key=? AND (created_at < ? OR (created_at = ? AND id <= ?))", ctx.ws, object, rec.created_at, rec.created_at, rec.id)?.n ?? 0) || null; } const t = TABLE[object]; if (!t || !rec.created_at) return null; return (ctx.db.get<{ n: number }>(`SELECT COUNT(*) n FROM ${t} WHERE workspace_id=? AND (created_at < ? OR (created_at = ? AND id <= ?))`, ctx.ws, rec.created_at, rec.created_at, rec.id)?.n ?? 0) || null; }
 /** Enriquecer una lista (tablero) con los valores calculados. */
 export function enrichList(ctx: Ctx, object: string, items: Row[]): Row[] {
   const defs = fieldDefs(ctx, object);
   if (!defs.some((d) => COMPUTED_TYPES.includes(d.type)) || !items.length) return items;
   let auto: Map<string, number> | undefined;
-  if (defs.some((d) => d.type === "autonumber") && TABLE[object]) { auto = new Map(); ctx.db.all<{ id: string }>(`SELECT id FROM ${TABLE[object]} WHERE workspace_id=? ORDER BY created_at, id`, ctx.ws).forEach((r, i) => auto!.set(r.id, i + 1)); }
+  if (defs.some((d) => d.type === "autonumber") && (TABLE[object] || isCustomObjectKey(object))) { auto = new Map(); (isCustomObjectKey(object) ? ctx.db.all<{ id: string }>("SELECT id FROM custom_records WHERE workspace_id=? AND object_key=? ORDER BY created_at, id", ctx.ws, object) : ctx.db.all<{ id: string }>(`SELECT id FROM ${TABLE[object]} WHERE workspace_id=? ORDER BY created_at, id`, ctx.ws)).forEach((r, i) => auto!.set(r.id, i + 1)); }
   for (const it of items) { const { values, errors } = computeFields(ctx, object, it, defs, { autonumber: auto }); it.custom = { ...((it.custom as Row) ?? {}), ...values }; if (Object.keys(errors).length) it._computed_errors = errors; }
   return items;
 }
@@ -419,8 +430,10 @@ export function cellsOf(ctx: Ctx, object: string, rec: Row) {
   enrichOne(ctx, object, rec);
   const custom = (rec.custom as Row) ?? {};
   const cfg = boardConfig(ctx, object);
+  // estados de un objeto personalizado: se guardan por id y se muestran con la etiqueta de su definición
+  const objStatuses = isCustomObjectKey(object) ? ((parseJson(ctx.db.get<Row>("SELECT statuses FROM custom_objects WHERE workspace_id=? AND key=?", ctx.ws, object), ["statuses"])?.statuses as StatusLabel[] | undefined) ?? []) : null;
   return [
-    ...builtinColumns(object).map((b) => ({ id: b.id, title: b.title, type: b.type, value: rec[b.id] ?? null, text: b.type === "status" ? (picklistText(ctx, object, b.id, rec[b.id], custom) ?? builtinLabel(cfg, b.id, rec[b.id], custom)) : cellText(ctx, b.type, rec[b.id]), builtin: true, ...(b.type === "status" && sublabel(cfg, b.id, rec[b.id], custom) ? { sublabel: sublabel(cfg, b.id, rec[b.id], custom)!.id } : {}) })),
+    ...builtinColumns(object).map((b) => ({ id: b.id, title: b.title, type: b.type, value: rec[b.id] ?? null, text: objStatuses && b.id === "status" ? (objStatuses.find((s) => String(s.id) === String(rec.status))?.label ?? "") : b.type === "status" ? (picklistText(ctx, object, b.id, rec[b.id], custom) ?? builtinLabel(cfg, b.id, rec[b.id], custom)) : cellText(ctx, b.type, rec[b.id]), builtin: true, ...(b.type === "status" && sublabel(cfg, b.id, rec[b.id], custom) ? { sublabel: sublabel(cfg, b.id, rec[b.id], custom)!.id } : {}) })),
     ...defs.map((d) => {
       const v = custom[d.key] ?? null;
       const extra = d.type === "status" ? (() => { const l = statusLabels(ctx, d).find((x) => x.id === Number(v)); return { label: l?.label ?? null, color: l?.color ?? null, is_done: !!l?.done }; })() : d.type === "button" ? { label: d.settings.label ?? d.label, color: d.settings.color ?? null } : {};

@@ -22,6 +22,9 @@ export const taskSchema = z.object({
   company_id: z.string().nullable().optional(),
   deal_id: z.string().nullable().optional(),
   ticket_id: z.string().nullable().optional(),
+  /** vínculo con un registro de objeto personalizado */
+  record_object: z.string().regex(/^o_[a-z0-9_]{2,40}$/).nullable().optional(),
+  record_id: z.string().nullable().optional(),
   description: nullableStr,
   recurrence: z.enum(["daily", "weekdays", "weekly", "monthly", "yearly"]).nullable().optional(),
   /** cada N días / semanas / meses / años */
@@ -79,7 +82,7 @@ export function getTask(ctx: Ctx, tid: string): Row {
 
 export function createTask(ctx: Ctx, input: TaskInput, opts: { silent?: boolean } = {}): Row {
   assert(ctx, "task", "create");
-  const row = { custom: validateCustom(ctx, "task", input.custom ?? {}), id: id(), workspace_id: ctx.ws, title: input.title, type: input.type ?? "todo", due_at: input.due_at ?? null, priority: input.priority ?? "normal", assignee_id: input.assignee_id === undefined ? ctx.user.id : input.assignee_id, contact_id: input.contact_id ?? null, company_id: input.company_id ?? null, deal_id: input.deal_id ?? null, ticket_id: input.ticket_id ?? null, description: input.description ?? null, recurrence: input.recurrence ?? null, recurrence_interval: input.recurrence_interval ?? 1, recurrence_days: input.recurrence_days ?? null, duration_min: input.duration_min ?? null, created_by: ctx.user.id, created_at: now(), updated_at: now() };
+  const row = { custom: validateCustom(ctx, "task", input.custom ?? {}), id: id(), workspace_id: ctx.ws, title: input.title, type: input.type ?? "todo", due_at: input.due_at ?? null, priority: input.priority ?? "normal", assignee_id: input.assignee_id === undefined ? ctx.user.id : input.assignee_id, contact_id: input.contact_id ?? null, company_id: input.company_id ?? null, deal_id: input.deal_id ?? null, ticket_id: input.ticket_id ?? null, record_object: input.record_object ?? null, record_id: input.record_id ?? null, description: input.description ?? null, recurrence: input.recurrence ?? null, recurrence_interval: input.recurrence_interval ?? 1, recurrence_days: input.recurrence_days ?? null, duration_min: input.duration_min ?? null, created_by: ctx.user.id, created_at: now(), updated_at: now() };
   if (!row.company_id && row.contact_id) row.company_id = ctx.db.get<{ company_id: string | null }>("SELECT company_id FROM contacts WHERE id=?", row.contact_id)?.company_id ?? null;
   ctx.db.insert("tasks", row);
   refreshNextActivity(ctx, row.deal_id);

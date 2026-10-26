@@ -303,6 +303,34 @@ input.xl-ce{position:absolute;inset:0;width:100%;height:100%;border:2px solid va
 [data-theme="dark"] .doc-view{color:var(--ink)}
 [data-theme="dark"] .overlay{background:rgba(5,6,15,.6)}
 [data-theme="dark"] .tut-hl{box-shadow:0 0 0 4px var(--primary),0 0 0 9999px rgba(0,0,0,.55)!important}
+/* ---------- personalización total ---------- */
+.dd.cus-ledd{width:560px;max-width:calc(100vw - 16px);z-index:96;max-height:calc(100vh - 16px)}.cus-led .xl-ledf{position:sticky;bottom:-1px;background:var(--surface,#fff);border-top:1px solid var(--line2);z-index:1}
+.cus-led .xl-lrow .cus-role{flex:0 0 165px}.cus-led .cus-role-sys{font-weight:600}.cus-led .cus-n{min-width:22px;text-align:right}
+.cus-warn{margin:6px 10px;padding:7px 9px;border-radius:6px;background:#fff6e5;color:#7a4b00;font-size:12px;line-height:1.45}
+.cus-gone{padding:4px 12px;color:var(--ink2)}.cus-gone .tag{cursor:pointer;border:0;margin:2px}
+.cus-pill{display:inline-flex;width:auto;min-height:22px;padding:0 8px;border-radius:4px;font-size:12px;align-items:center}
+.cus-pills{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.cus-pi{display:inline-flex;align-items:center;gap:3px}
+.cus-lt td{vertical-align:top}.cus-lt td:first-child{white-space:normal}
+.cus-sec{margin:14px 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink2);border-bottom:1px solid var(--line2);padding-bottom:4px}
+.cus-panel>.cus-sec:first-child{margin-top:2px}
+.cus-ro{color:var(--ink2)}.cus-ro .edit{border-bottom:0!important}.cus-lock{font-size:11px;opacity:.75}
+.cus-req>label{font-weight:600}.cus-star{color:var(--c-red)}
+.cus-chk{display:flex;flex-direction:column;gap:6px;max-height:240px;overflow:auto}
+.cus-h2{font-size:16px;margin:22px 0 10px}
+.cus-mini td,.cus-mini th{padding:5px 6px;vertical-align:top}.cus-mini .inp{min-height:30px;padding:4px 8px}
+.cus-csel{width:44px;color:transparent;text-shadow:none;padding:2px!important;cursor:pointer}.cus-csel option{color:#fff}
+.cus-pal{display:flex;flex-wrap:wrap;gap:5px}.cus-pal button{width:22px;height:22px;border:0;border-radius:4px;cursor:pointer}.cus-pal button.cur{outline:2px solid var(--ink);outline-offset:1px}
+.cus-chips{display:flex;flex-wrap:wrap;gap:4px;max-width:420px}.cus-chip{display:inline-flex;align-items:center;gap:3px;font-size:11.5px;padding:2px 7px;border:1px solid var(--line);border-radius:12px;cursor:pointer;background:var(--surface,#fff)}.cus-chip input{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}.cus-chip:focus-within{outline:2px solid var(--primary);outline-offset:1px}.cus-chip.on{background:var(--primary-s);border-color:var(--primary);color:var(--primary)}
+.cus-rule{border:1px solid var(--line2);border-radius:8px;padding:10px;margin-top:10px}.cus-cond{display:inline-flex;align-items:center;gap:4px;margin:2px 0}.cus-cond .inp{min-height:28px;padding:3px 6px;width:auto}
+.cus-test{background:var(--surface2,#f5f6f8);border-radius:6px;padding:8px}.cus-test .tag{margin:2px}
+.cus-rtag{margin-left:6px;background:var(--primary-s);color:var(--primary)}
+.cus-cstate{display:inline-flex;width:auto;min-height:24px;padding:0 9px;border-radius:4px;font-size:12px;align-items:center;outline:2px dashed rgba(255,255,255,.7);outline-offset:-3px}
+.cus-perm.read{background:#fff6e5}.cus-perm.hidden{background:#fde8ec}
+.cus-note{background:var(--primary-s)}
+.cus-ocard p{margin:6px 0}
+[data-theme="dark"] .cus-warn{background:#3b2f14;color:#ffd58a}
+[data-theme="dark"] .cus-perm.read{background:#3b2f14}[data-theme="dark"] .cus-perm.hidden{background:#3d1d25}
+@media (max-width:720px){.dd.cus-ledd{width:calc(100vw - 16px)}.cus-led .xl-lrow .cus-role{flex:1 1 100%}.cus-lt th:nth-child(3),.cus-lt td:nth-child(3){display:none}.cus-chips{max-width:none}}
 </style>
 </head>
 <body>
@@ -2496,7 +2524,7 @@ function xlLabelEditor(obj, col, anchor) {
   let pick = -1, dragI = -1, n = 0;
   const box = dropdown(anchor, '<div class="xl-led"></div>', 'xl-ledd list');
   const draw = () => {
-    box.querySelector('.xl-led').innerHTML = `<div class="xl-ledh"><b>Etiquetas de «${esc(col.label)}»</b><span class="xs muted">${kind === 'builtin' ? 'Las del sistema no se borran (las usa la lógica del CRM); las nuevas «se comportan como» una de ellas.' : kind === 'stage' ? 'Edita las etapas del pipeline.' : 'El elemento guarda el ID: renombrar no reescribe datos.'}</span></div>` +
+    box.querySelector('.xl-led').innerHTML = `<div class="xl-ledh"><b>Etiquetas de «${esc(col.label)}»</b><span class="xs muted">${kind === 'builtin' ? 'Todas las etiquetas se pueden renombrar, recolorear, ordenar y borrar; cada una indica cómo se comporta.' : kind === 'stage' ? 'Edita las etapas del pipeline.' : 'El elemento guarda el ID: renombrar no reescribe datos.'}</span></div>` +
       rows.map((r, i) => r.del ? '' : `<div class="xl-lrow ${r.hidden ? 'off' : ''}" draggable="true" data-i="${i}"><span class="xl-grip" title="Arrastra para ordenar">⋮⋮</span><button class="xl-sw" data-c="${i}" style="background:${r.color}" title="Color"></button><input class="inp" data-l="${i}" value="${esc(r.label)}" maxlength="40"/>${kind === 'builtin' && r.own ? `<select class="inp xl-base" data-b="${i}" title="Se comporta como">${bases.map(([k, l]) => `<option value="${esc(k)}" ${r.base === k ? 'selected' : ''}>≈ ${esc(l)}</option>`).join('')}</select>` : ''}${kind === 'custom' ? `<label class="xs xl-done" title="Cuenta como hecho"><input type="checkbox" data-d="${i}" ${r.done ? 'checked' : ''}/>hecho</label>` : ''}${kind === 'builtin' && !r.own ? `<button class="ibtn" data-h="${i}" title="${r.hidden ? 'Mostrar en el selector' : 'Ocultar en el selector'}">${r.hidden ? '◌' : '●'}</button><span class="xl-lock" title="Etiqueta del sistema: no se puede borrar">🔒</span>` : `<button class="ibtn" data-x="${i}" title="Borrar">${ico.trash}</button>`}${r.move ? `<div class="xl-reas">Pasar ${r.move.n} elemento(s) a <select class="inp" data-m="${i}">${rows.filter((x, j) => j !== i && !x.del).map((x) => `<option value="${esc(x.k)}" ${r.move.to === x.k ? 'selected' : ''}>${esc(x.label)}</option>`).join('')}${kind === 'custom' ? `<option value="" ${r.move.to === '' ? 'selected' : ''}>— vacío —</option>` : ''}</select></div>` : ''}</div>${pick === i ? `<div class="xl-pal">${PALETTE.map((p) => `<button data-p="${p}" style="background:${p}" class="${p === r.color ? 'cur' : ''}"></button>`).join('')}</div>` : ''}`).join('') +
       `<div class="xl-ledf"><button class="btn sm outline" data-add>${ico.plus}Nueva etiqueta</button><span class="right"></span><button class="btn sm outline" data-cancel>Cancelar</button><button class="btn sm primary" data-apply>Aplicar</button></div>`;
     const q = (s) => box.querySelectorAll(s);
@@ -3407,6 +3435,850 @@ ensurePro(); save(); proApplyTheme(); render();
 
 <script>
 /* ============================================================
+   Personalización total
+   - Listas y etiquetas: todas editables y borrables (también las del
+     sistema). Cada etiqueta tiene un «comportamiento» (el valor que usa
+     la lógica del CRM); al borrar una en uso se reasignan sus elementos
+     y se avisa de qué automatismos dejan de funcionar.
+   - Fichas por objeto y rol (secciones, orden, ficha / alta, obligatorios)
+     y permisos por campo (editable / solo lectura / oculto).
+   - Compartir un registro con un usuario o un equipo.
+   - Objetos personalizados (p. ej. Proyectos) con tablero, kanban, ficha,
+     relaciones, numeración, automatizaciones e informes.
+   - CLM configurable por tipo de contrato: estados propios dentro de cada
+     fase con transiciones y campos obligatorios, matriz de aprobación,
+     numeración con variables, campos de la solicitud y alertas.
+   ============================================================ */
+'use strict';
+const CUS = { probing: false, ctx: null, alias: {}, forms: {}, draft: null };
+function ensureCus() { S.cus = S.cus || {}; for (const k of ['layouts', 'perms', 'clm', 'catalogs']) S.cus[k] = S.cus[k] || {}; S.cus.objects = S.cus.objects || []; return S.cus; }
+/* nombres originales de cada valor del sistema (las constantes se renombran al cargar) */
+const CUS_ROLES = {"LIFECYCLE": {"subscriber": "Suscriptor", "lead": "Lead", "mql": "MQL", "sql": "SQL", "opportunity": "Oportunidad", "customer": "Cliente", "evangelist": "Evangelista", "lost": "Perdido"}, "LEAD_STATUS": {"new": "Nuevo", "contacted": "Contactado", "qualified": "Cualificado", "unqualified": "No cualificado", "nurturing": "En nutrición"}, "SOURCES": {"web": "Web", "referral": "Referido", "event": "Evento", "outbound": "Outbound", "ads": "Anuncios", "import": "Importación", "api": "API"}, "COMPANY_TYPE": {"prospect": "Prospecto", "customer": "Cliente", "partner": "Partner", "supplier": "Proveedor", "competitor": "Competidor"}, "DEAL_STATUS": {"open": "Abierto", "won": "Ganado", "lost": "Perdido"}, "PRIORITY": {"low": "Baja", "normal": "Media", "high": "Alta", "urgent": "Crítica"}, "TASK_STATUS": {"todo": "Pendiente", "doing": "En curso", "done": "Hecha"}, "TASK_TYPE": {"call": "Llamada", "email": "Email", "meeting": "Reunión", "followup": "Seguimiento", "todo": "Tarea"}, "TICKET_STATUS": {"new": "Nuevo", "open": "Abierto", "pending": "Esperando cliente", "resolved": "Resuelto", "closed": "Cerrado"}, "CST": {"draft": "Borrador", "review": "Revisión interna", "negotiation": "Negociación", "approval": "Pendiente de aprobación", "approved": "Aprobado", "signing": "En firma", "partial": "Firmado parcialmente", "active": "Activo", "expired": "Vencido", "terminated": "Terminado", "renewed": "Renovado", "cancelled": "Cancelado", "hold": "En pausa", "archived": "Archivado"}, "CRISK": {"low": "Bajo", "medium": "Medio", "high": "Alto", "critical": "Crítico"}, "CRENEW": {"auto": "Renovación automática", "manual": "Renovación expresa", "none": "Sin renovación"}, "CPAPER": {"own": "Papel propio", "external": "Papel de la contraparte"}, "CDIR": {"income": "Ingreso", "expense": "Gasto", "neutral": "Neutro"}, "CKIND": {"master": "Contrato", "amendment": "Enmienda", "renewal": "Renovación"}, "COBLT": {"deliver": "Entrega", "pay": "Pago", "report": "Informe", "notify": "Notificación", "audit": "Auditoría", "return": "Devolución", "other": "Otra"}, "CMS": {"end": "Fin de vigencia", "notice": "Límite de preaviso", "decision": "Decisión de renovación", "review": "Revisión del contrato", "custom": "Hito"}, "CPAY": {"one_time": "Pago único", "monthly": "Mensual", "quarterly": "Trimestral", "yearly": "Anual", "milestones": "Por hitos"}, "COBL": {"pending": "Pendiente", "done": "Cumplida", "breached": "Incumplida", "waived": "Dispensada"}, "QUOTE_STATUS": {"draft": "Borrador", "sent": "Enviado", "viewed": "Visto", "accepted": "Aceptado", "rejected": "Rechazado", "expired": "Caducado"}, "PERIOD": {"one_time": "Único", "monthly": "Mensual", "yearly": "Anual"}, "LOSS": {"price": "Precio", "competitor": "Competidor", "no_budget": "Sin presupuesto", "no_response": "Sin respuesta", "timing": "Timing", "no_need": "Sin necesidad"}, "CAPPR": {"pending": "Pendiente", "approved": "Aprobado", "rejected": "Rechazado"}};
+const CUS_CONST = { LIFECYCLE, LEAD_STATUS, SOURCES, COMPANY_TYPE, DEAL_STATUS, PRIORITY, TASK_STATUS, TASK_TYPE, TICKET_STATUS, QUOTE_STATUS, PERIOD, LOSS, CST, CRISK, CRENEW, CPAPER, CDIR, CKIND, COBLT, CMS, CPAY, COBL, CAPPR };
+const CUS_SRC = { 'contacts.lifecycle': 'LIFECYCLE', 'contacts.leadStatus': 'LEAD_STATUS', 'contacts.source': 'SOURCES', 'companies.type': 'COMPANY_TYPE', 'deals.priority': 'PRIORITY', 'tasks.status': 'TASK_STATUS', 'tasks.type': 'TASK_TYPE', 'tasks.priority': 'PRIORITY', 'tickets.status': 'TICKET_STATUS', 'tickets.priority': 'PRIORITY', 'products.period': 'PERIOD', 'quotes.status': 'QUOTE_STATUS', 'contracts.status': 'CST', 'contracts.risk': 'CRISK', 'contracts.renewal': 'CRENEW', 'contracts.paper': 'CPAPER', 'contracts.direction': 'CDIR', 'contracts.kind': 'CKIND' };
+/* qué hace la lógica con cada comportamiento (para avisar si se queda sin etiqueta) */
+const CUS_BEHAV = {
+  'contacts.leadStatus': { new: 'el SLA de primer contacto a leads (aviso al propietario) y el valor por defecto de los contactos nuevos', unqualified: 'pedir el motivo de descalificación', qualified: 'el estado que se pone al convertir un lead en oportunidad' },
+  'contacts.lifecycle': { lead: 'el valor por defecto de los contactos nuevos', opportunity: 'el paso automático al crear un negocio o convertir un lead', customer: 'el paso automático al ganar un negocio', mql: 'la promoción por puntuación (umbral MQL)', sql: 'la promoción por puntuación (umbral SQL)' },
+  'companies.type': { prospect: 'el valor por defecto de las empresas nuevas', customer: 'el paso automático de prospecto a cliente al ganar un negocio' },
+  'tasks.status': { todo: 'el estado inicial y el aviso de tareas vencidas', done: 'completar la tarea: registra la actividad y crea la siguiente repetición' },
+  'tickets.status': { new: 'el estado inicial y el control del SLA de primera respuesta', open: 'el control del SLA de primera respuesta', resolved: 'la fecha de resolución y la encuesta CSAT', closed: 'contar el ticket como cerrado' },
+  'tickets.priority': { low: 'el SLA de respuesta de prioridad baja', normal: 'el SLA de respuesta por defecto', high: 'el SLA de respuesta de prioridad alta', urgent: 'el SLA de respuesta crítico' },
+  'quotes.status': { sent: 'la caducidad automática de presupuestos enviados', viewed: 'la caducidad automática y el aviso de presupuesto visto', accepted: 'mover el negocio al aceptar', expired: 'marcar presupuestos caducados' },
+  'contracts.status': { draft: 'el estado inicial de las solicitudes', review: 'el aviso a legal y el SLA de revisión', approval: 'lanzar el circuito de aprobación', approved: 'habilitar el envío a firma', signing: 'el sobre de firma electrónica', active: 'generar hitos, pagos y obligaciones', expired: 'el vencimiento automático', terminated: 'la terminación con causa', renewed: 'cerrar el contrato renovado', cancelled: 'cancelar sobres pendientes', archived: 'el archivo definitivo' },
+  'contracts.risk': { high: 'los avisos de riesgo alto', critical: 'los avisos de riesgo crítico' },
+  'contracts.renewal': { auto: 'los hitos de preaviso y decisión de renovación', manual: 'los hitos de decisión de renovación', none: 'no generar hitos de renovación' },
+  'contracts.paper': { external: 'añadir a legal en la aprobación (papel de la contraparte)', own: 'generar el documento desde la plantilla' },
+};
+const CUS_CATS = {
+  DEAL_STATUS: { name: 'Resultado del negocio', obj: 'Negocios', sys: true, n: (k) => S.deals.filter((d) => d.status === k).length },
+  LOSS: { name: 'Motivos de pérdida', obj: 'Negocios', str: true, n: (k) => S.deals.filter((d) => d.lossReason === k).length, move: (a, b) => S.deals.forEach((d) => { if (d.lossReason === a) d.lossReason = b; }) },
+  COBLT: { name: 'Tipos de obligación', obj: 'Contratos', n: (k) => (S.contracts || []).reduce((s, c) => s + (c.obligations || []).filter((o) => o.type === k).length, 0), move: (a, b) => (S.contracts || []).forEach((c) => (c.obligations || []).forEach((o) => { if (o.type === a) o.type = b; })) },
+  COBL: { name: 'Estados de obligación', obj: 'Contratos', sys: true, n: (k) => (S.contracts || []).reduce((s, c) => s + (c.obligations || []).filter((o) => o.status === k).length, 0) },
+  CMS: { name: 'Tipos de hito', obj: 'Contratos', sys: true, n: (k) => (S.contracts || []).reduce((s, c) => s + (c.milestones || []).filter((m) => m.type === k).length, 0) },
+  CPAY: { name: 'Modelos de pago', obj: 'Contratos', sys: true, n: (k) => (S.contracts || []).filter((c) => c.payModel === k).length },
+  CAPPR: { name: 'Estados de aprobación', obj: 'Contratos', sys: true, n: (k) => (S.contracts || []).reduce((s, c) => s + (c.approvals || []).filter((a) => a.status === k).length, 0) },
+};
+const cap1 = (s) => (s ? String(s)[0].toUpperCase() + String(s).slice(1) : '');
+const cusPill = (o, extra = '') => `<span class="pill cus-pill" style="background:${o?.color || C.grey};${extra}">${esc(o?.label ?? '—')}</span>`;
+const cusEmpty = (v) => v == null || v === '' || (Array.isArray(v) && !v.length) || v === false;
+
+/* ---------------------------------------------------------------- catálogos que no son columnas */
+function cusApplyCatalogs() {
+  for (const [name, cfg] of Object.entries(S.cus?.catalogs || {})) {
+    const def = CUS_CONST[name]; const meta = CUS_CATS[name]; if (!def || !meta) continue;
+    for (const [k, o] of Object.entries(cfg.added || {})) if (!def[k]) def[k] = meta.str ? o.label : { label: o.label, color: o.color };
+    for (const [k, o] of Object.entries(cfg.ov || {})) if (def[k] !== undefined) { if (meta.str) def[k] = o.label; else Object.assign(def[k], o); }
+    for (const k of cfg.deleted || []) delete def[k];
+    if (cfg.order) { const all = Object.entries(def); for (const [k] of all) delete def[k]; const pos = (k) => { const i = cfg.order.indexOf(k); return i < 0 ? 999 : i; }; all.sort((a, b) => pos(a[0]) - pos(b[0])).forEach(([k, v]) => (def[k] = v)); }
+  }
+}
+
+/* ---------------------------------------------------------------- columnas de estado: comportamiento, borrado y respaldo */
+const cusColOf = (obj, key) => applyColOv(obj, [...(COLS[obj] ? COLS[obj]() : []), ...customCols(obj)]).find((c) => c.key === key) || null;
+const cusRoleNames = (col) => CUS_ROLES[col.cusSrc] || Object.fromEntries(Object.entries(col.opt || {}).filter(([, o]) => !o.base && !o.deleted).map(([k, o]) => [k, o.label]));
+const _xlWrapColCus = xlWrapCol;
+xlWrapCol = function (obj, c) {
+  const w = _xlWrapColCus(obj, c);
+  if (!w || w.type !== 'status' || w.custom || w.stage || !w.opt || cusObj(obj)) return w;
+  const src = CUS_SRC[obj + '.' + c.key]; const L = S.xl?.lab?.[obj]?.[c.key];
+  if (!L || !w.baseGet) return { ...w, cusSrc: src };
+  const del = L.deleted || []; if (!del.length) return { ...w, cusSrc: src };
+  const fallback = (b, it) => { const ord = L.order || []; return [...L.subs].sort((x, y) => (ord.indexOf(x.id) + 1 || 999) - (ord.indexOf(y.id) + 1 || 999)).find((s) => String(s.base) === String(b) && (!s.clmType || s.clmType === it?.typeId)); };
+  const get = (it) => { const b = w.baseGet(it); const sid = it._sub?.[c.key]; const s = sid && L.subs.find((x) => x.id === sid); if (s && String(s.base) === String(b)) return sid; if (del.includes(b)) { const f = fallback(b, it); if (f) return f.id; } return b; };
+  const opt = {};
+  for (const [k, o] of Object.entries(w.opt)) { if (!del.includes(k)) { opt[k] = o; continue; } if ((S[obj] || []).some((it) => get(it) === k)) opt[k] = { ...o, label: o.label + ' (eliminada)', deleted: true }; }
+  return { ...w, cusSrc: src, opt, get, hiddenKeys: [...new Set([...(w.hiddenKeys || []), ...del])] };
+};
+/* asignar una etiqueta (original o propia) a un elemento sin pasar por diálogos: reasignaciones en bloque */
+function cusSetBase(obj, it, key, base) {
+  if (obj === 'contracts' && key === 'status') { clmSetStatus(it, base, 'reasignación de etiquetas'); return true; }
+  const P = window.prompt; window.prompt = () => 'Reasignado al reorganizar las etiquetas';
+  try { return setField(obj, it, key, base, { silent: true }) !== false; } catch (e) { console.warn(e); return false; } finally { window.prompt = P; }
+}
+function cusAssign(obj, it, key, target) {
+  const L = S.xl?.lab?.[obj]?.[key]; const s = L?.subs.find((x) => x.id === target); const base = s ? s.base : target;
+  let ok = true; if (String(it[key]) !== String(base)) ok = cusSetBase(obj, it, key, base);
+  if (ok) { it._sub = it._sub || {}; if (s) it._sub[key] = s.id; else delete it._sub[key]; }
+  return ok;
+}
+/* comportamientos que se quedan sin ninguna etiqueta */
+function cusUncovered(obj, key, rows) {
+  const src = CUS_SRC[obj + '.' + key]; const names = CUS_ROLES[src] || {}; const beh = CUS_BEHAV[obj + '.' + key] || {};
+  const live = new Set(rows.filter((r) => !r.del).map((r) => r.role));
+  return Object.keys(names).filter((k) => !live.has(k)).map((k) => ({ k, name: names[k], what: beh[k] || 'las automatizaciones, filtros e informes que usen este valor' }));
+}
+function cusLabelUsage(obj, col) { const n = {}; (S[obj] || []).forEach((it) => { const v = String(col.get ? col.get(it) : it[col.key]); n[v] = (n[v] || 0) + 1; }); return n; }
+
+/* editor de etiquetas de columnas del sistema: todo editable y borrable */
+function cusLabelEditor(obj, col, anchor) {
+  if (!can('edit')) return toast('Tu rol es de solo lectura', 'err');
+  col = cusColOf(obj, col.key) || col;
+  const roles = cusRoleNames(col); const L = xlLab(obj, col.key); const del = L.deleted || []; const usage = cusLabelUsage(obj, col);
+  const order = L.order || [...Object.keys(roles), ...L.subs.map((s) => s.id)];
+  const allKeys = [...order.filter((k) => roles[k] !== undefined || L.subs.some((s) => s.id === k)), ...Object.keys(roles).filter((k) => !order.includes(k)), ...L.subs.map((s) => s.id).filter((k) => !order.includes(k))];
+  const optOf = (k) => col.opt[k] || CUS_CONST[col.cusSrc]?.[k] || {};
+  let rows = [];
+  for (const k of allKeys) {
+    if (roles[k] !== undefined) { if (del.includes(k)) continue; const o = optOf(k); rows.push({ k, sys: true, role: k, label: String(o.label || roles[k]).replace(/ \(eliminada\)$/, ''), color: o.color || C.grey, hidden: (L.hidden || []).includes(k) }); continue; }
+    const s = L.subs.find((x) => x.id === k); if (!s || s.clmType) continue; rows.push({ k, sys: false, role: s.base, origRole: s.base, label: s.label, color: s.color, hidden: (L.hidden || []).includes(k) });
+  }
+  const restored = new Set(); let pick = -1, dragI = -1, n = 0;
+  const box = dropdown(anchor, '<div class="xl-led cus-led"></div>', 'xl-ledd list cus-ledd');
+  const roleOpts = (sel) => Object.entries(roles).map(([k, l]) => `<option value="${esc(k)}" ${sel === k ? 'selected' : ''}>≈ ${esc(l)}</option>`).join('');
+  const draw = () => {
+    const unc = cusUncovered(obj, col.key, rows); const gone = del.filter((k) => !restored.has(k));
+    box.querySelector('.xl-led').innerHTML = `<div class="xl-ledh"><b>Etiquetas de «${esc(col.label)}»</b><span class="xs muted">Todas se pueden renombrar, recolorear, ordenar, ocultar y borrar. «Se comporta como» indica qué valor usa la lógica del CRM (SLA, automatizaciones, informes).</span></div>` +
+      rows.map((r, i) => r.del ? '' : `<div class="xl-lrow cus-lrow ${r.hidden ? 'off' : ''}" draggable="true" data-i="${i}"><span class="xl-grip" title="Arrastra para ordenar">⋮⋮</span><button class="xl-sw" data-c="${i}" style="background:${r.color}" title="Color"></button><input class="inp" data-l="${i}" value="${esc(r.label)}" maxlength="40"/><select class="inp xl-base cus-role ${r.sys && r.role === r.k ? 'cus-role-sys' : ''}" data-b="${i}" title="Se comporta como">${roleOpts(r.role)}</select><span class="xs muted cus-n" title="Elementos con esta etiqueta">${usage[r.k] || 0}</span><button class="ibtn" data-h="${i}" title="${r.hidden ? 'Mostrar en el selector' : 'Ocultar en el selector'}">${r.hidden ? '◌' : '●'}</button><button class="ibtn" data-x="${i}" title="Borrar">${ico.trash}</button>${r.move ? `<div class="xl-reas">Pasar ${r.move.n} elemento(s) a <select class="inp" data-m="${i}">${rows.filter((x, j) => j !== i && !x.del).map((x) => `<option value="${esc(x.k)}" ${r.move.to === x.k ? 'selected' : ''}>${esc(x.label || '(sin nombre)')}</option>`).join('')}</select></div>` : ''}</div>${pick === i ? `<div class="xl-pal">${PALETTE.map((p) => `<button data-p="${p}" style="background:${p}" class="${p === r.color ? 'cur' : ''}"></button>`).join('')}</div>` : ''}`).join('') +
+      (gone.length ? `<div class="cus-gone xs">Etiquetas del sistema borradas: ${gone.map((k) => `<button class="tag" data-r="${esc(k)}" title="Restaurar">↺ ${esc(roles[k] || k)}</button>`).join(' ')}</div>` : '') +
+      (unc.length ? `<div class="cus-warn">⚠ ${unc.map((u) => `Ninguna etiqueta se comporta como «${esc(u.name)}»: deja de aplicarse ${esc(u.what)}.`).join('<br>⚠ ')}</div>` : '') +
+      `<div class="xl-ledf"><button class="btn sm outline" data-add>${ico.plus}Nueva etiqueta</button><span class="right"></span><button class="btn sm outline" data-cancel>Cancelar</button><button class="btn sm primary" data-apply>Aplicar</button></div>`;
+    const q = (s) => box.querySelectorAll(s);
+    q('[data-l]').forEach((x) => (x.oninput = () => (rows[x.dataset.l].label = x.value)));
+    q('[data-b]').forEach((x) => (x.onchange = () => { rows[x.dataset.b].role = x.value; draw(); }));
+    q('[data-m]').forEach((x) => (x.onchange = () => (rows[x.dataset.m].move.to = x.value)));
+    q('[data-c]').forEach((x) => (x.onclick = () => { pick = pick === Number(x.dataset.c) ? -1 : Number(x.dataset.c); draw(); }));
+    q('[data-p]').forEach((x) => (x.onclick = () => { rows[pick].color = x.dataset.p; pick = -1; draw(); }));
+    q('[data-h]').forEach((x) => (x.onclick = () => { const r = rows[x.dataset.h]; r.hidden = !r.hidden; draw(); }));
+    q('[data-r]').forEach((x) => (x.onclick = () => { const k = x.dataset.r; restored.add(k); const o = optOf(k); rows.push({ k, sys: true, role: k, label: String(o.label || roles[k]).replace(/ \(eliminada\)$/, ''), color: o.color || C.grey, hidden: false }); draw(); }));
+    q('[data-x]').forEach((x) => (x.onclick = () => { const i = Number(x.dataset.x); const r = rows[i]; const u = String(r.k).startsWith('__n') ? 0 : usage[r.k] || 0; if (rows.filter((z) => !z.del).length <= 1) return toast('La lista necesita al menos una etiqueta', 'err'); if (u && !r.move) { const other = rows.find((z, j) => j !== i && !z.del && z.role === r.role) || rows.find((z, j) => j !== i && !z.del); r.move = { n: u, to: other.k }; toast(`En uso en ${u} elemento(s): elige a qué etiqueta pasarlos y pulsa borrar otra vez`, 'err'); return draw(); } r.del = true; draw(); }));
+    q('[data-add]').forEach((x) => (x.onclick = () => { rows.push({ k: '__n' + n++, sys: false, role: Object.keys(roles)[0], label: '', color: PALETTE[(rows.length * 3) % PALETTE.length], hidden: false }); draw(); const ins = box.querySelectorAll('[data-l]'); ins[ins.length - 1]?.focus(); }));
+    q('[data-cancel]').forEach((x) => (x.onclick = () => closeDd()));
+    q('[data-apply]').forEach((x) => (x.onclick = () => apply()));
+    q('.xl-lrow').forEach((rw) => { rw.ondragstart = (e) => { if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return e.preventDefault(); dragI = Number(rw.dataset.i); e.dataTransfer.effectAllowed = 'move'; }; rw.ondragover = (e) => { e.preventDefault(); rw.classList.add('over'); }; rw.ondragleave = () => rw.classList.remove('over'); rw.ondrop = (e) => { e.preventDefault(); const to = Number(rw.dataset.i); if (dragI < 0 || dragI === to) return; const [m] = rows.splice(dragI, 1); rows.splice(to, 0, m); dragI = -1; draw(); }; });
+    const bb = box.getBoundingClientRect(); if (bb.bottom > innerHeight - 8) box.style.top = Math.max(8, innerHeight - bb.height - 8) + 'px';
+  };
+  const apply = () => {
+    const live = rows.filter((r) => !r.del);
+    if (live.some((r) => !r.label.trim())) return toast('Hay una etiqueta sin nombre', 'err');
+    const names = live.map((r) => norm(r.label.trim())); if (new Set(names).size !== names.length) return toast('Hay dos etiquetas con el mismo nombre', 'err');
+    const before = cusUncovered(obj, col.key, rows.map((r) => ({ role: r.sys ? r.k : r.origRole || r.role, del: false }))).map((u) => u.k);
+    /* 1) qué elementos se mueven (con las etiquetas actuales) */
+    const shown = (it) => String(col.get ? col.get(it) : it[col.key]);
+    const keyOf = {}; const moves = [];
+    ensureOv(); S.labelOv[obj] = S.labelOv[obj] || {}; const ov = (S.labelOv[obj][col.key] = S.labelOv[obj][col.key] || {});
+    const newDel = new Set(del.filter((k) => !restored.has(k))); const subs = [];
+    for (const r of rows) {
+      if (r.sys) {
+        if (r.del) { newDel.add(r.k); continue; }
+        if (r.role !== r.k) { newDel.add(r.k); const id = 'x' + uid(); subs.push({ id, label: r.label.trim(), color: r.color, base: r.role }); keyOf[r.k] = id; moves.push({ from: r.k, to: id }); continue; }
+        newDel.delete(r.k); ov[r.k] = { label: r.label.trim(), color: r.color }; const k0 = CUS_CONST[col.cusSrc]?.[r.k] || col.opt[r.k]; if (k0 && typeof k0 === 'object') Object.assign(k0, ov[r.k]); keyOf[r.k] = r.k;
+      } else {
+        if (r.del) continue; const id = String(r.k).startsWith('__n') ? 'x' + uid() : r.k; keyOf[r.k] = id; subs.push({ id, label: r.label.trim(), color: r.color, base: r.role });
+        if (!String(r.k).startsWith('__n') && r.origRole !== r.role) moves.push({ from: r.k, to: id });
+      }
+    }
+    for (const r of rows.filter((x) => x.del && x.move)) moves.push({ from: r.k, to: keyOf[r.move.to] ?? r.move.to });
+    const plan = moves.map((m) => ({ ...m, items: (S[obj] || []).filter((it) => shown(it) === String(m.from)) }));
+    /* 2) guardar la definición */
+    L.subs = [...subs, ...L.subs.filter((s) => s.clmType)];
+    L.deleted = [...newDel]; L.hidden = live.filter((r) => r.hidden).map((r) => keyOf[r.k]);
+    L.order = [...live.map((r) => keyOf[r.k]), ...L.subs.filter((s) => s.clmType).map((s) => s.id)];
+    const goneSubs = new Set(rows.filter((r) => r.del && !r.sys).map((r) => r.k)); (S[obj] || []).forEach((it) => { if (it._sub && goneSubs.has(it._sub[col.key])) delete it._sub[col.key]; });
+    /* 3) reasignar */
+    let moved = 0, failed = 0;
+    for (const m of plan) for (const it of m.items) { if (cusAssign(obj, it, col.key, m.to)) moved++; else failed++; }
+    const after = cusUncovered(obj, col.key, live).filter((u) => !before.includes(u.k));
+    audit(obj, null, 'labels', { columna: col.label, reasignados: moved }); closeDd(); save(); refresh();
+    toast(after.length ? `Guardado. ⚠ Sin etiqueta para «${after.map((u) => u.name).join('», «')}»: deja de aplicarse ${after[0].what}.` : `Etiquetas guardadas${moved ? ` · ${moved} elemento(s) reasignados` : ''}${failed ? ` · ${failed} no se pudieron mover` : ''}`, after.length || failed ? 'err' : 'ok');
+  };
+  draw();
+  return box;
+}
+const _xlLabelEditorCus = xlLabelEditor;
+xlLabelEditor = function (obj, col, anchor) {
+  if (cusObj(obj) && col.key === 'status') return cusObjEditor(obj, 'status');
+  if (col.custom || col.stage) return _xlLabelEditorCus.apply(this, arguments);
+  return cusLabelEditor(obj, col, anchor);
+};
+/* grupos y kanban: sin columnas de etiquetas borradas vacías; etiquetas propias como carriles */
+const _applyGroupByCus = applyGroupBy;
+applyGroupBy = function (obj, cols, groups) { const out = _applyGroupByCus.apply(this, arguments); const del = S.xl?.lab?.[obj]?.[uiOf(obj).groupBy ?? DEFAULT_GROUP[obj]]?.deleted || []; return del.length ? out.filter((g) => !del.includes(g.key) || g.items.length) : out; };
+const _kanbanHtmlCus = kanbanHtml;
+kanbanHtml = function (o) {
+  const L = S.xl?.lab?.[o.obj]?.[o.laneKey]; if (!L || o.laneKey === 'stageId') return _kanbanHtmlCus.apply(this, arguments);
+  const col = cusColOf(o.obj, o.laneKey); if (!col?.get) return _kanbanHtmlCus.apply(this, arguments);
+  const lanes = []; const seen = new Set();
+  for (const l of o.lanes) { const mine = l.items.filter((i) => String(col.get(i)) === String(l.key)); lanes.push({ ...l, label: col.opt[l.key]?.label || l.label, items: mine }); seen.add(l.key); for (const s of L.subs.filter((x) => String(x.base) === String(l.key))) { const its = l.items.filter((i) => col.get(i) === s.id); if (its.length || !(col.hiddenKeys || []).includes(s.id)) { lanes.push({ key: s.id, label: s.label, color: s.color, items: its, sum: l.sum != null ? sumBy(its, (x) => x.amount || x.value || 0) : undefined }); seen.add(s.id); } } }
+  return _kanbanHtmlCus.call(this, { ...o, lanes: lanes.filter((l) => !(col.hiddenKeys || []).includes(l.key) || l.items.length) });
+};
+const _bindDnDCus = bindDnD;
+bindDnD = function () {
+  _bindDnDCus.apply(this, arguments);
+  document.querySelectorAll('[data-lane]').forEach((ln) => { const obj = ln.dataset.obj, key = ln.dataset.lanekey; if (key === 'stageId' || !S.xl?.lab?.[obj]?.[key]) return; const prev = ln.ondrop; ln.ondrop = (e) => { const id = document.querySelector('.kcard.drag')?.dataset.drag; const it = id && byId(obj, id); const col = cusColOf(obj, key); if (!it || !col) return prev && prev(e); e.preventDefault(); ln.classList.remove('over'); if (xlPickStatus(obj, it, col, ln.dataset.lane)) { save(); refresh(); } }; });
+};
+/* ficha: desplegable y pastillas con las etiquetas propias */
+const _kvStatusCus = ACT['kv-status'];
+ACT['kv-status'] = (arg, el) => {
+  const { obj, id, key } = arg; const it = byId(obj, id); const col = it && cusColOf(obj, key);
+  if (!col || !(col.baseGet || cusObj(obj) || col.cusSrc)) return _kvStatusCus(arg, el);
+  if (!can('edit')) return toast('Tu rol es de solo lectura', 'err');
+  if (cusPerm(obj, key) !== 'edit') return toast('Campo de solo lectura para tu rol', 'err');
+  const box = xlStatusDd(obj, it, col, el); box.querySelectorAll('[data-k]').forEach((b) => b.addEventListener('click', () => setTimeout(() => PANEL && renderPanel(), 40)));
+};
+/* alta: los selectores de estado muestran las etiquetas vivas; las propias se guardan como «comportamiento + etiqueta» */
+const CUS_FORMSEL = { contacts: { src: 'source', lc: 'lifecycle' }, companies: { ty: 'type' }, deals: { pr: 'priority' }, tasks: { ty: 'type', pr: 'priority' }, tickets: { pr: 'priority' } };
+function cusRelabelSelects(obj, ov) {
+  for (const [id, key] of Object.entries(CUS_FORMSEL[obj] || {})) {
+    const sel = ov.querySelector('#' + id); const col = sel && cusColOf(obj, key); if (!col?.cusSrc && !col?.baseGet) continue;
+    const cur = sel.value; const hid = col.hiddenKeys || []; const entries = Object.entries(col.opt).filter(([k, o]) => !hid.includes(k) && !o.deleted);
+    const pickK = entries.some(([k]) => k === cur) ? cur : (entries.find(([, o]) => o.base === cur) || entries[0] || [''])[0];
+    sel.innerHTML = entries.map(([k, o]) => `<option value="${esc(k)}" ${k === pickK ? 'selected' : ''}>${esc(o.label)}</option>`).join('');
+  }
+}
+function cusSplit(obj, d) { const subs = {}; if (!d) return subs; for (const key of Object.values(CUS_FORMSEL[obj] || {})) { const L = S.xl?.lab?.[obj]?.[key]; const s = d[key] && L?.subs.find((x) => x.id === d[key]); if (s) { subs[key] = s.id; d[key] = s.base; } } return subs; }
+const cusWithSubs = (obj, fn) => function (d) { const subs = cusSplit(obj, d); const r = fn.apply(this, arguments); const it = r && r.id ? r : null; if (it && Object.keys(subs).length) it._sub = { ...(it._sub || {}), ...subs }; return r; };
+createContact = cusWithSubs('contacts', createContact); createCompany = cusWithSubs('companies', createCompany); createDeal = cusWithSubs('deals', createDeal); createTask = cusWithSubs('tasks', createTask); createTicket = cusWithSubs('tickets', createTicket);
+
+/* ---------------------------------------------------------------- fichas y permisos por campo */
+const cusRole = () => me()?.role || 'readonly';
+const cusPerm = (obj, key, role = cusRole()) => (S.cus?.perms?.[obj]?.[role] || {})[key] || 'edit';
+const cusLayout = (obj, role = cusRole()) => { const L = S.cus?.layouts?.[obj] || {}; return L[role] || L['*'] || null; };
+const CUS_PERM = { edit: 'Editable', read: 'Solo lectura', hidden: 'Oculto' };
+const CUS_KV_ACTS = ['kv-edit', 'kv-status', 'kv-person', 'kv-bool'];
+const cusFormFn = (obj) => ({ contacts: () => contactForm({}), companies: () => companyForm({}), deals: () => dealForm({}), tasks: () => taskForm({}), tickets: () => ticketForm({}) })[obj] || (cusObj(obj) ? () => cusObjForm(cusObj(obj)) : null);
+const cusFormObj = (title) => ({ 'Nuevo contacto': 'contacts', 'Nueva empresa': 'companies', 'Nuevo negocio': 'deals', 'Nueva tarea': 'tasks', 'Nuevo ticket': 'tickets' })[title] || (S.cus?.objects || []).find((o) => title === 'Nuevo ' + o.single)?.key || null;
+function cusRawDetails(obj, it) { return cusObj(obj) ? cusObjDetails(obj, it) : _panelDetailsCus(obj, it); }
+/* etiqueta normalizada → clave de campo (columnas + campos de la ficha con data-arg) */
+function cusAlias(obj) {
+  const sig = (S.customCols?.[obj] || []).length + ':' + (cusObj(obj)?.fields || []).length;
+  if (CUS.alias[obj]?.sig === sig) return CUS.alias[obj].map;
+  const map = {}; for (const c of [...(COLS[obj] ? COLS[obj]() : []), ...customCols(obj)]) map[norm(String(c.label).replace(/<[^>]+>/g, ''))] = c.key;
+  const it = (S[obj] || [])[0]; if (it) for (const p of cusPairs(obj, cusRawDetails(obj, it), map)) if (!p.key.startsWith('lbl:')) map[norm(p.label)] = p.key;
+  CUS.alias[obj] = { sig, map }; return map;
+}
+function cusPairKey(dt, dd, alias) {
+  for (const a of dd ? dd.querySelectorAll('[data-act][data-arg]') : []) { if (!CUS_KV_ACTS.includes(a.dataset.act)) continue; try { const j = JSON.parse(a.dataset.arg); if (typeof j.key === 'string') return j.key; } catch (_) { /* */ } }
+  const l = norm(dt.textContent.replace(/[*🔒]/g, '')); return alias[l] || 'lbl:' + l;
+}
+function cusPairs(obj, html, alias) {
+  const t = document.createElement('template'); t.innerHTML = html; const dl = t.content.querySelector('dl.kv'); if (!dl) return [];
+  const out = []; let cur = null;
+  for (const el of [...dl.children]) { if (el.tagName === 'DT') { cur = { dt: el, dd: null, label: el.textContent.replace(/[*🔒]/g, '').trim() }; out.push(cur); } else if (el.tagName === 'DD' && cur) cur.dd = el; }
+  out.forEach((p) => (p.key = cusPairKey(p.dt, p.dd, alias || {})));
+  return out;
+}
+function cusPanelLayout(obj, html) {
+  const lay = cusLayout(obj); const P = S.cus?.perms?.[obj]?.[cusRole()] || {};
+  if (!lay && !Object.keys(P).length) return html;
+  const t = document.createElement('template'); t.innerHTML = html; const dl = t.content.querySelector('dl.kv'); if (!dl) return html;
+  const alias = cusAlias(obj); const pairs = []; let cur = null;
+  for (const el of [...dl.children]) { if (el.tagName === 'DT') { cur = { dt: el, dd: null }; pairs.push(cur); } else if (el.tagName === 'DD' && cur) cur.dd = el; }
+  pairs.forEach((p) => (p.key = cusPairKey(p.dt, p.dd, alias)));
+  const keep = pairs.filter((p) => P[p.key] !== 'hidden' && !(lay?.hidden || []).includes(p.key));
+  for (const p of keep) if (P[p.key] === 'read' && p.dd) { p.dd.querySelectorAll('[data-act]').forEach((e) => { e.removeAttribute('data-act'); e.classList.remove('edit'); e.style.cursor = 'default'; }); p.dd.querySelectorAll('input,select,textarea,button').forEach((e) => e.setAttribute('disabled', '')); p.dd.classList.add('cus-ro'); p.dt.insertAdjacentHTML('beforeend', ' <span class="cus-lock" title="Solo lectura para tu rol">🔒</span>'); }
+  const secs = lay?.sections?.length ? lay.sections : []; const used = new Set(); let out = '';
+  const ph = (p) => p.dt.outerHTML + (p.dd ? p.dd.outerHTML : '');
+  for (const s of secs) { const ps = (s.fields || []).map((k) => keep.find((p) => p.key === k)).filter(Boolean); ps.forEach((p) => used.add(p)); if (ps.length) out += `${s.title ? `<h4 class="cus-sec">${esc(s.title)}</h4>` : ''}<dl class="kv">${ps.map(ph).join('')}</dl>`; }
+  const rest = keep.filter((p) => !used.has(p)); if (rest.length) out += `${secs.length ? '<h4 class="cus-sec">Otros datos</h4>' : ''}<dl class="kv">${rest.map(ph).join('')}</dl>`;
+  const wrap = document.createElement('div'); wrap.className = 'cus-panel'; wrap.innerHTML = out; dl.replaceWith(wrap);
+  return t.innerHTML;
+}
+const _panelDetailsCus = panelDetails;
+panelDetails = function (obj, it) {
+  let html = cusRawDetails(obj, it);
+  /* pastillas de estado con las etiquetas propias / borradas */
+  if (/data-act="kv-status"/.test(html)) { const t = document.createElement('template'); t.innerHTML = html; t.content.querySelectorAll('[data-act="kv-status"]').forEach((el) => { try { const a = JSON.parse(el.dataset.arg); const col = cusColOf(a.obj, a.key); if (col?.get || col?.cusSrc) el.innerHTML = pill(col.opt, String(col.get ? col.get(it) : it[a.key]), 'display:inline-flex;width:auto;min-height:26px;padding:0 10px;border-radius:4px'); } catch (_) { /* */ } }); html = t.innerHTML; }
+  return cusPanelLayout(obj, html);
+};
+/* tablas y exportación: columnas ocultas o de solo lectura según el rol */
+const _applyColOvCus = applyColOv;
+applyColOv = function (obj, cols) { const out = _applyColOvCus.apply(this, arguments); const P = S.cus?.perms?.[obj]?.[cusRole()]; if (!P) return out; return out.filter((c) => c.type === 'name' || P[c.key] !== 'hidden').map((c) => (P[c.key] === 'read' && c.type !== 'name' ? { ...c, cusRo: true, label: c.label + ' 🔒' } : c)); };
+const cusRoMsg = (obj, key) => toast(`«${cusFieldLabel(obj, key)}» es de solo lectura para tu rol`, 'err');
+const cusFieldLabel = (obj, key) => { const c = [...(COLS[obj] ? COLS[obj]() : []), ...customCols(obj)].find((x) => x.key === key); return c ? c.label : Object.entries(cusAlias(obj)).find(([, k]) => k === key)?.[0] || key; };
+const _setFieldCus = setField;
+setField = function (obj, item, key, value, opts = {}) {
+  if (!opts?.silent && item && cusPerm(obj, key) !== 'edit') { cusRoMsg(obj, key); return false; }
+  const from = item ? item[key] : undefined;
+  const r = _setFieldCus.apply(this, arguments);
+  if (r !== false && item && cusObj(obj) && key === 'status' && from !== item[key]) { const d = cusObj(obj); const to = d.statuses.find((s) => s.id === item[key]); if (to?.done) item.doneAt = nowISO(); emit('status_to', obj, item, { field: 'status', from, to: item[key] }); }
+  return r;
+};
+const _setValCus = setVal; setVal = function (obj, it, col, v) { if (col && cusPerm(obj, col.key) !== 'edit') { cusRoMsg(obj, col.key); return false; } return _setValCus.apply(this, arguments); };
+const _xlSetRawCus = xlSetRaw; xlSetRaw = function (obj, it, col, v, opts) { if (col && (col.cusRo || cusPerm(obj, col.key) !== 'edit')) { cusRoMsg(obj, col.key); return false; } return _xlSetRawCus.apply(this, arguments); };
+for (const a of ['cell-status', 'cell-person', 'cell-edit', 'cell-bool', 'cell-tags']) { const f = ACT[a]; if (!f) continue; ACT[a] = function (arg, el, e) { const col = arg && findCol(arg.key); if (col?.cusRo) { if (el?.type === 'checkbox') el.checked = !el.checked; return cusRoMsg(arg.obj, arg.key); } return f.apply(this, arguments); }; }
+/* alta: ocultar, solo lectura, obligatorios y orden de la ficha */
+function cusFormInfo(obj, ov) {
+  const alias = cusAlias(obj);
+  return [...ov.querySelectorAll('.mb .fld, .mb label.chk')].filter((el) => !el.closest('#dup')).map((el) => { const raw = el.tagName === 'LABEL' ? el.textContent : el.querySelector('label')?.textContent || ''; const label = raw.replace(/[*🔒]/g, '').trim(); return { el, label, key: alias[norm(label)] || 'form:' + norm(label), req: /\*/.test(raw) }; }).filter((f) => f.label);
+}
+function cusApplyForm(obj, ov) {
+  cusRelabelSelects(obj, ov);
+  const lay = cusLayout(obj) || {}; const P = S.cus?.perms?.[obj]?.[cusRole()] || {}; const info = cusFormInfo(obj, ov);
+  for (const f of info) {
+    if (!f.req && ((lay.formHidden || []).includes(f.key) || P[f.key] === 'hidden')) { f.el.style.display = 'none'; f.el.dataset.cusHidden = '1'; continue; }
+    if (P[f.key] === 'read' && !f.req) { f.el.querySelectorAll('input,select,textarea').forEach((e) => (e.disabled = true)); f.el.classList.add('cus-ro'); continue; }
+    if ((lay.required || []).includes(f.key) && !f.req) { f.el.classList.add('cus-req'); const l = f.el.tagName === 'LABEL' ? f.el : f.el.querySelector('label'); l?.insertAdjacentHTML('beforeend', ' <b class="cus-star">*</b>'); }
+  }
+  if (lay.sections?.length) { const order = lay.sections.flatMap((s) => s.fields || []); const grid = info[0]?.el.parentElement; const pos = (k) => { const i = order.indexOf(k); return i < 0 ? 999 : i; }; info.filter((f) => f.el.parentElement === grid).sort((a, b) => pos(a.key) - pos(b.key)).forEach((f) => grid.appendChild(f.el)); const dup = grid?.querySelector('#dup'); if (dup) grid.appendChild(dup); }
+  ov.addEventListener('click', (e) => {
+    if (!e.target.closest('#ok')) return;
+    const miss = info.filter((f) => f.el.classList.contains('cus-req')).filter((f) => { const i = f.el.querySelector('input,select,textarea') || (f.el.tagName === 'LABEL' ? f.el.querySelector('input') : null); return i && (i.type === 'checkbox' ? !i.checked : !String(i.value || '').trim()); });
+    if (miss.length) { e.stopPropagation(); e.preventDefault(); toast(`Obligatorio para crear: ${miss.map((f) => f.label).join(', ')}`, 'err'); miss[0].el.querySelector('input,select,textarea')?.focus(); }
+  }, true);
+}
+const _modalCus = modal;
+modal = function (o) { const ov = _modalCus.apply(this, arguments); try { const obj = !CUS.probing && cusFormObj(o?.title); if (obj) cusApplyForm(obj, ov); } catch (e) { console.warn(e); } return ov; };
+function cusFormProbe(obj) {
+  if (CUS.forms[obj]) return CUS.forms[obj];
+  const fn = cusFormFn(obj); if (!fn || !can('edit')) return [];
+  const before = new Set(document.querySelectorAll('#layer .overlay'));
+  CUS.probing = true; try { fn(); } catch (e) { console.warn(e); } finally { CUS.probing = false; }
+  const ov = [...document.querySelectorAll('#layer .overlay')].find((x) => !before.has(x)); if (!ov) return [];
+  const res = cusFormInfo(obj, ov).map(({ label, key, req }) => ({ label, key, req })); ov.remove();
+  return (CUS.forms[obj] = res);
+}
+/* registro de campos de un objeto: ficha, tabla y alta */
+function cusFields(obj) {
+  const out = []; const add = (key, label, where) => { let f = out.find((x) => x.key === key); if (!f) { f = { key, label: String(label).replace(/<[^>]+>/g, '').replace(' 🔒', ''), panel: false, table: false, form: false, sysReq: false, name: false }; out.push(f); } f[where] = true; return f; };
+  const it = (S[obj] || [])[0]; if (it) for (const p of cusPairs(obj, cusRawDetails(obj, it), cusAlias(obj))) add(p.key, p.label, 'panel');
+  for (const c of [...(COLS[obj] ? COLS[obj]() : []), ...customCols(obj)]) { const f = add(c.key, c.label, 'table'); if (c.type === 'name') f.name = true; }
+  for (const ff of cusFormProbe(obj)) { const f = add(ff.key, ff.label, 'form'); if (ff.req) f.sysReq = true; }
+  return out;
+}
+
+/* ---------------------------------------------------------------- compartir registros */
+const _visibleCus = visible;
+visible = function (item) { if (_visibleCus.apply(this, arguments)) return true; const sh = item?.shares; if (!sh?.length) return false; const t = teamOf(S.me); return sh.some((s) => (s.t === 'u' && s.id === S.me) || (s.t === 't' && t && s.id === t.id)); };
+ACT['cus-share'] = ({ obj, id }) => {
+  const it = byId(obj, id); if (!it) return; if (!can('edit')) return toast('Tu rol es de solo lectura', 'err');
+  const sh = it.shares || []; const has = (t, i) => sh.some((s) => s.t === t && s.id === i);
+  const m = modal({ title: 'Compartir registro', body: `<p class="small muted" style="margin-top:0">Quien lo reciba podrá verlo aunque su rol solo vea sus registros o los de su equipo. Su rol decide si además puede editarlo.</p><h4 class="mb8">Usuarios</h4><div class="cus-chk">${S.users.filter((u) => u.active && u.id !== (it.owner || it.assignee)).map((u) => `<label class="chk"><input type="checkbox" data-sh="u:${u.id}" ${has('u', u.id) ? 'checked' : ''}/>${avatarOf(u.id, 'sm')} ${esc(u.name)} <span class="xs muted">${esc(ROLES[u.role]?.label || '')}</span></label>`).join('')}</div><h4 class="mb8 mt12">Equipos</h4><div class="cus-chk">${S.teams.map((t) => `<label class="chk"><input type="checkbox" data-sh="t:${t.id}" ${has('t', t.id) ? 'checked' : ''}/>${esc(t.name)} <span class="xs muted">${t.members.length} miembros</span></label>`).join('') || '<span class="muted small">No hay equipos</span>'}</div>`, footer: '<button class="btn primary" id="cusShOk">Guardar</button>' });
+  m.querySelector('#cusShOk').onclick = () => {
+    const next = [...m.querySelectorAll('[data-sh]:checked')].map((x) => { const [t, i] = x.dataset.sh.split(':'); return { t, id: i }; });
+    const added = next.filter((s) => !has(s.t, s.id)); it.shares = next; audit(obj, it.id, 'share', { compartido: next.map((s) => (s.t === 'u' ? user(s.id)?.name : S.teams.find((t) => t.id === s.id)?.name)).join(', ') || 'nadie' });
+    const nm = it.name || it.title || it.subject || `${it.firstName || ''} ${it.lastName || ''}`.trim();
+    for (const s of added) { const to = s.t === 'u' ? [s.id] : S.teams.find((t) => t.id === s.id)?.members || []; to.forEach((u) => notify(u, `${me().name} ha compartido contigo: ${nm}`, '', linkOf(obj, it.id))); }
+    m.close(); toast(next.length ? `Compartido con ${next.length} destinatario(s)` : 'Ya no se comparte', 'ok'); refresh(); if (PANEL) renderPanel();
+  };
+};
+const _rowMenuCus = ACT['row-menu'];
+ACT['row-menu'] = (arg, el) => { _rowMenuCus(arg, el); if (!ddEl || !arg?.obj) return; const b = document.createElement('button'); b.innerHTML = `${ico.users}Compartir…`; b.onclick = () => { closeDd(); ACT['cus-share'](arg); }; const del = ddEl.querySelector('[data-k="del"]'); if (del) ddEl.insertBefore(b, del.previousElementSibling || del); else ddEl.appendChild(b); };
+const _renderPanelCus = renderPanel;
+renderPanel = function () {
+  const r = _renderPanelCus.apply(this, arguments); if (!PANEL) return r;
+  const it = byId(PANEL.obj, PANEL.id); const pa = document.querySelector('#panel .pacts'); if (!it || !pa || pa.querySelector('[data-act="cus-share"]')) return r;
+  const n = (it.shares || []).length; pa.insertAdjacentHTML('beforeend', `<button class="btn outline sm" data-act="cus-share" data-arg='${JSON.stringify({ obj: PANEL.obj, id: it.id })}'>${ico.users}Compartir${n ? ' · ' + n : ''}</button>`);
+  return r;
+};
+
+/* ---------------------------------------------------------------- objetos personalizados */
+const cusObj = (obj) => (S?.cus?.objects || []).find((o) => o.key === obj) || null;
+const cusObjBySlug = (slug) => (S?.cus?.objects || []).find((o) => o.slug === slug) || null;
+const cusObjOpt = (d) => Object.fromEntries((d.statuses || []).map((s) => [s.id, { label: s.label, color: s.color }]));
+const cusDone = (d, it) => !!d.statuses.find((s) => s.id === it.status)?.done;
+const CUS_REL = { companies: { label: 'Empresa', field: 'companyId', page: 'empresas', name: (x) => x.name }, contacts: { label: 'Contacto', field: 'contactId', page: 'contactos', name: (x) => contactName(x) }, deals: { label: 'Negocio', field: 'dealId', page: 'negocios', name: (x) => x.name }, contracts: { label: 'Contrato', field: 'contractId', page: 'contratos', name: (x) => `${x.number} · ${x.title}` } };
+const CUS_FTYPES = { text: 'Texto', number: 'Número', money: 'Importe (€)', date: 'Fecha', person: 'Persona', check: 'Casilla' };
+const cusCp = (name) => (norm(name || '').replace(/[^a-z0-9]/g, '').slice(0, 3).toUpperCase() || 'XXX');
+/* numeración con variables: {TIPO} {YYYY} {YY} {MM} {CP} {DIR} {SEQ} {SEQ:n}; el contador se reinicia cuando cambia la parte fija */
+function cusFormat(pattern, ctx, counters, peek) {
+  const d = new Date(); const base = String(pattern || '{SEQ:5}').replace(/\{(YYYY|YY|MM|TIPO|CP|DIR)\}/g, (_, t) => String(({ YYYY: d.getFullYear(), YY: String(d.getFullYear()).slice(2), MM: String(d.getMonth() + 1).padStart(2, '0'), TIPO: ctx.type || '', CP: ctx.cp || 'XXX', DIR: ctx.dir || '' })[t]));
+  const ck = 'cus:' + base.replace(/\{SEQ(?::\d+)?\}/g, '#'); const n = (counters[ck] || 0) + 1; if (!peek) counters[ck] = n;
+  return base.replace(/\{SEQ(?::(\d+))?\}/g, (_, w) => String(n).padStart(Number(w) || 1, '0'));
+}
+function cusRegister(d) {
+  S[d.key] = S[d.key] || []; d.counters = d.counters || {};
+  COLS[d.key] = () => [{ key: 'name', label: cap1(d.single), type: 'name' }, { key: 'number', label: 'Nº', type: 'calc', w: 130, get: (it) => esc(it.number || '') }, { key: 'status', label: 'Estado', type: 'status', opt: cusObjOpt(d), w: 140 }, personCol('owner', 'Responsable'), ...d.rel.map((r) => ({ key: 'rel_' + r, label: CUS_REL[r].label, type: 'rel', w: 170, get: (it) => { const x = byId(r, it[CUS_REL[r].field]); return x ? { label: CUS_REL[r].name(x), href: `#/${CUS_REL[r].page}/${x.id}` } : { label: '—' }; } })), ...d.fields.map((f) => ({ key: f.key, label: f.label, type: f.type === 'check' ? 'bool' : f.type, w: f.type === 'date' ? 110 : f.type === 'person' ? 110 : 130 })), { key: 'tags', label: 'Etiquetas', type: 'tags', w: 130 }, { key: 'createdAt', label: 'Creado', type: 'date', w: 100, noDot: true }];
+  DEFAULT_GROUP[d.key] = 'status'; OBJ_LABEL[d.key] = d.single;
+  PAGES['o-' + d.slug] = () => cusObjPage(d.key);
+  for (const t of ['created', 'status_to', 'field', 'any_change', 'button', 'date_arrives', 'assigned']) if (TRIGGERS[t] && !TRIGGERS[t].objs.includes(d.key)) TRIGGERS[t].objs.push(d.key);
+}
+function cusUnregister(d) { delete COLS[d.key]; delete PAGES['o-' + d.slug]; for (const t of Object.values(TRIGGERS)) if (t.objs) t.objs = t.objs.filter((o) => o !== d.key); }
+function cusCreateRec(key, data, opts = {}) {
+  const d = cusObj(key); const co = byId('companies', data.companyId);
+  const rec = { id: uid(), number: cusFormat(d.pattern, { type: d.prefix, cp: cusCp(co?.name) }, d.counters), name: String(data.name || '').trim() || 'Sin nombre', status: data.status || d.statuses[0]?.id || null, owner: data.owner === undefined ? S.me : data.owner, tags: [], custom: {}, createdAt: nowISO(), updatedAt: nowISO(), createdBy: S.me };
+  for (const r of d.rel) rec[CUS_REL[r].field] = data[CUS_REL[r].field] || null;
+  for (const f of d.fields) rec[f.key] = data[f.key] ?? (f.type === 'check' ? false : null);
+  S[key].unshift(rec); audit(key, rec.id, 'create', { nombre: rec.name, número: rec.number });
+  if (!opts.silent) emit('created', key, rec);
+  return rec;
+}
+function cusObjPage(key) {
+  const d = cusObj(key); if (!d) return PAGES.inicio();
+  const pg = 'o-' + d.slug; const view = S.ui.view[pg] || 'table'; const items = vis(key); const opt = cusObjOpt(d);
+  const groups = d.statuses.map((s) => ({ key: s.id, label: s.label, color: s.color, items: items.filter((i) => i.status === s.id) })); const rest = items.filter((i) => !opt[i.status]); if (rest.length) groups.push({ key: '__none', label: 'Sin estado', color: C.grey, items: rest });
+  setHead({ title: esc(d.label), desc: `${items.filter((i) => !cusDone(d, i)).length} abiertos de ${items.length} · objeto personalizado · numeración ${esc(d.pattern)}${d.rel.length ? ' · relacionado con ' + d.rel.map((r) => CUS_REL[r].label.toLowerCase()).join(', ') : ''}`, views: [{ key: 'table', label: 'Tabla principal', icon: 'table' }, { key: 'kanban', label: 'Kanban', icon: 'kanban' }], view, toolbar: boardToolbar(key, COLS[key](), { newLabel: 'Nuevo ' + d.single, newAct: 'cus-o-new', extra: can('admin') ? `<button class="btn" data-act="cus-obj-edit" data-arg="${key}">${ico.gear}Configurar objeto</button>` : '' }) });
+  const card = (it) => { const co = byId('companies', it.companyId); return `<div class="grp">${esc(it.number)}</div><div class="t">${esc(it.name)}</div><div class="m"><span>${esc(co?.name || '')}</span>${avatarOf(it.owner, 'sm')}</div>`; };
+  document.getElementById('content').innerHTML = `<div class="cus-obj-board">${view === 'table' ? boardTable({ obj: key, cols: COLS[key](), groups, addLabel: 'Añadir ' + d.single, onAddAct: 'cus-o-addrow' }) : kanbanHtml({ obj: key, laneKey: 'status', lanes: groups.map((g) => ({ ...g, items: applyFilters(key, COLS[key](), g.items) })), card })}</div>`;
+  if (route.id) { const it = byId(key, route.id); if (it) openPanel(key, it.id); }
+}
+const cusPageObj = () => (route.page.startsWith('o-') ? cusObjBySlug(route.page.slice(2)) : null);
+ACT['cus-o-new'] = () => { const d = cusPageObj(); if (d) cusObjForm(d); };
+ACT['cus-o-addrow'] = ({ group, name }) => { const d = cusPageObj(); if (!d) return; if (!can('edit')) return toast('Solo lectura', 'err'); cusCreateRec(d.key, { name, status: d.statuses.some((s) => s.id === group) ? group : undefined }); refresh(); };
+ACT['cus-o-new-rel'] = ({ key, field, id }) => { const d = cusObj(key); if (d) cusObjForm(d, { [field]: id }); };
+function cusObjForm(d, preset = {}) {
+  if (!can('edit')) return toast('Solo lectura', 'err');
+  const relSel = (r) => { const f = CUS_REL[r].field; const list = r === 'contracts' ? (S.contracts || []) : S[r]; return `<div class="fld"><label>${CUS_REL[r].label}</label><select class="inp" data-f="${f}"><option value="">—</option>${list.map((x) => `<option value="${x.id}" ${preset[f] === x.id ? 'selected' : ''}>${esc(CUS_REL[r].name(x))}</option>`).join('')}</select></div>`; };
+  const fin = (f) => f.type === 'person' ? `<div class="fld"><label>${esc(f.label)}</label>${userSel('cf_' + f.key, '').replace(`id="cf_${f.key}"`, `data-f="${f.key}"`)}</div>` : f.type === 'check' ? `<label class="chk full"><input type="checkbox" data-f="${f.key}"/>${esc(f.label)}</label>` : `<div class="fld"><label>${esc(f.label)}</label><input class="inp" data-f="${f.key}" type="${f.type === 'date' ? 'date' : ['number', 'money'].includes(f.type) ? 'number' : 'text'}"/></div>`;
+  const m = modal({ title: 'Nuevo ' + d.single, size: 'lg', body: `<div class="fgrid"><div class="fld full"><label>Nombre *</label><input class="inp" data-f="name"/></div><div class="fld"><label>Estado</label><select class="inp" data-f="status">${d.statuses.map((s) => `<option value="${s.id}">${esc(s.label)}</option>`).join('')}</select></div><div class="fld"><label>Responsable</label>${userSel('cusOw', S.me).replace('id="cusOw"', 'data-f="owner"')}</div>${d.rel.map(relSel).join('')}${d.fields.map(fin).join('')}</div><p class="xs muted">Se numerará como ${esc(cusFormat(d.pattern, { type: d.prefix, cp: 'XXX' }, d.counters, true))}</p>`, footer: '<button class="btn primary" id="ok">Crear</button>' });
+  m.querySelector('#ok').onclick = () => {
+    const data = {}; m.querySelectorAll('[data-f]').forEach((el) => { const k = el.dataset.f; const f = d.fields.find((x) => x.key === k); data[k] = el.type === 'checkbox' ? el.checked : ['number', 'money'].includes(f?.type) ? (el.value === '' ? null : Number(el.value)) : el.value || null; });
+    if (!String(data.name || '').trim()) return toast('El nombre es obligatorio', 'err');
+    const r = cusCreateRec(d.key, data); m.close(); toast(`${cap1(d.single)} ${r.number} creado`, 'ok'); go(`#/o-${d.slug}/${r.id}`);
+  };
+  return m;
+}
+function cusObjDetails(obj, it) {
+  const d = cusObj(obj); const kind = (t) => (t === 'date' ? 'date' : ['number', 'money'].includes(t) ? 'number' : 'text');
+  let h = `<dl class="kv"><dt>Número</dt><dd><b>${esc(it.number || '')}</b></dd>` + kvEdit(obj, it, 'name', 'Nombre', it.name) + kvStatus(obj, it, 'status', 'Estado', cusObjOpt(d)) + kvPerson(obj, it, 'owner', 'Responsable');
+  for (const r of d.rel) { const x = byId(r, it[CUS_REL[r].field]); h += `<dt>${CUS_REL[r].label}</dt><dd><span class="edit" data-act="cus-o-rel" data-arg='${JSON.stringify({ obj, id: it.id, rel: r })}'>${x ? esc(CUS_REL[r].name(x)) : '<span class="muted">—</span>'}</span>${x ? ` <a class="xs" href="#/${CUS_REL[r].page}/${x.id}">abrir</a>` : ''}</dd>`; }
+  for (const f of d.fields) h += f.type === 'person' ? kvPerson(obj, it, f.key, esc(f.label)) : f.type === 'check' ? `<dt>${esc(f.label)}</dt><dd><label class="chk"><input type="checkbox" ${it[f.key] ? 'checked' : ''} data-act="kv-bool" data-arg='${JSON.stringify({ obj, id: it.id, key: f.key })}'/>Sí</label></dd>` : kvEdit(obj, it, f.key, esc(f.label), f.type === 'money' && it[f.key] != null ? money2(it[f.key]) : it[f.key], kind(f.type));
+  h += `<dt>Etiquetas</dt><dd class="row wrap" style="gap:4px">${(it.tags || []).map((t) => `<span class="tag">${esc(t)}</span>`).join('') || '<span class="muted">—</span>'}</dd><dt>Creado</dt><dd class="small">${fdt(it.createdAt)}</dd></dl>`;
+  return h;
+}
+ACT['cus-o-rel'] = ({ obj, id, rel }, el) => {
+  const it = byId(obj, id); const R = CUS_REL[rel]; if (!can('edit')) return toast('Solo lectura', 'err'); if (cusPerm(obj, 'rel_' + rel) !== 'edit') return cusRoMsg(obj, 'rel_' + rel);
+  const list = rel === 'contracts' ? (S.contracts || []) : S[rel];
+  const box = dropdown(el, `<button data-k="">— Ninguno —</button>` + list.slice(0, 60).map((x) => `<button data-k="${x.id}">${esc(R.name(x))}</button>`).join(''), 'list');
+  box.querySelectorAll('[data-k]').forEach((b) => (b.onclick = () => { closeDd(); setField(obj, it, R.field, b.dataset.k || null); renderPanel(); }));
+};
+/* listas relacionadas: en la ficha de la empresa / contacto / negocio y en el contrato */
+function cusRelatedHtml(target, id) {
+  return (S.cus?.objects || []).filter((d) => d.rel.includes(target)).map((d) => { const f = CUS_REL[target].field; const list = (S[d.key] || []).filter((x) => x[f] === id); return `<h3 class="mt12 mb8 cus-relh" style="font-size:14px">${esc(d.label)} <span class="muted">${list.length}</span>${can('edit') ? `<button class="btn outline sm" style="margin-left:auto" data-act="cus-o-new-rel" data-arg='${JSON.stringify({ key: d.key, field: f, id })}'>${ico.plus}Nuevo</button>` : ''}</h3>${list.map((x) => `<div class="rel cus-rel">${ico.box}<a href="#/o-${d.slug}/${x.id}">${esc(x.number)} · ${esc(x.name)}</a>${pill(cusObjOpt(d), x.status)}</div>`).join('')}`; }).join('');
+}
+const _panelRelatedCus = panelRelated;
+panelRelated = function (obj, it) {
+  const d = cusObj(obj);
+  if (d) return d.rel.map((r) => { const x = byId(r, it[CUS_REL[r].field]); return x ? `<div class="rel">${ico.link}<span class="muted small">${CUS_REL[r].label}</span><a href="#/${CUS_REL[r].page}/${x.id}">${esc(CUS_REL[r].name(x))}</a></div>` : ''; }).join('') || '<div class="empty">Sin relaciones. Asígnalas en Detalles.</div>';
+  return _panelRelatedCus.apply(this, arguments) + (CUS_REL[obj] ? cusRelatedHtml(obj, it.id) : '');
+};
+const _clmTabSummaryCus = clmTabSummary;
+clmTabSummary = function (c) {
+  let h = _clmTabSummaryCus.apply(this, arguments);
+  const cfg = S.cus?.clm?.[c.typeId]; const intake = (cfg?.intake || []).filter((f) => c.intake && c.intake[f.key] !== undefined);
+  if (intake.length) h = h.replace('<dt>Etiquetas</dt>', intake.map((f) => `<dt>${esc(f.label)}</dt><dd>${esc(f.type === 'bool' ? (c.intake[f.key] ? 'Sí' : 'No') : f.type === 'date' ? fdate(c.intake[f.key]) : String(c.intake[f.key] ?? '—'))}</dd>`).join('') + '<dt>Etiquetas</dt>');
+  const rel = cusRelatedHtml('contracts', c.id); return rel ? h + `<div class="card mt12 cus-clm-rel">${rel}</div>` : h;
+};
+const _linkOfCus = linkOf; linkOf = function (obj, id) { const d = cusObj(obj); return d ? `#/o-${d.slug}/${id}` : _linkOfCus.apply(this, arguments); };
+const _renderSideCus = renderSide;
+renderSide = function () {
+  _renderSideCus.apply(this, arguments); const objs = S.cus?.objects || []; if (!objs.length) return;
+  const side = document.getElementById('side'); const tools = [...side.querySelectorAll('.sec')].find((s) => /Herramientas/.test(s.textContent));
+  const html = objs.map((o) => `<a href="#/o-${o.slug}" class="board cus-side ${route.page === 'o-' + o.slug ? 'active' : ''}"><i style="background:${o.color}"></i>${esc(o.label)}<span class="cnt">${vis(o.key).filter((x) => !cusDone(o, x)).length}</span></a>`).join('');
+  if (tools) tools.insertAdjacentHTML('beforebegin', html); else side.insertAdjacentHTML('beforeend', html);
+};
+/* automatizaciones: acción «crear registro» */
+ACT_V2.cus_create = 'Crear registro de un objeto personalizado'; ACT_GROUP.cus_create = 'Crear'; ACT_DEFAULTS.cus_create = { title: '{{name}}' };
+const _actFieldsCus = actFields;
+actFields = function (obj, x, p) { if (x.type !== 'cus_create') return _actFieldsCus.apply(this, arguments); return `<select class="inp" data-p="${p}.cobj" style="width:auto">${(S.cus.objects || []).map((o) => `<option value="${o.key}" ${(x.cobj || S.cus.objects[0]?.key) === o.key ? 'selected' : ''}>${esc(o.label)}</option>`).join('')}</select><input class="inp" data-p="${p}.title" value="${esc(x.title ?? '')}" placeholder="nombre ({{name}}, {{empresa}})" style="width:220px"/>`; };
+const _runActionV2Cus = runActionV2;
+runActionV2 = function (x, obj, item, log) {
+  if (x.type !== 'cus_create') return _runActionV2Cus.apply(this, arguments);
+  const d = cusObj(x.cobj) || S.cus.objects[0]; if (!d) throw new Error('No hay objetos personalizados');
+  const data = { name: tpl(x.title || '{{name}}', obj, item) || 'Nuevo', owner: item.owner || item.assignee || S.me };
+  if (d.rel.includes('companies')) data.companyId = obj === 'companies' ? item.id : item.companyId || null;
+  if (d.rel.includes('contacts')) data.contactId = obj === 'contacts' ? item.id : item.contactId || item.contactIds?.[0] || null;
+  if (d.rel.includes('deals') && obj === 'deals') data.dealId = item.id;
+  if (d.rel.includes('contracts') && obj === 'contracts') data.contractId = item.id;
+  const r = cusCreateRec(d.key, data); log.push(`${cap1(d.single)} ${r.number} creado`); return 1;
+};
+/* informes */
+const _informesCus = PAGES.informes;
+PAGES.informes = function () {
+  _informesCus.apply(this, arguments); const objs = S.cus?.objects || []; const el = document.getElementById('content'); if (!objs.length || !el) return;
+  el.insertAdjacentHTML('beforeend', `<h2 class="cus-h2">Objetos personalizados</h2><div class="charts cus-rep">${objs.map((o) => { const its = vis(o.key); const data = o.statuses.map((s) => ({ label: s.label, color: s.color, v: its.filter((i) => i.status === s.id).length })); const mf = o.fields.filter((f) => f.type === 'money'); return `<div class="chart"><h3>${esc(o.label)} por estado</h3>${donutHtml(data, o.label.toLowerCase())}${mf.map((f) => `<p class="small muted mt8">${esc(f.label)}: <b>${money(sumBy(its, (i) => Number(i[f.key]) || 0))}</b> en total · <b>${money(sumBy(its.filter((i) => !cusDone(o, i)), (i) => Number(i[f.key]) || 0))}</b> abierto</p>`).join('')}</div>`; }).join('')}</div>`);
+};
+/* editor del objeto: nombre, numeración, relaciones, estados y campos */
+function cusObjEditor(key) {
+  if (!can('admin')) return toast('Solo un administrador puede configurar objetos', 'err');
+  const cur = key ? cusObj(key) : null;
+  const D = cur ? JSON.parse(JSON.stringify({ label: cur.label, single: cur.single, color: cur.color, prefix: cur.prefix, pattern: cur.pattern, rel: cur.rel, statuses: cur.statuses, fields: cur.fields })) : { label: '', single: '', color: C.teal, prefix: '', pattern: '', rel: ['companies'], statuses: [{ id: 's' + uid(), label: 'Nuevo', color: C.blue }, { id: 's' + uid(), label: 'En curso', color: C.orange }, { id: 's' + uid(), label: 'Hecho', color: C.green, done: true }], fields: [] };
+  const use = (sid) => (cur ? (S[cur.key] || []).filter((x) => x.status === sid).length : 0);
+  const m = modal({ title: cur ? `Configurar «${esc(cur.label)}»` : 'Nuevo objeto personalizado', size: 'lg', body: '<div id="cusOE"></div>', footer: `${cur ? '<button class="btn danger" id="cusODel">Borrar objeto</button><span class="grow"></span>' : ''}<button class="btn primary" id="cusOOk">Guardar</button>` });
+  const box = m.querySelector('#cusOE');
+  const draw = () => {
+    box.innerHTML = `<div class="fgrid"><div class="fld"><label>Nombre (plural) *</label><input class="inp" data-o="label" value="${esc(D.label)}" placeholder="Proyectos"/></div><div class="fld"><label>Nombre de un registro *</label><input class="inp" data-o="single" value="${esc(D.single)}" placeholder="proyecto"/></div><div class="fld"><label>Prefijo</label><input class="inp" data-o="prefix" value="${esc(D.prefix)}" placeholder="PRJ" maxlength="8"/></div><div class="fld"><label>Numeración</label><input class="inp" data-o="pattern" value="${esc(D.pattern)}" placeholder="{TIPO}-{YYYY}-{SEQ:4}"/><span class="xs muted">Variables: {TIPO} (prefijo) {YYYY} {YY} {MM} {CP} (3 letras de la empresa) {SEQ:n}. Ejemplo: <b class="cus-onum">${esc(cusFormat(D.pattern || '{TIPO}-{YYYY}-{SEQ:4}', { type: D.prefix || 'OBJ', cp: 'ACM' }, cur?.counters || {}, true))}</b></span></div><div class="fld full"><label>Color</label><div class="cus-pal">${PALETTE.map((p) => `<button data-oc="${p}" class="${p === D.color ? 'cur' : ''}" style="background:${p}"></button>`).join('')}</div></div><div class="fld full"><label>Relacionado con</label><div class="row wrap">${Object.entries(CUS_REL).map(([k, r]) => `<label class="chk"><input type="checkbox" data-or="${k}" ${D.rel.includes(k) ? 'checked' : ''}/>${r.label}</label>`).join('')}</div><span class="xs muted">Cada relación añade una columna, un campo en la ficha y una lista «${esc(D.label || 'Objetos')}» en la ficha relacionada.</span></div></div>
+    <h3 class="mt12">Estados <span class="xs muted">(tablero, kanban, automatizaciones «cambia a»)</span></h3><table class="t cus-mini"><thead><tr><th></th><th>Etiqueta</th><th>Cuenta como cerrado</th><th class="r">En uso</th><th></th></tr></thead><tbody>${D.statuses.map((s, i) => `<tr><td><select class="inp cus-csel" data-sc="${i}" style="background:${s.color}">${PALETTE.map((p) => `<option value="${p}" ${p === s.color ? 'selected' : ''} style="background:${p}">■</option>`).join('')}</select></td><td><input class="inp" data-sl="${i}" value="${esc(s.label)}"/></td><td><input type="checkbox" data-sd="${i}" ${s.done ? 'checked' : ''}/></td><td class="r num">${use(s.id)}</td><td>${s.move ? `<span class="xs">pasar a <select class="inp" data-sm="${i}">${D.statuses.filter((z, j) => j !== i && !z.del).map((z) => `<option value="${z.id}" ${s.move === z.id ? 'selected' : ''}>${esc(z.label)}</option>`).join('')}</select></span>` : ''}<button class="ibtn" data-sx="${i}" title="Borrar">${ico.trash}</button></td></tr>`).filter((_, i) => !D.statuses[i].del).join('')}</tbody></table><button class="btn sm outline mt8" data-sa>${ico.plus}Estado</button>
+    <h3 class="mt12">Campos</h3><table class="t cus-mini"><thead><tr><th>Nombre</th><th>Tipo</th><th></th></tr></thead><tbody>${D.fields.map((f, i) => `<tr><td><input class="inp" data-fl="${i}" value="${esc(f.label)}"/></td><td><select class="inp" data-ft="${i}" ${f.key && cur?.fields.some((x) => x.key === f.key) ? 'disabled' : ''}>${Object.entries(CUS_FTYPES).map(([k, l]) => `<option value="${k}" ${f.type === k ? 'selected' : ''}>${l}</option>`).join('')}</select></td><td><button class="ibtn" data-fx="${i}">${ico.trash}</button></td></tr>`).join('')}</tbody></table><button class="btn sm outline mt8" data-fa>${ico.plus}Campo</button>`;
+    const q = (s) => box.querySelectorAll(s);
+    q('[data-o]').forEach((x) => (x.oninput = () => { D[x.dataset.o] = x.value; }));
+    q('[data-o="pattern"],[data-o="prefix"]').forEach((x) => x.addEventListener('input', () => { const el = box.querySelector('.cus-onum'); if (el) el.textContent = cusFormat(D.pattern || '{TIPO}-{YYYY}-{SEQ:4}', { type: (D.prefix || 'OBJ').toUpperCase(), cp: 'ACM' }, cur?.counters || {}, true); }));
+    q('[data-oc]').forEach((x) => (x.onclick = () => { D.color = x.dataset.oc; draw(); }));
+    q('[data-or]').forEach((x) => (x.onchange = () => { D.rel = x.checked ? [...D.rel, x.dataset.or] : D.rel.filter((r) => r !== x.dataset.or); }));
+    q('[data-sc]').forEach((x) => (x.onchange = () => { D.statuses[x.dataset.sc].color = x.value; draw(); }));
+    q('[data-sl]').forEach((x) => (x.oninput = () => (D.statuses[x.dataset.sl].label = x.value)));
+    q('[data-sd]').forEach((x) => (x.onchange = () => (D.statuses[x.dataset.sd].done = x.checked)));
+    q('[data-sm]').forEach((x) => (x.onchange = () => (D.statuses[x.dataset.sm].move = x.value)));
+    q('[data-sx]').forEach((x) => (x.onclick = () => { const s = D.statuses[x.dataset.sx]; if (D.statuses.filter((z) => !z.del).length <= 1) return toast('Hace falta al menos un estado', 'err'); const u = use(s.id); if (u && !s.move) { s.move = D.statuses.find((z) => z !== s && !z.del).id; toast(`En uso en ${u} registro(s): elige a qué estado pasarlos y pulsa borrar otra vez`, 'err'); return draw(); } s.del = true; draw(); }));
+    q('[data-sa]').forEach((x) => (x.onclick = () => { D.statuses.push({ id: 's' + uid(), label: '', color: PALETTE[(D.statuses.length * 3) % PALETTE.length] }); draw(); }));
+    q('[data-fl]').forEach((x) => (x.oninput = () => (D.fields[x.dataset.fl].label = x.value)));
+    q('[data-ft]').forEach((x) => (x.onchange = () => (D.fields[x.dataset.ft].type = x.value)));
+    q('[data-fx]').forEach((x) => (x.onclick = () => { D.fields.splice(Number(x.dataset.fx), 1); draw(); }));
+    q('[data-fa]').forEach((x) => (x.onclick = () => { D.fields.push({ key: '', label: '', type: 'text' }); draw(); }));
+  };
+  draw();
+  m.querySelector('#cusOOk').onclick = () => {
+    if (!D.label.trim() || !D.single.trim()) return toast('Pon el nombre del objeto y de un registro', 'err');
+    const live = D.statuses.filter((s) => !s.del); if (live.some((s) => !s.label.trim())) return toast('Hay un estado sin nombre', 'err');
+    if (D.fields.some((f) => !f.label.trim())) return toast('Hay un campo sin nombre', 'err');
+    D.fields.forEach((f) => { if (!f.key) f.key = 'f_' + (norm(f.label).replace(/[^a-z0-9]+/g, '_').slice(0, 20) || 'campo') + '_' + uid().slice(0, 4); });
+    const prefix = (D.prefix || D.label.slice(0, 3)).toUpperCase().replace(/[^A-Z0-9]/g, '') || 'OBJ';
+    const def = { label: D.label.trim(), single: D.single.trim().toLowerCase(), color: D.color, prefix, pattern: D.pattern.trim() || '{TIPO}-{YYYY}-{SEQ:4}', rel: D.rel, statuses: live.map((s) => ({ id: s.id, label: s.label.trim(), color: s.color, done: !!s.done })), fields: D.fields.map((f) => ({ key: f.key, label: f.label.trim(), type: f.type })) };
+    if (cur) {
+      for (const s of D.statuses.filter((z) => z.del && z.move)) (S[cur.key] || []).forEach((x) => { if (x.status === s.id) { x.status = s.move; x.updatedAt = nowISO(); } });
+      Object.assign(cur, def); cusRegister(cur); audit(cur.key, null, 'config', { objeto: cur.label });
+    } else {
+      let slug = norm(def.label).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'objeto'; while (cusObjBySlug(slug) || PAGES[slug]) slug += '-2';
+      const d = { ...def, key: 'o_' + slug.replace(/-/g, '_'), slug, counters: {} }; S.cus.objects.push(d); cusRegister(d); audit(d.key, null, 'config', { objeto: d.label, creado: true });
+      m.close(); save(); toast(`Objeto «${d.label}» creado`, 'ok'); go(`#/o-${slug}`); return;
+    }
+    CUS.alias = {}; CUS.forms = {}; m.close(); save(); toast('Objeto guardado', 'ok'); refresh();
+  };
+  const del = m.querySelector('#cusODel');
+  if (del) del.onclick = async () => { const n = (S[cur.key] || []).length; if (!(await ask(`¿Borrar «${cur.label}»?`, `Se borran la definición y sus ${n} registro(s). No se puede deshacer.`, 'Borrar', true))) return; S.cus.objects = S.cus.objects.filter((o) => o !== cur); delete S[cur.key]; cusUnregister(cur); m.close(); save(); toast('Objeto borrado', 'ok'); go('#/ajustes/objetos'); };
+  return m;
+}
+ACT['cus-obj-edit'] = (key) => cusObjEditor(key || null);
+ACT['cus-obj-new'] = () => cusObjEditor(null);
+function cusSeedObjects() {
+  if (S.cus.seeded) return; S.cus.seeded = true; if (S.cus.objects.length) return;
+  const d = { key: 'o_proyectos', slug: 'proyectos', label: 'Proyectos', single: 'proyecto', color: '#037f4c', prefix: 'PRJ', pattern: '{TIPO}-{YYYY}-{SEQ:4}', counters: {}, rel: ['companies', 'deals', 'contracts'], statuses: [{ id: 'p_plan', label: 'Planificado', color: C.blue }, { id: 'p_run', label: 'En curso', color: C.orange }, { id: 'p_block', label: 'Bloqueado', color: C.red }, { id: 'p_done', label: 'Entregado', color: C.green, done: true }], fields: [{ key: 'f_budget', label: 'Presupuesto', type: 'money' }, { key: 'f_due', label: 'Entrega', type: 'date' }, { key: 'f_pm', label: 'Jefe de proyecto', type: 'person' }] };
+  S.cus.objects.push(d); cusRegister(d);
+  const won = S.deals.filter((x) => x.status === 'won').concat(S.deals).slice(0, 3);
+  won.forEach((deal, i) => { const ct = (S.contracts || []).find((c) => c.companyId === deal.companyId); cusCreateRec(d.key, { name: `Implantación · ${byId('companies', deal.companyId)?.name || deal.name}`, status: d.statuses[i % 3].id, companyId: deal.companyId, dealId: deal.id, contractId: ct?.id || null, owner: deal.owner, f_budget: Math.round((deal.amount || 10000) * 0.4), f_due: dayISO(addDays(20 + i * 15)), f_pm: deal.owner }, { silent: true }); });
+}
+
+/* ---------------------------------------------------------------- CLM configurable por tipo de contrato */
+const cusClmCfg = (typeId) => { ensureCus(); const c = (S.cus.clm[typeId] = S.cus.clm[typeId] || {}); c.numbering = c.numbering || ''; c.states = c.states || []; c.trans = c.trans || {}; c.approval = c.approval || { mode: 'add', rules: [] }; c.intake = c.intake || []; c.alerts = c.alerts || {}; return c; };
+const CUS_CFIELDS = { value: 'Valor', startDate: 'Inicio de vigencia', endDate: 'Fin de vigencia', companyId: 'Contraparte', legalOwner: 'Responsable legal', termMonths: 'Duración', noticeDays: 'Preaviso', paymentDays: 'Plazo de pago', scope: 'Alcance', why: 'Motivo' };
+const CUS_CCOND = { value: 'Valor (€)', termMonths: 'Duración (meses)', paymentDays: 'Plazo de pago (días)', noticeDays: 'Preaviso (días)', paper: 'Papel (own / external)', direction: 'Dirección (income / expense)', risk: 'Riesgo (low / medium / high / critical)', personalData: 'Datos personales (sí / no)', urgency: 'Urgencia (normal / high)', renewal: 'Renovación (auto / manual / none)' };
+const CUS_OPS = { '>=': '≥', '>': '>', '<=': '≤', '<': '<', '=': '=', '!=': '≠' };
+const cusClmState = (c) => { const sid = c._sub?.status; const s = sid && (S.cus?.clm?.[c.typeId]?.states || []).find((x) => x.id === sid); return s && s.phase === c.status ? sid : c.status; };
+const cusClmLabel = (c, k) => (S.cus?.clm?.[c.typeId]?.states || []).find((s) => s.id === k)?.label || CST[k]?.label || k;
+const cusClmVal = (c, f) => (f.startsWith('intake.') ? (c.intake || {})[f.slice(7)] ?? c['cus_' + f.slice(7)] : c[f]);
+/* los estados propios viven como etiquetas de la columna Estado (con su fase como comportamiento) */
+function cusClmSync() {
+  ensureXl(); const L = xlLab('contracts', 'status'); const own = [];
+  for (const [tid, cfg] of Object.entries(S.cus?.clm || {})) for (const s of cfg.states || []) own.push({ id: s.id, label: `${s.label}`, color: s.color, base: s.phase, clmType: tid });
+  L.subs = [...L.subs.filter((s) => !s.clmType), ...own];
+}
+function cusClmCheck(c, target) {
+  const cfg = S.cus?.clm?.[c.typeId]; if (!cfg) return true;
+  const from = cusClmState(c); if (from === target) return true;
+  const fromSt = cfg.states.find((s) => s.id === from); const st = cfg.states.find((s) => s.id === target);
+  if (st && st.phase !== c.status && !(CTRANS[c.status] || []).includes(st.phase)) return `No se puede pasar de ${cusClmLabel(c, from)} a ${st.label} (fase ${CST[st.phase]?.label})`;
+  if (fromSt && cfg.trans[from]?.length && !cfg.trans[from].includes(target)) return `Desde «${fromSt.label}» solo se puede pasar a: ${cfg.trans[from].map((k) => cusClmLabel(c, k)).join(', ')}`;
+  if (st && (st.required || []).length) { const miss = st.required.filter((f) => cusEmpty(cusClmVal(c, f))); if (miss.length) return `Para pasar a «${st.label}» falta: ${miss.map((f) => CUS_CFIELDS[f] || cfg.intake.find((x) => 'intake.' + x.key === f)?.label || f).join(', ')}`; }
+  return true;
+}
+const cusClmTargets = (c) => { const cfg = S.cus?.clm?.[c.typeId]; if (!cfg) return []; const cur = cusClmState(c); return cfg.states.filter((s) => s.id !== cur && cusClmCheck({ ...c, _sub: c._sub }, s.id) === true && (s.phase === c.status || (CTRANS[c.status] || []).includes(s.phase))); };
+const _xlStatusDdCus = xlStatusDd;
+xlStatusDd = function (obj, it, col, el) { if (obj === 'contracts' && col?.key === 'status' && col.opt) { const L = S.xl?.lab?.contracts?.status; const opt = {}; for (const [k, o] of Object.entries(col.opt)) { const s = L?.subs.find((x) => x.id === k); if (s?.clmType && s.clmType !== it.typeId) continue; opt[k] = o; } col = { ...col, opt }; } return _xlStatusDdCus.call(this, obj, it, col, el); };
+const _xlPickStatusCus = xlPickStatus;
+xlPickStatus = function (obj, it, col, k, opts = {}) {
+  if (obj !== 'contracts' || col?.key !== 'status') return _xlPickStatusCus.apply(this, arguments);
+  const chk = cusClmCheck(it, k); if (chk !== true) { toast(chk, 'err'); return false; }
+  const from = cusClmState(it); const fromBase = it.status; const r = _xlPickStatusCus.apply(this, arguments);
+  const to = cusClmState(it); if (r && to !== from && it.status === fromBase) { ctl(it, 'flow', `${cusClmLabel(it, from)} → ${cusClmLabel(it, to)}`); it.statusAt = nowISO(); audit('contracts', it.id, 'update', { estado: [cusClmLabel(it, from), cusClmLabel(it, to)] }); emit('status_to', 'contracts', it, { field: 'status', from, to }); save(); }
+  return r;
+};
+const _clmTransitionCus = clmTransition;
+clmTransition = function (c, to, opts) { const chk = cusClmCheck(c, to); if (chk !== true) { toast(chk, 'err'); return false; } return _clmTransitionCus.apply(this, arguments); };
+ACT['cus-clm-state'] = ({ id, k }) => { const c = contract(id); const col = cusColOf('contracts', 'status'); if (c && col && xlPickStatus('contracts', c, col, k)) { save(); refresh(); toast(`Estado: ${cusClmLabel(c, k)}`, 'ok'); } };
+const _clmDetailPageCus = clmDetailPage;
+clmDetailPage = function (id) {
+  _clmDetailPageCus.apply(this, arguments); const c = contract(id); const cfg = c && S.cus?.clm?.[c.typeId]; if (!cfg?.states?.length) return;
+  const cur = cusClmState(c); const st = cfg.states.find((s) => s.id === cur);
+  const desc = document.querySelector('#head p > span'); if (desc) desc.insertAdjacentHTML('afterbegin', `<span class="pill cus-cstate" style="background:${st ? st.color : CST[c.status]?.color}">${esc(st ? st.label : CST[c.status]?.label)}</span>`);
+  const tg = cusClmTargets(c); const tb = document.querySelector('#toolbar .row');
+  if (tb && can('edit') && tg.length) tb.insertAdjacentHTML('afterbegin', tg.map((s) => `<button class="btn outline sm cus-cst-btn" data-act="cus-clm-state" data-arg='${JSON.stringify({ id: c.id, k: s.id })}' title="Estado propio de ${esc(ctype(c.typeId)?.code || '')} · fase ${esc(CST[s.phase]?.label)}"><i class="gdot" style="background:${s.color}"></i>${esc(s.label)}</button>`).join(''));
+};
+/* numeración por tipo */
+const _clmNumberCus = clmNumber;
+clmNumber = function (type, parent) { const cfg = type && S.cus?.clm?.[type.id]; if (parent || !cfg?.numbering) return _clmNumberCus.apply(this, arguments); const d = CUS.ctx || {}; const co = byId('companies', d.companyId); return cusFormat(cfg.numbering, { type: type.code, cp: cusCp(co?.name), dir: ({ income: 'I', expense: 'G', neutral: 'N' })[d.direction || type.direction] || '' }, S.clm.counters, CUS.peek); };
+const _clmCreateCus = clmCreate;
+clmCreate = function (d) { CUS.ctx = d; let c; try { c = _clmCreateCus.apply(this, arguments); } finally { CUS.ctx = null; } const intake = {}; for (const [k, v] of Object.entries(d || {})) if (k.startsWith('cus_')) intake[k.slice(4)] = v; if (c && Object.keys(intake).length) c.intake = intake; return c; };
+/* alertas por tipo */
+const _clmMilestonesCus = clmMilestones;
+clmMilestones = function (c) { const r = _clmMilestonesCus.apply(this, arguments); const al = S.cus?.clm?.[c.typeId]?.alerts || {}; for (const m of c.milestones || []) if (Array.isArray(al[m.type]) && al[m.type].length) m.alerts = [...al[m.type]]; return r; };
+/* matriz de aprobación */
+function cusRuleMatch(c, r) { return (r.conds || []).every((q) => { const v = q.field.startsWith('intake.') ? cusClmVal(c, q.field) : c[q.field]; const a = typeof v === 'boolean' ? (v ? 'si' : 'no') : v; const b = q.value; const na = Number(a), nb = Number(b); const num = a !== '' && a != null && !isNaN(na) && b !== '' && !isNaN(nb); switch (q.op) { case '>=': return num && na >= nb; case '>': return num && na > nb; case '<=': return num && na <= nb; case '<': return num && na < nb; case '!=': return num ? na !== nb : norm(a) !== norm(b); default: return num ? na === nb : norm(a) === norm(b) || (norm(b) === 'si' && a === true); } }); }
+const cusWhoOpts = () => [['manager', 'Manager del propietario'], ['owner', 'Propietario del contrato'], ...Object.keys(S.clm.roles).map((k) => ['role:' + k, 'Rol · ' + roleLabel(k)]), ...S.users.filter((u) => u.active).map((u) => ['user:' + u.id, 'Usuario · ' + u.name])];
+function cusWho(c, w) { if (w === 'manager') return teamOf(c.owner)?.manager || S.clm.roles.business; if (w === 'owner') return c.owner; if (String(w).startsWith('role:')) return S.clm.roles[w.slice(5)]; if (String(w).startsWith('user:')) return w.slice(5); return S.clm.roles.legal; }
+const _clmStepsCus = clmSteps;
+clmSteps = function (c) {
+  const cfg = S.cus?.clm?.[c.typeId]; const rules = (cfg?.approval?.rules || []).filter((r) => r.on !== false && (r.steps || []).length && cusRuleMatch(c, r));
+  if (!rules.length) return _clmStepsCus.apply(this, arguments);
+  const steps = cfg.approval.mode === 'replace' ? [] : _clmStepsCus.apply(this, arguments);
+  for (const r of rules) r.steps.forEach((s, i) => {
+    let u = cusWho(c, s.who); if (!u || !user(u)) u = S.clm.roles.legal; if (u === c.owner) u = [S.clm.roles.ceo, 'u6', 'u1'].find((x) => x !== c.owner && user(x)) || u;
+    const name = s.label || cusWhoOpts().find(([k]) => k === s.who)?.[1].replace(/^(Rol|Usuario) · /, '') || 'Aprobador';
+    const ex = !r.seq && steps.find((x) => x.approver === u && !x.seq);
+    if (ex) { ex.name += ' + ' + name; ex.reason += ` · regla «${r.name}»`; return; }
+    steps.push({ id: uid(), order: steps.length + 1, role: String(s.who).startsWith('role:') ? s.who.slice(5) : 'custom', roles: [s.who], name, reason: `Regla «${r.name}»${r.seq ? ` · paso ${i + 1} de ${r.steps.length} (secuencial)` : ''}`, approver: u, status: 'pending', at: null, comment: '', requestedAt: nowISO(), rule: r.id, seq: !!r.seq, seqIdx: i });
+  });
+  steps.forEach((s, i) => (s.order = i + 1));
+  return steps;
+};
+const cusWaiting = (c, s) => !!s.seq && (c.approvals || []).some((t) => t.rule === s.rule && t.seq && t.seqIdx < s.seqIdx && t.status !== 'approved');
+clmRequestApproval = function (c) {
+  c.approvals = clmSteps(c); clmSetStatus(c, 'approval', `${c.approvals.length} paso(s) de aprobación`);
+  for (const s of c.approvals) if (!cusWaiting(c, s)) { s.notifiedAt = nowISO(); notify(s.approver, `Aprobación pendiente: ${c.number}`, `${s.name} · ${c.title}`, `#/contratos/${c.id}`); }
+  return true;
+};
+const _clmDecideCus = clmDecide;
+clmDecide = function (c, stepId, decision) {
+  const s = (c.approvals || []).find((x) => x.id === stepId); if (s && s.status === 'pending' && cusWaiting(c, s)) { toast('Este paso es secuencial: espera a que se apruebe el anterior', 'err'); return false; }
+  const r = _clmDecideCus.apply(this, arguments);
+  if (r && decision === 'approved' && c.status === 'approval') for (const t of c.approvals) if (t.status === 'pending' && !t.notifiedAt && !cusWaiting(c, t)) { t.notifiedAt = nowISO(); t.requestedAt = nowISO(); notify(t.approver, `Aprobación pendiente: ${c.number}`, `${t.name} · ${c.title} (paso anterior aprobado)`, `#/contratos/${c.id}`); ctl(c, 'flow', `Paso secuencial activado: ${t.name}`); }
+  return r;
+};
+const _clmTabApprovalsCus = clmTabApprovals;
+clmTabApprovals = function (c) {
+  const html = _clmTabApprovalsCus.apply(this, arguments); const steps = c.approvals || []; const cfg = S.cus?.clm?.[c.typeId];
+  const t = document.createElement('template'); t.innerHTML = html;
+  if (steps.length) t.content.querySelectorAll('.fstep').forEach((el, i) => { const s = steps[i]; if (!s) return; if (s.rule) el.querySelector('.row')?.insertAdjacentHTML('beforeend', `<span class="tag cus-rtag">${s.seq ? 'secuencial' : 'matriz'}</span>`); if (s.status === 'pending' && cusWaiting(c, s)) { const act = el.querySelector('.row.mt8'); if (act) act.outerHTML = '<div class="xs muted mt8 cus-wait">⏳ En espera: se activa cuando se apruebe el paso anterior de la regla.</div>'; } });
+  const rules = (cfg?.approval?.rules || []).filter((r) => r.on !== false);
+  const info = rules.length ? `<div class="card mb12 cus-matrix-info"><b>Matriz de aprobación de ${esc(ctype(c.typeId)?.name || '')}</b> · ${cfg.approval.mode === 'replace' ? 'sustituye al circuito estándar cuando aplica una regla' : 'se suma al circuito estándar'}<div class="small mt8">${rules.map((r) => `<div>${cusRuleMatch(c, r) ? '✅' : '▫️'} ${esc(r.name)} — ${(r.conds || []).map((q) => `${esc(CUS_CCOND[q.field] || q.field)} ${CUS_OPS[q.op] || q.op} ${esc(q.value)}`).join(' y ') || 'siempre'} → ${(r.steps || []).map((s) => esc(s.label || s.who)).join(r.seq ? ' → ' : ' + ')}</div>`).join('')}</div>${can('admin') ? `<a class="xs" href="#/contratos/configuracion/ciclo">Editar la matriz</a>` : ''}</div>` : '';
+  return info + t.innerHTML;
+};
+/* solicitud: campos propios por tipo dentro del asistente */
+const _clmIntakeCus = clmIntake;
+clmIntake = function () {
+  const r = _clmIntakeCus.apply(this, arguments); const ov = [...document.querySelectorAll('#layer .overlay')].pop(); const wiz = ov?.querySelector('#wiz'); if (!wiz) return r;
+  const vals = {}; let type = null; let busy = false;
+  const stepIdx = () => [...wiz.querySelectorAll('.wiz-steps span')].findIndex((s) => s.classList.contains('cur'));
+  const fieldsOf = () => (S.cus?.clm?.[type]?.intake || []);
+  const inject = () => {
+    if (busy) return; busy = true;
+    try {
+      const st = stepIdx(); const wt = wiz.querySelector('#wtype'); if (wt) { type = wt.value; wt.addEventListener('change', () => (type = wt.value)); }
+      const fs = fieldsOf();
+      if (st === 1 && fs.length && !wiz.querySelector('.cus-intake')) {
+        const inp = (f) => { const v = vals[f.key] ?? ''; const req = f.required ? ' *' : ''; if (f.type === 'bool') return `<div class="fld" style="grid-column:1/-1"><label class="chk"><input type="checkbox" data-k="cus_${f.key}" ${v ? 'checked' : ''}/>${esc(f.label)}${req}</label></div>`; if (f.type === 'select') return `<div class="fld"><label>${esc(f.label)}${req}</label><select class="inp" data-k="cus_${f.key}"><option value="">—</option>${String(f.options || '').split(',').map((o) => o.trim()).filter(Boolean).map((o) => `<option ${v === o ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select></div>`; return `<div class="fld"><label>${esc(f.label)}${req}</label><input class="inp" data-k="cus_${f.key}" type="${f.type === 'number' ? 'number' : f.type === 'date' ? 'date' : 'text'}" value="${esc(v)}"/></div>`; };
+        wiz.insertAdjacentHTML('beforeend', `<h4 class="mt12 mb8 cus-intake-h">Datos propios de ${esc(ctype(type)?.name || 'este tipo')}</h4><div class="fgrid cus-intake">${fs.map(inp).join('')}</div>`);
+        wiz.querySelectorAll('.cus-intake [data-k]').forEach((el) => el.addEventListener('input', () => (vals[el.dataset.k.slice(4)] = el.type === 'checkbox' ? el.checked : el.value)));
+        wiz.querySelectorAll('.cus-intake [type=checkbox]').forEach((el) => el.addEventListener('change', () => (vals[el.dataset.k.slice(4)] = el.checked)));
+      }
+      if (st === 3) {
+        const dl = wiz.querySelector('dl.kv');
+        if (dl && fs.length && !dl.querySelector('.cus-int')) dl.insertAdjacentHTML('beforeend', fs.map((f) => `<dt class="cus-int">${esc(f.label)}</dt><dd>${esc(f.type === 'bool' ? (vals[f.key] ? 'Sí' : 'No') : String(vals[f.key] ?? '—') || '—')}</dd>`).join(''));
+        const t = ctype(type); const cfg = t && S.cus?.clm?.[t.id];
+        if (dl && cfg?.numbering) { const dt = [...dl.querySelectorAll('dt')].find((x) => x.textContent === 'Numeración'); const co = wiz.closest('.modal')?.querySelector('[data-k="companyId"]'); if (dt?.nextElementSibling) dt.nextElementSibling.textContent = cusFormat(cfg.numbering, { type: t.code, cp: 'XXX', dir: ({ income: 'I', expense: 'G', neutral: 'N' })[t.direction] || '' }, S.clm.counters, true) + ' (aprox.)'; void co; }
+        const ap = [...dl?.querySelectorAll('dt') || []].find((x) => x.textContent === 'Aprobaciones previstas'); if (ap && (cfg?.approval?.rules || []).length) ap.nextElementSibling.insertAdjacentHTML('beforeend', ' <span class="xs muted">(incluye la matriz del tipo)</span>');
+      }
+    } finally { busy = false; }
+  };
+  new MutationObserver(() => inject()).observe(wiz, { childList: true });
+  ov.addEventListener('click', (e) => {
+    if (!e.target.closest('#wnext') || stepIdx() !== 1) return;
+    const miss = fieldsOf().filter((f) => f.required).filter((f) => { const el = wiz.querySelector(`[data-k="cus_${f.key}"]`); return el && (el.type === 'checkbox' ? !el.checked : !String(el.value).trim()); });
+    if (miss.length) { e.stopPropagation(); e.preventDefault(); toast(`Falta: ${miss.map((f) => f.label).join(', ')}`, 'err'); }
+  }, true);
+  inject(); return r;
+};
+
+/* ---------------------------------------------------------------- Ajustes: listas y etiquetas · fichas y permisos · objetos */
+const CUS_OBJN = { contacts: 'Contactos', companies: 'Empresas', deals: 'Negocios', tasks: 'Tareas', tickets: 'Tickets', products: 'Productos', quotes: 'Presupuestos', contracts: 'Contratos' };
+const CUS_TABS = [['listas', 'Listas y etiquetas'], ['fichas', 'Fichas y permisos'], ['objetos', 'Objetos personalizados']];
+const cusPills = (entries, use) => `<div class="cus-pills">${entries.map(([k, o]) => `<span class="cus-pi">${cusPill(o)}<span class="xs muted">${use[k] || 0}</span></span>`).join('')}</div>`;
+function cusListsPage() {
+  ensureCus(); const adm = can('admin'); const row = (name, sub, pills, warn, btn) => `<tr><td><b>${name}</b><div class="xs muted">${sub}</div></td><td>${pills}</td><td class="small">${warn || '<span class="muted">—</span>'}</td><td style="text-align:right">${btn}</td></tr>`;
+  const edit = (act, arg) => (can('edit') ? `<button class="btn outline sm" data-act="${act}" data-arg='${typeof arg === 'string' ? arg : JSON.stringify(arg)}'>${ico.note}Editar</button>` : '');
+  const sysRows = (filter) => Object.entries(CUS_SRC).filter(([ok]) => filter(ok.split('.')[0])).map(([ok]) => {
+    const [obj, key] = ok.split('.'); if (!COLS[obj]) return ''; const col = cusColOf(obj, key); if (!col) return '';
+    const L = S.xl?.lab?.[obj]?.[key]; const ent = Object.entries(col.opt).filter(([k, o]) => !o.deleted && !L?.subs.find((s) => s.id === k)?.clmType); const use = cusLabelUsage(obj, col);
+    const unc = cusUncovered(obj, key, ent.map(([k, o]) => ({ role: o.base || k })));
+    const del = (L?.deleted || []).length; const own = (L?.subs || []).filter((s) => !s.clmType).length;
+    return row(esc(col.label.replace(' 🔒', '')), `${CUS_OBJN[obj]} · ${Object.keys(CUS_ROLES[CUS_SRC[ok]] || {}).length} comportamientos${own ? ` · ${own} propia(s)` : ''}${del ? ` · ${del} del sistema borrada(s)` : ''}`, cusPills(ent, use), unc.map((u) => `⚠ Sin etiqueta «${esc(u.name)}»: no se aplica ${esc(u.what)}`).join('<br>'), edit('cus-list-edit', { obj, key }));
+  }).join('');
+  const customRows = Object.keys(CUS_OBJN).flatMap((obj) => customCols(obj).filter((c) => c.type === 'status').map((c) => { const col = cusColOf(obj, c.key) || c; const use = {}; (S[obj] || []).forEach((it) => { const v = String(colVal(col, it) ?? ''); use[v] = (use[v] || 0) + 1; }); return row(esc(c.label), `${CUS_OBJN[obj]} · columna propia`, cusPills(Object.entries(col.opt || {}), use), '', edit('cus-list-edit', { obj, key: c.key })); })).join('');
+  const stageUse = {}; S.deals.filter((d) => d.status === 'open').forEach((d) => (stageUse[d.stageId] = (stageUse[d.stageId] || 0) + 1));
+  const stages = row('Etapas del pipeline', 'Negocios · etapa, probabilidad y días esperados', cusPills(S.pipeline.stages.map((s) => [s.id, { label: s.name, color: s.color }]), stageUse), '', edit('cus-list-edit', { obj: 'deals', key: 'stageId' }));
+  const cats = Object.entries(CUS_CATS).map(([name, m]) => { const def = CUS_CONST[name]; const use = Object.fromEntries(Object.keys(def).map((k) => [k, m.n(k)])); return row(esc(m.name), `${m.obj} · ${m.sys ? 'valores del sistema: renombrar, color y orden' : 'lista libre: añadir, borrar y reasignar'}`, cusPills(Object.entries(def).map(([k, o]) => [k, m.str ? { label: o, color: C.grey } : o]), use), '', adm ? edit('cus-cat-edit', name) : ''); }).join('');
+  const objs = (S.cus.objects || []).map((d) => { const use = {}; (S[d.key] || []).forEach((x) => (use[x.status] = (use[x.status] || 0) + 1)); return row(`${esc(d.label)} · estado`, 'Objeto personalizado', cusPills(d.statuses.map((s) => [s.id, s]), use), '', adm ? edit('cus-obj-edit', d.key) : ''); }).join('');
+  const clmStates = Object.entries(S.cus.clm || {}).filter(([, c]) => (c.states || []).length).map(([tid, c]) => { const use = {}; (S.contracts || []).filter((x) => x.typeId === tid).forEach((x) => { const k = cusClmState(x); use[k] = (use[k] || 0) + 1; }); return row(`Estados propios · ${esc(ctype(tid)?.code || tid)}`, `Contratos · ${esc(ctype(tid)?.name || '')} (dentro de cada fase)`, cusPills(c.states.map((s) => [s.id, s]), use), '', adm ? `<button class="btn outline sm" data-go="#/contratos/configuracion/ciclo">${ico.note}Editar</button>` : ''); }).join('');
+  const tbl = (title, rows, note = '') => rows ? `<div class="card tight mt12"><h3 style="padding:12px 14px 0;margin:0">${title}</h3>${note ? `<p class="xs muted" style="padding:0 14px;margin:4px 0 0">${note}</p>` : ''}<table class="t cus-lt"><thead><tr><th style="width:230px">Lista</th><th>Etiquetas (y elementos que las usan)</th><th style="width:300px">Avisos</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>` : '';
+  return `<div class="cus-lists"><div class="card"><h3>Listas y etiquetas</h3><p class="small muted" style="margin:0">Todas las listas desplegables del CRM y del CLM en un sitio. Cualquier etiqueta —también las del sistema— se puede renombrar, recolorear, ordenar, ocultar o borrar. Cada etiqueta lleva un <b>comportamiento</b>: el valor que entiende la lógica (SLA, automatizaciones, informes). Si borras una etiqueta en uso eliges a cuál pasan sus elementos, y si un comportamiento se queda sin etiqueta te avisamos de qué deja de funcionar. También puedes editarlas desde el desplegable de cada celda («Editar etiquetas»).</p></div>
+  ${tbl('CRM', sysRows((o) => o !== 'contracts') + stages)}${tbl('Contratos (CLM)', sysRows((o) => o === 'contracts') + clmStates, 'Los estados propios de cada tipo de contrato se configuran en Contratos → Configuración → Ciclo de vida por tipo.')}${tbl('Columnas propias', customRows)}${tbl('Objetos personalizados', objs)}${tbl('Otros catálogos', cats, 'Listas que no son columnas de un tablero (resultados, motivos, hitos, obligaciones, pagos).')}</div>`;
+}
+ACT['cus-list-edit'] = ({ obj, key }, el) => { const col = cusColOf(obj, key); if (!col) return toast('Lista no disponible para tu rol', 'err'); xlLabelEditor(obj, col, el); };
+/* catálogos que no son columnas */
+ACT['cus-cat-edit'] = (name) => {
+  if (!can('admin')) return toast('Solo un administrador', 'err');
+  const m0 = CUS_CATS[name]; const def = CUS_CONST[name]; const pr = CUS_ROLES[name] || {};
+  let rows = Object.entries(def).map(([k, o]) => ({ k, label: m0.str ? o : o.label, color: m0.str ? null : o.color, sys: pr[k] !== undefined, n: m0.n(k) }));
+  const m = modal({ title: `Lista · ${esc(m0.name)}`, body: '<div id="cusCat"></div>', footer: '<button class="btn primary" id="cusCatOk">Guardar</button>' });
+  const box = m.querySelector('#cusCat');
+  const draw = () => {
+    box.innerHTML = `<p class="xs muted" style="margin-top:0">${m0.sys ? 'Valores que usa la lógica del CLM/CRM: puedes cambiar su nombre, color y orden.' : 'Lista libre: añade, renombra, ordena y borra (los elementos en uso se pasan a otra etiqueta).'}</p><table class="t cus-mini"><tbody>${rows.map((r, i) => r.del ? '' : `<tr><td><button class="ibtn" data-u="${i}" title="Subir">↑</button><button class="ibtn" data-d="${i}" title="Bajar">↓</button></td>${m0.str ? '' : `<td><select class="inp cus-csel" data-c="${i}" style="background:${r.color}">${PALETTE.map((p) => `<option value="${p}" ${p === r.color ? 'selected' : ''} style="background:${p}">■</option>`).join('')}</select></td>`}<td><input class="inp" data-l="${i}" value="${esc(r.label)}"/>${r.sys ? `<div class="xs muted">sistema: ${esc(pr[r.k])}</div>` : ''}</td><td class="r xs muted">${r.n} en uso</td><td>${m0.sys ? '' : `${r.move !== undefined ? `<span class="xs">pasar a <select class="inp" data-m="${i}">${rows.filter((z, j) => j !== i && !z.del).map((z) => `<option value="${esc(z.k)}" ${r.move === z.k ? 'selected' : ''}>${esc(z.label)}</option>`).join('')}</select></span>` : ''}<button class="ibtn" data-x="${i}">${ico.trash}</button>`}</td></tr>`).join('')}</tbody></table>${m0.sys ? '' : `<button class="btn sm outline mt8" data-a>${ico.plus}Etiqueta</button>`}`;
+    const q = (s) => box.querySelectorAll(s);
+    q('[data-l]').forEach((x) => (x.oninput = () => (rows[x.dataset.l].label = x.value)));
+    q('[data-c]').forEach((x) => (x.onchange = () => { rows[x.dataset.c].color = x.value; draw(); }));
+    q('[data-m]').forEach((x) => (x.onchange = () => (rows[x.dataset.m].move = x.value)));
+    q('[data-u]').forEach((x) => (x.onclick = () => { const i = Number(x.dataset.u); if (i > 0) { [rows[i - 1], rows[i]] = [rows[i], rows[i - 1]]; draw(); } }));
+    q('[data-d]').forEach((x) => (x.onclick = () => { const i = Number(x.dataset.d); if (i < rows.length - 1) { [rows[i + 1], rows[i]] = [rows[i], rows[i + 1]]; draw(); } }));
+    q('[data-x]').forEach((x) => (x.onclick = () => { const r = rows[x.dataset.x]; if (rows.filter((z) => !z.del).length <= 1) return toast('Hace falta al menos una etiqueta', 'err'); if (r.n && r.move === undefined) { r.move = rows.find((z) => z !== r && !z.del).k; toast(`En uso en ${r.n}: elige a cuál pasan y pulsa borrar otra vez`, 'err'); return draw(); } r.del = true; draw(); }));
+    q('[data-a]').forEach((x) => (x.onclick = () => { rows.push({ k: 'c' + uid().slice(0, 6), label: '', color: PALETTE[(rows.length * 3) % PALETTE.length], sys: false, n: 0, isNew: true }); draw(); }));
+  };
+  draw();
+  m.querySelector('#cusCatOk').onclick = () => {
+    const live = rows.filter((r) => !r.del); if (live.some((r) => !r.label.trim())) return toast('Hay una etiqueta sin nombre', 'err');
+    const cfg = (S.cus.catalogs[name] = S.cus.catalogs[name] || {}); cfg.ov = cfg.ov || {}; cfg.added = cfg.added || {}; cfg.deleted = cfg.deleted || [];
+    for (const r of rows.filter((z) => z.del)) { if (r.move !== undefined && m0.move) m0.move(r.k, r.move); if (cfg.added[r.k]) delete cfg.added[r.k]; else cfg.deleted.push(r.k); delete def[r.k]; }
+    for (const r of live) { const o = { label: r.label.trim(), color: r.color }; if (cfg.added[r.k] || r.isNew) cfg.added[r.k] = o; else cfg.ov[r.k] = o; }
+    cfg.order = live.map((r) => r.k); cusApplyCatalogs(); audit('settings', null, 'labels', { lista: m0.name }); m.close(); save(); refresh(); toast('Lista guardada', 'ok');
+  };
+};
+/* fichas y permisos */
+const CUS_LAYOBJS = () => [['contacts', 'Contactos'], ['companies', 'Empresas'], ['deals', 'Negocios'], ['tickets', 'Tickets'], ['tasks', 'Tareas'], ...(S.cus.objects || []).map((o) => [o.key, o.label])];
+function cusLayDraft(obj, role) {
+  const fields = cusFields(obj); const own = S.cus.layouts[obj]?.[role]; const base = own || (role !== '*' ? S.cus.layouts[obj]?.['*'] : null);
+  const lay = base ? JSON.parse(JSON.stringify(base)) : { sections: [{ title: 'Datos principales', fields: fields.filter((f) => f.panel).map((f) => f.key) }], hidden: [], formHidden: [], required: [] };
+  for (const k of ['hidden', 'formHidden', 'required']) lay[k] = lay[k] || [];
+  return { obj, role, fields, lay, perms: JSON.parse(JSON.stringify(S.cus.perms[obj]?.[role] || {})), inherited: !own };
+}
+function cusLayoutPage() {
+  ensureCus(); const objs = CUS_LAYOBJS(); const obj = objs.some(([k]) => k === S.ui.cusLayObj) ? S.ui.cusLayObj : 'contacts'; const role = S.ui.cusLayRole && (S.ui.cusLayRole === '*' || ROLES[S.ui.cusLayRole]) ? S.ui.cusLayRole : '*';
+  if (!CUS.draft || CUS.draft.obj !== obj || CUS.draft.role !== role) CUS.draft = cusLayDraft(obj, role);
+  return `<div class="cus-layout"><div class="card"><div class="row wrap" style="gap:10px"><h3 style="margin:0" class="grow">Fichas y permisos por campo</h3><label class="small">Objeto <select class="inp" id="cusLayObj" style="width:auto">${objs.map(([k, l]) => `<option value="${k}" ${k === obj ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></label><label class="small">Rol <select class="inp" id="cusLayRole" style="width:auto"><option value="*" ${role === '*' ? 'selected' : ''}>Todos los roles (por defecto)</option>${Object.entries(ROLES).map(([k, r]) => `<option value="${k}" ${k === role ? 'selected' : ''}>${esc(r.label)}</option>`).join('')}</select></label></div><p class="small muted" style="margin:8px 0 0">Ordena los campos de la ficha en secciones, decide qué se ve en la ficha y en el formulario de alta y qué es obligatorio al crear. Elige un rol para darle un diseño propio y fijar permisos por campo: <b>editable</b>, <b>solo lectura</b> u <b>oculto</b> (se aplica en tablas, fichas, formularios y exportaciones).</p></div><div id="cusLay"></div></div>`;
+}
+function cusLayDraw() {
+  const box = document.getElementById('cusLay'); const D = CUS.draft; if (!box || !D) return; const { lay, fields, perms, role } = D; const adm = can('admin');
+  const inSec = (k) => lay.sections.findIndex((s) => (s.fields || []).includes(k));
+  const fRow = (f, si) => `<tr class="${perms[f.key] === 'hidden' ? 'muted' : ''}"><td><b>${esc(f.label)}</b><div class="xs muted">${[f.panel && 'ficha', f.table && 'tabla', f.form && 'alta'].filter(Boolean).join(' · ')}${f.sysReq ? ' · obligatorio del sistema' : ''}</div></td><td>${f.panel ? `<select class="inp" data-fs="${esc(f.key)}">${lay.sections.map((s, i) => `<option value="${i}" ${i === si ? 'selected' : ''}>${esc(s.title || 'Sección ' + (i + 1))}</option>`).join('')}<option value="-1" ${si < 0 ? 'selected' : ''}>(al final)</option></select>` : '<span class="xs muted">—</span>'}</td><td class="nowrap">${f.panel && si >= 0 ? `<button class="ibtn" data-fu="${esc(f.key)}">↑</button><button class="ibtn" data-fd="${esc(f.key)}">↓</button>` : ''}</td><td><input type="checkbox" data-fp="${esc(f.key)}" ${f.panel ? '' : 'disabled'} ${f.panel && !lay.hidden.includes(f.key) ? 'checked' : ''}/></td><td><input type="checkbox" data-ff="${esc(f.key)}" ${f.form && !f.sysReq ? '' : 'disabled'} ${f.form && !lay.formHidden.includes(f.key) ? 'checked' : ''}/></td><td><input type="checkbox" data-fr="${esc(f.key)}" ${f.form && !f.sysReq ? '' : 'disabled'} ${f.sysReq || lay.required.includes(f.key) ? 'checked' : ''}/></td>${role === '*' ? '' : `<td class="cus-perm-col"><select class="inp cus-perm ${perms[f.key] || 'edit'}" data-pm="${esc(f.key)}" ${f.name || f.sysReq ? 'disabled' : ''}>${Object.entries(CUS_PERM).map(([k, l]) => `<option value="${k}" ${(perms[f.key] || 'edit') === k ? 'selected' : ''}>${l}</option>`).join('')}</select></td>`}</tr>`;
+  const head = `<thead><tr><th>Campo</th><th>Sección</th><th>Orden</th><th>En ficha</th><th>En alta</th><th>Obligatorio al crear</th>${role === '*' ? '' : '<th class="cus-perm-col">Permiso</th>'}</tr></thead>`;
+  const secs = lay.sections.map((s, i) => { const fs = (s.fields || []).map((k) => fields.find((f) => f.key === k)).filter(Boolean); return `<div class="card tight mt12 cus-secbox"><div class="row" style="padding:10px 12px 0;gap:6px"><input class="inp cus-sect" data-st="${i}" value="${esc(s.title)}" placeholder="Título de la sección" style="max-width:280px"/><button class="ibtn" data-su="${i}" title="Subir sección">↑</button><button class="ibtn" data-sd="${i}" title="Bajar sección">↓</button><button class="ibtn" data-sx="${i}" title="Quitar sección">${ico.trash}</button><span class="xs muted right">${fs.length} campo(s)</span></div><table class="t">${head}<tbody>${fs.map((f) => fRow(f, i)).join('') || '<tr><td colspan="7" class="muted small">Sin campos: muévelos aquí con el selector «Sección».</td></tr>'}</tbody></table></div>`; }).join('');
+  const loose = fields.filter((f) => f.panel && inSec(f.key) < 0); const out = fields.filter((f) => !f.panel);
+  box.innerHTML = (D.inherited && role !== '*' ? `<div class="card mt12 cus-note small">Este rol usa el diseño por defecto. Al guardar tendrá uno propio.</div>` : '') + secs +
+    (loose.length ? `<div class="card tight mt12"><h4 style="padding:10px 12px 0;margin:0">Sin sección (al final de la ficha)</h4><table class="t">${head}<tbody>${loose.map((f) => fRow(f, -1)).join('')}</tbody></table></div>` : '') +
+    (out.length ? `<div class="card tight mt12"><h4 style="padding:10px 12px 0;margin:0">Solo en la tabla o en el alta</h4><table class="t">${head}<tbody>${out.map((f) => fRow(f, -1)).join('')}</tbody></table></div>` : '') +
+    `<div class="row mt12" style="gap:8px">${adm ? `<button class="btn outline" data-act="cus-lay-addsec">${ico.plus}Sección</button><span class="grow"></span><button class="btn outline" data-act="cus-lay-reset">Restablecer</button><button class="btn primary" data-act="cus-lay-save">Guardar ficha${role === '*' ? '' : ' y permisos'}</button>` : '<span class="muted small">Solo un administrador puede cambiar fichas y permisos.</span>'}</div>`;
+  const q = (s) => box.querySelectorAll(s); const tog = (arr, k, on) => { const i = arr.indexOf(k); if (on && i < 0) arr.push(k); if (!on && i >= 0) arr.splice(i, 1); };
+  const moveTo = (k, si) => { lay.sections.forEach((s) => (s.fields = (s.fields || []).filter((x) => x !== k))); if (si >= 0) lay.sections[si].fields.push(k); };
+  q('[data-st]').forEach((x) => (x.oninput = () => (lay.sections[x.dataset.st].title = x.value)));
+  q('[data-su]').forEach((x) => (x.onclick = () => { const i = Number(x.dataset.su); if (i > 0) { [lay.sections[i - 1], lay.sections[i]] = [lay.sections[i], lay.sections[i - 1]]; cusLayDraw(); } }));
+  q('[data-sd]').forEach((x) => (x.onclick = () => { const i = Number(x.dataset.sd); if (i < lay.sections.length - 1) { [lay.sections[i + 1], lay.sections[i]] = [lay.sections[i], lay.sections[i + 1]]; cusLayDraw(); } }));
+  q('[data-sx]').forEach((x) => (x.onclick = () => { lay.sections.splice(Number(x.dataset.sx), 1); cusLayDraw(); }));
+  q('[data-fs]').forEach((x) => (x.onchange = () => { moveTo(x.dataset.fs, Number(x.value)); cusLayDraw(); }));
+  q('[data-fu],[data-fd]').forEach((x) => (x.onclick = () => { const k = x.dataset.fu || x.dataset.fd; const s = lay.sections[inSec(k)]; const i = s.fields.indexOf(k); const j = x.dataset.fu ? i - 1 : i + 1; if (j < 0 || j >= s.fields.length) return; [s.fields[i], s.fields[j]] = [s.fields[j], s.fields[i]]; cusLayDraw(); }));
+  q('[data-fp]').forEach((x) => (x.onchange = () => tog(lay.hidden, x.dataset.fp, !x.checked)));
+  q('[data-ff]').forEach((x) => (x.onchange = () => { tog(lay.formHidden, x.dataset.ff, !x.checked); if (!x.checked) tog(lay.required, x.dataset.ff, false); cusLayDraw(); }));
+  q('[data-fr]').forEach((x) => (x.onchange = () => { tog(lay.required, x.dataset.fr, x.checked); if (x.checked) tog(lay.formHidden, x.dataset.fr, false); cusLayDraw(); }));
+  q('[data-pm]').forEach((x) => (x.onchange = () => { if (x.value === 'edit') delete perms[x.dataset.pm]; else perms[x.dataset.pm] = x.value; cusLayDraw(); }));
+}
+ACT['cus-lay-addsec'] = () => { CUS.draft.lay.sections.push({ title: 'Nueva sección', fields: [] }); cusLayDraw(); };
+ACT['cus-lay-save'] = () => {
+  if (!can('admin')) return toast('Solo un administrador', 'err'); const D = CUS.draft; if (!D) return;
+  if (D.lay.sections.some((s) => !String(s.title || '').trim())) return toast('Pon título a todas las secciones', 'err');
+  S.cus.layouts[D.obj] = S.cus.layouts[D.obj] || {}; S.cus.layouts[D.obj][D.role] = JSON.parse(JSON.stringify(D.lay));
+  if (D.role !== '*') { S.cus.perms[D.obj] = S.cus.perms[D.obj] || {}; S.cus.perms[D.obj][D.role] = { ...D.perms }; }
+  audit('settings', null, 'layout', { objeto: D.obj, rol: D.role }); CUS.alias = {}; D.inherited = false; save(); toast('Ficha y permisos guardados', 'ok'); cusLayDraw();
+};
+ACT['cus-lay-reset'] = async () => { const D = CUS.draft; if (!D || !(await ask('¿Restablecer?', 'Vuelve al diseño por defecto y quita los permisos de este rol.', 'Restablecer', true))) return; if (S.cus.layouts[D.obj]) delete S.cus.layouts[D.obj][D.role]; if (S.cus.perms[D.obj]) delete S.cus.perms[D.obj][D.role]; CUS.draft = null; save(); refresh(); };
+function cusObjectsPage() {
+  ensureCus(); const adm = can('admin');
+  return `<div class="cus-objects"><div class="card"><div class="row"><h3 class="grow" style="margin:0">Objetos personalizados</h3>${adm ? `<button class="btn primary" data-act="cus-obj-new">${ico.plus}Nuevo objeto</button>` : ''}</div><p class="small muted" style="margin:8px 0 0">Crea tus propios tableros (proyectos, activos, licitaciones, incidencias…) con estados, numeración, campos y relaciones con empresas, contactos, negocios y contratos. Cada objeto tiene tabla, kanban, ficha con permisos, lista relacionada en la ficha de la empresa / negocio / contrato, disparadores y acción «crear registro» en las automatizaciones, y gráficos en Informes.</p></div>
+  <div class="charts mt12">${(S.cus.objects || []).map((d) => `<div class="chart cus-ocard" style="border-top:4px solid ${d.color}"><div class="row"><h3 class="grow" style="margin:0">${esc(d.label)}</h3><span class="tag">${(S[d.key] || []).length} registros</span></div><p class="xs muted">Numeración ${esc(d.pattern)} · ejemplo ${esc(cusFormat(d.pattern, { type: d.prefix, cp: 'ACM' }, d.counters, true))}</p><div class="cus-pills">${d.statuses.map((s) => cusPill(s) + (s.done ? '<span class="xs muted">cierra</span>' : '')).join('')}</div><p class="small mt8">Campos: ${d.fields.map((f) => `${esc(f.label)} <span class="muted xs">(${CUS_FTYPES[f.type]})</span>`).join(', ') || '—'}</p><p class="small">Relacionado con: ${d.rel.map((r) => CUS_REL[r].label).join(', ') || '—'}</p><div class="row" style="gap:6px"><button class="btn outline sm" data-go="#/o-${d.slug}">${ico.table}Abrir tablero</button>${adm ? `<button class="btn outline sm" data-act="cus-obj-edit" data-arg="${d.key}">${ico.gear}Configurar</button>` : ''}</div></div>`).join('') || '<div class="empty">Aún no hay objetos. Crea el primero.</div>'}</div></div>`;
+}
+const _ajustesCus = PAGES.ajustes;
+PAGES.ajustes = function () {
+  const tab = route.id || 'general'; const mine = CUS_TABS.some(([k]) => k === tab);
+  _ajustesCus.apply(this, arguments);
+  const st = document.querySelector('#toolbar .stabs'); if (st) { st.insertAdjacentHTML('beforeend', CUS_TABS.map(([k, l]) => `<button class="${tab === k ? 'active' : ''}" data-go="#/ajustes/${k}">${l}</button>`).join('')); if (mine) st.querySelectorAll('button').forEach((b) => b.classList.toggle('active', b.dataset.go === '#/ajustes/' + tab)); }
+  if (!mine) return; const el = document.getElementById('content');
+  el.innerHTML = tab === 'listas' ? cusListsPage() : tab === 'fichas' ? cusLayoutPage() : cusObjectsPage();
+  if (tab === 'fichas') { cusLayDraw(); document.getElementById('cusLayObj').onchange = (e) => { S.ui.cusLayObj = e.target.value; CUS.draft = null; refresh(); }; document.getElementById('cusLayRole').onchange = (e) => { S.ui.cusLayRole = e.target.value; CUS.draft = null; refresh(); }; }
+};
+
+/* ---------------------------------------------------------------- Configuración del CLM: ciclo de vida por tipo */
+const _clmSettingsPageCus = clmSettingsPage;
+clmSettingsPage = function () {
+  _clmSettingsPageCus.apply(this, arguments); const st = document.querySelector('#content .stabs');
+  if (st && !st.querySelector('[data-cusclm]')) st.insertAdjacentHTML('beforeend', `<button data-cusclm class="${route.sub === 'ciclo' ? 'active' : ''}" data-go="#/contratos/configuracion/ciclo">Ciclo de vida por tipo</button>`);
+  if (route.sub === 'ciclo') { document.getElementById('content').insertAdjacentHTML('beforeend', '<div id="cusClm" class="cus-clm-cfg"></div>'); cusClmDraw(); }
+};
+function cusClmDraw() {
+  const box = document.getElementById('cusClm'); if (!box) return; const types = S.clm.types; const tid = types.some((t) => t.id === S.ui.cusClmType) ? S.ui.cusClmType : types[0]?.id; if (!tid) return;
+  if (!CUS.clmDraft || CUS.clmDraft.tid !== tid) CUS.clmDraft = { tid, cfg: JSON.parse(JSON.stringify(cusClmCfg(tid))), test: null };
+  const D = CUS.clmDraft.cfg; const t = ctype(tid); const adm = can('admin');
+  const pal = (path, v) => `<select class="inp cus-csel" data-c="${path}" style="background:${v}">${PALETTE.map((p) => `<option value="${p}" ${p === v ? 'selected' : ''} style="background:${p}">■</option>`).join('')}</select>`;
+  const reqOpts = [...Object.entries(CUS_CFIELDS), ...D.intake.filter((f) => f.key).map((f) => ['intake.' + f.key, f.label])];
+  const chips = (path, arr, opts) => `<div class="cus-chips">${opts.map(([k, l]) => `<label class="cus-chip ${(arr || []).includes(k) ? 'on' : ''}"><input type="checkbox" data-ca="${path}" value="${esc(k)}" ${(arr || []).includes(k) ? 'checked' : ''}/>${esc(l)}</label>`).join('')}</div>`;
+  const condF = { ...CUS_CCOND, ...Object.fromEntries(D.intake.filter((f) => f.key).map((f) => ['intake.' + f.key, 'Solicitud · ' + f.label])) };
+  const tests = (S.contracts || []).filter((c) => c.typeId === tid);
+  let testHtml = '';
+  if (CUS.clmDraft.test) { const c = contract(CUS.clmDraft.test); if (c) { const keep = S.cus.clm[tid]; S.cus.clm[tid] = D; let steps = []; try { steps = clmSteps(c); } finally { S.cus.clm[tid] = keep; } testHtml = `<div class="cus-test small mt8"><b>${esc(c.number)}</b> (${money(c.value)}, ${esc(CPAPER[c.paper]?.label || '')}${c.personalData ? ', datos personales' : ''}) → ${steps.map((s) => `<span class="tag">${s.order}. ${esc(s.name)} · ${esc(user(s.approver)?.name || '—')}${s.seq ? ' ⏭' : ''}</span>`).join(' ')}</div>`; } }
+  const numPrev = cusFormat(D.numbering || `{TIPO}-{YYYY}-{SEQ:5}`, { type: t.code, cp: 'ACM', dir: ({ income: 'I', expense: 'G', neutral: 'N' })[t.direction] || '' }, S.clm.counters, true);
+  box.innerHTML = `<div class="row wrap mt12 mb12 cus-types" style="gap:6px"><span class="small muted">Tipo de contrato:</span>${types.map((x) => `<button class="btn sm ${x.id === tid ? 'primary' : 'outline'}" data-act="cus-clm-type" data-arg="${x.id}" title="${esc(x.name)}">${esc(x.code)}${(S.cus.clm[x.id]?.states || []).length || (S.cus.clm[x.id]?.approval?.rules || []).length ? ' •' : ''}</button>`).join('')}</div>
+  <div class="card"><h3>Numeración · ${esc(t.name)}</h3><div class="row wrap"><input class="inp" data-c="numbering" value="${esc(D.numbering)}" placeholder="${esc(t.code)}-{YYYY}-{SEQ:5} (por defecto)" style="max-width:380px"/><span class="small">Siguiente: <b class="cus-numprev">${esc(numPrev)}</b></span></div><p class="xs muted">Variables: {TIPO} código del tipo · {YYYY} {YY} {MM} · {CP} 3 letras de la contraparte · {DIR} I / G / N (ingreso, gasto, neutro) · {SEQ:n} contador con n dígitos, que se reinicia cuando cambia la parte fija (p. ej. cada año). Las enmiendas y renovaciones siguen colgando del número del contrato principal.</p></div>
+  <div class="card mt12 cus-states"><h3>Estados propios dentro de cada fase</h3><p class="xs muted">Cada estado se comporta como una fase del ciclo (borrador, revisión, negociación…): las reglas de esa fase siguen aplicándose. Decide a qué estados se puede pasar desde cada uno y qué datos son obligatorios para entrar. Aparecen en la tabla, el kanban y la ficha del contrato.</p><table class="t cus-mini"><thead><tr><th></th><th>Estado</th><th>Fase (comportamiento)</th><th>Obligatorio para entrar</th><th>Desde aquí puede pasar a (vacío = cualquiera permitido por la fase)</th><th></th></tr></thead><tbody>${D.states.map((s, i) => `<tr><td>${pal(`states.${i}.color`, s.color)}</td><td><input class="inp" data-c="states.${i}.label" value="${esc(s.label)}" style="min-width:150px"/></td><td><select class="inp" data-c="states.${i}.phase">${Object.entries(CST).map(([k, o]) => `<option value="${k}" ${s.phase === k ? 'selected' : ''}>${esc(o.label)}</option>`).join('')}</select></td><td>${chips(`states.${i}.required`, s.required, reqOpts)}</td><td>${chips(`trans.${s.id}`, D.trans[s.id], [...D.states.filter((x) => x.id !== s.id).map((x) => [x.id, x.label || '(sin nombre)']), ...Object.entries(CST).map(([k, o]) => [k, o.label])])}</td><td><button class="ibtn" data-cx="del-state" data-i="${i}">${ico.trash}</button></td></tr>`).join('') || '<tr><td colspan="6" class="muted small">Sin estados propios: el tipo usa las fases estándar.</td></tr>'}</tbody></table><button class="btn sm outline mt8" data-cx="add-state">${ico.plus}Estado</button></div>
+  <div class="card mt12 cus-matrix"><h3>Matriz de aprobación</h3><div class="row wrap small" style="gap:8px">Cuando aplica alguna regla, sus pasos <select class="inp" data-c="approval.mode" style="width:auto"><option value="add" ${D.approval.mode !== 'replace' ? 'selected' : ''}>se suman al circuito estándar</option><option value="replace" ${D.approval.mode === 'replace' ? 'selected' : ''}>sustituyen al circuito estándar</option></select></div>
+  ${D.approval.rules.map((r, i) => `<div class="cus-rule"><div class="row wrap" style="gap:6px"><label class="chk"><input type="checkbox" data-c="approval.rules.${i}.on" ${r.on !== false ? 'checked' : ''}/></label><input class="inp" data-c="approval.rules.${i}.name" value="${esc(r.name)}" placeholder="Nombre de la regla" style="max-width:260px"/><select class="inp" data-c="approval.rules.${i}.seq" data-bool style="width:auto"><option value="false" ${!r.seq ? 'selected' : ''}>Pasos en paralelo</option><option value="true" ${r.seq ? 'selected' : ''}>Pasos en secuencia</option></select><span class="grow"></span><button class="ibtn" data-cx="del-rule" data-i="${i}">${ico.trash}</button></div>
+    <div class="small mt8"><b>Si</b> ${(r.conds || []).map((q, j) => `<span class="cus-cond"><select class="inp" data-c="approval.rules.${i}.conds.${j}.field">${Object.entries(condF).map(([k, l]) => `<option value="${k}" ${q.field === k ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select><select class="inp" data-c="approval.rules.${i}.conds.${j}.op" style="width:auto">${Object.entries(CUS_OPS).map(([k, l]) => `<option value="${esc(k)}" ${q.op === k ? 'selected' : ''}>${l}</option>`).join('')}</select><input class="inp" data-c="approval.rules.${i}.conds.${j}.value" value="${esc(q.value)}" style="width:110px"/><button class="ibtn" data-cx="del-cond" data-i="${i}" data-j="${j}">${ico.x}</button></span>`).join(' <b>y</b> ') || '<span class="muted">siempre</span>'} <button class="btn sm outline" data-cx="add-cond" data-i="${i}">+ condición</button></div>
+    <div class="small mt8"><b>Entonces aprueban</b> ${(r.steps || []).map((s, j) => `<span class="cus-cond"><span class="xs muted">${j + 1}.</span><select class="inp" data-c="approval.rules.${i}.steps.${j}.who">${cusWhoOpts().map(([k, l]) => `<option value="${esc(k)}" ${s.who === k ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select><input class="inp" data-c="approval.rules.${i}.steps.${j}.label" value="${esc(s.label || '')}" placeholder="nombre del paso" style="width:140px"/><button class="ibtn" data-cx="del-step" data-i="${i}" data-j="${j}">${ico.x}</button></span>`).join(r.seq ? ' → ' : ' + ')} <button class="btn sm outline" data-cx="add-step" data-i="${i}">+ paso</button></div></div>`).join('') || '<p class="muted small">Sin reglas: se usa el circuito estándar (negocio, legal, finanzas, DPO y dirección según valor, papel, desviaciones y datos personales).</p>'}
+  <div class="row wrap mt8" style="gap:6px"><button class="btn sm outline" data-cx="add-rule">${ico.plus}Regla</button><span class="grow"></span>${tests.length ? `<span class="small">Probar con</span><select class="inp" id="cusClmTest" style="width:auto"><option value="">— contrato —</option>${tests.map((c) => `<option value="${c.id}" ${CUS.clmDraft.test === c.id ? 'selected' : ''}>${esc(c.number)} · ${esc(c.title)}</option>`).join('')}</select>` : ''}</div>${testHtml}</div>
+  <div class="card mt12 cus-intakecfg"><h3>Campos de la solicitud</h3><p class="xs muted">Se piden en el paso «Condiciones» del asistente de nuevo contrato de este tipo, se ven en el resumen y se pueden usar en la matriz y como obligatorios de un estado.</p><table class="t cus-mini"><thead><tr><th>Campo</th><th>Tipo</th><th>Opciones (lista)</th><th>Obligatorio</th><th></th></tr></thead><tbody>${D.intake.map((f, i) => `<tr><td><input class="inp" data-c="intake.${i}.label" value="${esc(f.label)}"/></td><td><select class="inp" data-c="intake.${i}.type">${[['text', 'Texto'], ['number', 'Número'], ['date', 'Fecha'], ['select', 'Lista'], ['bool', 'Sí / no']].map(([k, l]) => `<option value="${k}" ${f.type === k ? 'selected' : ''}>${l}</option>`).join('')}</select></td><td><input class="inp" data-c="intake.${i}.options" value="${esc(f.options || '')}" placeholder="A, B, C" ${f.type === 'select' ? '' : 'disabled'}/></td><td><input type="checkbox" data-c="intake.${i}.required" ${f.required ? 'checked' : ''}/></td><td><button class="ibtn" data-cx="del-intake" data-i="${i}">${ico.trash}</button></td></tr>`).join('') || '<tr><td colspan="5" class="muted small">Sin campos propios.</td></tr>'}</tbody></table><button class="btn sm outline mt8" data-cx="add-intake">${ico.plus}Campo</button></div>
+  <div class="card mt12 cus-alerts"><h3>Alertas de fechas</h3><p class="xs muted">Días de antelación con los que se avisa de cada hito (separados por comas). Se aplican al activar o recalcular los hitos de un contrato de este tipo.</p><div class="fgrid">${[['end', '90, 60, 30, 7'], ['notice', '30, 15, 7, 1'], ['decision', '15, 1'], ['review', '0']].map(([k, d]) => `<div class="fld"><label>${esc(CMS[k]?.label || k)}</label><input class="inp" data-c="alerts.${k}" data-list value="${esc((D.alerts[k] || []).join(', '))}" placeholder="${d} (por defecto)"/></div>`).join('')}</div></div>
+  <div class="row mt12" style="gap:8px">${adm ? `<button class="btn outline" data-cx="discard">Descartar cambios</button><button class="btn primary" data-cx="save">Guardar ${esc(t.code)}</button>` : '<span class="muted small">Solo un administrador puede cambiar la configuración.</span>'}</div>`;
+  const setP = (p, v) => { const ks = p.split('.'); const last = ks.pop(); let o = D; for (const k of ks) { if (o[k] == null) o[k] = /^\d+$/.test(k) ? [] : {}; o = o[k]; } o[last] = v; };
+  const getP = (p) => p.split('.').reduce((a, k) => (a == null ? a : a[k]), D);
+  box.querySelectorAll('[data-c]').forEach((el) => { const ev = el.tagName === 'SELECT' || el.type === 'checkbox' ? 'change' : 'input'; el.addEventListener(ev, () => { const p = el.dataset.c; const v = el.type === 'checkbox' ? el.checked : el.hasAttribute('data-bool') ? el.value === 'true' : el.hasAttribute('data-list') ? el.value.split(',').map((x) => x.trim()).filter(Boolean).map(Number).filter((x) => !isNaN(x)) : el.value; setP(p, v); if (el.tagName === 'SELECT') cusClmDraw(); else if (p === 'numbering') { const pv = box.querySelector('.cus-numprev'); if (pv) pv.textContent = cusFormat(el.value || '{TIPO}-{YYYY}-{SEQ:5}', { type: t.code, cp: 'ACM', dir: ({ income: 'I', expense: 'G', neutral: 'N' })[t.direction] || '' }, S.clm.counters, true); } }); });
+  box.querySelectorAll('[data-ca]').forEach((el) => el.addEventListener('change', () => { const p = el.dataset.ca; const arr = getP(p) || []; const next = el.checked ? [...new Set([...arr, el.value])] : arr.filter((x) => x !== el.value); setP(p, next); el.closest('.cus-chip')?.classList.toggle('on', el.checked); }));
+  const ts = box.querySelector('#cusClmTest'); if (ts) ts.onchange = () => { CUS.clmDraft.test = ts.value || null; cusClmDraw(); };
+  box.querySelectorAll('[data-cx]').forEach((b) => (b.onclick = () => {
+    const i = Number(b.dataset.i), j = Number(b.dataset.j); const R = D.approval.rules;
+    switch (b.dataset.cx) {
+      case 'add-state': D.states.push({ id: 'cs_' + uid().slice(0, 8), label: '', color: PALETTE[(D.states.length * 4 + 2) % PALETTE.length], phase: 'review', required: [] }); break;
+      case 'del-state': { const s = D.states.splice(i, 1)[0]; delete D.trans[s.id]; Object.values(D.trans).forEach((a) => { const k = a.indexOf(s.id); if (k >= 0) a.splice(k, 1); }); break; }
+      case 'add-rule': R.push({ id: 'r' + uid().slice(0, 8), name: 'Nueva regla', on: true, seq: false, conds: [{ field: 'value', op: '>=', value: '100000' }], steps: [{ who: 'role:finance', label: '' }] }); break;
+      case 'del-rule': R.splice(i, 1); break;
+      case 'add-cond': R[i].conds = R[i].conds || []; R[i].conds.push({ field: 'value', op: '>=', value: '' }); break;
+      case 'del-cond': R[i].conds.splice(j, 1); break;
+      case 'add-step': R[i].steps = R[i].steps || []; R[i].steps.push({ who: 'role:legal', label: '' }); break;
+      case 'del-step': R[i].steps.splice(j, 1); break;
+      case 'add-intake': D.intake.push({ key: '', label: '', type: 'text', required: false }); break;
+      case 'del-intake': D.intake.splice(i, 1); break;
+      case 'discard': CUS.clmDraft = null; toast('Cambios descartados', 'ok'); break;
+      case 'save': return cusClmSave();
+    }
+    cusClmDraw();
+  }));
+}
+function cusClmSave() {
+  if (!can('admin')) return toast('Solo un administrador', 'err'); const { tid, cfg: D } = CUS.clmDraft;
+  if (D.states.some((s) => !String(s.label).trim())) return toast('Hay un estado sin nombre', 'err');
+  const nm = D.states.map((s) => norm(s.label)); if (new Set(nm).size !== nm.length) return toast('Hay dos estados con el mismo nombre', 'err');
+  if (D.intake.some((f) => !String(f.label).trim())) return toast('Hay un campo de solicitud sin nombre', 'err');
+  if (D.approval.rules.some((r) => !String(r.name).trim() || !(r.steps || []).length)) return toast('Cada regla necesita nombre y al menos un paso', 'err');
+  D.intake.forEach((f) => { if (!f.key) f.key = (norm(f.label).replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 24) || 'campo') + '_' + uid().slice(0, 3); });
+  for (const r of D.approval.rules) for (const q of r.conds || []) if (q.value === '' && !['personalData'].includes(q.field)) return toast(`La regla «${r.name}» tiene una condición sin valor`, 'err');
+  const old = new Set((S.cus.clm[tid]?.states || []).map((s) => s.id)); D.states.forEach((s) => old.delete(s.id));
+  S.cus.clm[tid] = JSON.parse(JSON.stringify(D)); cusClmSync();
+  (S.contracts || []).filter((c) => c.typeId === tid && old.has(c._sub?.status)).forEach((c) => delete c._sub.status);
+  audit('contracts', null, 'config', { ciclo: ctype(tid)?.code }); CUS.clmDraft = null; save(); toast(`Ciclo de vida de ${ctype(tid)?.code} guardado`, 'ok'); refresh();
+}
+ACT['cus-clm-type'] = (id) => { S.ui.cusClmType = id; CUS.clmDraft = null; refresh(); };
+
+/* ---------------------------------------------------------------- arranque */
+ensureCus(); cusApplyCatalogs(); for (const d of S.cus.objects) cusRegister(d); cusSeedObjects(); cusClmSync(); save();
+render();
+
+const cusTutGo = (h) => { if (location.hash === h) refresh(); else location.hash = h; };
+</script>
+
+<script>
+/* ============================================================
    Tutorial guiado · pasos con resaltado en pantalla
    ============================================================ */
 'use strict';
@@ -3475,6 +4347,15 @@ const STEPS = [
   { id: 'pro-emails', t: 'Varios emails y teléfonos', s: 'Uso diario', go: () => { goView('contactos', 'table'); const c = S.contacts.find((x) => (x.emails || []).length > 1) || S.contacts[0]; setTimeout(() => openPanel('contacts', c.id, 'details'), 80); }, sel: '.pro-ci-wrap', b: 'Cada contacto puede tener varios emails y teléfonos con etiqueta (trabajo, personal, móvil, facturación…) y uno principal. La búsqueda global y la del tablero los encuentran todos, la detección de duplicados los compara y no te deja añadir un email que ya tiene otro contacto.', try: 'Añade un teléfono móvil y hazlo principal.' },
   { id: 'pro-pdf', t: 'Presupuesto en PDF', s: 'Uso diario', go: () => { goView('presupuestos'); setTimeout(() => S.quotes[0] && ACT['quote-view'](S.quotes[0].id), 80); }, sel: '[data-act="quote-pdf"]', b: 'Descarga el presupuesto como PDF real, generado en el propio navegador: membrete, cliente, líneas con cantidades, descuentos e IVA, totales, condiciones, espacio para la firma y una huella SHA-256 al pie para comprobar que no se ha modificado.', try: 'Pulsa «Descargar PDF».' },
   { id: 'pro-tareas', t: 'Tareas con hora y repetición', s: 'Uso diario', go: () => goView('tareas', 'table'), sel: '[data-act="new-task"]', b: 'Las tareas llevan hora y se pueden repetir cada día, solo días laborables, cada semana, cada 2 semanas, cada mes (respetando fin de mes), cada trimestre, cada año o cada N días. Al completarla se crea la siguiente con la misma hora. La columna «Hora · repite» lo muestra en el tablero y la ficha permite cambiarlo.', try: 'Crea una tarea que se repita los días laborables a las 9:30.' },
+  { id: 'cus-listas', t: 'Todas las listas, en un sitio', s: 'Personalización total', go: () => cusTutGo('#/ajustes/listas'), sel: '.cus-lists', b: 'Ajustes → Listas y etiquetas reúne todas las listas desplegables del CRM y del CLM (estados, tipos, prioridades, orígenes, etapas, riesgos, renovación, obligaciones, motivos de pérdida…) con cuántos elementos usan cada etiqueta. Si un comportamiento del sistema se queda sin ninguna etiqueta, aquí verás el aviso de qué deja de funcionar.' },
+  { id: 'cus-etiquetas', t: 'Borra o cambia cualquier etiqueta', s: 'Personalización total', go: () => { cusTutGo('#/ajustes/listas'); setTimeout(() => document.querySelector('[data-act="cus-list-edit"][data-arg*="leadStatus"]')?.click(), 150); }, sel: '.cus-led', b: 'Ya no hay etiquetas bloqueadas: también las del sistema se renombran, recolorean, ordenan, ocultan y borran. Cada una lleva «se comporta como»: el valor que entiende la lógica (por ejemplo, el SLA de primer contacto vigila los leads que se comportan como «Nuevo»). Al borrar una en uso eliges a qué etiqueta pasan sus elementos.', try: 'Crea «Pendiente de llamar» que se comporte como «Nuevo», borra «Nuevo» y pasa sus contactos a la nueva: el SLA sigue funcionando.' },
+  { id: 'cus-fichas', t: 'Diseña la ficha de cada objeto', s: 'Personalización total', go: () => cusTutGo('#/ajustes/fichas'), sel: '.cus-secbox', b: 'Agrupa los campos de la ficha en secciones, cambia su orden y decide cuáles se ven en la ficha y en el formulario de alta y cuáles son obligatorios al crear. Funciona para contactos, empresas, negocios, tickets, tareas y tus objetos personalizados.' },
+  { id: 'cus-permisos', t: 'Permisos por campo y por rol', s: 'Personalización total', go: () => { S.ui.cusLayRole = 'sales'; CUS.draft = null; cusTutGo('#/ajustes/fichas'); }, sel: '.cus-perm-col', b: 'Elige un rol para darle su propia ficha y fijar, campo a campo, si es editable, de solo lectura u oculto. Se respeta en las tablas (la columna desaparece o lleva candado), en la ficha, en el formulario de alta y en la exportación a CSV.', try: 'Pon «Importe» en solo lectura para Comercial y entra como un comercial desde Usuarios.' },
+  { id: 'cus-compartir', t: 'Compartir un registro', s: 'Personalización total', go: () => { goView('negocios', 'table'); setTimeout(() => S.deals[0] && openPanel('deals', S.deals[0].id, 'details'), 80); }, sel: '#panel [data-act="cus-share"]', b: 'Comparte un contacto, negocio o ticket concreto con un usuario o con un equipo aunque su rol solo vea lo suyo. Recibe un aviso y el registro aparece en sus tableros; lo que pueda hacer con él lo deciden sus permisos.' },
+  { id: 'cus-objetos', t: 'Objetos personalizados', s: 'Personalización total', go: () => cusTutGo('#/ajustes/objetos'), sel: '.cus-objects', b: 'Crea tus propios tableros —proyectos, activos, licitaciones…— con estados, campos, numeración con variables y relaciones con empresas, contactos, negocios y contratos. Cada objeto aparece en el menú, en las automatizaciones (disparadores y acción «crear registro») y en Informes.' },
+  { id: 'cus-tablero', t: 'Un objeto propio en acción', s: 'Personalización total', go: () => { const d = S.cus?.objects?.[0]; cusTutGo(d ? '#/o-' + d.slug : '#/ajustes/objetos'); }, sel: '.cus-obj-board, .cus-objects', b: 'Proyectos funciona como cualquier tablero: tabla con grupos por estado, kanban arrastrable, ficha con detalles y relaciones, y lista «Proyectos» en la ficha de la empresa, del negocio y del contrato relacionados.' },
+  { id: 'cus-clm', t: 'Ciclo de vida del contrato por tipo', s: 'Personalización total', go: () => cusTutGo('#/contratos/configuracion/ciclo'), sel: '.cus-states', b: 'En la configuración del CLM, cada tipo de contrato puede tener estados propios dentro de cada fase (p. ej. «Revisión fiscal» dentro de Revisión), con las transiciones permitidas y los datos obligatorios para entrar, su numeración ({TIPO}-{YYYY}-{CP}-{SEQ:4}…), campos propios en la solicitud y días de alerta de cada hito.' },
+  { id: 'cus-matriz', t: 'Matriz de aprobación', s: 'Personalización total', go: () => cusTutGo('#/contratos/configuracion/ciclo'), sel: '.cus-matrix', b: 'Reglas «si… entonces aprueban…»: condiciones sobre valor, duración, papel, riesgo, datos personales o campos de la solicitud, y pasos ordenados (usuario, rol, manager o propietario) en paralelo o en secuencia. Pueden sumarse al circuito estándar o sustituirlo, y se prueban contra un contrato real antes de guardar.' },
   { id: 'fin', t: '¡Listo!', s: 'Fin', go: () => goView('inicio'), sel: '#tutBtn', b: 'Ya conoces el CRM. Vuelve a este tutorial cuando quieras desde el botón flotante; cada capítulo te lleva a la pantalla y la resalta. Todo lo que cambies se queda guardado en este navegador.' },
 ];
 let TUT = { idx: -1, done: [] };

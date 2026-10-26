@@ -1,3 +1,4 @@
+import { RelatedCustomRecords } from "./CustomObjects";
 import { RecordAutomations } from "./AutomationCenter";
 import { useEffect, useState, useCallback, type ReactNode, Fragment } from "react";
 import { useParams, useNavigate, Link, useSearchParams } from "react-router-dom";
@@ -130,6 +131,7 @@ function Summary({ c, onEdit, onRisk }: { c: Detail; onEdit: () => void; onRisk:
           </div>
           <div className="card"><h3 className="mb8">Datos de la solicitud</h3><dl className="kv">{Object.entries(c.intake ?? {}).filter(([k, v]) => v !== null && v !== "" && v !== false && k !== "before" && k !== "changes").map(([k, v]) => <Fragment key={k}><dt>{k}</dt><dd>{typeof v === "object" ? JSON.stringify(v) : String(v as string)}</dd></Fragment>)}{c.tags.length > 0 && <><dt>Etiquetas</dt><dd>{c.tags.map((t) => <span key={t} className="tag">{t}</span>)}</dd></>}</dl></div>
         </div>
+        <div className="charts mt16"><RelatedCustomRecords object="contract" id={c.id} /></div>
       </section>
     </div>
   );

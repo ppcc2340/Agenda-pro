@@ -1,4 +1,5 @@
 import { PicklistSelect, picklistPatch } from "../components/PicklistSelect";
+import { RelatedCustomRecords } from "./CustomObjects";
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { Send } from "lucide-react";
@@ -111,6 +112,7 @@ export function TicketDetailPage() {
           {tab === "tasks" && <div>{t.tasks.map((x) => <TaskRow key={x.id} task={x} onChanged={refreshAll} onEdit={(y) => setTaskForm(y)} />)}<button className="btn sm mt12" onClick={() => setTaskForm("new")}>+ Nueva tarea</button></div>}
         </section>
         <aside className="side r">
+          <RelatedCustomRecords object="ticket" id={id!} />
           <div className="card"><dl className="kv">
             <dt>Estado</dt><dd><PicklistSelect pkey="ticket.status" label="Estado" value={t.status} custom={(t as unknown as { custom?: Record<string, unknown> }).custom} onChange={(role, lbl) => patch(picklistPatch("status", role, lbl))} /></dd>
             <dt>Prioridad</dt><dd><PicklistSelect pkey="ticket.priority" label="Prioridad" value={t.priority} custom={(t as unknown as { custom?: Record<string, unknown> }).custom} onChange={(role, lbl) => patch(picklistPatch("priority", role, lbl))} /></dd>

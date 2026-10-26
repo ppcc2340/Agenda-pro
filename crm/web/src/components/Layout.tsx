@@ -32,7 +32,7 @@ const GO_KEYS: Record<string, { to: string; label: string }> = { h: { to: "/", l
 const typing = (el: EventTarget | null) => { const e = el as HTMLElement | null; return !!e && (!!e.closest("input, textarea, select, [contenteditable='true'], .grid-focus, .modal, .drawer, .cdd, .cpop") || e.isContentEditable); };
 
 export function Layout({ children, onLogout }: { children: ReactNode; onLogout: () => void }) {
-  const { me, settings } = useApp();
+  const { me, settings, objects } = useApp();
   const [palette, setPalette] = useState(false);
   const [mobileNav, setMobileNav] = useState(false);
   const [help, setHelp] = useState(false);
@@ -61,6 +61,7 @@ export function Layout({ children, onLogout }: { children: ReactNode; onLogout: 
       <div className="ws"><span className="wsi">{(settings.company_name || "C").slice(0, 1).toUpperCase()}</span><span className="ell grow">{settings.company_name || t("nav.workspace")}</span></div>
       <div className="section">{t("nav.boards")}</div>
       {BOARDS.map((n) => <NavLink key={n.to} to={n.to} className={({ isActive }) => (isActive ? "active" : "")}><span className="sq" style={{ background: n.color }} />{n.label}</NavLink>)}
+      {objects.map((o) => <NavLink key={o.key} to={`/o/${o.key}`} className={({ isActive }) => (isActive ? "active" : "")}><span className="sq" style={{ background: o.color }} />{o.plural}</NavLink>)}
       <div className="section">{t("nav.tools")}</div>
       {TOOLS.map((n) => <NavLink key={n.to} to={n.to} className={({ isActive }) => (isActive ? "active" : "")}><n.icon />{n.label}</NavLink>)}
       <div className="section">{t("nav.admin")}</div>

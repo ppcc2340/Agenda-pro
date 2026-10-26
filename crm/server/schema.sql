@@ -839,3 +839,53 @@ CREATE TABLE IF NOT EXISTS picklist_options (
   updated_at TEXT,
   PRIMARY KEY (workspace_id, picklist, id)
 );
+-- ---------- objetos personalizados (Proyectos, Inmuebles, Pedidos…) ----------
+CREATE TABLE IF NOT EXISTS custom_objects (
+  id TEXT PRIMARY KEY,
+  workspace_id TEXT NOT NULL,
+  key TEXT NOT NULL,                    -- o_<slug>: es el «objeto» en campos, celdas, permisos y automatizaciones
+  name TEXT NOT NULL,                   -- singular: Proyecto
+  plural TEXT NOT NULL,                 -- plural: Proyectos
+  icon TEXT NOT NULL DEFAULT 'box',
+  color TEXT NOT NULL DEFAULT '#579bfc',
+  primary_label TEXT NOT NULL DEFAULT 'Nombre',
+  number_prefix TEXT,                   -- PRY → PRY-0001 (null = sin numeración)
+  number_pad INTEGER NOT NULL DEFAULT 4,
+  has_owner INTEGER NOT NULL DEFAULT 1,
+  statuses TEXT NOT NULL DEFAULT '[]',  -- [{id, label, color, done}]
+  relations TEXT NOT NULL DEFAULT '[]', -- [{key, label, target, many, inverse_label}]
+  description TEXT,
+  position INTEGER NOT NULL DEFAULT 0,
+  created_by TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  UNIQUE(workspace_id, key)
+);
+CREATE TABLE IF NOT EXISTS custom_records (
+  id TEXT PRIMARY KEY,
+  workspace_id TEXT NOT NULL,
+  object_key TEXT NOT NULL,
+  name TEXT NOT NULL,
+  number TEXT,
+  owner_id TEXT,
+  status TEXT,
+  tags TEXT NOT NULL DEFAULT '[]',
+  custom TEXT NOT NULL DEFAULT '{}',
+  created_by TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  deleted_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_custom_records_obj ON custom_records(workspace_id, object_key, deleted_at);
+CREATE TABLE IF NOT EXISTS custom_links (
+  id TEXT PRIMARY KEY,
+  workspace_id TEXT NOT NULL,
+  record_id TEXT NOT NULL,              -- registro del objeto personalizado que define la relación
+  object_key TEXT NOT NULL,
+  relation_key TEXT NOT NULL,
+  target_object TEXT NOT NULL,          -- contact | company | deal | contract | ticket | o_<otro>
+  target_id TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  UNIQUE(record_id, relation_key, target_id)
+);
+CREATE INDEX IF NOT EXISTS idx_custom_links_target ON custom_links(target_object, target_id);

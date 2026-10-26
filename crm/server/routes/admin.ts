@@ -1,4 +1,6 @@
 import { convertField } from "../services/convert.js";
+import { isBoardObject, isCustomObjectKey } from "../lib/objectKeys.js";
+import { listDefs, getDef } from "../services/customObjects.js";
 import { passwordSchema } from "../lib/security.js";
 import { auditHash } from "../db.js";
 import { CUSTOM_TYPES } from "../services/columns.js";
@@ -47,7 +49,7 @@ export function adminRoutes() {
   }));
 
   // ---------- roles ----------
-  r.get("/roles", h(async (req) => ({ items: req.ctx.db.all<Row>("SELECT r.*, (SELECT COUNT(*) FROM users u WHERE u.role_id=r.id) users_count FROM roles r WHERE workspace_id=? ORDER BY is_system DESC, name", req.ctx.ws).map((x) => parseJson(x, ["permissions"])), objects: OBJECTS, actions: ACTIONS, presets: PRESET_ROLES })));
+  r.get("/roles", h(async (req) => ({ items: req.ctx.db.all<Row>("SELECT r.*, (SELECT COUNT(*) FROM users u WHERE u.role_id=r.id) users_count FROM roles r WHERE workspace_id=? ORDER BY is_system DESC, name", req.ctx.ws).map((x) => parseJson(x, ["permissions"])), objects: [...OBJECTS, ...listDefs(req.ctx).map((d) => d.key)], object_labels: Object.fromEntries(listDefs(req.ctx).map((d) => [d.key, d.plural])), actions: ACTIONS, presets: PRESET_ROLES })));
   r.post("/roles", h(async (req) => {
     assertAdmin(req.ctx);
     const b = parse(z.object({ name: z.string().trim().min(1), key: z.string().regex(/^[a-z0-9_]+$/), permissions: permSchema, visibility: z.enum(["own", "team", "all"]) }), req.body);
@@ -95,11 +97,12 @@ export function adminRoutes() {
 
   // ---------- custom fields ----------
   r.get("/custom-fields", h(async (req) => ({ items: req.ctx.db.all<Row>("SELECT * FROM custom_fields WHERE workspace_id=? ORDER BY object, position", req.ctx.ws).map((f) => parseJson(f, ["options", "show_if", "settings"])) })));
-  const cfSchema = z.object({ object: z.enum(["contact", "company", "deal", "ticket", "contract"]), key: z.string().regex(/^[a-z][a-z0-9_]*$/, "Clave en minúsculas, sin espacios"), label: z.string().trim().min(1), type: z.enum(CUSTOM_TYPES), options: z.array(z.string()).optional(), settings: z.record(z.string(), z.unknown()).optional(), required: z.boolean().optional(), default_value: z.string().nullable().optional(), position: z.number().int().optional(), section: z.string().nullable().optional(), show_if: z.object({ field: z.string(), value: z.string() }).nullable().optional() });
+  const cfSchema = z.object({ object: z.string().refine(isBoardObject, "Objeto no válido"), key: z.string().regex(/^[a-z][a-z0-9_]*$/, "Clave en minúsculas, sin espacios"), label: z.string().trim().min(1), type: z.enum(CUSTOM_TYPES), options: z.array(z.string()).optional(), settings: z.record(z.string(), z.unknown()).optional(), required: z.boolean().optional(), default_value: z.string().nullable().optional(), position: z.number().int().optional(), section: z.string().nullable().optional(), show_if: z.object({ field: z.string(), value: z.string() }).nullable().optional() });
   const canEditFields = (ctx: Ctx, object: string) => { if (!ctx.role.permissions.admin) assert(ctx, object, "update"); };
   r.post("/custom-fields", h(async (req) => {
     const b = parse(cfSchema, req.body);
     canEditFields(req.ctx, b.object);
+    if (isCustomObjectKey(b.object)) getDef(req.ctx, b.object);
     if (req.ctx.db.get("SELECT id FROM custom_fields WHERE workspace_id=? AND object=? AND key=?", req.ctx.ws, b.object, b.key)) throw badRequest("Ya existe un campo con esa clave");
     const fid = id();
     const pos = req.ctx.db.get<{ n: number }>("SELECT COUNT(*) n FROM custom_fields WHERE workspace_id=? AND object=?", req.ctx.ws, b.object)?.n ?? 0;

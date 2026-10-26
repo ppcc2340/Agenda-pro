@@ -1,4 +1,5 @@
 import { PicklistSelect, picklistPatch } from "../components/PicklistSelect";
+import { RelatedCustomRecords } from "./CustomObjects";
 import { ChannelList, type Channel } from "../components/ChannelList";
 import { RecordAutomations } from "./AutomationCenter";
 import { useEffect, useState, useCallback, Fragment } from "react";
@@ -108,6 +109,7 @@ export function ContactDetailPage() {
           </div>
         </section>
         <aside className="side r">
+          <RelatedCustomRecords object="contact" id={id!} />
           <div className="card">
             <div className="card-title"><h3>Negocios</h3><button className="btn xs" onClick={() => setConverting(true)}>+ Negocio</button></div>
             {c.deals.length === 0 ? <p className="muted small">Sin negocios asociados.</p> : c.deals.map((d) => <div key={d.id} style={{ padding: "6px 0", borderBottom: "1px solid var(--rule2)" }}><Link to={`/negocios/${d.id}`} className="bold ell" style={{ display: "block" }}>{d.name}</Link><div className="xs row"><span className="badge dot" style={{ color: d.stage_color }}>{d.status === "open" ? d.stage_name : d.status === "won" ? "Ganado" : "Perdido"}</span><span className="num muted">{fmtMoney(d.amount, d.currency)}</span></div></div>)}

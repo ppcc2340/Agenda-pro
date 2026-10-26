@@ -31,6 +31,7 @@ import { formAdminRoutes, formPublicRoutes } from "./routes/forms.js";
 import { publicRoutes } from "./routes/public.js";
 import { reportRoutes } from "./routes/reports.js";
 import { analyticsRoutes } from "./routes/analytics.js";
+import { objectRoutes, recordRoutes } from "./routes/objects.js";
 import { clmRoutes } from "./routes/clm.js";
 import { signRoutes } from "./routes/sign.js";
 import { registerWorkflowEngine } from "./services/workflows.js";
@@ -75,6 +76,8 @@ export function createApp(db: Db) {
     ["/forms", formAdminRoutes()],
     ["/reports", reportRoutes()],
     ["/analytics", analyticsRoutes()],
+    ["/objects", objectRoutes()],
+    ["/records", recordRoutes()],
     ["/clm", clmRoutes()],
     ["/columns", columnRoutes()],
     ["/cells", cellRoutes()],

@@ -3,7 +3,8 @@ import type { Ctx } from "../context.js";
 export interface CrmEvent {
   /** e.g. contact.created, deal.stage_changed, deal.won, form.submitted, task.overdue */
   type: string;
-  object: "contact" | "company" | "deal" | "task" | "ticket" | "quote" | "email" | "contract";
+  /** objeto nativo o personalizado (o_<slug>) */
+  object: "contact" | "company" | "deal" | "task" | "ticket" | "quote" | "email" | "contract" | `o_${string}`;
   record: Record<string, unknown>;
   previous?: Record<string, unknown>;
   changes?: Record<string, [unknown, unknown]>;

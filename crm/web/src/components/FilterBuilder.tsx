@@ -6,7 +6,7 @@ import { useApp, type CustomField } from "../lib/app";
 
 export type Condition = { field: string; op: string; value?: unknown };
 export type FilterGroup = { logic: "and" | "or"; conditions: Condition[] };
-type Meta = { fields: Record<string, Record<string, string>>; ops: string[]; custom: Record<string, CustomField[]> };
+type Meta = { fields: Record<string, Record<string, string>>; ops: string[]; custom: Record<string, CustomField[]>; objects?: Record<string, { label: string; fields: Record<string, string>; statuses: { id: number; label: string }[] }> };
 let metaCache: Meta | null = null;
 
 const NO_VALUE = new Set(["empty", "not_empty", "today", "is_true", "is_false"]);
@@ -22,15 +22,19 @@ const ENUMS: Record<string, Record<string, string>> = { lifecycle_stage: LIFECYC
 export function FilterBuilder({ object, value, onChange }: { object: string; value: FilterGroup; onChange: (g: FilterGroup) => void }) {
   const [meta, setMeta] = useState<Meta | null>(metaCache);
   const { users, pipelines } = useApp();
-  useEffect(() => { if (!meta) api.get<Meta>("filter-meta").then((m) => { metaCache = m; setMeta(m); }); }, [meta]);
+  // un objeto personalizado recién creado no está en la caché: se vuelve a pedir
+  const stale = !!meta && object.startsWith("o_") && !meta.objects?.[object];
+  useEffect(() => { if (!meta || stale) api.get<Meta>("filter-meta").then((m) => { metaCache = m; setMeta(m); }); }, [meta, stale]);
   if (!meta) return null;
-  const fields = meta.fields[object] ?? {};
+  const objMeta = meta.objects?.[object];
+  const fields = meta.fields[object] ?? objMeta?.fields ?? {};
   const custom = meta.custom[object] ?? [];
   const kindOf = (f: string) => { if (f.startsWith("custom.")) { const cf = custom.find((c) => c.key === f.slice(7)); return cf?.type === "number" || cf?.type === "currency" || cf?.type === "percent" ? "number" : cf?.type === "date" || cf?.type === "datetime" ? "date" : cf?.type === "boolean" ? "bool" : "text"; } return fields[f] ?? "text"; };
   const update = (i: number, patch: Partial<Condition>) => { const c = value.conditions.map((x, j) => (j === i ? { ...x, ...patch } : x)); onChange({ ...value, conditions: c }); };
   const enumFor = (f: string): Record<string, string> | null => {
     if (object === "deal" && f === "status") return DEAL_STATUS;
     if (object === "ticket" && f === "status") return TICKET_STATUS;
+    if (objMeta && f === "status") return Object.fromEntries(objMeta.statuses.map((s) => [String(s.id), s.label]));
     if (f === "owner_id" || f === "assignee_id") return Object.fromEntries(users.filter((u) => u.active).map((u) => [u.id, u.name]));
     if (f === "stage_id") return Object.fromEntries(pipelines.flatMap((p) => p.stages.map((s) => [s.id, `${p.name} · ${s.name}`])));
     if (f === "pipeline_id") return Object.fromEntries(pipelines.map((p) => [p.id, p.name]));

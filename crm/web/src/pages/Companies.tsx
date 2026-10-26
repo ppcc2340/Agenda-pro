@@ -1,4 +1,5 @@
 import { PicklistSelect, picklistPatch } from "../components/PicklistSelect";
+import { RelatedCustomRecords } from "./CustomObjects";
 import { RecordAutomations } from "./AutomationCenter";
 import { useState, useEffect, useCallback, Fragment } from "react";
 import { useNavigate, useParams, Link, useSearchParams } from "react-router-dom";
@@ -139,6 +140,7 @@ export function CompanyDetailPage() {
           <div className="card"><div className="card-title"><h3>Contactos clave</h3><button className="btn xs" onClick={() => setNewContact(true)}>+</button></div>{c.contacts.slice(0, 6).map((p) => <div key={p.id} className="small" style={{ padding: "5px 0", borderBottom: "1px solid var(--rule2)" }}><Link to={`/contactos/${p.id}`} className="bold">{p.first_name} {p.last_name}</Link><div className="xs muted">{p.job_title ?? p.email}</div></div>)}{c.contacts.length === 0 && <p className="muted small">Ninguno todavía.</p>}</div>
           <div className="card"><div className="card-title"><h3>Negocios abiertos</h3><button className="btn xs" onClick={() => setNewDeal(true)}>+</button></div>{c.deals.filter((d) => d.status === "open").map((d) => <div key={d.id} style={{ padding: "5px 0", borderBottom: "1px solid var(--rule2)" }}><Link to={`/negocios/${d.id}`} className="bold ell small" style={{ display: "block" }}>{d.name}</Link><div className="xs row"><span className="badge dot" style={{ color: d.stage_color }}>{d.stage_name}</span><span className="num muted">{fmtMoney(d.amount, d.currency)}</span></div></div>)}{c.deals.filter((d) => d.status === "open").length === 0 && <p className="muted small">Ninguno abierto.</p>}</div>
           <CompanyContracts companyId={c.id} />
+          <RelatedCustomRecords object="company" id={c.id} />
           {c.tickets.length > 0 && <div className="card"><div className="card-title"><h3>Tickets</h3></div>{c.tickets.slice(0, 5).map((t) => <div key={t.id} className="small" style={{ padding: "4px 0" }}><Link to={`/tickets/${t.id}`}>#{t.number} {t.subject}</Link></div>)}</div>}
         </aside>
       </div>

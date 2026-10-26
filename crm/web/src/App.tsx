@@ -22,6 +22,7 @@ import { SettingsPage } from "./pages/Settings";
 import { ContractsPage } from "./pages/Contracts";
 import { ContractDetailPage } from "./pages/ContractDetail";
 import { ClmSettingsPage } from "./pages/ClmSettings";
+import { CustomObjectPage, CustomRecordPage } from "./pages/CustomObjects";
 
 type MeResp = { user: Me | null; settings?: Settings; requires_2fa?: boolean };
 
@@ -65,6 +66,8 @@ export default function App() {
                   <Route path="/presupuestos" element={<QuotesPage />} />
                   <Route path="/informes" element={<ReportsPage />} />
                   <Route path="/analitica" element={<AnalyticsPage />} />
+                  <Route path="/o/:key" element={<CustomObjectPage />} />
+                  <Route path="/o/:key/:id" element={<CustomRecordPage />} />
                   <Route path="/ajustes/*" element={<SettingsPage />} />
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
