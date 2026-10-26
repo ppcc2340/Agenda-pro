@@ -2,7 +2,8 @@
 import type { Ctx } from "../context.js";
 import { parseJson, type Row } from "../db.js";
 import { badRequest, conflict } from "../lib/errors.js";
-import { compileFormula, formulaRefs, norm, RELATIONS, AGGREGATIONS, type StatusLabel } from "./columns.js";
+import { compileFormula, formulaRefs, norm, relationsFor, AGGREGATIONS, type StatusLabel } from "./columns.js";
+import { isCustomObjectKey } from "../lib/objectKeys.js";
 
 const COLORS = ["#00c875", "#fdab3d", "#e2445c", "#579bfc", "#a25ddc", "#66ccff", "#9cd326", "#ff158a", "#7f5347", "#c4c4c4"];
 export function normalizeLabels(input: unknown, used: Set<number> = new Set()): StatusLabel[] {
@@ -24,6 +25,7 @@ export function normalizeLabels(input: unknown, used: Set<number> = new Set()): 
   return out;
 }
 function usedStatusIds(ctx: Ctx, object: string, key: string): Set<number> {
+  if (isCustomObjectKey(object)) return new Set(ctx.db.all<{ v: unknown }>(`SELECT DISTINCT json_extract(custom, '$.${key.replace(/[^a-z0-9_]/gi, "")}') v FROM custom_records WHERE workspace_id=? AND object_key=?`, ctx.ws, object).map((r) => Number(r.v)).filter((n) => n > 0));
   const table = ({ contact: "contacts", company: "companies", deal: "deals", ticket: "tickets", contract: "contracts" } as Record<string, string>)[object];
   if (!table) return new Set();
   return new Set(ctx.db.all<{ v: unknown }>(`SELECT DISTINCT json_extract(custom, '$.${key.replace(/[^a-z0-9_]/gi, "")}') v FROM ${table} WHERE workspace_id=?`, ctx.ws).map((r) => Number(r.v)).filter((n) => n > 0));
@@ -47,7 +49,7 @@ export function validateFieldSettings(ctx: Ctx, object: string, type: string, se
       break;
     }
     case "mirror": {
-      const rel = RELATIONS[object]?.[String(s.relation)];
+      const rel = relationsFor(ctx, object)[String(s.relation)];
       if (!rel) throw badRequest("Elige una relación válida para el reflejo");
       if (!s.field) throw badRequest("Elige la columna a reflejar");
       if (!AGGREGATIONS[String(s.agg ?? "")]) s.agg = rel.many ? "list" : "first";
@@ -68,7 +70,7 @@ export function fieldDependents(ctx: Ctx, object: string, key: string, label: st
   for (const f of ctx.db.all<Row>("SELECT * FROM custom_fields WHERE workspace_id=?", ctx.ws).map((x) => parseJson(x, ["settings"]) as Row)) {
     const st = (f.settings ?? {}) as Row;
     if (f.type === "formula" && f.object === object && f.key !== key && formulaRefs(String(st.expression ?? "")).some((r) => norm(r) === norm(key) || norm(r) === norm(label))) out.push({ kind: "fórmula", id: String(f.id), name: String(f.label) });
-    if (f.type === "mirror" && st.field === `custom.${key}` && RELATIONS[String(f.object)]?.[String(st.relation)]?.target === object) out.push({ kind: "reflejo", id: String(f.id), name: `${f.label} (${f.object})` });
+    if (f.type === "mirror" && st.field === `custom.${key}` && relationsFor(ctx, String(f.object))[String(st.relation)]?.target === object) out.push({ kind: "reflejo", id: String(f.id), name: `${f.label} (${f.object})` });
   }
   const bc = ctx.db.get<{ config: string }>("SELECT config FROM board_configs WHERE workspace_id=? AND object=?", ctx.ws, object);
   if (bc && bc.config.includes(`custom.${key}`)) out.push({ kind: "regla del tablero", id: object, name: "Valores por defecto / columnas obligatorias" });

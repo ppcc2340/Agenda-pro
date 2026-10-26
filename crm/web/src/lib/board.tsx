@@ -31,10 +31,12 @@ export interface BoardConfig {
   defaults?: Record<string, unknown>;
   required?: { when_field: string; values: string[]; fields: string[] }[];
 }
+export type BoardObject = "contact" | "company" | "deal" | "ticket" | "contract" | `o_${string}`;
 export interface Board { object: string; config: BoardConfig; loaded: boolean; update: (patch: Partial<BoardConfig> | ((c: BoardConfig) => BoardConfig)) => void }
 
 /** Loads and persists the shared board configuration for an object (columns, labels, groups). */
-export function useBoard(object: "contact" | "company" | "deal" | "ticket" | "contract"): Board {
+/** `object`: tablero nativo o personalizado (o_<slug>). */
+export function useBoard(object: BoardObject): Board {
   const [config, setConfig] = useState<BoardConfig>({});
   const [loaded, setLoaded] = useState(false);
   const latest = useRef(config);

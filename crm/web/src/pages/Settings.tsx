@@ -10,6 +10,7 @@ import { AutomationCenter } from "./AutomationCenter";
 import { CustomFieldsAdmin, LabelSetsAdmin, BoardRulesAdmin } from "./SettingsColumns";
 import { ApiKeysAdmin, WebhooksAdmin, OutboxAdmin, AuditAdmin, UsageAdmin, RecycleBin, QualityGdpr, ImportPage } from "./SettingsIntegrations";
 import { fmtDateTime } from "../lib/format";
+import { ObjectsAdmin } from "./CustomObjects";
 
 export function SettingsPage() {
   const { isAdmin } = useApp();
@@ -19,7 +20,7 @@ export function SettingsPage() {
       <nav className="settings-nav">
         <div className="section">Mi cuenta</div><S to="perfil" label="Perfil y seguridad" />
         {isAdmin && <><div className="section">Empresa</div><S to="general" label="General" /><S to="usuarios" label="Usuarios" /><S to="roles" label="Roles y permisos" /><S to="equipos" label="Equipos" />
-          <div className="section">Datos</div><S to="pipelines" label="Pipelines y etapas" /><S to="campos" label="Columnas personalizadas" /><S to="etiquetas" label="Etiquetas compartidas" /><S to="reglas-tablero" label="Por defecto y obligatorias" /><S to="productos" label="Productos" /><S to="importar" label="Importar CSV" /><S to="papelera" label="Papelera" /><S to="calidad" label="Calidad y RGPD" />
+          <div className="section">Datos</div><S to="objetos" label="Objetos personalizados" /><S to="pipelines" label="Pipelines y etapas" /><S to="campos" label="Columnas personalizadas" /><S to="etiquetas" label="Etiquetas compartidas" /><S to="reglas-tablero" label="Por defecto y obligatorias" /><S to="productos" label="Productos" /><S to="importar" label="Importar CSV" /><S to="papelera" label="Papelera" /><S to="calidad" label="Calidad y RGPD" />
           <div className="section">Automatización</div><S to="automatizaciones" label="Centro de automatizaciones" /><S to="formularios" label="Formularios web" /><S to="plantillas" label="Plantillas de email" /><S to="scoring" label="Lead scoring" />
           <div className="section">Plataforma</div><S to="api" label="API keys" /><S to="webhooks" label="Webhooks" /><S to="emails" label="Emails enviados" /><S to="auditoria" label="Auditoría" /><S to="uso" label="Uso del sistema" /></>}
         {!isAdmin && <><div className="section">Automatización</div><S to="automatizaciones" label="Mis aprobaciones" /><div className="section">Datos</div><S to="importar" label="Importar CSV" /><S to="plantillas" label="Plantillas de email" /></>}
@@ -32,6 +33,7 @@ export function SettingsPage() {
           <Route path="usuarios" element={<UsersAdmin />} />
           <Route path="roles" element={<RolesAdmin />} />
           <Route path="equipos" element={<TeamsAdmin />} />
+          <Route path="objetos" element={<ObjectsAdmin />} />
           <Route path="pipelines" element={<PipelinesAdmin />} />
           <Route path="campos" element={<CustomFieldsAdmin />} />
           <Route path="productos" element={<Navigate to="/productos" replace />} />
@@ -163,12 +165,12 @@ type R = { id: string; name: string; key: string; permissions: Record<string, st
 function RolesAdmin() {
   const toast = useToast();
   const confirm = useConfirm();
-  const [data, setData] = useState<{ items: R[]; objects: string[]; actions: string[] } | null>(null);
+  const [data, setData] = useState<{ items: R[]; objects: string[]; object_labels?: Record<string, string>; actions: string[] } | null>(null);
   const [editing, setEditing] = useState<R | "new" | null>(null);
   const [f, setF] = useState<{ name: string; key: string; visibility: string; permissions: Record<string, string[] | boolean | undefined> }>({ name: "", key: "", visibility: "own", permissions: {} });
   const load = () => api.get<typeof data>("admin/roles").then(setData);
   useEffect(() => { load(); }, []);
-  const OBJ: Record<string, string> = { contact: "Contactos", company: "Empresas", deal: "Negocios", task: "Tareas", activity: "Actividades", ticket: "Tickets", product: "Productos", quote: "Presupuestos", list: "Listas", report: "Informes" };
+  const OBJ: Record<string, string> = { contact: "Contactos", company: "Empresas", deal: "Negocios", task: "Tareas", activity: "Actividades", ticket: "Tickets", product: "Productos", quote: "Presupuestos", list: "Listas", report: "Informes", contract: "Contratos", ...(data?.object_labels ?? {}) };
   const ACT: Record<string, string> = { create: "Crear", read: "Ver", update: "Editar", delete: "Borrar", export: "Exportar" };
   const open = (r: R | "new") => { setEditing(r); setF(r === "new" ? { name: "", key: "", visibility: "own", permissions: Object.fromEntries((data?.objects ?? []).map((o) => [o, ["read"]])) } : { name: r.name, key: r.key, visibility: r.visibility, permissions: { ...r.permissions } }); };
   const toggle = (o: string, a: string) => setF((x) => { const cur = Array.isArray(x.permissions[o]) ? (x.permissions[o] as string[]) : []; return { ...x, permissions: { ...x.permissions, [o]: cur.includes(a) ? cur.filter((y) => y !== a) : [...cur, a] } }; });

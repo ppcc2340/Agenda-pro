@@ -1,3 +1,4 @@
+import { RelatedCustomRecords } from "./CustomObjects";
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { Send } from "lucide-react";
@@ -110,6 +111,7 @@ export function TicketDetailPage() {
           {tab === "tasks" && <div>{t.tasks.map((x) => <TaskRow key={x.id} task={x} onChanged={refreshAll} onEdit={(y) => setTaskForm(y)} />)}<button className="btn sm mt12" onClick={() => setTaskForm("new")}>+ Nueva tarea</button></div>}
         </section>
         <aside className="side r">
+          <RelatedCustomRecords object="ticket" id={id!} />
           <div className="card"><dl className="kv">
             <dt>Estado</dt><dd><select aria-label="Estado" className="input sm" value={t.status} onChange={(e) => patch({ status: e.target.value })}>{Object.entries(TICKET_STATUS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></dd>
             <dt>Prioridad</dt><dd><select aria-label="Prioridad" className="input sm" value={t.priority} onChange={(e) => patch({ priority: e.target.value })}>{["low", "normal", "high", "urgent"].map((k) => <option key={k} value={k}>{PRIORITY[k]}</option>)}</select></dd>

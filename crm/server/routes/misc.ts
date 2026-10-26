@@ -5,7 +5,9 @@ import { id, now } from "../lib/util.js";
 import { badRequest, notFound } from "../lib/errors.js";
 import { assert } from "../lib/permissions.js";
 import { parseJson, type Row } from "../db.js";
-import { buildWhere, OBJECT_FIELDS, OPS } from "../lib/filters.js";
+import { buildWhere, OBJECT_FIELDS, OPS, CUSTOM_RECORD_FIELDS } from "../lib/filters.js";
+import { isBoardObject } from "../lib/objectKeys.js";
+import { listDefs } from "../services/customObjects.js";
 import { listRecords, listQuery, parseFilters, customFieldDefs } from "../services/records.js";
 import { ownerScope } from "../lib/permissions.js";
 import { createContact, updateContact, getContact } from "../services/contacts.js";
@@ -46,7 +48,7 @@ export function miscRoutes() {
   r.put("/views/:id", h(async (req) => { const b = parse(viewSchema.partial(), req.body); const v = req.ctx.db.get<Row>("SELECT * FROM views WHERE id=? AND workspace_id=?", param(req, "id"), req.ctx.ws); if (!v) throw notFound("Vista"); if (v.user_id !== req.ctx.user.id && !req.ctx.role.permissions.admin) throw new HttpError(403, "Solo el creador puede editar esta vista"); req.ctx.db.update("views", v.id as string, { ...b, shared: b.shared === undefined ? undefined : b.shared ? 1 : 0 }); return parseJson(req.ctx.db.get<Row>("SELECT * FROM views WHERE id=?", v.id), ["filters", "columns", "sort"]); }));
   r.delete("/views/:id", h(async (req) => { req.ctx.db.run("DELETE FROM views WHERE id=? AND workspace_id=? AND (user_id=? OR ?=1)", param(req, "id"), req.ctx.ws, req.ctx.user.id, req.ctx.role.permissions.admin ? 1 : 0); return { ok: true }; }));
   // ----- board configuration (columns, labels, groups) -----
-  const boardObj = z.enum(["contact", "company", "deal", "ticket", "contract"]);
+  const boardObj = z.string().refine(isBoardObject, "Objeto no válido");
   r.get("/boards/:object", h(async (req) => { const o = boardObj.parse(param(req, "object")); const row = req.ctx.db.get<Row>("SELECT * FROM board_configs WHERE workspace_id=? AND object=?", req.ctx.ws, o); return { object: o, config: row ? JSON.parse(String(row.config)) : {}, updated_at: row?.updated_at ?? null }; }));
   r.put("/boards/:object", h(async (req) => {
     const o = boardObj.parse(param(req, "object"));
@@ -55,7 +57,7 @@ export function miscRoutes() {
     req.ctx.db.run("INSERT INTO board_configs (workspace_id, object, config, updated_by, updated_at) VALUES (?,?,?,?,?) ON CONFLICT(workspace_id, object) DO UPDATE SET config=excluded.config, updated_by=excluded.updated_by, updated_at=excluded.updated_at", req.ctx.ws, o, JSON.stringify(cfg), req.ctx.user.id, now());
     return { object: o, config: cfg };
   }));
-  r.get("/filter-meta", h(async (req) => ({ fields: OBJECT_FIELDS, ops: OPS, custom: { contact: customFieldDefs(req.ctx, "contact"), company: customFieldDefs(req.ctx, "company"), deal: customFieldDefs(req.ctx, "deal"), ticket: customFieldDefs(req.ctx, "ticket"), contract: customFieldDefs(req.ctx, "contract") } })));
+  r.get("/filter-meta", h(async (req) => ({ fields: OBJECT_FIELDS, ops: OPS, custom: { contact: customFieldDefs(req.ctx, "contact"), company: customFieldDefs(req.ctx, "company"), deal: customFieldDefs(req.ctx, "deal"), ticket: customFieldDefs(req.ctx, "ticket"), contract: customFieldDefs(req.ctx, "contract"), ...Object.fromEntries(listDefs(req.ctx).map((d) => [d.key, customFieldDefs(req.ctx, d.key)])) }, ...{ objects: Object.fromEntries(listDefs(req.ctx).map((d) => [d.key, { label: d.plural, fields: CUSTOM_RECORD_FIELDS, statuses: d.statuses, relations: d.relations }])) } })));
 
   // ---------- lists / segments (2.2, 2.3) ----------
   r.get("/lists", h(async (req) => ({ items: req.ctx.db.all<Row>("SELECT l.*, (SELECT COUNT(*) FROM list_members m WHERE m.list_id=l.id) members FROM lists l WHERE workspace_id=? ORDER BY name", req.ctx.ws).map((l) => parseJson(l, ["filters"])) })));

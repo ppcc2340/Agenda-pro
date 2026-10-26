@@ -1,3 +1,4 @@
+import { RelatedCustomRecords } from "./CustomObjects";
 import { RecordAutomations } from "./AutomationCenter";
 import { useEffect, useState, useCallback, Fragment } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
@@ -88,6 +89,7 @@ export function DealDetailPage() {
           </div>
         </section>
         <aside className="side r">
+          <RelatedCustomRecords object="deal" id={id!} />
           <div className="card">
             <div className="card-title"><h3>Detalles</h3><button className="btn xs ghost" onClick={() => setEditing(true)} aria-label="Editar"><Pencil /></button></div>
             <dl className="kv">

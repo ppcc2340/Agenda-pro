@@ -50,9 +50,10 @@ function FieldSelect({ schema, value, onChange, filter, special, placeholder = "
   );
 }
 function useValueOptions(object: string, schema: Schema | null) {
-  const { users, pipelines } = useApp();
+  const { users, pipelines, objects } = useApp();
   return (field?: string): { v: string; l: string }[] | null => {
     if (!field) return null;
+    if (field === "status" && object.startsWith("o_")) return (objects.find((o) => o.key === object)?.statuses ?? []).map((s) => ({ v: String(s.id), l: s.label }));
     if (field.startsWith("custom.")) { const d = schema?.custom.find((x) => `custom.${x.key}` === field); if (d?.type === "status") return (((d.settings ?? {}).labels as StatusLabel[] | undefined) ?? []).map((l) => ({ v: l.label, l: l.label })); if (d?.type === "user") return users.map((u) => ({ v: u.id, l: u.name })); return null; }
     if (/(owner_id|assignee_id|legal_owner_id|_actor)$/.test(field)) return users.map((u) => ({ v: u.id, l: u.name }));
     if (field === "stage_id") return pipelines.flatMap((p) => p.stages.map((s) => ({ v: s.id, l: `${p.name} · ${s.name}` })));
@@ -126,7 +127,7 @@ export function ActionList({ actions, onChange, object, schema, meta, depth = 0 
   );
 }
 function ActionForm({ a, onChange, object, schema, meta, depth }: { a: Action; onChange: (a: Action) => void; object: string; schema: Schema | null; meta: Meta; depth: number }) {
-  const { users, teams, pipelines } = useApp();
+  const { users, teams, pipelines, objects } = useApp();
   const opts = useValueOptions(object, schema);
   const s = (k: string) => String(a[k] ?? "");
   const set = (p: Any) => onChange({ ...a, ...p });
@@ -154,8 +155,8 @@ function ActionForm({ a, onChange, object, schema, meta, depth }: { a: Action; o
     case "create_deal": return <Field label="Nombre del negocio" hint={tpl}><input className="input sm" value={s("name")} onChange={(e) => set({ name: e.target.value })} /></Field>;
     case "create_record": {
       const vals = (a.values ?? {}) as Record<string, string>;
-      const targets: Record<string, string[]> = { task: ["title", "assignee_id"], deal: ["name", "amount", "owner_id"], ticket: ["subject", "description", "priority", "assignee_id"], company: ["name", "sector", "city"], contact: ["first_name", "last_name", "email", "phone"] };
-      return <div className="form-grid"><Field label="Tablero destino"><select className="input sm" value={s("object") || "task"} onChange={(e) => set({ object: e.target.value, values: {} })}>{Object.keys(targets).map((k) => <option key={k} value={k}>{OBJ_LABEL[k]}</option>)}</select></Field><label className="checkbox small"><input type="checkbox" checked={a.connect !== false} onChange={(e) => set({ connect: e.target.checked })} />Conectar con este elemento</label>
+      const targets: Record<string, string[]> = { task: ["title", "assignee_id"], deal: ["name", "amount", "owner_id"], ticket: ["subject", "description", "priority", "assignee_id"], company: ["name", "sector", "city"], contact: ["first_name", "last_name", "email", "phone"], ...Object.fromEntries(objects.map((o) => [o.key, ["name", "status", "owner_id"]])) };
+      return <div className="form-grid"><Field label="Tablero destino"><select className="input sm" value={s("object") || "task"} onChange={(e) => set({ object: e.target.value, values: {} })}>{Object.keys(targets).map((k) => <option key={k} value={k}>{OBJ_LABEL[k] ?? objects.find((o) => o.key === k)?.plural ?? k}</option>)}</select></Field><label className="checkbox small"><input type="checkbox" checked={a.connect !== false} onChange={(e) => set({ connect: e.target.checked })} />Conectar con este elemento</label>
         <Field label="Mapeo de columnas (destino ← plantilla o =columna_origen)" full><div className="col" style={{ gap: 4 }}>{(targets[s("object") || "task"] ?? []).map((k) => <div key={k} className="row"><code className="xs" style={{ width: 110 }}>{k}</code><input aria-label="{{name}} o =amount" className="input sm grow" placeholder="{{name}} o =amount" value={vals[k] ?? ""} onChange={(e) => set({ values: { ...vals, [k]: e.target.value } })} /></div>)}</div></Field></div>;
     }
     case "update_related": { const rels = meta.relations[object] ?? []; return <div className="form-grid"><Field label="Elementos conectados"><select className="input sm" value={s("relation")} onChange={(e) => set({ relation: e.target.value })}><option value="">—</option>{rels.map((r) => <option key={r.key} value={r.key}>{r.label}</option>)}</select></Field><Field label="Columna del conectado" hint="ej. custom.estado_contrato, sector, status"><input className="input sm" value={s("field")} onChange={(e) => set({ field: e.target.value })} /></Field><Field label="Valor" hint={tpl}><input className="input sm" value={s("value")} onChange={(e) => set({ value: e.target.value })} /></Field></div>; }
@@ -182,7 +183,8 @@ function ActionForm({ a, onChange, object, schema, meta, depth }: { a: Action; o
 
 /* ------------------------------------------------------------------ disparador */
 function TriggerForm({ t, onChange, meta, schema, wfId }: { t: Trigger; onChange: (t: Trigger) => void; meta: Meta; schema: Schema | null; wfId?: string }) {
-  const { pipelines, users } = useApp();
+  const { pipelines, users, objects } = useApp();
+  useObjectLabels();
   const [forms, setForms] = useState<{ id: string; name: string }[]>([]);
   useEffect(() => { if (t.type === "form_submitted") api.get<{ items: typeof forms }>("forms").then((r) => setForms(r.items)); }, [t.type]);
   const info = meta.trigger_info[t.type];
@@ -194,7 +196,7 @@ function TriggerForm({ t, onChange, meta, schema, wfId }: { t: Trigger; onChange
   return (
     <div className="form-grid">
       <Field label="Cuando…"><select className="input" value={t.type} onChange={(e) => { const i = meta.trigger_info[e.target.value]; onChange({ type: e.target.value, object: i?.object ? (t.object ?? "deal") : undefined }); }}>{Object.entries(groups).map(([g, items]) => <optgroup key={g} label={g}>{items.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</optgroup>)}</select></Field>
-      {info?.object && <Field label="Tablero"><select className="input" value={t.object ?? "deal"} onChange={(e) => set({ object: e.target.value, field: undefined, value: undefined, from: undefined })}>{["contact", "company", "deal", "ticket", "contract"].map((k) => <option key={k} value={k}>{OBJ_LABEL[k]}</option>)}</select></Field>}
+      {info?.object && <Field label="Tablero"><select className="input" value={t.object ?? "deal"} onChange={(e) => set({ object: e.target.value, field: undefined, value: undefined, from: undefined })}>{["contact", "company", "deal", "ticket", "contract", ...objects.map((o) => o.key)].map((k) => <option key={k} value={k}>{OBJ_LABEL[k] ?? k}</option>)}</select></Field>}
       {(t.type === "field_changed" || t.type === "status_unchanged") && <><Field label="Columna"><FieldSelect schema={schema} value={t.field} onChange={(f) => set({ field: f, value: undefined, from: undefined })} /></Field>{t.type === "field_changed" && <Field label="De (vacío = cualquiera)"><ValueInput options={opts(t.field)} value={t.from} onChange={(v) => set({ from: v || undefined })} placeholder="cualquier valor" /></Field>}<Field label={t.type === "status_unchanged" ? "Con el valor (opcional)" : "A (vacío = cualquiera)"}><ValueInput options={opts(t.field)} value={t.value} onChange={(v) => set({ value: v || undefined })} placeholder="cualquier valor" /></Field></>}
       {t.type === "status_unchanged" && <Field label="Días sin cambiar"><input className="input" type="number" min={1} value={t.days ?? 7} onChange={(e) => set({ days: Number(e.target.value) })} /></Field>}
       {t.type === "any_field_changed" && <Field label="Excepto estas columnas" full><TagInput value={t.exclude ?? []} onChange={(v) => set({ exclude: v })} placeholder="ej. updated_at, score" /></Field>}
@@ -268,6 +270,7 @@ const STATUS_BADGE: Record<string, string> = { ok: "ok", error: "risk", skipped:
 const STATUS_LABEL: Record<string, string> = { ok: "Correcta", error: "Error", skipped: "No cumplía", waiting: "En espera" };
 export function AutomationCenter() {
   const { isAdmin } = useApp();
+  useObjectLabels();
   const [params, setParams] = useSearchParams();
   const tab = params.get("tab") ?? (isAdmin ? "lista" : "aprobaciones");
   const meta = useMeta();
@@ -314,6 +317,11 @@ function WorkflowList() {
   );
 }
 const objPath: Record<string, string> = { contact: "contactos", deal: "negocios", company: "empresas", ticket: "tickets", contract: "contratos" };
+/** Añade los objetos personalizados a los nombres y rutas de tableros que usan las listas de este módulo. */
+function useObjectLabels() {
+  const { objects } = useApp();
+  for (const o of objects) { OBJ_LABEL[o.key] = o.plural; objPath[o.key] = `o/${o.key}`; }
+}
 function RunsTable({ items, showWf }: { items: Any[]; showWf?: boolean }) {
   if (!items.length) return <p className="muted small">Sin ejecuciones.</p>;
   return <table className="table"><thead><tr><th>Fecha</th>{showWf && <th>Automatización</th>}<th>Disparador</th><th>Elemento</th><th>Estado</th><th className="r">Acciones</th><th>Origen</th><th>Detalle</th></tr></thead><tbody>

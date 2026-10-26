@@ -1,5 +1,8 @@
 /** Rutas de analítica: constructor de informes, paneles, embudo, previsión, cuotas, motivos de pérdida, programación y alertas. */
 import { Router, type Response } from "express";
+import { isCustomObjectKey } from "../lib/objectKeys.js";
+import { can } from "../lib/permissions.js";
+import { listDefs } from "../services/customObjects.js";
 import { z } from "zod";
 import { h, parse, param } from "./_helpers.js";
 import type { Row } from "../db.js";
@@ -20,17 +23,19 @@ const sendCsv = (res: Response, name: string, csv: string) => {
   res.setHeader("content-disposition", `attachment; filename="${name.replace(/[^\w\-]+/g, "-").replace(/-+/g, "-") || "informe"}-${now().slice(0, 10)}.csv"`);
   res.send(csv);
 };
-const runSchema = z.object({ object: z.enum(A.REPORT_OBJECTS), config: z.unknown(), global: A.globalSchema.optional() });
+const runSchema = z.object({ object: z.string().refine((o) => (A.REPORT_OBJECTS as readonly string[]).includes(o) || isCustomObjectKey(o), "Objeto no válido"), config: z.unknown(), global: A.globalSchema.optional() });
 
 export function analyticsRoutes() {
   const r = Router();
 
   /* ---- metadatos para el constructor ---- */
   r.get("/meta", h(async (req) => {
-    const objects = Object.fromEntries(A.REPORT_OBJECTS.map((o) => {
+    const customDefs = listDefs(req.ctx).filter((d) => can(req.ctx, d.key, "read"));
+    const objects = Object.fromEntries([...A.REPORT_OBJECTS, ...customDefs.map((d) => d.key)].map((o) => {
       const base = Object.entries(OBJECT_FIELDS[o] ?? {}).filter(([, k]) => k !== "json").map(([f, k]) => ({ field: f, label: A.FIELD_LABELS[f] ?? f, kind: k === "bool" ? "text" : k }));
       const custom = o === "activity" ? [] : fieldDefs(req.ctx, o).filter((d) => !["button", "mirror", "formula", "autonumber", "creation_log", "last_updated", "timeline", "multiselect"].includes(d.type) || (d.type === "formula" && false)).map((d) => ({ field: `custom.${d.key}`, label: d.label, kind: ["number", "currency", "percent", "rating"].includes(d.type) ? "number" : ["date", "datetime"].includes(d.type) ? "date" : "text" }));
-      return [o, { fields: [...base, ...custom], date_field: A.DATE_FIELD[o] }];
+      const def = customDefs.find((d) => d.key === o);
+      return [o, { fields: [...base.map((f) => (def && f.field === "name" ? { ...f, label: def.primary_label } : f)), ...custom], date_field: A.DATE_FIELD[o], ...(def ? { label: def.plural, custom_object: true } : {}) }];
     }));
     return { objects, kpis: A.KPIS, buckets: A.BUCKETS, metrics: A.METRIC_FNS, charts: A.CHARTS };
   }));
@@ -40,7 +45,7 @@ export function analyticsRoutes() {
   r.get("/run.csv", h(async (req, res) => {
     const object = String(req.query.object ?? ""); let config: unknown;
     try { config = JSON.parse(String(req.query.config ?? "{}")); } catch { throw badRequest("Configuración no válida"); }
-    assert(req.ctx, A.REPORT_OBJECTS.includes(object as never) && object !== "activity" ? object : "report", "export");
+    assert(req.ctx, (A.REPORT_OBJECTS.includes(object as never) && object !== "activity") || isCustomObjectKey(object) ? object : "report", "export");
     sendCsv(res, String(req.query.name ?? "informe"), A.toCsv(A.runReport(req.ctx, object, config, g(req.query as never))));
   }));
 

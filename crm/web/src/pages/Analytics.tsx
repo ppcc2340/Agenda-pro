@@ -16,7 +16,7 @@ import "./analytics.css";
 
 type Any = Record<string, unknown>;
 interface Global { from?: string; to?: string; owner_id?: string; team_id?: string; pipeline_id?: string }
-interface Meta { objects: Record<string, { fields: { field: string; label: string; kind: string }[]; date_field: string }>; kpis: Record<string, { label: string; money?: boolean; pct?: boolean }> }
+interface Meta { objects: Record<string, { fields: { field: string; label: string; kind: string }[]; date_field: string; label?: string; custom_object?: boolean }>; kpis: Record<string, { label: string; money?: boolean; pct?: boolean }> }
 interface Dim { field: string; bucket?: string }
 interface Metric { fn: string; field?: string; label?: string }
 interface Config { filters?: FilterGroup; dims: Dim[]; metrics: Metric[]; chart: string; sort: { by: "dim" | "metric"; dir: "asc" | "desc" }; limit: number; date_field?: string }
@@ -39,7 +39,8 @@ export function AnalyticsPage() {
   const [params, setParams] = useSearchParams();
   const tab = params.get("tab") ?? "paneles";
   const [meta, setMeta] = useState<Meta | null>(null);
-  useEffect(() => { api.get<Meta>("analytics/meta").then(setMeta).catch(() => undefined); }, []);
+  // los objetos personalizados llegan en /meta con su nombre: se añaden al selector «Datos de»
+  useEffect(() => { api.get<Meta>("analytics/meta").then((m) => { for (const [k, o] of Object.entries(m.objects)) if (o.label) OBJECTS[k] = o.label; setMeta(m); }).catch(() => undefined); }, []);
   return (
     <div className="an">
       <div className="page-head"><div><h1>Analítica</h1><p className="sub">Paneles, constructor de informes, previsión y alertas. Todo respeta lo que tu rol puede ver.</p></div><Link className="btn ghost" to="/informes">Informes fijos</Link></div>

@@ -13,7 +13,7 @@ import { Modal, Pager, Spinner, Empty, Field, useToast, useDebounce, errorMessag
 import { useApp, type CustomField, type StatusLabel } from "../lib/app";
 import { ColumnSettings } from "./ColumnSettings";
 import { fmtMoney, fmtDate, fmtNum } from "../lib/format";
-import { PALETTE, applyBoard, type Board } from "../lib/board";
+import { PALETTE, applyBoard, type Board, type BoardObject } from "../lib/board";
 import { BoardRules } from "./BoardRules";
 import { onLive } from "../lib/live";
 import { ColorPicker, LabelEditor, CondFormatDialog, NumFormatDialog, ChangeTypeDialog, Pop, TagsEditor, LongTextEditor, RangeEditor, RelationPicker, SHORTCUTS, type LabelItem, type LabelCaps } from "./GridDialogs";
@@ -59,7 +59,7 @@ export interface GroupOption<T> {
 export interface SavedView { id: string; object: string; name: string; filters: FilterGroup; columns: string[]; sort: { field?: string; dir?: string }; shared: number; user_id: string }
 
 interface Props<T> {
-  object: "contact" | "company" | "deal" | "ticket" | "contract";
+  object: BoardObject;
   endpoint: string;
   columns: Column<T>[];
   board: Board;

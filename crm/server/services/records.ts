@@ -7,24 +7,27 @@ import { parseJson, type Row } from "../db.js";
 import { buildWhere, OBJECT_FIELDS, type FilterGroup } from "../lib/filters.js";
 import { badRequest } from "../lib/errors.js";
 import { ownerScope } from "../lib/permissions.js";
+import { isCustomObjectKey } from "../lib/objectKeys.js";
 
-export const JSON_COLS: Record<string, string[]> = {
+/** Mapa por objeto que resuelve también los objetos personalizados (o_<slug>) con un valor común. */
+const withCustom = <T,>(core: Record<string, T>, custom: T): Record<string, T> => new Proxy(core, { get: (t, p) => (typeof p === "string" && isCustomObjectKey(p) ? custom : (t as Record<string | symbol, never>)[p]) });
+export const JSON_COLS: Record<string, string[]> = withCustom({
   contact: ["tags", "custom", "utm", "qualification", "emails", "phones"],
   company: ["tags", "custom"],
   deal: ["tags", "custom"],
   ticket: ["tags"],
   task: [],
   contract: ["tags", "custom", "effective_values", "intake", "risk_factors"],
-};
-export const TABLES: Record<string, string> = { contact: "contacts", company: "companies", deal: "deals", ticket: "tickets", task: "tasks", contract: "contracts" };
-export const SEARCH_COLS: Record<string, string[]> = {
+}, ["tags", "custom"]);
+export const TABLES: Record<string, string> = withCustom({ contact: "contacts", company: "companies", deal: "deals", ticket: "tickets", task: "tasks", contract: "contracts" }, "custom_records");
+export const SEARCH_COLS: Record<string, string[]> = withCustom({
   contact: ["first_name", "last_name", "email", "phone", "job_title", "emails", "phones"],
   company: ["name", "domain", "city", "tax_id"],
   deal: ["name"],
   ticket: ["subject"],
   task: ["title"],
   contract: ["number", "title", "description"],
-};
+}, ["name", "number"]);
 
 export const listQuery = z.object({
   filters: z.any().optional(),
@@ -63,6 +66,7 @@ export function listRecords<T extends Row>(ctx: Ctx, object: string, q: ListQuer
   const where: string[] = ["t.workspace_id = ?"];
   const params: unknown[] = [ctx.ws];
   if (object !== "task" && object !== "ticket") where.push("t.deleted_at IS NULL");
+  if (isCustomObjectKey(object)) { where.push("t.object_key = ?"); params.push(object); }
   const scope = ownerScope(ctx, `t.${extra?.ownerCol ?? (object === "task" ? "assignee_id" : object === "ticket" ? "assignee_id" : "owner_id")}`);
   where.push(scope.sql); params.push(...scope.params);
   const f = buildWhere(object, parseFilters(q.filters), "t");

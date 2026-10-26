@@ -31,6 +31,8 @@ import { ctxAs, buildCtx } from "./system.js";
 import { hashPassword, token } from "../lib/util.js";
 import { fieldDefs, computeFields, statusLabels, cellText, norm, addBusinessDays, RELATIONS, COMPUTED_TYPES, type FieldDef } from "./columns.js";
 import { loadRecord, applyPatch, archiveRecord, cellsToPatch, recordName, OBJECT_TABLE, OBJECT_PATH, OBJECT_LABEL } from "./recordOps.js";
+import { isCustomObjectKey } from "../lib/objectKeys.js";
+import { createCustomRecord, findDef } from "./customObjects.js";
 
 export { loadRecord };
 
@@ -87,7 +89,7 @@ export const ACTION_INFO: Record<string, { label: string; group: string }> = {
 /* ================================================================== esquemas */
 export const triggerSchema = z.object({
   type: z.enum(TRIGGER_TYPES),
-  object: z.enum(OBJECTS).optional(),
+  object: z.string().refine((o) => (OBJECTS as readonly string[]).includes(o) || isCustomObjectKey(o), "Objeto no válido").optional(),
   field: z.string().optional(), value: z.string().optional(), from: z.string().optional(), exclude: z.array(z.string()).optional(),
   stage_id: z.string().optional(), pipeline_id: z.string().optional(), form_id: z.string().optional(),
   days: z.number().int().min(0).optional(), min: z.number().optional(), hours: z.number().optional(),
@@ -201,6 +203,7 @@ const NO_OBJECT_CHECK = new Set(["form_submitted", "email_opened", "quote_viewed
 /** ¿El valor (crudo o texto de etiqueta) coincide con lo esperado? */
 function valueIs(ctx: Ctx, object: string, field: string, raw: unknown, expected: string): boolean {
   if (norm(raw) === norm(expected)) return true;
+  if (field === "status" && isCustomObjectKey(object)) { const st = findDef(ctx, object)?.statuses.find((s) => String(s.id) === String(raw)); return !!st && norm(st.label) === norm(expected); }
   if (field.startsWith("custom.")) { const d = fieldDefs(ctx, object).find((x) => x.key === field.slice(7)); if (d?.type === "status") return norm(cellText(ctx, "status", raw, d)) === norm(expected); if (d?.type === "user") return norm(cellText(ctx, "user", raw)) === norm(expected); }
   if (/_id$/.test(field) && raw) { const u = ctx.db.get<{ name: string }>("SELECT name FROM users WHERE id=?", raw); if (u && norm(u.name) === norm(expected)) return true; const s = ctx.db.get<{ name: string }>("SELECT name FROM stages WHERE id=?", raw); if (s && norm(s.name) === norm(expected)) return true; }
   return false;
@@ -432,6 +435,7 @@ function links(object: string, record: Record<string, unknown>) {
     company_id: object === "company" ? (record.id as string) : ((record.company_id as string | null) ?? (record.counterparty_company_id as string | null) ?? null),
     deal_id: object === "deal" ? (record.id as string) : ((record.deal_id as string | null) ?? null),
     ticket_id: object === "ticket" ? (record.id as string) : null,
+    ...(isCustomObjectKey(object) ? { record_object: object, record_id: record.id as string } : {}),
   };
 }
 const linkOf = (object: string, rid: string) => (OBJECT_PATH[object] ? `${OBJECT_PATH[object]}/${rid}` : undefined);
@@ -572,14 +576,24 @@ function runAction(ctx: Ctx, object: string, record: Record<string, unknown>, a:
       const vals: Record<string, unknown> = {};
       for (const [k, v] of Object.entries(map)) vals[k] = String(v).startsWith("=") ? fieldValue(record, String(v).slice(1)) : renderTemplate(String(v), t);
       const input = cellsToPatch(vals) as Record<string, unknown>;
-      const lk: { contact_id?: string | null; company_id?: string | null; deal_id?: string | null; ticket_id?: string | null } = a.connect === false ? {} : links(object, record);
+      const lk: { contact_id?: string | null; company_id?: string | null; deal_id?: string | null; ticket_id?: string | null; record_object?: string; record_id?: string } = a.connect === false ? {} : links(object, record);
       let created: Row;
       if (target === "deal") created = createDeal(ctx, { name: String(input.name ?? `Negocio ${t.name}`), company_id: (input.company_id as string | null) ?? lk.company_id ?? null, owner_id: (input.owner_id as string | null) ?? (record.owner_id as string | null) ?? ctx.user.id, amount: input.amount === undefined ? undefined : Number(input.amount), contacts: lk.contact_id ? [{ contact_id: lk.contact_id, role: "decision_maker" }] : [], custom: input.custom as Row | undefined } as never, { depth });
       else if (target === "ticket") created = createTicket(ctx, { subject: String(input.subject ?? `Seguimiento de ${t.name}`), description: (input.description as string | undefined) ?? null, priority: (input.priority as "normal") ?? "normal", contact_id: lk.contact_id, company_id: lk.company_id, assignee_id: (input.assignee_id as string | undefined) ?? null, custom: input.custom } as never, { depth });
+      else if (isCustomObjectKey(target)) {
+        // objeto personalizado: se vincula al elemento de origen (y a su empresa/contacto/negocio) por las relaciones que tenga
+        const def = findDef(ctx, target); if (!def) throw new Error(`No existe el objeto ${target}`);
+        const lks: Record<string, string[]> = {};
+        if (a.connect !== false) for (const rel of def.relations) {
+          const tid = rel.target === object ? String(record.id) : rel.target === "company" ? lk.company_id : rel.target === "contact" ? lk.contact_id : rel.target === "deal" ? lk.deal_id : rel.target === "ticket" ? lk.ticket_id : null;
+          if (tid) lks[rel.key] = [tid];
+        }
+        created = createCustomRecord(ctx, target, { name: String(input.name ?? t.name), status: (input.status as string | undefined) ?? undefined, owner_id: (input.owner_id as string | undefined) ?? (record.owner_id as string | null) ?? ctx.user.id, custom: input.custom as Record<string, unknown> | undefined, links: lks }, { depth });
+      }
       else if (target === "company") created = createCompany(ctx, { name: String(input.name ?? t.name), ...input } as never);
       else if (target === "contact") created = createContact(ctx, { first_name: String(input.first_name ?? t.name), ...input, company_id: (input.company_id as string | undefined) ?? lk.company_id ?? null } as never, { force: true, depth });
       else created = createTask(ctx, { title: String(input.title ?? `Seguimiento de ${t.name}`), type: "todo", due_at: addDays(now(), Number(a.due_in_days ?? 1)), priority: "normal", assignee_id: (input.assignee_id as string | undefined) ?? resolveUsers(ctx, "owner", record, st)[0] ?? null, ...lk });
-      log.push(`Creado en ${OBJECT_LABEL[target] ?? target}: ${recordName(target, created)}${a.connect === false ? "" : " (conectado)"}`); return 1;
+      log.push(`Creado en ${isCustomObjectKey(target) ? findDef(ctx, target)?.plural ?? target : OBJECT_LABEL[target] ?? target}: ${recordName(target, created)}${a.connect === false ? "" : " (conectado)"}`); return 1;
     }
     case "update_related": {
       const rel = RELATIONS[object]?.[str("relation")]; if (!rel) throw new Error(`Relación no válida: ${str("relation")}`);
@@ -692,9 +706,10 @@ export function planWorkflow(ctx: Ctx, w: Row) {
   const t = w.trigger as Trigger;
   if (t.type !== "date_arrives" || !w.active || !t.object) return 0;
   const table = OBJECT_TABLE[t.object]; if (!table) return 0;
-  const soft = ["contacts", "companies", "deals", "contracts"].includes(table) ? " AND deleted_at IS NULL" : "";
+  const soft = ["contacts", "companies", "deals", "contracts", "custom_records"].includes(table) ? " AND deleted_at IS NULL" : "";
+  const only = table === "custom_records" ? " AND object_key=?" : "";
   let n = 0;
-  for (const r of ctx.db.all<{ id: string }>(`SELECT id FROM ${table} WHERE workspace_id=?${soft} LIMIT 5000`, ctx.ws)) { const rec = loadRecord(ctx, t.object, r.id); if (rec) { planRecord(ctx, w, t.object, rec); n++; } }
+  for (const r of ctx.db.all<{ id: string }>(`SELECT id FROM ${table} WHERE workspace_id=?${soft}${only} LIMIT 5000`, ...(only ? [ctx.ws, t.object] : [ctx.ws]))) { const rec = loadRecord(ctx, t.object, r.id); if (rec) { planRecord(ctx, w, t.object, rec); n++; } }
   return ctx.db.get<{ n: number }>("SELECT COUNT(*) n FROM automation_schedule WHERE workflow_id=? AND fired_at IS NULL", w.id)?.n ?? n;
 }
 function planForEvent(ctx: Ctx, ev: CrmEvent) {
@@ -738,8 +753,9 @@ function enrollAll(ctx: Ctx, w: Row, object: string, evType: string, extraFilter
   let where: { sql: string; params: unknown[] } = { sql: "1=1", params: [] };
   const flat = w.conditions as FilterGroup;
   if ((flat.conditions ?? []).every((c) => !(c as CondNode).conditions && !String((c as CondNode).field ?? "").startsWith("_"))) { try { where = buildWhere(object, flat, "t"); } catch { /* condiciones sobre campos calculados: se evalúan en memoria */ } }
-  const soft = ["contacts", "companies", "deals", "contracts"].includes(table) ? " AND t.deleted_at IS NULL" : "";
-  for (const r of ctx.db.all<{ id: string }>(`SELECT t.id FROM ${table} t WHERE t.workspace_id=? AND ${where.sql}${soft} LIMIT 1000`, ctx.ws, ...where.params)) {
+  const soft = ["contacts", "companies", "deals", "contracts", "custom_records"].includes(table) ? " AND t.deleted_at IS NULL" : "";
+  const only = table === "custom_records" ? " AND t.object_key=?" : "";
+  for (const r of ctx.db.all<{ id: string }>(`SELECT t.id FROM ${table} t WHERE t.workspace_id=? AND ${where.sql}${soft}${only} LIMIT 1000`, ctx.ws, ...where.params, ...(only ? [object] : []))) {
     if (ctx.db.get("SELECT id FROM workflow_runs WHERE workflow_id=? AND record_id=? AND ran_at >= ? AND status != 'skipped'", w.id, r.id, now().slice(0, 10))) continue;
     const rec = loadRecord(ctx, object, r.id); if (!rec) continue;
     if (extraFilter && !extraFilter(rec)) continue;

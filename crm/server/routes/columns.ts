@@ -11,10 +11,12 @@ import { COLUMN_TYPES, FORMULA_FUNCTIONS, AGGREGATIONS, RELATIONS, EXTRA_TARGET_
 import { normalizeLabels, fieldDependents } from "../services/columnAdmin.js";
 import { loadRecord, applyPatch, cellsToPatch, validatedPatch, OBJECT_TABLE } from "../services/recordOps.js";
 import { OBJECT_FIELDS } from "../lib/filters.js";
+import { isBoardObject } from "../lib/objectKeys.js";
+import { relationsFor } from "../services/columns.js";
 import { convertField } from "../services/convert.js";
 import { assert } from "../lib/permissions.js";
 
-const OBJ = z.enum(["contact", "company", "deal", "ticket", "contract"]);
+const OBJ = z.string().refine(isBoardObject, "Objeto no válido");
 export function columnRoutes() {
   const r = Router();
   r.get("/types", h(async () => ({ types: COLUMN_TYPES, functions: FORMULA_FUNCTIONS, aggregations: AGGREGATIONS })));
@@ -35,7 +37,7 @@ export function columnRoutes() {
   // esquema de un tablero: columnas nativas + personalizadas + relaciones disponibles para reflejos
   r.get("/schema/:object", h(async (req) => {
     const object = parse(OBJ, req.params.object);
-    const rels = Object.entries(RELATIONS[object] ?? {}).map(([k, v]) => ({ key: k, label: v.label, target: v.target, many: v.many, fields: [...(OBJECT_FIELDS[v.target] ? Object.keys(OBJECT_FIELDS[v.target]!) : []), ...(EXTRA_TARGET_FIELDS[v.target] ?? []), ...(OBJECT_FIELDS[v.target] ? fieldDefs(req.ctx, v.target).map((d) => `custom.${d.key}`) : [])] }));
+    const rels = Object.entries(relationsFor(req.ctx, object)).map(([k, v]) => ({ key: k, label: v.label, target: v.target, many: v.many, fields: [...(OBJECT_FIELDS[v.target] ? Object.keys(OBJECT_FIELDS[v.target]!) : []), ...(EXTRA_TARGET_FIELDS[v.target] ?? []), ...(OBJECT_FIELDS[v.target] ? fieldDefs(req.ctx, v.target).map((d) => `custom.${d.key}`) : [])] }));
     return { builtin: builtinColumns(object), custom: fieldDefs(req.ctx, object), relations: rels };
   }));
   /** Vista previa de un cambio de tipo: cuántos valores se convierten, cuántos se pierden y ejemplos. */

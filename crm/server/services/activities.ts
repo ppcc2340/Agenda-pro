@@ -20,6 +20,9 @@ export const activitySchema = z.object({
   company_id: z.string().nullable().optional(),
   deal_id: z.string().nullable().optional(),
   ticket_id: z.string().nullable().optional(),
+  /** vínculo con un registro de objeto personalizado */
+  record_object: z.string().regex(/^o_[a-z0-9_]{2,40}$/).nullable().optional(),
+  record_id: z.string().nullable().optional(),
   pinned: z.boolean().optional(),
   meta: z.record(z.string(), z.unknown()).optional(),
 });
@@ -27,15 +30,15 @@ export type ActivityInput = z.infer<typeof activitySchema>;
 
 /** Log an activity and refresh last_activity_at on linked records. */
 export function logActivity(ctx: Ctx, input: ActivityInput, userId: string | null = ctx.user.id): Row {
-  if (!input.contact_id && !input.company_id && !input.deal_id && !input.ticket_id) throw badRequest("La actividad debe estar vinculada a un contacto, empresa, negocio o ticket");
+  if (!input.contact_id && !input.company_id && !input.deal_id && !input.ticket_id && !input.record_id) throw badRequest("La actividad debe estar vinculada a un contacto, empresa, negocio o ticket");
   const at = input.occurred_at ?? now();
-  const a = { id: id(), workspace_id: ctx.ws, type: input.type, subject: input.subject ?? "", body: input.body ?? null, occurred_at: at, duration_min: input.duration_min ?? null, outcome: input.outcome ?? null, direction: input.direction ?? null, user_id: userId, contact_id: input.contact_id ?? null, company_id: input.company_id ?? null, deal_id: input.deal_id ?? null, ticket_id: input.ticket_id ?? null, pinned: input.pinned ? 1 : 0, meta: input.meta ?? {}, created_at: now() };
+  const a = { id: id(), workspace_id: ctx.ws, type: input.type, subject: input.subject ?? "", body: input.body ?? null, occurred_at: at, duration_min: input.duration_min ?? null, outcome: input.outcome ?? null, direction: input.direction ?? null, user_id: userId, contact_id: input.contact_id ?? null, company_id: input.company_id ?? null, deal_id: input.deal_id ?? null, ticket_id: input.ticket_id ?? null, record_object: input.record_id ? input.record_object ?? null : null, record_id: input.record_id ?? null, pinned: input.pinned ? 1 : 0, meta: input.meta ?? {}, created_at: now() };
   // Inherit company from contact / deal when missing so timelines stay complete.
   if (!a.company_id && a.contact_id) a.company_id = ctx.db.get<{ company_id: string | null }>("SELECT company_id FROM contacts WHERE id=?", a.contact_id)?.company_id ?? null;
   if (!a.company_id && a.deal_id) a.company_id = ctx.db.get<{ company_id: string | null }>("SELECT company_id FROM deals WHERE id=?", a.deal_id)?.company_id ?? null;
   ctx.db.insert("activities", a);
   if (input.type !== "system") {
-    const parent = a.deal_id ? { object: "deal", id: a.deal_id } : a.ticket_id ? { object: "ticket", id: a.ticket_id } : a.contact_id ? { object: "contact", id: a.contact_id } : a.company_id ? { object: "company", id: a.company_id } : null;
+    const parent = a.deal_id ? { object: "deal", id: a.deal_id } : a.ticket_id ? { object: "ticket", id: a.ticket_id } : a.contact_id ? { object: "contact", id: a.contact_id } : a.company_id ? { object: "company", id: a.company_id } : a.record_id && a.record_object ? { object: a.record_object, id: a.record_id } : null;
     if (parent) emit(ctx, { type: "activity.created", object: parent.object as "deal", record: { id: parent.id }, meta: { activity: { id: a.id, type: a.type, subject: a.subject, body: a.body, user_id: a.user_id } } });
   }
   if (input.type !== "system") {

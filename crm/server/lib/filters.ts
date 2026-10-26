@@ -4,11 +4,12 @@
  * Fields: whitelisted column names per object, or "custom.<key>" (JSON column).
  */
 import { badRequest } from "./errors.js";
+import { isCustomObjectKey } from "./objectKeys.js";
 
 export type Condition = { field: string; op: string; value?: unknown };
 export type FilterGroup = { logic?: "and" | "or"; conditions?: Condition[] };
 
-export const OBJECT_FIELDS: Record<string, Record<string, "text" | "number" | "date" | "bool" | "json">> = {
+const CORE_FIELDS: Record<string, Record<string, "text" | "number" | "date" | "bool" | "json">> = {
   contact: {
     first_name: "text", last_name: "text", email: "text", phone: "text", job_title: "text", company_id: "text",
     lifecycle_stage: "text", lead_status: "text", source: "text", owner_id: "text", score: "number", language: "text",
@@ -38,6 +39,11 @@ export const OBJECT_FIELDS: Record<string, Record<string, "text" | "number" | "d
     legal_hold: "bool", created_at: "date", updated_at: "date", tags: "json",
   },
 };
+/** Columnas nativas de los registros de cualquier objeto personalizado (o_<slug>). */
+export const CUSTOM_RECORD_FIELDS: Record<string, "text" | "number" | "date" | "bool" | "json"> = { name: "text", number: "text", owner_id: "text", status: "text", created_at: "date", updated_at: "date", tags: "json" };
+// Los objetos personalizados no se enumeran (Object.keys sigue devolviendo solo los nativos), pero se resuelven al pedirlos.
+
+export const OBJECT_FIELDS: Record<string, Record<string, "text" | "number" | "date" | "bool" | "json">> = new Proxy(CORE_FIELDS, { get: (t, p) => (typeof p === "string" && isCustomObjectKey(p) ? CUSTOM_RECORD_FIELDS : (t as Record<string | symbol, never>)[p]) });
 
 export const OPS = ["eq", "neq", "contains", "not_contains", "starts", "gt", "gte", "lt", "lte", "empty", "not_empty", "in", "not_in", "last_days", "next_days", "before", "after", "today", "is_true", "is_false"];
 
