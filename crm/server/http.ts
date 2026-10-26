@@ -14,11 +14,12 @@ export function requestLog(): RequestHandler {
     const rid = (typeof req.headers["x-request-id"] === "string" && /^[\w-]{6,64}$/.test(req.headers["x-request-id"]) ? req.headers["x-request-id"] : randomUUID());
     (req as Request & { rid?: string }).rid = rid;
     res.setHeader("x-request-id", rid);
-    if (!enabled || !req.path.startsWith("/api")) return next();
+    const url = req.originalUrl.split("?")[0] ?? req.path;
+    if (!enabled || !url.startsWith("/api")) return next();
     const t0 = process.hrtime.bigint();
     res.on("finish", () => {
       const ctx = (req as Partial<AuthedRequest>).ctx;
-      process.stdout.write(JSON.stringify({ t: new Date().toISOString(), level: res.statusCode >= 500 ? "error" : "info", request_id: rid, method: req.method, path: req.path, status: res.statusCode, ms: Number((process.hrtime.bigint() - t0) / 1000000n), tenant_id: ctx?.ws ?? null, user_id: ctx?.user?.id ?? null, via: ctx?.via ?? null }) + "\n");
+      process.stdout.write(JSON.stringify({ t: new Date().toISOString(), level: res.statusCode >= 500 ? "error" : "info", request_id: rid, method: req.method, path: url, status: res.statusCode, ms: Number((process.hrtime.bigint() - t0) / 1000000n), tenant_id: ctx?.ws ?? null, user_id: ctx?.user?.id ?? null, via: ctx?.via ?? null }) + "\n");
     });
     next();
   };

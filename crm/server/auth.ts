@@ -50,6 +50,7 @@ export function requireAuth(db: Db): RequestHandler {
     try {
       const { ctx } = resolveCtx(db, req);
       if (!ctx) throw new HttpError(401, "Inicia sesión para continuar");
+      (req as AuthedRequest).ctx = ctx;
       // rol con verificación en dos pasos obligatoria y aún sin activar: solo puede configurarla
       if (mfaSetupRequired(ctx) && !/^\/api\/(v1\/)?auth\/(me|2fa|logout|sessions)/.test(req.originalUrl)) throw new HttpError(403, "Tu rol exige la verificación en dos pasos. Actívala para continuar.", { code: "mfa_setup_required" });
       (req as AuthedRequest).ctx = ctx;
