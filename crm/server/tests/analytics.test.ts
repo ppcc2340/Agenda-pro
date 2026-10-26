@@ -18,8 +18,8 @@ beforeAll(async () => {
   const roles = (await admin.get("/api/admin/roles")).body.items as { id: string; key: string }[];
   const rid = (k: string) => roles.find((r) => r.key === k)!.id;
   const t1 = (await admin.post("/api/admin/teams").send({ name: "Norte" })).body;
-  s1 = (await admin.post("/api/admin/users").send({ name: "Ana Ventas", email: "ana@test.local", password: "Password123", role_id: rid("sales"), team_id: t1.id })).body;
-  s2 = (await admin.post("/api/admin/users").send({ name: "Bea Ventas", email: "bea@test.local", password: "Password123", role_id: rid("sales") })).body;
+  s1 = (await admin.post("/api/admin/users").send({ name: "Ana Ventas", email: "ana@test.local", password: "Password12345", role_id: rid("sales"), team_id: t1.id })).body;
+  s2 = (await admin.post("/api/admin/users").send({ name: "Bea Ventas", email: "bea@test.local", password: "Password12345", role_id: rid("sales") })).body;
   stages = (await admin.get("/api/pipelines")).body.items[0].stages;
   const open = stages.filter((s) => s.kind === "open").sort((a, b) => a.position - b.position);
   const mk = async (name: string, owner: string, amount: number, prob: number, close: string, source = "web") => (await admin.post("/api/deals").send({ name, owner_id: owner, amount, probability: prob, expected_close_date: close, source })).body;
@@ -60,7 +60,7 @@ describe("constructor de informes", () => {
     expect((await admin.post("/api/analytics/run").send({ object: "deal", config: { dims: [{ field: "nope" }] } })).status).toBe(400);
   });
   it("respeta la visibilidad del rol (comercial ve solo lo suyo)", async () => {
-    const ana = await login(app, "ana@test.local", "Password123");
+    const ana = await login(app, "ana@test.local", "Password12345");
     const r = await ana.post("/api/analytics/run").send({ object: "deal", config: { dims: [{ field: "owner_id" }], metrics: [{ fn: "count" }] } });
     expect(r.body.rows.map((x: Record<string, unknown>) => x.d0_label)).toEqual(["Ana Ventas"]);
     // filtros globales del panel
@@ -70,7 +70,7 @@ describe("constructor de informes", () => {
   it("guarda, comparte, duplica, exporta CSV y borra", async () => {
     const rep = await admin.post("/api/analytics/reports").send({ name: "Por origen", object: "deal", config: { dims: [{ field: "source" }], metrics: [{ fn: "sum", field: "amount" }], chart: "pie" }, visibility: "all" });
     expect(rep.status).toBe(200);
-    const ana = await login(app, "ana@test.local", "Password123");
+    const ana = await login(app, "ana@test.local", "Password12345");
     expect((await ana.get("/api/analytics/reports")).body.items.some((x: { id: string }) => x.id === rep.body.id)).toBe(true);
     expect((await ana.put(`/api/analytics/reports/${rep.body.id}`).send({ ...rep.body, name: "x" })).status).toBe(403);
     const dup = await ana.post(`/api/analytics/reports/${rep.body.id}/duplicate`);
@@ -122,7 +122,7 @@ describe("analítica comercial", () => {
     const q = await admin.get(`/api/analytics/quota?month=${month}`);
     const ana = q.body.users.find((u: { name: string }) => u.name === "Ana Ventas");
     expect(ana.attainment).toBe(50);
-    const anaAgent = await login(app, "ana@test.local", "Password123");
+    const anaAgent = await login(app, "ana@test.local", "Password12345");
     expect((await anaAgent.put("/api/analytics/quota").send({ user_id: s2.id, month, amount: 1 })).status).toBe(403);
     const l = await admin.get("/api/analytics/loss-reasons");
     expect(l.body.reasons[0]).toMatchObject({ reason: "price", label: "Precio", count: 1, pct: 100 });
@@ -137,7 +137,7 @@ describe("paneles, programación y alertas", () => {
     const list = await admin.get("/api/analytics/dashboards");
     expect(list.body.items.length).toBeGreaterThanOrEqual(5);
     expect(list.body.items[0].role_key).toBe("admin");
-    const ana = await login(app, "ana@test.local", "Password123");
+    const ana = await login(app, "ana@test.local", "Password12345");
     const mine = (await ana.get("/api/analytics/dashboards")).body.items;
     expect(mine.map((d: { name: string }) => d.name)).toEqual(["Mi rendimiento"]);
     const nd = await ana.post("/api/analytics/dashboards").send({ name: "Mío", widgets: [{ id: "a", kind: "kpi", kpi: "won_amount", w: 4, h: 1 }] });
