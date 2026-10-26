@@ -60,7 +60,19 @@ Pendiente de operación (no de código): copia de seguridad diaria del archivo S
 
 ## Demo con tutorial
 
-`crm/demo/crm-tutorial.html` es una demo usable en un solo archivo (sin servidor, datos en el navegador) con un tutorial guiado de 27 pasos que resalta cada función en pantalla: tableros, edición en celda, columnas y etiquetas nuevas, agrupaciones, kanban con etapas editables, reglas «cuando… entonces…», fichas 360, tickets, presupuestos, informes, formularios y roles. Ábrelo con doble clic.
+`crm/demo/crm-tutorial.html` es una demo usable en un solo archivo (sin servidor, datos en el navegador) con un tutorial guiado (73 pasos) que resalta cada función en pantalla: tableros, edición en celda, columnas y etiquetas nuevas, agrupaciones, kanban con etapas editables, reglas «cuando… entonces…», fichas 360, tickets, presupuestos, informes, formularios y roles. Ábrelo con doble clic.
+
+**Espacios de trabajo y carpetas.** La demo puede tener varios espacios de trabajo, cada uno con sus propios datos, carpetas y apariencia.
+- **Espacios:** se crean en blanco (con usuarios, tipos de contrato, cláusulas, playbooks y automatizaciones ya configurados), con datos de ejemplo o duplicando el actual.
+- **Carpetas y subcarpetas:** se cambian de nombre, icono, color, roles que las ven y orden (arrastrando). Contienen tableros, vistas guardadas («Por aprobar», «En firma»…) y enlaces. Los objetos personalizados aparecen solos en la carpeta «Objetos personalizados».
+- **Copias de seguridad:** exportar e importar uno o todos los espacios en JSON.
+- **Registro de auditoría sellado** con SHA-256: detecta manipulaciones, pero no las impide.
+- **Controles del CLM:** las aprobaciones quedan ligadas a la versión del documento; un contrato firmado no se puede modificar; el código OTP admite 3 intentos y caduca a los 10 minutos.
+- **Validaciones:** se rechazan las fechas imposibles; presupuestos y cuotas se redondean al céntimo; el importe en letras está corregido; sumar meses no se pasa de fin de mes.
+- **Seguridad y rendimiento:** las automatizaciones que entran en bucle se desactivan; el cambio de tipo de una columna se puede deshacer; las tablas y el kanban se cargan por páginas (miles de filas sin bloquear la página).
+- **Guardado:** si el almacenamiento del navegador se llena, aparece un aviso.
+
+Esta parte corresponde a `cambios_crm_clm_para_claude_code.txt`, que se aplicó literalmente y se verificó con sus pruebas F1–F5. Hay un bloque de integración que mete los objetos personalizados en las carpetas.
 
 La demo incluye también la pestaña **Contratos (CLM)** con el mismo principio: tablero por estado, solicitud guiada, plantillas y cláusulas, revisión contra playbook, aprobaciones, firma simulada con OTP y evidencias, obligaciones, hitos, pagos, enmiendas, renovaciones, terminación, informes y configuración; el tutorial tiene un capítulo «Contratos» con diez pasos.
 

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Tutorial · CRM · demo funcional</title>
+<title>CRM · CLM</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
 <!-- Figtree es opcional: carga no bloqueante; sin red se usa la fuente del sistema -->
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
@@ -331,6 +331,76 @@ input.xl-ce{position:absolute;inset:0;width:100%;height:100%;border:2px solid va
 [data-theme="dark"] .cus-warn{background:#3b2f14;color:#ffd58a}
 [data-theme="dark"] .cus-perm.read{background:#3b2f14}[data-theme="dark"] .cus-perm.hidden{background:#3d1d25}
 @media (max-width:720px){.dd.cus-ledd{width:calc(100vw - 16px)}.cus-led .xl-lrow .cus-role{flex:1 1 100%}.cus-lt th:nth-child(3),.cus-lt td:nth-child(3){display:none}.cus-chips{max-width:none}}
+
+/* ---------- Espacios de trabajo y carpetas personalizables ---------- */
+.wsx-switch{display:flex;align-items:center;gap:8px;width:100%;border:1px solid var(--line2);background:var(--surface,#fff);border-radius:8px;padding:6px 8px;margin:2px 0 6px;color:var(--ink);font:inherit;cursor:pointer;text-align:left;min-height:40px}
+.wsx-switch:hover{background:var(--hover)}.wsx-switch>svg{width:16px;height:16px;flex:none;color:var(--ink2)}
+.wsx-wsi{width:24px;height:24px;border-radius:6px;color:#fff;font-weight:700;display:grid;place-items:center;font-size:12px;line-height:1;flex:none}.wsx-wsi.lg{width:36px;height:36px;font-size:16px;border-radius:9px}
+.wsx-n{font-size:11px;color:var(--ink2);background:var(--line2);border-radius:10px;padding:0 6px}
+.wsx-tree{display:flex;flex-direction:column;gap:1px}
+.wsx-fh{display:flex;align-items:center;border-radius:6px}.wsx-fh:hover{background:var(--hover)}
+.wsx-ft{flex:1;min-width:0;display:flex;align-items:center;gap:6px;border:0;background:transparent;color:var(--ink);font:inherit;font-weight:600;font-size:13px;padding:6px;cursor:pointer;text-align:left;min-height:34px}
+.wsx-car{width:12px;height:12px;flex:none;color:var(--ink3);transition:transform .15s}
+.wsx-ft[aria-expanded="true"] .wsx-car{transform:rotate(90deg)}
+.wsx-fi{display:inline-grid;color:var(--fc);flex:none}.wsx-fi svg{width:16px;height:16px}
+.wsx-emo{font-size:15px;line-height:1;width:16px;text-align:center;flex:none}
+.wsx-fb{padding-left:2px;margin-left:11px;border-left:2px solid color-mix(in srgb,var(--fc) 40%,transparent)}
+.wsx-row{display:flex;align-items:center;border-radius:4px;position:relative}.wsx-row>a{flex:1;min-width:0}
+.side .wsx-row a.board{padding-left:8px;padding-right:6px;gap:8px}
+.wsx-row>.wsx-more{position:absolute;right:2px;top:50%;transform:translateY(-50%);background:var(--surface,#fff);box-shadow:-6px 0 6px var(--surface,#fff)}
+.wsx-row:hover>.wsx-more{background:var(--hover);box-shadow:-6px 0 6px var(--hover)}
+.wsx-more{border:0;background:transparent;color:var(--ink2);width:26px;height:26px;border-radius:4px;display:grid;place-items:center;opacity:0;flex:none;cursor:pointer;padding:0}
+.wsx-more svg{width:16px;height:16px}
+.wsx-row:hover .wsx-more,.wsx-fh:hover .wsx-more,.wsx-more:focus-visible,.wsx-row:focus-within .wsx-more,.wsx-fh:focus-within .wsx-more{opacity:1}
+.wsx-more:hover{background:var(--line2);color:var(--ink)}
+@media (hover:none){.wsx-more{opacity:.75}}
+.wsx-vk{width:14px;height:14px;color:var(--ink3);flex:none}.wsx-ext svg{width:12px;height:12px}
+.wsx-lock{font-size:10px;opacity:.6}
+.wsx-empty{font-size:12px;color:var(--ink3);padding:4px 8px}
+.wsx-lnk{border:0;background:none;color:var(--primary);padding:0;font:inherit;cursor:pointer}
+.wsx-addf{border:1px dashed var(--line);background:transparent;color:var(--ink2);border-radius:6px;padding:6px 10px;margin-top:6px;display:flex;align-items:center;gap:8px;font:inherit;cursor:pointer;min-height:34px}
+.wsx-addf:hover{color:var(--primary);border-color:var(--primary)}.wsx-addf svg{width:14px;height:14px}
+.wsx-over{outline:2px dashed var(--primary);outline-offset:-2px;background:var(--primary-s)!important}
+.dd.wsx-dd{width:290px}.wsx-menu{display:flex;flex-direction:column;gap:2px}
+.wsx-menu button.on{background:var(--primary-s)}.wsx-menu hr{border:0;border-top:1px solid var(--line2);margin:4px 0}.wsx-menu svg{width:16px;height:16px}
+.wsx-swrow{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.wsx-sw{width:26px;height:26px;border-radius:50%;border:2px solid transparent;cursor:pointer;padding:0;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
+.wsx-sw.on{border-color:var(--ink);box-shadow:inset 0 0 0 2px var(--surface,#fff)}
+.wsx-swrow input[type=color],.wsx-cin{width:32px;height:28px;padding:0;border:1px solid var(--line);border-radius:6px;background:none;cursor:pointer;flex:none}
+.wsx-tpl,.wsx-roles{border:0;padding:0;margin:0}
+.wsx-tpl{display:flex;flex-direction:column;gap:6px}
+.wsx-tpl legend,.wsx-roles legend{font-size:12.5px;font-weight:600;color:var(--ink2);margin-bottom:6px;padding:0}
+.wsx-tpl label{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line2);border-radius:8px;padding:10px;cursor:pointer}
+.wsx-tpl label:has(input:checked){border-color:var(--primary);background:var(--primary-s)}
+.wsx-tpl small{display:block;color:var(--ink2);font-size:12px;margin-top:2px;font-weight:400}
+.wsx-roles{display:flex;flex-wrap:wrap;gap:6px 16px}
+.wsx-roles label,.wsx-pick label{display:flex;align-items:center;gap:6px;font-size:13px}
+.wsx-pick{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px}
+.wsx-emos{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.wsx-emos button{border:1px solid var(--line2);background:var(--surface,#fff);color:var(--ink);border-radius:6px;min-width:30px;height:30px;cursor:pointer}
+.wsx-items-ed{display:flex;flex-direction:column;gap:6px;max-height:300px;overflow:auto}
+.wsx-ie{display:flex;align-items:center;gap:6px}.wsx-ie .inp{flex:1;min-width:0}
+.wsx-kind{font-size:11.5px;color:var(--ink2);background:var(--line2);border-radius:10px;padding:2px 8px;flex:none}
+.wsx-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.wsx-card{border:1px solid var(--line2);border-top:4px solid var(--wc);border-radius:10px;padding:14px;background:var(--surface,#fff)}
+.wsx-card.on{box-shadow:0 0 0 2px var(--primary)}.wsx-card .row{gap:10px;align-items:center}
+.pill-s{font-size:11px;background:var(--primary-s);color:var(--primary);border-radius:10px;padding:1px 8px;font-weight:600}
+.wsx-danger{color:var(--c-red)!important}
+.wsx-bar{height:8px;border-radius:4px;background:var(--line2);overflow:hidden;margin-top:6px;display:block}.wsx-bar>i{display:block;height:100%;border-radius:4px}
+.wsx-dot{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:8px;vertical-align:middle}
+.wsx-banner{position:fixed;left:50%;top:56px;transform:translateX(-50%);z-index:250;background:#fff4e5;color:#5b3200;border:1px solid #f0b46b;border-radius:8px;padding:10px 14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;max-width:min(860px,calc(100vw - 24px));box-shadow:0 8px 24px rgba(0,0,0,.15);font-size:13px}
+.wsx-morerow .cell{border-bottom:1px solid var(--line2)}
+[data-density="compact"] .tbl .cell{min-height:30px;font-size:13px}
+[data-density="comfy"] .tbl .cell{min-height:44px}
+[data-density="compact"] .side a{padding-top:5px;padding-bottom:5px}
+@media (max-width:720px){.wsx-cards{grid-template-columns:1fr}}
+@media (hover:none){.wsx-row>.wsx-more{position:static;transform:none;box-shadow:none;background:transparent;opacity:.75}}
+
+.wsx-kmore{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 4px}
+.wsx-due{font-size:10.5px;font-weight:600;border-radius:10px;padding:1px 7px;background:#fff1d6;color:#7a4a00;flex:none}.wsx-due.bad{background:var(--c-red);color:#fff}
+.wsx-ok{margin:0;color:var(--ink)}.wsx-ok b{color:var(--c-green)}
+.wsx-bad{margin:0;padding:10px 12px;border-radius:8px;background:#fdecee;color:#7a1020;border:1px solid #f3b4bd}
+[data-theme="dark"] .wsx-bad{background:#4a1d27;color:#ffd7dd;border-color:#7a2a38}[data-theme="dark"] .wsx-due{background:#5a4210;color:#ffe2a8}
 </style>
 </head>
 <body>
@@ -338,7 +408,7 @@ input.xl-ce{position:absolute;inset:0;width:100%;height:100%;border:2px solid va
 <div class="app">
   <header class="topbar">
     <button class="ibtn pro-burger" id="proBurger" aria-label="Abrir menú" aria-expanded="false" aria-controls="side"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
-    <div class="logo" data-go="#/inicio"><span class="dots"><i></i><i></i><i></i></span><span id="brand">CRM</span><small>gestión comercial</small></div>
+    <div class="logo" data-go="#/inicio"><span class="dots"><i></i><i></i><i></i></span><span id="brand">CRM</span><small>comercial y contratos</small></div>
     <div class="tb-search" id="openPalette"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span>Buscar contactos, empresas, negocios…</span><kbd>Ctrl K</kbd></div>
     <div class="tb-icons">
       <button class="ibtn" id="proTheme" title="Tema: sistema, claro u oscuro" aria-label="Cambiar tema"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
@@ -368,7 +438,7 @@ input.xl-ce{position:absolute;inset:0;width:100%;height:100%;border:2px solid va
    auditoría, notificaciones, automatizaciones, enrutado y UI base
    ============================================================ */
 'use strict';
-const KEY = 'crm-tutorial-v1';
+const KEY = (() => { try { const ix = JSON.parse(localStorage.getItem('crm-workspaces') || 'null'); const w = ix && Array.isArray(ix.list) && ix.list.find((x) => x.id === ix.active); return (w && w.key) || 'crm-tutorial-v1'; } catch (_) { return 'crm-tutorial-v1'; } })();
 const C = { blue: '#579bfc', purple: '#a25ddc', green: '#00c875', red: '#e2445c', orange: '#fdab3d', dark: '#323338', teal: '#66ccff', grey: '#c4c4c4', indigo: '#5559df', violet: '#784bd1', lime: '#9cd326', pink: '#ff158a', brown: '#7f5347', sun: '#ffcb00', berry: '#7e3b8a', sky: '#4eccc6' };
 const LIFECYCLE = { subscriber: { label: 'Suscriptor', color: C.grey }, lead: { label: 'Lead', color: C.blue }, mql: { label: 'MQL', color: C.teal }, sql: { label: 'SQL', color: C.indigo }, opportunity: { label: 'Oportunidad', color: C.purple }, customer: { label: 'Cliente', color: C.green }, evangelist: { label: 'Evangelista', color: C.lime }, lost: { label: 'Perdido', color: C.red } };
 const LEAD_STATUS = { new: { label: 'Nuevo', color: C.blue }, contacted: { label: 'Contactado', color: C.orange }, qualified: { label: 'Cualificado', color: C.green }, unqualified: { label: 'No cualificado', color: C.red }, nurturing: { label: 'En nutrición', color: C.violet } };
@@ -386,6 +456,7 @@ const ROLES = { admin: { label: 'Administrador', vis: 'all', edit: true, admin: 
 
 const uid = () => Math.random().toString(36).slice(2, 10);
 const nowISO = () => new Date().toISOString();
+const r2 = (x) => Math.round((Number(x) + Number.EPSILON) * 100) / 100;
 const dayISO = (dt = new Date()) => { const z = new Date(dt); z.setMinutes(z.getMinutes() - z.getTimezoneOffset()); return z.toISOString().slice(0, 10); };
 const addDays = (n, from = new Date()) => { const z = new Date(from); z.setDate(z.getDate() + n); return z; };
 const daysBetween = (a, b) => Math.round((new Date(b) - new Date(a)) / 864e5);
@@ -620,7 +691,7 @@ function setHead({ title, desc, views = [], view, toolbar = '', extra = '' }) {
 function render() {
   parseRoute(); renderSide(); updateBell();
   const fn = PAGES[route.page] || PAGES.inicio;
-  try { fn(); } catch (e) { console.error(e); document.getElementById('content').innerHTML = `<div class="card"><h3>Algo ha fallado en esta pantalla</h3><p class="muted">${esc(e.message)}</p><button class="btn outline mt12" data-act="reset-demo">Restablecer la demo</button></div>`; }
+  try { fn(); } catch (e) { console.error(e); document.getElementById('content').innerHTML = `<div class="card"><h3>Algo ha fallado en esta pantalla</h3><p class="muted">${esc(e.message)}</p><button class="btn outline mt12" data-act="reset-demo">Restablecer datos de ejemplo</button></div>`; }
   const m = me(); document.getElementById('meAvatar').outerHTML = avatarOf(m.id).replace('class="avatar', 'id="meAvatar" class="avatar'); document.getElementById('meName').textContent = m.name.split(' ')[0]; document.getElementById('brand').textContent = S.settings.company;
 }
 function renderSide() {
@@ -642,7 +713,7 @@ document.addEventListener('click', (e) => {
 });
 document.addEventListener('keydown', (e) => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); ACT.palette(); } if (e.key === 'Escape') { closeDd(); const ov = document.querySelector('.overlay'); if (ov) ov.remove(); else closePanel(); } });
 ACT.view = (v) => { S.ui.view[route.page] = v; refresh(); };
-ACT['reset-demo'] = async () => { if (await ask('¿Restablecer la demo?', 'Se borran todos los cambios y se vuelven a cargar los datos de ejemplo.', 'Restablecer', true)) { localStorage.removeItem(KEY); location.hash = '#/inicio'; location.reload(); } };
+ACT['reset-demo'] = async () => { if (await ask('¿Restablecer los datos de ejemplo?', 'Se borran todos los cambios y se vuelven a cargar los datos de ejemplo.', 'Restablecer', true)) { localStorage.removeItem(KEY); location.hash = '#/inicio'; location.reload(); } };
 </script>
 <script>
 /* ============================================================
@@ -695,10 +766,10 @@ function boardTable({ obj, cols, groups, addLabel = 'Añadir elemento', onAddAct
     const items = applyFilters(obj, allCols, g.items); const collapsed = u.collapsed[g.key];
     const dist = statusCol ? (() => { const cnt = {}; items.forEach((i) => { const v = colVal(statusCol, i); cnt[v] = (cnt[v] || 0) + 1; }); return Object.entries(cnt).map(([k, n]) => `<i style="width:${(100 * n) / Math.max(1, items.length)}%;background:${statusCol.opt[k]?.color || C.grey}" title="${esc(statusCol.opt[k]?.label || k)}: ${n}"></i>`).join(''); })() : '';
     const head = `<div class="cell gbar" style="border-radius:4px 0 0 0"></div><div class="cell hd cb"><input type="checkbox" data-act="sel-all" data-arg='${JSON.stringify({ obj, ids: items.map((i) => i.id) })}' ${items.length && items.every((i) => SEL.ids.includes(i.id)) ? 'checked' : ''}/></div>` + allCols.map((c) => `<div class="cell hd ${c.type === 'name' ? 'l' : ''}"><span class="hdl" data-act="sort-col" data-arg="${c.key}" title="Ordenar">${esc(c.label)}${u.sort?.key === c.key ? (u.sort.dir === 'asc' ? ' ↑' : ' ↓') : ''}</span><button class="hdm" data-act="col-menu" data-arg='${JSON.stringify({ obj, key: c.key })}' title="Opciones de columna">⌄</button></div>`).join('') + `<div class="cell hd last" data-act="add-col" data-arg="${obj}" title="Añadir columna">${ico.plus}</div>`;
-    const rows = items.map((it) => `<div class="r ${SEL.ids.includes(it.id) ? 'sel' : ''}" style="display:contents"><div class="cell gbar"></div><div class="cell cb"><input type="checkbox" data-act="sel" data-arg='${JSON.stringify({ obj, id: it.id })}' ${SEL.ids.includes(it.id) ? 'checked' : ''}/></div>${allCols.map((c) => cellHtml(obj, it, c, g)).join('')}<div class="cell last"><button class="menu-dot" data-act="row-menu" data-arg='${JSON.stringify({ obj, id: it.id })}'>${ico.dots}</button></div></div>`).join('');
+    const wsLim = typeof wsLimit === 'function' ? wsLimit(obj, g.key) : Infinity; const rows = items.slice(0, wsLim).map((it) => `<div class="r ${SEL.ids.includes(it.id) ? 'sel' : ''}" style="display:contents"><div class="cell gbar"></div><div class="cell cb"><input type="checkbox" data-act="sel" data-arg='${JSON.stringify({ obj, id: it.id })}' ${SEL.ids.includes(it.id) ? 'checked' : ''}/></div>${allCols.map((c) => cellHtml(obj, it, c, g)).join('')}<div class="cell last"><button class="menu-dot" data-act="row-menu" data-arg='${JSON.stringify({ obj, id: it.id })}'>${ico.dots}</button></div></div>`).join('');
     const add = onAddAct ? `<div class="addrow" style="display:contents"><div class="cell gbar" style="opacity:.45"></div><div class="cell"></div><div class="cell" style="grid-column:span ${allCols.length + 1}"><input placeholder="+ ${addLabel}" data-addrow='${JSON.stringify({ act: onAddAct, group: g.key })}' /></div></div>` : '';
     const sum = `<div class="sumrow" style="grid-template-columns:${tmpl}"><div class="cell" style="border:0"></div><div class="cell"></div>${allCols.map((c) => c === statusCol ? `<div class="cell"><div class="dist">${dist}</div></div>` : moneyCols.includes(c) ? `<div class="cell sum"><b>${money(sumBy(items, (i) => colVal(c, i)))}</b><span>suma</span></div>` : c.type === 'number' ? `<div class="cell sum"><b>${items.length ? Math.round(sumBy(items, (i) => colVal(c, i)) / items.length) : 0}</b><span>media</span></div>` : c.type === 'date' ? `<div class="cell xs">${(() => { const ds = items.map((i) => colVal(c, i)).filter(Boolean).sort(); return ds.length ? `${fdate(ds[0])} – ${fdate(ds[ds.length - 1])}` : ''; })()}</div>` : '<div class="cell"></div>').join('')}<div class="cell last"></div></div>`;
-    return `<section class="group ${collapsed ? 'collapsed' : ''}" style="--gc:${g.color}"><div class="ghead"><button class="caret" data-act="collapse" data-arg='${JSON.stringify({ obj, key: g.key })}'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg></button><h2 data-act="group-rename" data-arg='${JSON.stringify({ obj, key: g.key })}' title="Clic para renombrar">${esc(g.label)}</h2><button class="gcol" data-act="group-color" data-arg='${JSON.stringify({ obj, key: g.key })}' title="Color del grupo" style="background:${g.color}"></button><span class="count">${plural(items.length, 'elemento', 'elementos')}</span>${g.extra || ''}<button class="menu-dot gm" data-act="group-menu" data-arg='${JSON.stringify({ obj, key: g.key })}'>${ico.dots}</button></div><div class="tblwrap"><div class="tbl" style="grid-template-columns:${tmpl}">${head}${rows}${add}</div>${sum}</div></section>`;
+    return `<section class="group ${collapsed ? 'collapsed' : ''}" style="--gc:${g.color}"><div class="ghead"><button class="caret" data-act="collapse" data-arg='${JSON.stringify({ obj, key: g.key })}'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg></button><h2 data-act="group-rename" data-arg='${JSON.stringify({ obj, key: g.key })}' title="Clic para renombrar">${esc(g.label)}</h2><button class="gcol" data-act="group-color" data-arg='${JSON.stringify({ obj, key: g.key })}' title="Color del grupo" style="background:${g.color}"></button><span class="count">${plural(items.length, 'elemento', 'elementos')}</span>${g.extra || ''}<button class="menu-dot gm" data-act="group-menu" data-arg='${JSON.stringify({ obj, key: g.key })}'>${ico.dots}</button></div><div class="tblwrap"><div class="tbl" style="grid-template-columns:${tmpl}">${head}${rows}${typeof wsMoreRow === 'function' ? wsMoreRow(obj, g.key, items.length, wsLim, allCols.length) : ''}${add}</div>${sum}</div></section>`;
   }).join('') + selBar(obj);
 }
 function cellHtml(obj, it, c, g) {
@@ -744,7 +815,7 @@ document.addEventListener('keydown', (e) => { const a = e.target.dataset?.addrow
 /* ---------- kanban ---------- */
 function kanbanHtml({ obj, lanes, card, laneKey }) {
   setTimeout(bindDnD, 0);
-  return `<div class="kanban">${lanes.map((l) => `<div class="kcol" data-lane="${l.key}" data-obj="${obj}" data-lanekey="${laneKey}"><h3 style="background:${l.color}"><span class="ell" ${obj === 'deals' && laneKey === 'stageId' && stage(l.key) ? `data-act="stage-rename" data-arg="${l.key}" title="Clic para renombrar" style="cursor:text"` : ''}>${esc(l.label)}</span><span>${l.items.length}${l.sum != null ? ' · ' + money(l.sum) : ''}${obj === 'deals' && laneKey === 'stageId' && stage(l.key) ? `<button class="kmenu" data-act="stage-menu" data-arg="${l.key}" title="Opciones de etapa">⋯</button>` : ''}</span></h3>${l.items.map((it) => `<div class="kcard ${it.stale ? 'stale' : ''}" draggable="true" data-drag="${it.id}" data-act="open" data-arg='${JSON.stringify({ obj, id: it.id })}' style="--gc:${l.color}">${card(it)}</div>`).join('')}${l.items.length ? '' : '<div class="muted xs" style="text-align:center;padding:10px">Arrastra aquí</div>'}</div>`).join('')}${obj === 'deals' && laneKey === 'stageId' && can('edit') ? `<div class="kcol kadd"><button class="btn" data-act="stage-add" style="width:100%;justify-content:center">${ico.plus}Añadir etapa</button></div>` : ''}</div>`;
+  return `<div class="kanban">${lanes.map((l) => `<div class="kcol" data-lane="${l.key}" data-obj="${obj}" data-lanekey="${laneKey}"><h3 style="background:${l.color}"><span class="ell" ${obj === 'deals' && laneKey === 'stageId' && stage(l.key) ? `data-act="stage-rename" data-arg="${l.key}" title="Clic para renombrar" style="cursor:text"` : ''}>${esc(l.label)}</span><span>${l.items.length}${l.sum != null ? ' · ' + money(l.sum) : ''}${obj === 'deals' && laneKey === 'stageId' && stage(l.key) ? `<button class="kmenu" data-act="stage-menu" data-arg="${l.key}" title="Opciones de etapa">⋯</button>` : ''}</span></h3>${l.items.slice(0, typeof wsLimit === 'function' ? wsLimit(obj, 'k:' + l.key) : Infinity).map((it) => `<div class="kcard ${it.stale ? 'stale' : ''}" draggable="true" data-drag="${it.id}" data-act="open" data-arg='${JSON.stringify({ obj, id: it.id })}' style="--gc:${l.color}">${card(it)}</div>`).join('')}${typeof wsKanbanMore === 'function' ? wsKanbanMore(obj, l.key, l.items.length) : ''}${l.items.length ? '' : '<div class="muted xs" style="text-align:center;padding:10px">Arrastra aquí</div>'}</div>`).join('')}${obj === 'deals' && laneKey === 'stageId' && can('edit') ? `<div class="kcol kadd"><button class="btn" data-act="stage-add" style="width:100%;justify-content:center">${ico.plus}Añadir etapa</button></div>` : ''}</div>`;
 }
 function bindDnD() { let dragId = null; document.querySelectorAll('[data-drag]').forEach((c) => { c.ondragstart = (e) => { dragId = c.dataset.drag; c.classList.add('drag'); e.dataTransfer.effectAllowed = 'move'; }; c.ondragend = () => c.classList.remove('drag'); }); document.querySelectorAll('[data-lane]').forEach((col) => { col.ondragover = (e) => { e.preventDefault(); col.classList.add('over'); }; col.ondragleave = () => col.classList.remove('over'); col.ondrop = (e) => { e.preventDefault(); col.classList.remove('over'); const obj = col.dataset.obj, it = byId(obj, dragId); if (!it) return; const lane = col.dataset.lane, key = col.dataset.lanekey; if (obj === 'deals' && key === 'stageId') { if (lane === 'won' || lane === 'lost') return ACT['deal-close']({ id: it.id, status: lane }); if (moveStage(it, lane)) { toast(`Movido a ${stage(lane).name}`, 'ok'); refresh(); } return; } setField(obj, it, key, lane); }; }); }
 const barsHtml = (data, { money: isMoney } = {}) => { const max = Math.max(1, ...data.map((d) => d.v)); return `<div class="bars">${data.map((d) => `<div class="bar"><b>${isMoney ? money(d.v) : d.v}</b><i style="height:${(100 * d.v) / max}%;background:${d.color || C.blue}"></i><small>${esc(d.label)}</small></div>`).join('')}</div>`; };
@@ -822,7 +893,7 @@ ACT['task-toggle'] = (id, el) => { const t = byId('tasks', id); if (el.checked) 
 ACT['q-post'] = ({ obj, id }) => { const it = byId(obj, id); const txt = document.getElementById('updText').value.trim(); if (!txt) return; const type = document.getElementById('updType').value; logActivity({ type, subject: type === 'note' ? 'Nota' : type === 'call' ? 'Llamada' : 'Reunión', body: txt, direction: type === 'call' ? 'outbound' : null, ...linksFor(obj, it) }); toast('Registrado', 'ok'); refresh(); renderPanel(); };
 ACT['q-note'] = ({ obj, id }) => { openPanel(obj, id, 'updates'); setTimeout(() => document.getElementById('updText')?.focus(), 50); };
 ACT['q-call'] = ({ obj, id }) => { const it = byId(obj, id); const m = modal({ title: 'Registrar llamada', body: `<div class="fgrid"><div class="fld"><label>Resultado</label><select class="inp" id="o">${['Contactado', 'Sin respuesta', 'Buzón de voz', 'Reunión agendada', 'No interesado'].map((o) => `<option>${o}</option>`).join('')}</select></div><div class="fld"><label>Duración (min)</label><input class="inp" id="d" type="number" value="10"/></div><div class="fld full"><label>Resumen</label><textarea class="inp" id="b"></textarea></div><div class="fld full"><label class="chk"><input type="checkbox" id="fu" checked/>Crear tarea de seguimiento en 3 días</label></div></div>`, footer: `<button class="btn primary" id="ok">Registrar</button>` }); m.querySelector('#ok').onclick = () => { logActivity({ type: 'call', subject: 'Llamada', body: m.querySelector('#b').value, outcome: m.querySelector('#o').value, direction: 'outbound', ...linksFor(obj, it) }); if (m.querySelector('#fu').checked) createTask({ title: `Seguimiento tras llamada`, type: 'followup', due: dayISO(addDays(3)), ...linksFor(obj, it) }); m.close(); toast('Llamada registrada', 'ok'); refresh(); renderPanel(); }; };
-ACT['q-email'] = ({ obj, id }) => { const it = byId(obj, id); const c = obj === 'contacts' ? it : byId('contacts', it.contactId || it.contactIds?.[0]); if (!c?.email) return toast('El contacto no tiene email', 'err'); if (c.dnc) return toast('El contacto ha pedido no ser contactado', 'err'); const m = modal({ title: `Email a ${esc(c.firstName)} ${esc(c.lastName)}`, body: `<div class="col"><div class="fld"><label>Plantilla</label><select class="inp" id="t"><option value="">— Sin plantilla —</option>${S.templates.map((t) => `<option value="${t.id}">${esc(t.name)}</option>`).join('')}</select></div><div class="fld"><label>Para</label><input class="inp" value="${esc(c.email)}" disabled/></div><div class="fld"><label>Asunto</label><input class="inp" id="s"/></div><div class="fld"><label>Mensaje <span class="muted xs">variables: {{nombre}} {{empresa}} {{propietario}}</span></label><textarea class="inp" id="b" style="min-height:140px"></textarea></div></div>`, footer: `<button class="btn primary" id="ok">${ico.mail}Enviar</button>` }); m.querySelector('#t').onchange = (e) => { const t = S.templates.find((x) => x.id === e.target.value); if (t) { m.querySelector('#s').value = t.subject; m.querySelector('#b').value = t.body; } }; m.querySelector('#ok').onclick = () => { const s = m.querySelector('#s').value.trim(), b = m.querySelector('#b').value.trim(); if (!s || !b) return toast('Indica asunto y mensaje', 'err'); sendEmail({ to: c, subject: tpl(s, 'contacts', c), body: tpl(b, 'contacts', c), dealId: obj === 'deals' ? it.id : null, ticketId: obj === 'tickets' ? it.id : null }); m.close(); toast('Email enviado (modo demo: se registra y simula la apertura)', 'ok'); refresh(); renderPanel(); }; };
+ACT['q-email'] = ({ obj, id }) => { const it = byId(obj, id); const c = obj === 'contacts' ? it : byId('contacts', it.contactId || it.contactIds?.[0]); if (!c?.email) return toast('El contacto no tiene email', 'err'); if (c.dnc) return toast('El contacto ha pedido no ser contactado', 'err'); const m = modal({ title: `Email a ${esc(c.firstName)} ${esc(c.lastName)}`, body: `<div class="col"><div class="fld"><label>Plantilla</label><select class="inp" id="t"><option value="">— Sin plantilla —</option>${S.templates.map((t) => `<option value="${t.id}">${esc(t.name)}</option>`).join('')}</select></div><div class="fld"><label>Para</label><input class="inp" value="${esc(c.email)}" disabled/></div><div class="fld"><label>Asunto</label><input class="inp" id="s"/></div><div class="fld"><label>Mensaje <span class="muted xs">variables: {{nombre}} {{empresa}} {{propietario}}</span></label><textarea class="inp" id="b" style="min-height:140px"></textarea></div></div>`, footer: `<button class="btn primary" id="ok">${ico.mail}Enviar</button>` }); m.querySelector('#t').onchange = (e) => { const t = S.templates.find((x) => x.id === e.target.value); if (t) { m.querySelector('#s').value = t.subject; m.querySelector('#b').value = t.body; } }; m.querySelector('#ok').onclick = () => { const s = m.querySelector('#s').value.trim(), b = m.querySelector('#b').value.trim(); if (!s || !b) return toast('Indica asunto y mensaje', 'err'); sendEmail({ to: c, subject: tpl(s, 'contacts', c), body: tpl(b, 'contacts', c), dealId: obj === 'deals' ? it.id : null, ticketId: obj === 'tickets' ? it.id : null }); m.close(); toast('Email registrado (sin envío real: se simula la apertura)', 'ok'); refresh(); renderPanel(); }; };
 ACT['q-task'] = ({ obj, id }) => { const it = byId(obj, id); taskForm({ ...linksFor(obj, it), title: '' }); };
 ACT['q-convert'] = ({ id }) => { const c = byId('contacts', id); const m = modal({ title: 'Convertir en oportunidad', body: `<p class="muted small mb12">El contacto pasa a «Oportunidad», se mantiene todo su historial y se crea un negocio en el pipeline.</p><div class="fgrid"><div class="fld full"><label>Nombre del negocio</label><input class="inp" id="n" value="${esc((byId('companies', c.companyId)?.name || c.firstName + ' ' + c.lastName) + ' · Nuevo negocio')}"/></div><div class="fld"><label>Importe</label><input class="inp" id="a" type="number" value="0"/></div><div class="fld"><label>Cierre previsto</label><input class="inp" id="d" type="date" value="${dayISO(addDays(30))}"/></div></div>`, footer: `<button class="btn primary" id="ok">Convertir</button>` }); m.querySelector('#ok').onclick = () => { const d = convertContact(c, { name: m.querySelector('#n').value, amount: Number(m.querySelector('#a').value), close: m.querySelector('#d').value }); m.close(); toast('Convertido en oportunidad', 'ok'); go(`#/negocios/${d.id}`); }; };
 ACT['q-deal'] = ({ obj, id }) => { const it = byId(obj, id); dealForm(obj === 'contacts' ? { companyId: it.companyId, contactIds: [it.id], name: (byId('companies', it.companyId)?.name || it.firstName) + ' · ' } : { companyId: it.id, name: it.name + ' · ' }); };
@@ -869,7 +940,7 @@ PAGES.inicio = () => {
   const lead = S.users.filter((u) => u.active).map((u) => ({ u, n: deals.filter((d) => d.status === 'won' && d.owner === u.id && (d.closedAt || '').startsWith(month)).length, v: sumBy(deals.filter((d) => d.status === 'won' && d.owner === u.id && (d.closedAt || '').startsWith(month)), (d) => d.amount) })).sort((a, b) => b.v - a.v).slice(0, 6);
   const upcoming = open.filter((d) => daysBetween(dayISO(), d.close) <= 14).sort((a, b) => a.close.localeCompare(b.close)).slice(0, 6);
   const h = new Date().getHours(); const greet = h < 13 ? 'Buenos días' : h < 20 ? 'Buenas tardes' : 'Buenas noches';
-  setHead({ title: `${greet}, ${esc(me().name.split(' ')[0])}`, desc: `${esc(S.settings.company)} · ${new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })} · rol ${myRole().label}`, toolbar: `<button class="btn primary" data-act="new-deal">${ico.plus}Nuevo negocio</button><button class="btn" data-act="new-contact">${ico.plus}Contacto</button><button class="btn" data-act="new-task">${ico.plus}Tarea</button><span class="right muted small">Datos guardados en este navegador · <a href="#" data-act="reset-demo">restablecer demo</a></span>` });
+  setHead({ title: `${greet}, ${esc(me().name.split(' ')[0])}`, desc: `${esc(S.settings.company)} · ${new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })} · rol ${myRole().label}`, toolbar: `<button class="btn primary" data-act="new-deal">${ico.plus}Nuevo negocio</button><button class="btn" data-act="new-contact">${ico.plus}Contacto</button><button class="btn" data-act="new-task">${ico.plus}Tarea</button><span class="right muted small">Datos guardados en este navegador · <a href="#" data-act="reset-demo">restablecer datos de ejemplo</a></span>` });
   document.getElementById('content').innerHTML = `<div class="kpis">
     <div class="kpi" data-go="#/negocios"><div class="l">Pipeline abierto</div><div class="v num">${money(sumBy(open, (d) => d.amount))}</div><div class="s">${open.length} negocios · ponderado ${money(sumBy(open, (d) => d.amount * d.prob / 100))}</div></div>
     <div class="kpi"><div class="l">Ganado este mes</div><div class="v num" style="color:var(--c-green)">${money(sumBy(wonM, (d) => d.amount))}</div><div class="s">${wonM.length} ganados · ${lostM.length} perdidos (${money(sumBy(lostM, (d) => d.amount))})</div></div>
@@ -950,7 +1021,7 @@ PAGES.productos = () => { setHead({ title: 'Catálogo de productos', desc: 'Prod
 ACT['add-product-row'] = ({ name }) => { S.products.push({ id: uid(), name, sku: '', price: 0, tax: 21, cost: null, period: 'one_time', category: '', active: true, createdAt: nowISO() }); refresh(); };
 ACT['new-product'] = () => ACT['add-product-row']({ name: 'Nuevo producto' });
 PAGES.presupuestos = () => { setHead({ title: 'Presupuestos', desc: 'Se crean desde la ficha del negocio. El cliente los ve y acepta desde un enlace con seguimiento (simulado aquí con «Ver como cliente»).', toolbar: boardToolbar('quotes', COLS.quotes(), {}) }); document.getElementById('content').innerHTML = boardTable({ obj: 'quotes', cols: COLS.quotes(), groups: groupBy(S.quotes, QUOTE_STATUS, 'status').filter((g) => g.items.length) }) || '<div class="empty">Sin presupuestos.</div>'; if (route.id) ACT['quote-view'](route.id); };
-ACT['q-quote'] = ({ id }) => { const d = byId('deals', id); const lines = d.products.length ? d.products.map((l) => ({ ...l })) : [{ name: d.name, qty: 1, price: d.amount, discount: 0, period: 'one_time' }]; const m = modal({ title: 'Nuevo presupuesto', size: 'lg', body: `<table class="t" id="qt"><thead><tr><th>Concepto</th><th>Cant.</th><th>Precio</th><th>Dto.%</th><th>IVA%</th><th></th></tr></thead><tbody></tbody></table><div class="row mt8"><select class="inp" id="qp" style="max-width:320px"><option value="">Añadir del catálogo…</option>${S.products.filter((p) => p.active).map((p) => `<option value="${p.id}">${esc(p.name)} · ${money2(p.price)}</option>`).join('')}</select><button class="btn outline sm" id="ql">+ Línea libre</button></div><div class="fgrid mt12"><div class="fld"><label>Validez (días)</label><input class="inp" id="qv" type="number" value="30"/></div><div class="fld"><label>Descuento global %</label><input class="inp" id="qd" type="number" value="0"/></div><div class="fld full"><label>Condiciones</label><textarea class="inp" id="qn">Validez según fecha indicada. Precios sin IVA salvo indicación. Pago a 30 días.</textarea></div></div><p class="b mt8" id="qtot"></p>`, footer: `<button class="btn primary" id="ok">Crear presupuesto</button>` }); const L = lines.map((l) => ({ name: l.name, qty: l.qty, price: l.price, discount: l.discount, tax: 21 })); const draw = () => { m.querySelector('#qt tbody').innerHTML = L.map((l, i) => `<tr><td><input class="inp" data-i="${i}" data-k="name" value="${esc(l.name)}"/></td><td><input class="inp" style="width:70px" type="number" data-i="${i}" data-k="qty" value="${l.qty}"/></td><td><input class="inp" style="width:100px" type="number" data-i="${i}" data-k="price" value="${l.price}"/></td><td><input class="inp" style="width:70px" type="number" data-i="${i}" data-k="discount" value="${l.discount}"/></td><td><input class="inp" style="width:70px" type="number" data-i="${i}" data-k="tax" value="${l.tax}"/></td><td><button class="ibtn" data-del="${i}">${ico.trash}</button></td></tr>`).join(''); const g = Number(m.querySelector('#qd').value) || 0; const sub = sumBy(L, (l) => l.qty * l.price * (1 - l.discount / 100)) * (1 - g / 100); const tax = sumBy(L, (l) => l.qty * l.price * (1 - l.discount / 100) * (1 - g / 100) * l.tax / 100); m.querySelector('#qtot').textContent = `Subtotal ${money2(sub)} · Impuestos ${money2(tax)} · Total ${money2(sub + tax)}`; m.querySelectorAll('[data-i]').forEach((inp) => (inp.oninput = () => { const l = L[inp.dataset.i]; l[inp.dataset.k] = inp.type === 'number' ? Number(inp.value) : inp.value; draw0(); })); m.querySelectorAll('[data-del]').forEach((b) => (b.onclick = () => { L.splice(b.dataset.del, 1); draw(); })); }; const draw0 = () => { const g = Number(m.querySelector('#qd').value) || 0; const sub = sumBy(L, (l) => l.qty * l.price * (1 - l.discount / 100)) * (1 - g / 100); const tax = sumBy(L, (l) => l.qty * l.price * (1 - l.discount / 100) * (1 - g / 100) * l.tax / 100); m.querySelector('#qtot').textContent = `Subtotal ${money2(sub)} · Impuestos ${money2(tax)} · Total ${money2(sub + tax)}`; }; draw(); m.querySelector('#qd').oninput = draw0; m.querySelector('#qp').onchange = (e) => { const p = byId('products', e.target.value); if (p) { L.push({ name: p.name, qty: 1, price: p.price, discount: 0, tax: p.tax }); draw(); } e.target.value = ''; }; m.querySelector('#ql').onclick = () => { L.push({ name: '', qty: 1, price: 0, discount: 0, tax: 21 }); draw(); }; m.querySelector('#ok').onclick = () => { const g = Number(m.querySelector('#qd').value) || 0; const sub = sumBy(L, (l) => l.qty * l.price * (1 - l.discount / 100)) * (1 - g / 100); const tax = sumBy(L, (l) => l.qty * l.price * (1 - l.discount / 100) * (1 - g / 100) * l.tax / 100); const prev = S.quotes.filter((q) => q.dealId === d.id); const q = { id: uid(), dealId: d.id, number: prev[0]?.number || `${S.settings.quotePrefix}-${new Date().getFullYear()}-${String(++S.counters.quote).padStart(4, '0')}`, version: prev.length + 1, date: dayISO(), validUntil: dayISO(addDays(Number(m.querySelector('#qv').value) || 30)), lines: L, discount: g, subtotal: sub, tax, total: sub + tax, status: 'draft', notes: m.querySelector('#qn').value, views: 0, createdBy: S.me, createdAt: nowISO() }; S.quotes.unshift(q); audit('quotes', q.id, 'create', { numero: q.number, total: q.total }); sysNote(`Presupuesto ${q.number} v${q.version} creado (${money2(q.total)})`, { dealId: d.id }); m.close(); toast('Presupuesto creado', 'ok'); refresh(); openPanel('deals', d.id, 'quotes'); }; };
+ACT['q-quote'] = ({ id }) => { const d = byId('deals', id); const lines = d.products.length ? d.products.map((l) => ({ ...l })) : [{ name: d.name, qty: 1, price: d.amount, discount: 0, period: 'one_time' }]; const m = modal({ title: 'Nuevo presupuesto', size: 'lg', body: `<table class="t" id="qt"><thead><tr><th>Concepto</th><th>Cant.</th><th>Precio</th><th>Dto.%</th><th>IVA%</th><th></th></tr></thead><tbody></tbody></table><div class="row mt8"><select class="inp" id="qp" style="max-width:320px"><option value="">Añadir del catálogo…</option>${S.products.filter((p) => p.active).map((p) => `<option value="${p.id}">${esc(p.name)} · ${money2(p.price)}</option>`).join('')}</select><button class="btn outline sm" id="ql">+ Línea libre</button></div><div class="fgrid mt12"><div class="fld"><label>Validez (días)</label><input class="inp" id="qv" type="number" value="30"/></div><div class="fld"><label>Descuento global %</label><input class="inp" id="qd" type="number" value="0"/></div><div class="fld full"><label>Condiciones</label><textarea class="inp" id="qn">Validez según fecha indicada. Precios sin IVA salvo indicación. Pago a 30 días.</textarea></div></div><p class="b mt8" id="qtot"></p>`, footer: `<button class="btn primary" id="ok">Crear presupuesto</button>` }); const L = lines.map((l) => ({ name: l.name, qty: l.qty, price: l.price, discount: l.discount, tax: 21 })); const draw = () => { m.querySelector('#qt tbody').innerHTML = L.map((l, i) => `<tr><td><input class="inp" data-i="${i}" data-k="name" value="${esc(l.name)}"/></td><td><input class="inp" style="width:70px" type="number" data-i="${i}" data-k="qty" value="${l.qty}"/></td><td><input class="inp" style="width:100px" type="number" data-i="${i}" data-k="price" value="${l.price}"/></td><td><input class="inp" style="width:70px" type="number" data-i="${i}" data-k="discount" value="${l.discount}"/></td><td><input class="inp" style="width:70px" type="number" data-i="${i}" data-k="tax" value="${l.tax}"/></td><td><button class="ibtn" data-del="${i}">${ico.trash}</button></td></tr>`).join(''); const g = Number(m.querySelector('#qd').value) || 0; const sub = sumBy(L, (l) => l.qty * l.price * (1 - l.discount / 100)) * (1 - g / 100); const tax = sumBy(L, (l) => l.qty * l.price * (1 - l.discount / 100) * (1 - g / 100) * l.tax / 100); m.querySelector('#qtot').textContent = `Subtotal ${money2(sub)} · Impuestos ${money2(tax)} · Total ${money2(sub + tax)}`; m.querySelectorAll('[data-i]').forEach((inp) => (inp.oninput = () => { const l = L[inp.dataset.i]; l[inp.dataset.k] = inp.type === 'number' ? Number(inp.value) : inp.value; draw0(); })); m.querySelectorAll('[data-del]').forEach((b) => (b.onclick = () => { L.splice(b.dataset.del, 1); draw(); })); }; const draw0 = () => { const g = Number(m.querySelector('#qd').value) || 0; const sub = sumBy(L, (l) => l.qty * l.price * (1 - l.discount / 100)) * (1 - g / 100); const tax = sumBy(L, (l) => l.qty * l.price * (1 - l.discount / 100) * (1 - g / 100) * l.tax / 100); m.querySelector('#qtot').textContent = `Subtotal ${money2(sub)} · Impuestos ${money2(tax)} · Total ${money2(sub + tax)}`; }; draw(); m.querySelector('#qd').oninput = draw0; m.querySelector('#qp').onchange = (e) => { const p = byId('products', e.target.value); if (p) { L.push({ name: p.name, qty: 1, price: p.price, discount: 0, tax: p.tax }); draw(); } e.target.value = ''; }; m.querySelector('#ql').onclick = () => { L.push({ name: '', qty: 1, price: 0, discount: 0, tax: 21 }); draw(); }; m.querySelector('#ok').onclick = () => { const g = Number(m.querySelector('#qd').value) || 0; const sub = sumBy(L, (l) => l.qty * l.price * (1 - l.discount / 100)) * (1 - g / 100); const tax = sumBy(L, (l) => l.qty * l.price * (1 - l.discount / 100) * (1 - g / 100) * l.tax / 100); const prev = S.quotes.filter((q) => q.dealId === d.id); const q = { id: uid(), dealId: d.id, number: prev[0]?.number || `${S.settings.quotePrefix}-${new Date().getFullYear()}-${String(++S.counters.quote).padStart(4, '0')}`, version: prev.length + 1, date: dayISO(), validUntil: dayISO(addDays(Number(m.querySelector('#qv').value) || 30)), lines: L, discount: g, subtotal: r2(sub), tax: r2(tax), total: r2(r2(sub) + r2(tax)), status: 'draft', notes: m.querySelector('#qn').value, views: 0, createdBy: S.me, createdAt: nowISO() }; S.quotes.unshift(q); audit('quotes', q.id, 'create', { numero: q.number, total: q.total }); sysNote(`Presupuesto ${q.number} v${q.version} creado (${money2(q.total)})`, { dealId: d.id }); m.close(); toast('Presupuesto creado', 'ok'); refresh(); openPanel('deals', d.id, 'quotes'); }; };
 ACT['quote-send'] = (id) => { const q = byId('quotes', id); const d = byId('deals', q.dealId); const c = byId('contacts', d.contactIds[0]); if (!c?.email) return toast('El negocio no tiene un contacto con email', 'err'); q.status = 'sent'; q.sentAt = nowISO(); sendEmail({ to: c, subject: `Presupuesto ${q.number} · ${S.settings.company}`, body: `Hola ${c.firstName},\nte enviamos el presupuesto ${q.number} (${money2(q.total)}). Puedes verlo y aceptarlo desde el enlace.`, dealId: d.id }); audit('quotes', q.id, 'update', { estado: ['draft', 'sent'] }); toast(`Enviado a ${c.email}. Usa «Ver como cliente» para simular la apertura y aceptación.`, 'ok'); refresh(); if (PANEL) renderPanel(); };
 ACT['quote-view'] = (id) => { const q = byId('quotes', id); if (!q) return; const d = byId('deals', q.dealId); const m = modal({ title: `Presupuesto ${esc(q.number)} <span class="muted small">v${q.version}</span>`, size: 'lg', body: `<div class="pub"><div class="form" style="max-width:720px"><div class="row" style="align-items:flex-start"><div class="grow"><div style="font-size:22px;font-weight:600">${esc(S.settings.company)}</div><div class="muted small">para ${esc(byId('companies', d.companyId)?.name || d.name)} · ${fdate(q.date)} · válido hasta ${fdate(q.validUntil)}</div></div>${pill(QUOTE_STATUS, q.status, 'display:inline-flex;width:auto;min-height:26px;padding:0 10px;border-radius:4px')}</div><table class="t mt12"><thead><tr><th>Concepto</th><th class="r">Cant.</th><th class="r">Precio</th><th class="r">Dto.</th><th class="r">Importe</th></tr></thead><tbody>${q.lines.map((l) => `<tr><td>${esc(l.name)}</td><td class="r">${l.qty}</td><td class="r">${money2(l.price)}</td><td class="r">${l.discount}%</td><td class="r">${money2(l.qty * l.price * (1 - l.discount / 100))}</td></tr>`).join('')}</tbody></table><div style="text-align:right;margin-top:10px" class="small">Subtotal ${money2(q.subtotal)}${q.discount ? ` · Dto. global ${q.discount}%` : ''} · Impuestos ${money2(q.tax)}<div style="font-size:18px;font-weight:700;margin-top:4px">Total ${money2(q.total)}</div></div><p class="small muted mt12" style="white-space:pre-wrap">${esc(q.notes)}</p>${['sent', 'viewed'].includes(q.status) ? `<div class="row mt12" style="border-top:1px solid var(--line2);padding-top:12px"><input class="inp" id="signer" placeholder="Nombre del firmante (cliente)"/><button class="btn primary" id="acc">Aceptar presupuesto</button><button class="btn outline" id="rej">Rechazar</button></div><p class="xs muted mt8">Simula la página pública que ve el cliente: al abrirla se registra la vista, y al aceptar se guarda nombre, fecha y se dispara la automatización.</p>` : q.status === 'draft' ? `<p class="xs muted mt12">Borrador: envíalo desde el negocio para que el cliente pueda verlo.</p>` : ''}<div class="row mt8"><span class="xs muted">Vistas: ${q.views}${q.signer ? ` · Firmado por ${esc(q.signer)} el ${fdt(q.decidedAt)}` : ''}</span><button class="btn sm right" onclick="window.print()">Imprimir / PDF</button></div></div></div>`, footer: '' }); if (['sent', 'viewed'].includes(q.status)) { const d2 = byId('deals', q.dealId); if (q.status === 'sent') { q.status = 'viewed'; } q.views++; q.viewedAt = nowISO(); notify(d2.owner, `Presupuesto ${q.number} visto (${q.views} ${q.views === 1 ? 'vez' : 'veces'})`, d2.name, `#/negocios/${d2.id}`, 'email'); sysNote(`Presupuesto ${q.number} visto por el cliente`, { dealId: d2.id }); emit('quote_viewed', 'deals', d2); save(); m.querySelector('#acc').onclick = () => { const s = m.querySelector('#signer').value.trim(); if (!s) return toast('Indica el nombre del firmante', 'err'); q.status = 'accepted'; q.signer = s; q.decidedAt = nowISO(); audit('quotes', q.id, 'update', { estado: ['viewed', 'accepted'], firmante: s }); sysNote(`Presupuesto ${q.number} aceptado por ${s} (${money2(q.total)})`, { dealId: d2.id }); notify(d2.owner, `Presupuesto ${q.number} aceptado`, `${d2.name} · ${money2(q.total)}`, `#/negocios/${d2.id}`, 'ok'); if (S.settings.quoteAcceptStage && d2.status === 'open' && d2.stageId !== S.settings.quoteAcceptStage) moveStage(d2, S.settings.quoteAcceptStage, true); emit('quote_accepted', 'deals', d2); m.close(); toast('Presupuesto aceptado', 'ok'); refresh(); if (PANEL) renderPanel(); }; m.querySelector('#rej').onclick = () => { q.status = 'rejected'; q.decidedAt = nowISO(); sysNote(`Presupuesto ${q.number} rechazado`, { dealId: d2.id }); m.close(); refresh(); if (PANEL) renderPanel(); }; } };
 /* ---------- Listas y segmentos ---------- */
@@ -1054,7 +1125,7 @@ PAGES.ajustes = () => {
   setHead({ title: 'Ajustes', desc: 'Configuración del CRM. Algunas secciones requieren rol de administrador.', toolbar: `<div class="stabs">${tabs.map(([k, l]) => `<button class="${tab === k ? 'active' : ''}" data-go="#/ajustes/${k}">${l}</button>`).join('')}</div>` });
   const adm = can('admin'); const lock = adm ? '' : '<div class="card mb12" style="background:#fff6e5">Solo un administrador puede modificar esta sección (puedes verla).</div>'; let h = '';
   const s = S.settings;
-  if (tab === 'general') h = `${lock}<div class="card"><h3>Empresa</h3><div class="fgrid"><div class="fld"><label>Nombre</label><input class="inp" data-set="company" value="${esc(s.company)}"/></div><div class="fld"><label>Moneda (ISO)</label><input class="inp" data-set="currency" value="${esc(s.currency)}" maxlength="3"/></div><div class="fld"><label>Prefijo telefónico</label><input class="inp" data-set="cc" value="${esc(s.cc)}"/></div><div class="fld"><label>Prefijo de presupuestos</label><input class="inp" data-set="quotePrefix" value="${esc(s.quotePrefix)}"/></div></div></div><div class="card mt12"><h3>Reglas comerciales</h3><div class="fgrid"><div class="fld"><label>Negocio inactivo tras (días sin actividad)</label><input class="inp" type="number" data-set="inactiveDays" value="${s.inactiveDays}"/></div><div class="fld"><label>SLA de primer contacto a leads (horas)</label><input class="inp" type="number" data-set="leadSlaHours" value="${s.leadSlaHours}"/></div><div class="fld"><label>Umbral MQL (puntos)</label><input class="inp" type="number" data-set="mqlThreshold" value="${s.mqlThreshold}"/></div><div class="fld"><label>Umbral SQL (puntos)</label><input class="inp" type="number" data-set="sqlThreshold" value="${s.sqlThreshold}"/></div><div class="fld full"><label>Al aceptar un presupuesto, mover el negocio a</label><select class="inp" data-set="quoteAcceptStage"><option value="">No mover</option>${S.pipeline.stages.map((x) => `<option value="${x.id}" ${s.quoteAcceptStage === x.id ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select></div></div></div><div class="card mt12"><h3>SLA de tickets (horas hasta primera respuesta)</h3><div class="fgrid">${Object.entries(PRIORITY).map(([k, o]) => `<div class="fld"><label>${esc(o.label)}</label><input class="inp" type="number" data-sla="${k}" value="${s.sla[k]}"/></div>`).join('')}</div></div><div class="card mt12"><h3>Email saliente</h3><p class="small muted">Esta demo no envía correos reales: cada envío se registra en la línea temporal y se simula la apertura a los pocos segundos (seguimiento de aperturas). En la versión servidor se configura SMTP y se sincronizan los buzones de Gmail / Microsoft 365.</p></div>`;
+  if (tab === 'general') h = `${lock}<div class="card"><h3>Empresa</h3><div class="fgrid"><div class="fld"><label>Nombre</label><input class="inp" data-set="company" value="${esc(s.company)}"/></div><div class="fld"><label>Moneda (ISO)</label><input class="inp" data-set="currency" value="${esc(s.currency)}" maxlength="3"/></div><div class="fld"><label>Prefijo telefónico</label><input class="inp" data-set="cc" value="${esc(s.cc)}"/></div><div class="fld"><label>Prefijo de presupuestos</label><input class="inp" data-set="quotePrefix" value="${esc(s.quotePrefix)}"/></div></div></div><div class="card mt12"><h3>Reglas comerciales</h3><div class="fgrid"><div class="fld"><label>Negocio inactivo tras (días sin actividad)</label><input class="inp" type="number" data-set="inactiveDays" value="${s.inactiveDays}"/></div><div class="fld"><label>SLA de primer contacto a leads (horas)</label><input class="inp" type="number" data-set="leadSlaHours" value="${s.leadSlaHours}"/></div><div class="fld"><label>Umbral MQL (puntos)</label><input class="inp" type="number" data-set="mqlThreshold" value="${s.mqlThreshold}"/></div><div class="fld"><label>Umbral SQL (puntos)</label><input class="inp" type="number" data-set="sqlThreshold" value="${s.sqlThreshold}"/></div><div class="fld full"><label>Al aceptar un presupuesto, mover el negocio a</label><select class="inp" data-set="quoteAcceptStage"><option value="">No mover</option>${S.pipeline.stages.map((x) => `<option value="${x.id}" ${s.quoteAcceptStage === x.id ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select></div></div></div><div class="card mt12"><h3>SLA de tickets (horas hasta primera respuesta)</h3><div class="fgrid">${Object.entries(PRIORITY).map(([k, o]) => `<div class="fld"><label>${esc(o.label)}</label><input class="inp" type="number" data-sla="${k}" value="${s.sla[k]}"/></div>`).join('')}</div></div><div class="card mt12"><h3>Email saliente</h3><p class="small muted">Esta versión no envía correos reales: cada envío se registra en la línea temporal y se simula la apertura a los pocos segundos (seguimiento de aperturas). En la versión servidor se configura SMTP y se sincronizan los buzones de Gmail / Microsoft 365.</p></div>`;
   if (tab === 'usuarios') h = `${lock}<div class="card"><div class="row mb12"><h3 class="grow" style="margin:0">Usuarios</h3>${adm ? `<button class="btn primary sm" data-act="user-new">${ico.plus}Nuevo usuario</button>` : ''}</div><table class="t"><thead><tr><th>Usuario</th><th>Email</th><th>Rol</th><th>Equipo</th><th class="r">Cuota mensual</th><th>Estado</th><th></th></tr></thead><tbody>${S.users.map((u) => `<tr><td class="row">${avatarOf(u.id, 'sm')}<b>${esc(u.name)}</b>${u.id === S.me ? '<span class="tag">tú</span>' : ''}</td><td>${esc(u.email)}</td><td>${adm ? `<select class="inp" data-urole="${u.id}" style="min-height:30px;padding:3px 8px">${Object.entries(ROLES).map(([k, r]) => `<option value="${k}" ${u.role === k ? 'selected' : ''}>${esc(r.label)}</option>`).join('')}</select>` : ROLES[u.role].label}</td><td>${esc(teamOf(u.id)?.name || '—')}</td><td class="r">${u.quota ? money(u.quota) : '—'}</td><td>${u.active ? '<span class="tag" style="background:#e6f8ef;color:#0a7b47">activo</span>' : '<span class="tag">desactivado</span>'}</td><td class="r">${adm && u.id !== S.me ? `<button class="btn sm outline" data-act="user-toggle" data-arg="${u.id}">${u.active ? 'Desactivar' : 'Activar'}</button>` : ''}<button class="btn sm" data-act="switch-user" data-arg="${u.id}" title="Simular inicio de sesión">Entrar como</button></td></tr>`).join('')}</tbody></table><p class="small muted mt12">«Entrar como» simula el inicio de sesión de otro usuario para ver cómo cambian la visibilidad y los permisos (en la versión servidor hay contraseñas, bloqueo tras 5 intentos y 2FA).</p></div><div class="card mt12"><h3>Equipos</h3>${S.teams.map((t) => `<div class="rel"><b>${esc(t.name)}</b><span class="muted small">manager: ${esc(user(t.manager)?.name || '—')} · ${t.members.map((m) => user(m)?.name.split(' ')[0]).join(', ')}</span></div>`).join('')}<p class="small muted mt8">Un manager ve los registros de su equipo; un comercial solo los suyos; soporte y lectura ven todo.</p></div>`;
   if (tab === 'roles') h = `<div class="card"><h3>Roles y permisos</h3><table class="t"><thead><tr><th>Rol</th><th>Visibilidad de registros</th><th>Puede editar</th><th>Administración</th><th class="r">Usuarios</th></tr></thead><tbody>${Object.entries(ROLES).map(([k, r]) => `<tr><td class="b">${esc(r.label)}</td><td>${{ all: 'Todos', team: 'Su equipo', own: 'Solo los suyos' }[r.vis]}</td><td>${r.edit ? '✓' : '—'}</td><td>${r.admin ? '✓ ajustes, usuarios, columnas, automatizaciones' : '—'}</td><td class="r">${S.users.filter((u) => u.role === k).length}</td></tr>`).join('')}</tbody></table><p class="small muted mt12">Prueba «Entrar como» en Usuarios: Carlos (comercial) solo ve sus negocios; Lucía (manager) ve su equipo; el usuario de solo lectura no puede editar celdas.</p></div>`;
   if (tab === 'pipeline') h = `${lock}<div class="card"><div class="row mb12"><h3 class="grow" style="margin:0">Etapas del pipeline «${esc(S.pipeline.name)}»</h3>${adm ? `<button class="btn primary sm" data-act="stage-add">${ico.plus}Etapa</button>` : ''}</div><table class="t"><thead><tr><th></th><th>Etapa</th><th class="r">Probabilidad</th><th class="r">Días esperados</th><th>Obligatorio para entrar</th><th></th></tr></thead><tbody>${S.pipeline.stages.map((st, i) => `<tr><td><span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:${st.color}"></span></td><td><input class="inp" data-st="${st.id}" data-k="name" value="${esc(st.name)}" ${adm ? '' : 'disabled'}/></td><td class="r"><input class="inp" type="number" data-st="${st.id}" data-k="prob" value="${st.prob}" style="width:80px" ${adm ? '' : 'disabled'}/></td><td class="r"><input class="inp" type="number" data-st="${st.id}" data-k="days" value="${st.days}" style="width:80px" ${adm ? '' : 'disabled'}/></td><td>${[['amount', 'importe'], ['close', 'fecha cierre'], ['contacts', 'contacto decisor'], ['companyId', 'empresa']].map(([f, l]) => `<label class="chk small" style="margin-right:8px"><input type="checkbox" data-req="${st.id}" data-k="${f}" ${(st.required || []).includes(f) ? 'checked' : ''} ${adm ? '' : 'disabled'}/>${l}</label>`).join('')}</td><td class="r">${adm ? `<button class="ibtn" data-act="stage-move" data-arg='${JSON.stringify({ id: st.id, d: -1 })}' ${i === 0 ? 'disabled' : ''}>▲</button><button class="ibtn" data-act="stage-move" data-arg='${JSON.stringify({ id: st.id, d: 1 })}' ${i === S.pipeline.stages.length - 1 ? 'disabled' : ''}>▼</button><button class="ibtn" data-act="stage-del" data-arg="${st.id}">${ico.trash}</button>` : ''}</td></tr>`).join('')}</tbody></table><p class="small muted mt8">Los negocios con campos obligatorios sin rellenar no pueden avanzar a la etapa (ni por arrastre ni por automatización sin «forzar»). Los estados Ganado y Perdido son fijos.</p></div>`;
@@ -1065,7 +1136,7 @@ PAGES.ajustes = () => {
   if (tab === 'papelera') h = `<div class="card"><h3>Papelera</h3><p class="small muted mb8">Los registros borrados se conservan 30 días y se pueden restaurar.</p>${S.trash.map((t) => `<div class="rel"><span class="tag">${OBJ_LABEL[t.obj]}</span><span class="grow">${esc(t.item.name || t.item.title || t.item.subject || contactName(t.item))}</span><span class="small muted">${rel(t.at)} · ${esc(user(t.user)?.name)}</span><button class="btn sm outline" data-act="restore" data-arg="${t.id}">Restaurar</button></div>`).join('') || '<p class="muted">Vacía.</p>'}</div>`;
   if (tab === 'importar') h = `<div class="card"><h3>Importar CSV</h3><p class="small muted mb12">Pega un CSV o elige un archivo (separador coma o punto y coma, con cabecera). Se detectan las columnas, se evitan duplicados por email y se crean las empresas por nombre. La importación se puede revertir.</p><div class="row wrap mb8"><select class="inp" id="io" style="width:auto"><option value="contacts">Contactos</option><option value="companies">Empresas</option><option value="deals">Negocios</option></select><label class="btn outline">${ico.up}Elegir archivo<input type="file" accept=".csv,text/csv" id="if" style="display:none"/></label></div><textarea class="inp" id="ic" style="min-height:140px;font-family:monospace;font-size:12px" placeholder="nombre;email;telefono;empresa;cargo\nAna Pérez;ana@acme.com;600112233;Acme SL;Directora de compras\nLuis Gómez;luis@beta.io;;Beta;CEO"></textarea><div class="row mt8"><button class="btn primary" data-act="import-run">Importar</button><button class="btn outline" data-act="import-sample">Cargar ejemplo</button></div></div><div class="card mt12"><h3>Historial</h3>${S.imports.map((i) => `<div class="rel"><span class="grow">${fdt(i.at)} · ${OBJ_LABEL[i.obj]}s · <b>${i.created}</b> creados, ${i.skipped} omitidos (duplicados), ${i.errors} con error</span>${i.reverted ? '<span class="tag">revertida</span>' : `<button class="btn sm outline" data-act="import-revert" data-arg="${i.id}">Revertir</button>`}</div>`).join('') || '<p class="muted small">Sin importaciones.</p>'}</div>`;
   if (tab === 'rgpd') h = `<div class="card"><h3>Protección de datos (RGPD)</h3><ul class="small" style="line-height:1.9;margin:0 0 0 18px"><li>Consentimiento con fecha en cada contacto (Detalles → Consentimiento) y marca «No contactar» que bloquea emails.</li><li>Desde la ficha del contacto (botón RGPD): <b>exportar sus datos</b> (derecho de acceso) y <b>anonimizar</b> (conserva estadísticas).</li><li>Papelera de 30 días, auditoría completa, registro de solicitudes.</li><li>Política de retención: <label class="chk"><input type="checkbox" data-set="retention" ${s.retention ? 'checked' : ''} ${adm ? '' : 'disabled'}/>anonimizar automáticamente contactos no cliente sin actividad en <input class="inp" type="number" data-set="retentionMonths" value="${s.retentionMonths}" style="width:70px;display:inline-block" ${adm ? '' : 'disabled'}/> meses</label></li></ul></div><div class="card mt12"><h3>Solicitudes registradas</h3>${S.gdpr.map((g) => `<div class="rel"><span class="tag">${g.type}</span><span class="grow">${esc(contactName(byId('contacts', g.contactId)) || '(contacto)')}</span><span class="small muted">${fdt(g.at)} · ${esc(user(g.user)?.name)}</span></div>`).join('') || '<p class="muted small">Ninguna.</p>'}</div>`;
-  if (tab === 'datos') h = `<div class="card"><h3>Datos y copia de seguridad</h3><p class="small muted">Esta demo guarda todo en el navegador (localStorage). Exporta una copia completa en JSON o restáurala. En la versión servidor la base de datos es un archivo SQLite con copia diaria.</p><div class="row wrap mt12"><button class="btn primary" data-act="backup">${ico.down}Exportar copia (JSON)</button><label class="btn outline">${ico.up}Restaurar copia<input type="file" accept=".json" id="rf" style="display:none"/></label><button class="btn danger" data-act="reset-demo">${ico.refresh}Restablecer datos de demostración</button></div><p class="small muted mt12">${S.contacts.length} contactos · ${S.companies.length} empresas · ${S.deals.length} negocios · ${S.tasks.length} tareas · ${S.tickets.length} tickets · ${S.activities.length} actividades · ${S.audit.length} entradas de auditoría</p></div>`;
+  if (tab === 'datos') h = `<div class="card"><h3>Datos y copia de seguridad</h3><p class="small muted">Esta aplicación guarda todo en este navegador. Exporta una copia completa en JSON o restáurala. En la versión servidor la base de datos es un archivo SQLite con copia diaria.</p><div class="row wrap mt12"><button class="btn primary" data-act="backup">${ico.down}Exportar copia (JSON)</button><label class="btn outline">${ico.up}Restaurar copia<input type="file" accept=".json" id="rf" style="display:none"/></label><button class="btn danger" data-act="reset-demo">${ico.refresh}Restablecer datos de demostración</button></div><p class="small muted mt12">${S.contacts.length} contactos · ${S.companies.length} empresas · ${S.deals.length} negocios · ${S.tasks.length} tareas · ${S.tickets.length} tickets · ${S.activities.length} actividades · ${S.audit.length} entradas de auditoría</p></div>`;
   document.getElementById('content').innerHTML = `<div class="mt12">${h}</div>`;
   if (adm) { document.querySelectorAll('[data-set]').forEach((el) => (el.onchange = () => { const k = el.dataset.set; S.settings[k] = el.type === 'checkbox' ? el.checked : el.type === 'number' ? Number(el.value) : el.value; audit('settings', null, 'update', { [k]: S.settings[k] }); save(); toast('Guardado', 'ok'); renderSide(); document.getElementById('brand').textContent = S.settings.company; })); document.querySelectorAll('[data-sla]').forEach((el) => (el.onchange = () => { S.settings.sla[el.dataset.sla] = Number(el.value); save(); toast('Guardado', 'ok'); })); document.querySelectorAll('[data-urole]').forEach((el) => (el.onchange = () => { const u = user(el.dataset.urole); audit('users', u.id, 'permission', { rol: [u.role, el.value] }); u.role = el.value; save(); toast('Rol actualizado', 'ok'); })); document.querySelectorAll('[data-st]').forEach((el) => (el.onchange = () => { const st = stage(el.dataset.st); st[el.dataset.k] = el.type === 'number' ? Number(el.value) : el.value; save(); toast('Guardado', 'ok'); })); document.querySelectorAll('[data-req]').forEach((el) => (el.onchange = () => { const st = stage(el.dataset.req); st.required = st.required || []; st.required = el.checked ? [...new Set([...st.required, el.dataset.k])] : st.required.filter((x) => x !== el.dataset.k); save(); })); }
   const f = document.getElementById('if'); if (f) f.onchange = () => { const r = new FileReader(); r.onload = () => (document.getElementById('ic').value = r.result); r.readAsText(f.files[0]); };
@@ -1132,10 +1203,10 @@ function seed() {
   for (let i = 0; i < 6; i++) { const c = contacts[i * 5]; logActivity({ type: 'meeting', subject: pickA(subj.meeting), at: addDays(1 + rnd(6)).toISOString(), user: c.owner, contactId: c.id, companyId: c.companyId }); }
   const ts = ['No puedo exportar a Excel', 'Error al sincronizar calendario', 'Solicitud de nueva funcionalidad', 'Factura duplicada', 'Acceso bloqueado tras cambio de contraseña', 'Dudas sobre la renovación'];
   contacts.slice(0, 8).forEach((c, i) => { const t = createTicket({ subject: ts[i % 6], description: 'Descripción reportada por el cliente.', contactId: c.id, channel: pickA(['email', 'formulario', 'teléfono']), priority: pickA(['low', 'normal', 'high', 'urgent']), category: pickA(['Técnico', 'Facturación', 'Producto']), assignee: 'u5', createdAt: ago(rnd(15)) }); if (i < 3) { t.status = 'resolved'; t.resolvedAt = ago(rnd(5)); t.firstResponse = ago(rnd(5)); t.csat = 3 + rnd(3); } else if (i < 5) { t.status = 'open'; t.firstResponse = ago(1); } });
-  const od = deals.find((d) => d.status === 'open' && d.amount > 5000); if (od) { S.counters.quote++; S.quotes.push({ id: uid(), dealId: od.id, number: `P-${new Date().getFullYear()}-0001`, version: 1, date: dayISO(addDays(-3)), validUntil: dayISO(addDays(27)), lines: [{ name: S.products[1].name, qty: 15, price: 59, discount: 0, tax: 21 }, { name: S.products[3].name, qty: 1, price: 600, discount: 0, tax: 21 }], discount: 5, subtotal: (15 * 59 + 600) * 0.95, tax: (15 * 59 + 600) * 0.95 * 0.21, total: (15 * 59 + 600) * 0.95 * 1.21, status: 'sent', notes: 'Validez 30 días. Pago a 30 días desde factura.', views: 0, createdBy: od.owner, createdAt: ago(3), sentAt: ago(3) }); }
+  const od = deals.find((d) => d.status === 'open' && d.amount > 5000); if (od) { S.counters.quote++; S.quotes.push({ id: uid(), dealId: od.id, number: `P-${new Date().getFullYear()}-0001`, version: 1, date: dayISO(addDays(-3)), validUntil: dayISO(addDays(27)), lines: [{ name: S.products[1].name, qty: 15, price: 59, discount: 0, tax: 21 }, { name: S.products[3].name, qty: 1, price: 600, discount: 0, tax: 21 }], discount: 5, subtotal: r2((15 * 59 + 600) * 0.95), tax: r2((15 * 59 + 600) * 0.95 * 0.21), total: r2(r2((15 * 59 + 600) * 0.95) + r2((15 * 59 + 600) * 0.95 * 0.21)), status: 'sent', notes: 'Validez 30 días. Pago a 30 días desde factura.', views: 0, createdBy: od.owner, createdAt: ago(3), sentAt: ago(3) }); }
   S.lists = [{ id: uid(), name: 'Leads calientes (MQL y SQL)', obj: 'contacts', kind: 'dynamic', rule: { field: 'lifecycle', op: 'contains', value: 'ql' }, ids: [], createdAt: ago(10) }, { id: uid(), name: 'Clientes', obj: 'companies', kind: 'dynamic', rule: { field: 'type', op: 'eq', value: 'customer' }, ids: [], createdAt: ago(10) }, { id: uid(), name: 'Newsletter trimestral', obj: 'contacts', kind: 'static', rule: {}, ids: contacts.filter((c) => c.consent).slice(0, 12).map((c) => c.id), createdAt: ago(10) }];
   S.contacts.forEach(rescore); S.notifs = []; S.audit = S.audit.slice(0, 80); S.autolog = []; S.automations.forEach((a) => (a.runs = 0));
-  notify('u6', 'Bienvenido a la demo del CRM', 'Explora el pipeline, edita celdas, prueba las automatizaciones y cambia de usuario para ver los permisos.', '#/negocios');
+  notify('u6', 'Bienvenido a tu CRM y CLM', 'Explora el pipeline, edita celdas, prueba las automatizaciones y cambia de usuario para ver los permisos.', '#/negocios');
   save();
 }
 
@@ -1401,9 +1472,21 @@ function clmNumber(type, parent, kind) {
   if (parent) { const n = S.contracts.filter((c) => c.parentId === parent.id && c.kind === kind).length + 1; return `${parent.number}-${kind === 'amendment' ? 'A' : 'R'}${String(n).padStart(2, '0')}`; }
   const y = new Date().getFullYear(); const k = `${type.code}-${y}`; S.clm.counters[k] = (S.clm.counters[k] || 0) + 1; return `${k}-${String(S.clm.counters[k]).padStart(5, '0')}`;
 }
-const addMonths = (iso, m) => { const d = new Date(iso + 'T00:00:00'); d.setMonth(d.getMonth() + m); return dayISO(d); };
+const addMonths = (iso, m) => { const [y, mo, da] = String(iso).slice(0, 10).split('-').map(Number); const t = new Date(y, mo - 1 + m, 1); const last = new Date(t.getFullYear(), t.getMonth() + 1, 0).getDate(); t.setDate(Math.min(da, last)); return dayISO(t); };
 const addD = (iso, n) => dayISO(addDays(n, new Date(iso + 'T00:00:00')));
-const numWords = (n) => { n = Math.round(Number(n) || 0); if (n === 0) return 'cero'; const u = ['', 'uno', 'dos', 'tres', 'cuatro', 'cinco', 'seis', 'siete', 'ocho', 'nueve', 'diez', 'once', 'doce', 'trece', 'catorce', 'quince', 'dieciséis', 'diecisiete', 'dieciocho', 'diecinueve', 'veinte', 'veintiuno', 'veintidós', 'veintitrés', 'veinticuatro', 'veinticinco', 'veintiséis', 'veintisiete', 'veintiocho', 'veintinueve']; const d = ['', '', 'treinta', 'cuarenta', 'cincuenta', 'sesenta', 'setenta', 'ochenta', 'noventa']; const c = ['', 'ciento', 'doscientos', 'trescientos', 'cuatrocientos', 'quinientos', 'seiscientos', 'setecientos', 'ochocientos', 'novecientos']; const h = (x) => { if (x < 30) return u[x]; if (x < 100) return d[Math.floor(x / 10)] + (x % 10 ? ' y ' + u[x % 10] : ''); if (x === 100) return 'cien'; return c[Math.floor(x / 100)] + (x % 100 ? ' ' + h(x % 100) : ''); }; let out = ''; if (n >= 1e6) { const m = Math.floor(n / 1e6); out += (m === 1 ? 'un millón' : h(m) + ' millones') + ' '; n %= 1e6; } if (n >= 1000) { const t = Math.floor(n / 1000); out += (t === 1 ? 'mil' : h(t) + ' mil') + ' '; n %= 1000; } if (n) out += h(n); return out.trim(); };
+const numWords = (n) => {
+  n = Math.round(Math.abs(Number(n) || 0)); if (n === 0) return 'cero';
+  const U = ['', 'uno', 'dos', 'tres', 'cuatro', 'cinco', 'seis', 'siete', 'ocho', 'nueve', 'diez', 'once', 'doce', 'trece', 'catorce', 'quince', 'dieciséis', 'diecisiete', 'dieciocho', 'diecinueve', 'veinte', 'veintiuno', 'veintidós', 'veintitrés', 'veinticuatro', 'veinticinco', 'veintiséis', 'veintisiete', 'veintiocho', 'veintinueve'];
+  const D = ['', '', '', 'treinta', 'cuarenta', 'cincuenta', 'sesenta', 'setenta', 'ochenta', 'noventa'];
+  const H = ['', 'ciento', 'doscientos', 'trescientos', 'cuatrocientos', 'quinientos', 'seiscientos', 'setecientos', 'ochocientos', 'novecientos'];
+  const h = (x) => (x < 30 ? U[x] : x < 100 ? D[Math.floor(x / 10)] + (x % 10 ? ' y ' + U[x % 10] : '') : x === 100 ? 'cien' : H[Math.floor(x / 100)] + (x % 100 ? ' ' + h(x % 100) : ''));
+  const ap = (w) => w.replace(/veintiuno$/, 'veintiún').replace(/uno$/, 'un');
+  const th = (x) => { const t = Math.floor(x / 1000), r = x % 1000; let s = ''; if (t) s = t === 1 ? 'mil' : ap(h(t)) + ' mil'; if (r) s += (s ? ' ' : '') + h(r); return s; };
+  const m = Math.floor(n / 1e6), rest = n % 1e6; let out = '';
+  if (m) out = m === 1 ? 'un millón' : ap(th(m)) + ' millones';
+  if (rest) out += (out ? ' ' : '') + th(rest);
+  return ap(out.trim());
+};
 function clmCtx(c) {
   const co = byId('companies', c.companyId) || {}; const type = ctype(c.typeId) || {}; const parent = c.parentId ? contract(c.parentId) : null; const signerC = S.contacts.find((x) => x.companyId === co.id);
   const fmtD = (d) => (d ? new Date(d + 'T00:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }) : '');
@@ -1580,7 +1663,7 @@ function clmActivate(c, why) {
 const CFIELD = { value: 'valor', endDate: 'fecha de fin', termMonths: 'duración', noticeDays: 'preaviso', renewal: 'renovación', paymentDays: 'plazo de pago', scope: 'alcance' };
 function clmMilestones(c) {
   const keep = (c.milestones || []).filter((m) => m.type === 'custom'); const ms = [];
-  if (c.endDate) { ms.push({ id: uid(), type: 'end', date: c.endDate, status: 'pending', alerts: [90, 60, 30, 7], alerted: [] }); if (c.renewal !== 'none' && c.noticeDays) { const notice = addD(c.endDate, -c.noticeDays); ms.push({ id: uid(), type: 'notice', date: notice, status: 'pending', alerts: [30, 15, 7, 1], alerted: [] }); ms.push({ id: uid(), type: 'decision', date: addD(notice, -30), status: 'pending', alerts: [15, 1], alerted: [] }); } ms.push({ id: uid(), type: 'review', date: addD(c.endDate, -120), status: 'pending', alerts: [0], alerted: [] }); }
+  if (c.endDate) { ms.push({ id: uid(), type: 'end', date: c.endDate, status: 'pending', alerts: [90, 60, 30, 7], alerted: [] }); if (c.renewal !== 'none' && c.noticeDays) { const notice = addD(c.endDate, -c.noticeDays); ms.push({ id: uid(), type: 'notice', date: notice, status: 'pending', alerts: [30, 15, 7, 1], alerted: [] }); ms.push({ id: uid(), type: 'decision', date: addD(notice, -30), status: 'pending', alerts: [15, 1], alerted: [] }); } ms.push({ id: uid(), type: 'review', date: addD(c.endDate, -120), status: 'pending', alerts: [30, 7, 0], alerted: [] }); }
   c.milestones = [...ms, ...keep].sort((a, b) => a.date.localeCompare(b.date));
 }
 function clmPayments(c) {
@@ -1854,7 +1937,7 @@ ACT['clm-verify'] = async (id) => { const c = cref(id); const v = c.versions.fin
 ACT['clm-signpage'] = ({ id, s }) => { const c = cref(id); const sg = c.envelope.signers.find((x) => x.id === s); const v = c.versions.find((x) => x.id === c.envelope.versionId); let otp = null; let scrolled = false;
   const m = modal({ title: `Página pública de firma · ${sg.name}`, size: 'lg', body: `<div class="pub"><p class="small muted" style="margin:0 0 8px">Simula el enlace privado que recibe el firmante por email (/s/${sg.token.slice(0, 10)}…). Lee el documento hasta el final, acepta y verifica tu identidad con el código.</p><div class="doc-view" id="sdoc" style="max-height:260px">${esc(v.text)}</div><div class="row mt8" style="gap:8px"><label class="chk small"><input type="checkbox" id="sconsent"/>Acepto firmar electrónicamente este documento y que se registren mis evidencias (IP ${sg.ip}, fecha y hora)</label></div><div class="row mt8 wrap" style="gap:8px"><button class="btn outline" id="sotp">Enviar código por SMS / email</button><span id="sdemo" class="small"></span><input class="inp" id="scode" placeholder="Código de 6 dígitos" style="width:160px" maxlength="6"/><button class="btn primary" id="ssign">Firmar</button><button class="btn outline" style="color:var(--c-red)" id="sdecl">Rechazar</button></div><p id="serr" class="small" style="color:var(--c-red);margin:6px 0 0"></p></div>` });
   const doc = m.querySelector('#sdoc'); doc.onscroll = () => { if (doc.scrollTop + doc.clientHeight >= doc.scrollHeight - 8) scrolled = true; }; if (doc.scrollHeight <= doc.clientHeight + 8) scrolled = true;
-  m.querySelector('#sotp').onclick = () => { otp = clmSignerOtp(c, sg); m.querySelector('#sdemo').innerHTML = `Código enviado (demo): <b>${otp}</b>`; save(); };
+  m.querySelector('#sotp').onclick = () => { otp = clmSignerOtp(c, sg); m.querySelector('#sdemo').innerHTML = `Código de prueba (sin envío real): <b>${otp}</b>`; save(); };
   m.querySelector('#ssign').onclick = async () => { const err = m.querySelector('#serr'); if (!scrolled) { err.textContent = 'Desplázate hasta el final del documento antes de firmar.'; return; } const r = await clmSign(c, sg, m.querySelector('#scode').value.trim(), m.querySelector('#sconsent').checked); if (r) { err.textContent = r; save(); return; } m.close(); refresh(); toast(c.status === 'active' ? '¡Contrato firmado por todas las partes y activado!' : `Firmado por ${sg.name}`, 'ok'); };
   m.querySelector('#sdecl').onclick = async () => { const why = await askText('Motivo del rechazo', '', 'Motivo'); if (!why) return; sg.status = 'declined'; c.envelope.status = 'cancelled'; c.envelope.events.push({ at: nowISO(), t: `${sg.name} rechazó firmar: ${why}` }); ctl(c, 'x', `Firma rechazada por ${sg.name}: ${why}`); clmSetStatus(c, 'negotiation', 'firma rechazada'); m.close(); refresh(); };
 };
@@ -2228,7 +2311,7 @@ function runActionV2(x, obj, item, log) {
     case 'owner': { const u = x.who === 'rr' ? roundRobin() : x.who === 'manager' ? who('manager', item) : x.who === 'creator' ? item.createdBy || S.me : x.who; if (!u) throw new Error('No hay a quién asignar'); writeField(obj, item, obj === 'tasks' || obj === 'tickets' ? 'assignee' : 'owner', u); log.push(`Asignado a ${user(u)?.name}`); return 1; }
     case 'create_ticket': { const t = createTicket({ subject: tpl(x.title || 'Desde actualización: {{name}}', obj, item), description: S._ev?.activity?.body || '', contactId: links.contactId, companyId: links.companyId, priority: 'normal' }); log.push(`Ticket #${t.number} creado y conectado`); return 1; }
     case 'update_related': { const r = RELS[obj]?.[x.rel]; if (!r) throw new Error('Relación no válida'); const rows = r.rows(item); for (const row of rows) writeField(r.obj, row, x.field, tpl(String(x.value ?? ''), obj, item)); log.push(`${rows.length} conectado(s) (${r.label}): ${colLabel(r.obj, x.field)} = ${x.value}`); return Math.max(1, rows.length); }
-    case 'webhook': { log.push(`POST ${x.url || 'https://…'} con el elemento en JSON (simulado en la demo)`); return 1; }
+    case 'webhook': { log.push(`POST ${x.url || 'https://…'} con el elemento en JSON (simulado: sin envío real)`); return 1; }
     case 'ai_categorize': { const src = String(cellRaw(obj, item, x.source) ?? '') + ' ' + String(S._ev?.activity?.body || ''); let best = { l: x.fallback || '', n: 0 }; for (const line of String(x.rules || '').split('\n')) { const [l, kw] = line.split(':'); if (!kw) continue; const n = kw.split(',').map((k) => nrm(k)).filter(Boolean).reduce((s, k) => s + (nrm(src).split(k).length - 1), 0); if (n > best.n) best = { l: l.trim(), n }; } if (best.l) writeField(obj, item, x.field, best.l); log.push(`Clasificado como «${best.l || '—'}» (IA local por reglas)`); return 1; }
     default: { const before = log.length; _runAction(x, obj, item, log); if (log.length === before) log.push(ACT_V2[x.type] || x.type); return 1; }
   }
@@ -2279,7 +2362,7 @@ function tickV2() {
   }
 }
 const _dailyChecks = dailyChecks; dailyChecks = function () { _dailyChecks(); try { tickV2(); } catch (e) { console.error(e); } save(); };
-ACT['clock-advance'] = (n) => { S.autoV2.clock += Number(n) || 1; tickV2(); refresh(); toast(`Reloj de la demo: ${fdate(vDay(), { day: 'numeric', month: 'long', year: 'numeric' })}`, 'ok'); };
+ACT['clock-advance'] = (n) => { S.autoV2.clock += Number(n) || 1; tickV2(); refresh(); toast(`Reloj de pruebas: ${fdate(vDay(), { day: 'numeric', month: 'long', year: 'numeric' })}`, 'ok'); };
 ACT['clock-reset'] = () => { S.autoV2.clock = 0; refresh(); };
 
 /* ---------------------------------------------------------------- frase */
@@ -2353,7 +2436,7 @@ autoForm = function (a) {
       ${t.type === 'period' ? `<select class="inp" data-p="trigger.period" style="width:auto"><option value="day" ${t.period !== 'week' && t.period !== 'month' ? 'selected' : ''}>cada día</option><option value="week" ${t.period === 'week' ? 'selected' : ''}>cada lunes</option><option value="month" ${t.period === 'month' ? 'selected' : ''}>cada día 1</option></select><span>a las</span><input class="inp" type="number" min="0" max="23" data-p="trigger.hour" value="${t.hour ?? 8}" style="width:60px"/>` : ''}
       ${t.type === 'button' ? `<select class="inp" data-p="trigger.field" style="width:auto"><option value="">cualquier botón</option>${colDefs(obj).filter((c) => c.type === 'button').map((c) => `<option value="custom.${c.key}" ${t.field === 'custom.' + c.key ? 'selected' : ''}>${esc(c.label)}</option>`).join('')}</select>` : ''}
       ${t.type === 'stage_to' ? `<select class="inp" data-p="trigger.value" style="width:auto">${S.pipeline.stages.map((s) => `<option value="${s.id}" ${t.value === s.id ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}</select>` : ''}</div>
-      <p class="xs muted mt8">${t.type === 'date_arrives' ? 'El planificador calcula la hora exacta al guardar o al cambiar la fecha del elemento (sin fecha auxiliar). Para probarlo, avanza el reloj de la demo en «Programadas».' : t.type === 'field' ? 'Funciona también con fórmulas y reflejos: monday no lo permite.' : ''}</p></div>
+      <p class="xs muted mt8">${t.type === 'date_arrives' ? 'El planificador calcula la hora exacta al guardar o al cambiar la fecha del elemento (sin fecha auxiliar). Para probarlo, avanza el reloj de pruebas en «Programadas».' : t.type === 'field' ? 'Funciona también con fórmulas y reflejos: monday no lo permite.' : ''}</p></div>
     <div class="wstep"><h3>${ico.filter} Y solo si <span class="muted small">(opcional)</span></h3>${condHtml(obj, d.conds, 'conds')}</div>
     <div class="wstep"><h3>${ico.check} Entonces</h3>${actHtml(obj, d.actions, 'actions')}</div>
     <details class="wstep"><summary class="b small">Ejecución y gobierno</summary><div class="row wrap mt8"><span>Se ejecuta como</span><select class="inp" data-p="owner" style="width:auto"><option value="service" ${!d.owner || d.owner === 'service' ? 'selected' : ''}>Automatizaciones (usuario de servicio)</option>${S.users.map((u) => `<option value="${u.id}" ${d.owner === u.id ? 'selected' : ''}>${esc(u.name)}${u.active ? '' : ' (inactivo)'}</option>`).join('')}</select><span>prioridad</span><input class="inp" type="number" data-p="priority" value="${d.priority || 100}" style="width:80px"/><label class="chk xs"><input type="checkbox" data-pb="reenroll" ${d.reenroll ? 'checked' : ''}/>puede repetirse sobre el mismo elemento</label></div></details>`;
@@ -2406,16 +2489,16 @@ function seedAutoV2() {
 PAGES.automatizaciones = () => {
   const view = S.ui.view.automatizaciones || 'list';
   const pend = S.autoV2.approvals.filter((x) => x.status === 'pending').length; const used = usedThisMonth(); const b = S.autoV2.budget;
-  setHead({ title: 'Centro de automatizaciones', desc: `Frases «Cuando… y solo si… entonces…» con ramas, aprobaciones y esperas · ${used} de ${b || '∞'} acciones este mes · reloj de la demo: ${fdate(vDay(), { day: 'numeric', month: 'short', year: 'numeric' })}`, views: [{ key: 'list', label: 'Automatizaciones', icon: 'bolt' }, { key: 'recipes', label: 'Recetas', icon: 'star' }, { key: 'log', label: 'Historial', icon: 'list' }, { key: 'sched', label: 'Programadas', icon: 'cal' }, { key: 'usage', label: 'Uso y presupuesto', icon: 'chart' }, { key: 'approvals', label: `Aprobaciones${pend ? ' · ' + pend : ''}`, icon: 'check' }, { key: 'gov', label: 'Gobierno', icon: 'shield' }], view, toolbar: `<button class="btn primary" data-act="auto-new">${ico.plus}Nueva automatización</button><span class="muted small right">${S.automations.filter((a) => a.on).length} activas · ${S.autolog.length} ejecuciones</span>` });
+  setHead({ title: 'Centro de automatizaciones', desc: `Frases «Cuando… y solo si… entonces…» con ramas, aprobaciones y esperas · ${used} de ${b || '∞'} acciones este mes · reloj de pruebas: ${fdate(vDay(), { day: 'numeric', month: 'short', year: 'numeric' })}`, views: [{ key: 'list', label: 'Automatizaciones', icon: 'bolt' }, { key: 'recipes', label: 'Recetas', icon: 'star' }, { key: 'log', label: 'Historial', icon: 'list' }, { key: 'sched', label: 'Programadas', icon: 'cal' }, { key: 'usage', label: 'Uso y presupuesto', icon: 'chart' }, { key: 'approvals', label: `Aprobaciones${pend ? ' · ' + pend : ''}`, icon: 'check' }, { key: 'gov', label: 'Gobierno', icon: 'shield' }], view, toolbar: `<button class="btn primary" data-act="auto-new">${ico.plus}Nueva automatización</button><span class="muted small right">${S.automations.filter((a) => a.on).length} activas · ${S.autolog.length} ejecuciones</span>` });
   const el = document.getElementById('content'); const autoName = (id) => esc(S.automations.find((a) => a.id === id)?.name || '(borrada)');
   const badge = (s) => `<span class="pill" style="display:inline-flex;width:auto;min-height:20px;padding:0 7px;border-radius:4px;font-size:11px;background:${({ ok: C.green, error: C.red, skipped: C.grey, waiting: C.orange })[s] || C.grey}">${({ ok: 'Correcta', error: 'Error', skipped: 'No cumplía', waiting: 'En espera' })[s] || s}</span>`;
   if (view === 'list') { el.innerHTML = `<div class="mt12">${S.automations.map((a) => `<div class="auto ${a.on ? '' : 'off'}"><span class="ic">${ico.bolt}</span><div class="grow"><div class="sent">${autoSentence(a)}</div><div class="meta">${esc(a.name)}${a.recipe ? ` · <b>${a.recipe}</b>` : ''} · ${a.runs || 0} ejecuciones · ${S.autolog.filter((l) => l.autoId === a.id).reduce((s, l) => s + (l.count || 0), 0)} acciones · se ejecuta como ${esc(ownerOf(a)?.name || '—')}${a.lastRun ? ' · última ' + rel(a.lastRun) : ''}</div>${a.pausedReason ? `<div class="xs" style="color:var(--c-red)">${esc(a.pausedReason)}</div>` : ''}</div><button class="btn sm outline" data-act="auto-edit" data-arg="${a.id}">Editar</button><button class="switch ${a.on ? 'on' : ''}" data-act="auto-toggle" data-arg="${a.id}" title="${a.on ? 'Activa' : 'Pausada'}"></button></div>`).join('')}</div>`; return; }
   if (view === 'recipes') { el.innerHTML = `<div class="rgrid mt12">${RECIPES_V2.map((r) => `<div class="recipe"><div class="row"><span class="tag">${r.code}</span><span class="xs muted">${r.cat}</span>${S.automations.some((a) => a.recipe === r.code) ? '<span class="tag right" style="background:#dcf7e9;color:#037f4c">Instalada</span>' : ''}</div><b>${esc(r.t)}</b>${r.col ? `<p class="xs muted">Crea la columna «${esc(r.col.label)}»</p>` : ''}<button class="btn sm outline" data-act="recipe-install" data-arg="${r.code}">${ico.plus}Usar receta</button></div>`).join('')}</div>`; return; }
   if (view === 'log') { const f = S.ui.logf || ''; const rows = S.autolog.filter((l) => !f || l.status === f).slice(0, 300); el.innerHTML = `<div class="row mt12 mb8"><select class="inp" id="lf" style="width:auto"><option value="">Todos</option>${['ok', 'error', 'skipped', 'waiting'].map((s) => `<option value="${s}" ${f === s ? 'selected' : ''}>${({ ok: 'Correctas', error: 'Errores', skipped: 'No cumplían', waiting: 'En espera' })[s]}</option>`).join('')}</select><button class="btn sm outline right" data-act="log-csv">${ico.down}Exportar CSV</button></div><div class="card"><table class="t"><thead><tr><th>Fecha</th><th>Automatización</th><th>Elemento</th><th>Estado</th><th class="r">Acciones</th><th>Origen</th><th>Detalle</th></tr></thead><tbody>${rows.map((l) => `<tr><td class="small">${fdt(l.at)}</td><td>${autoName(l.autoId)}</td><td class="small">${l.rid ? `<a href="${linkOf(l.obj, l.rid)}">${esc(itemName(l.obj, l.rid))}</a>` : '—'}</td><td>${badge(l.status || (l.ok ? 'ok' : 'skipped'))}</td><td class="r num">${l.count ?? 0}</td><td class="xs muted">${esc(l.origin || 'ui')}${l.depth > 1 ? ' · cadena ' + l.depth : ''}</td><td class="small" style="${l.status === 'error' ? 'color:var(--c-red)' : ''}">${esc(l.log)}</td></tr>`).join('') || '<tr><td colspan="7" class="empty">Sin ejecuciones</td></tr>'}</tbody></table></div>`; el.querySelector('#lf').onchange = (e) => { S.ui.logf = e.target.value; render(); }; return; }
-  if (view === 'sched') { const list = S.autoV2.schedule.filter((s) => !s.fired).sort((a, b2) => a.fire - b2.fire); el.innerHTML = `<div class="card mt12"><p class="small">El planificador calcula la hora exacta de cada disparador de fecha en cuanto cambias la fecha (monday las evalúa una vez al día y obliga a usar columnas auxiliares). Para probarlo sin esperar, adelanta el reloj de la demo:</p><div class="row wrap mt8"><button class="btn sm primary" data-act="clock-advance" data-arg="1">+1 día</button><button class="btn sm outline" data-act="clock-advance" data-arg="7">+7 días</button><button class="btn sm outline" data-act="clock-advance" data-arg="30">+30 días</button><button class="btn sm outline" data-act="clock-reset">Volver a hoy</button><span class="small muted">Reloj: <b>${fdate(vDay(), { day: 'numeric', month: 'long', year: 'numeric' })}</b></span></div></div><div class="card mt12"><table class="t"><thead><tr><th>Se ejecutará</th><th>Automatización</th><th>Elemento</th><th>Basada en</th></tr></thead><tbody>${list.map((s) => `<tr><td class="small">${fdt(new Date(s.fire).toISOString())}</td><td>${autoName(s.autoId)}</td><td class="small"><a href="${linkOf(s.obj, s.rid)}">${esc(itemName(s.obj, s.rid))}</a></td><td class="small">${s.kind === 'resume' ? 'continuación tras «esperar»' : 'fecha ' + fdate(s.basis)}</td></tr>`).join('') || '<tr><td colspan="4" class="empty">Nada programado. Instala la receta R3 y pon una fecha de «Próximo seguimiento» en un negocio.</td></tr>'}</tbody></table></div>`; return; }
+  if (view === 'sched') { const list = S.autoV2.schedule.filter((s) => !s.fired).sort((a, b2) => a.fire - b2.fire); el.innerHTML = `<div class="card mt12"><p class="small">El planificador calcula la hora exacta de cada disparador de fecha en cuanto cambias la fecha (monday las evalúa una vez al día y obliga a usar columnas auxiliares). Para probarlo sin esperar, adelanta el reloj de pruebas:</p><div class="row wrap mt8"><button class="btn sm primary" data-act="clock-advance" data-arg="1">+1 día</button><button class="btn sm outline" data-act="clock-advance" data-arg="7">+7 días</button><button class="btn sm outline" data-act="clock-advance" data-arg="30">+30 días</button><button class="btn sm outline" data-act="clock-reset">Volver a hoy</button><span class="small muted">Reloj: <b>${fdate(vDay(), { day: 'numeric', month: 'long', year: 'numeric' })}</b></span></div></div><div class="card mt12"><table class="t"><thead><tr><th>Se ejecutará</th><th>Automatización</th><th>Elemento</th><th>Basada en</th></tr></thead><tbody>${list.map((s) => `<tr><td class="small">${fdt(new Date(s.fire).toISOString())}</td><td>${autoName(s.autoId)}</td><td class="small"><a href="${linkOf(s.obj, s.rid)}">${esc(itemName(s.obj, s.rid))}</a></td><td class="small">${s.kind === 'resume' ? 'continuación tras «esperar»' : 'fecha ' + fdate(s.basis)}</td></tr>`).join('') || '<tr><td colspan="4" class="empty">Nada programado. Instala la receta R3 y pon una fecha de «Próximo seguimiento» en un negocio.</td></tr>'}</tbody></table></div>`; return; }
   if (view === 'usage') { const pct = b ? Math.round((100 * used) / b) : 0; const per = {}; S.autolog.filter((l) => l.at.slice(0, 7) === monthKey()).forEach((l) => (per[l.autoId] = (per[l.autoId] || 0) + (l.count || 0))); el.innerHTML = `<div class="kpis"><div class="kpi"><div class="l">Acciones este mes</div><div class="v num">${used}</div><div class="s">de ${b || '∞'} · ${pct} %</div><div class="meterb"><i style="width:${Math.min(100, pct)}%;background:${pct >= 100 ? C.red : pct >= 80 ? C.orange : pct >= 60 ? C.sun : C.green}"></i></div></div><div class="kpi"><div class="l">Al agotarse</div><div class="v" style="font-size:16px">${S.autoV2.mode === 'pause_all' ? 'Se pausan' : 'Bloqueo de edición'}</div><div class="s">avisos al 60, 80 y 100 %</div></div><div class="kpi"><div class="l">Protección de bucles</div><div class="v num">${S.autoV2.maxDepth}</div><div class="s">niveles de cadena · 5 ejecuciones/min por elemento</div></div><div class="kpi"><div class="l">Errores</div><div class="v num">${S.autolog.filter((l) => l.status === 'error').length}</div><div class="s">en el historial</div></div></div><div class="charts"><div class="chart"><h3>Acciones por automatización (mes)</h3>${barsHtml(Object.entries(per).map(([k, v]) => ({ label: (S.automations.find((a) => a.id === k)?.name || '—').slice(0, 14), v, color: C.blue })))}</div><div class="chart"><h3>Presupuesto</h3><div class="fgrid"><div class="fld"><label>Acciones al mes (0 = sin límite)</label><input class="inp" type="number" id="bud" value="${b}"/></div><div class="fld"><label>Al agotarse</label><select class="inp" id="bmode"><option value="block_edit" ${S.autoV2.mode !== 'pause_all' ? 'selected' : ''}>Siguen funcionando; bloqueo de edición</option><option value="pause_all" ${S.autoV2.mode === 'pause_all' ? 'selected' : ''}>Se pausan todas</option></select></div><div class="fld"><label>Profundidad máxima de cadena</label><input class="inp" type="number" id="bdep" value="${S.autoV2.maxDepth}"/></div></div><button class="btn sm primary mt8" data-act="budget-save">Guardar</button><p class="xs muted mt8">Cómo se cuenta: cada acción ejecutada = 1 (crear 3 subelementos = 3). Disparadores y condiciones no cuentan; una ejecución que no cumple las condiciones no gasta.</p></div></div>`; return; }
   if (view === 'approvals') { el.innerHTML = `<div class="card mt12"><p class="small muted">Aprobaciones pedidas por automatizaciones (human in the loop). Al decidir, el flujo sigue por la rama sí o no.</p><table class="t"><thead><tr><th>Solicitud</th><th>Automatización</th><th>Aprobador</th><th>Estado</th><th></th></tr></thead><tbody>${S.autoV2.approvals.map((p) => `<tr><td><b>${esc(p.title)}</b><div class="xs"><a href="${linkOf(p.obj, p.rid)}">Abrir elemento</a> · ${rel(p.at)}</div></td><td class="small">${autoName(p.autoId)}</td><td>${avatarOf(p.approver, 'sm')} ${esc(user(p.approver)?.name || '')}</td><td>${badge(p.status === 'pending' ? 'waiting' : p.status === 'approved' ? 'ok' : 'error').replace('En espera', 'Pendiente').replace('Correcta', 'Aprobada').replace('Error', 'Rechazada')}</td><td>${p.status === 'pending' ? `<button class="btn sm primary" data-act="ap-decide" data-arg='${JSON.stringify({ id: p.id, d: 'approved' })}'>Aprobar</button> <button class="btn sm outline" data-act="ap-decide" data-arg='${JSON.stringify({ id: p.id, d: 'rejected' })}'>Rechazar</button>` : ''}</td></tr>`).join('') || '<tr><td colspan="5" class="empty">Sin aprobaciones. La receta R8 pide una al subir un negocio por encima de 50.000 €.</td></tr>'}</tbody></table></div>`; return; }
-  if (view === 'gov') { el.innerHTML = `<div class="card mt12"><table class="t"><thead><tr><th>Automatización</th><th>Tablero</th><th>Se ejecuta como</th><th class="r">Acciones/ejecución</th><th class="r">Usadas (mes)</th><th class="r">Errores</th><th class="r">Prioridad</th></tr></thead><tbody>${S.automations.map((a) => `<tr class="${a.on ? '' : 'muted'}"><td><b>${esc(a.name)}</b>${a.pausedReason ? `<div class="xs" style="color:var(--c-red)">${esc(a.pausedReason)}</div>` : ''}</td><td class="small">${OBJ_LABEL[a.trigger.obj] || '—'}</td><td class="small">${esc(ownerOf(a)?.name || '—')}${ownerOf(a)?.active === false ? ' <span class="tag" style="background:#fde4e7;color:#bb3354">inactivo</span>' : ''}</td><td class="r num">${a.actions.length}</td><td class="r num">${S.autolog.filter((l) => l.autoId === a.id && l.at.slice(0, 7) === monthKey()).reduce((s, l) => s + (l.count || 0), 0)}</td><td class="r num">${S.autolog.filter((l) => l.autoId === a.id && l.status === 'error').length}</td><td class="r num">${a.priority || 100}</td></tr>`).join('')}</tbody></table></div><div class="card mt12 small"><b>Buenas prácticas</b><ul><li>Propietario: el usuario de servicio «Automatizaciones». Si el propietario se desactiva, la automatización se pausa con un error legible.</li><li>Una automatización, una responsabilidad. Estados terminales y condiciones de corte para evitar bucles (la demo corta a ${S.autoV2.maxDepth} niveles o 5 ejecuciones por minuto).</li><li>Usa «Origen del cambio ≠ automation» para no reaccionar a tus propias acciones.</li><li>Valores por defecto (botón «Reglas» de cada tablero) en lugar de «cuando se crea, establecer»: no gastan acciones.</li></ul><button class="btn sm outline" data-act="reassign-service">Reasignar todas al usuario de servicio y reactivar</button></div>`; }
+  if (view === 'gov') { el.innerHTML = `<div class="card mt12"><table class="t"><thead><tr><th>Automatización</th><th>Tablero</th><th>Se ejecuta como</th><th class="r">Acciones/ejecución</th><th class="r">Usadas (mes)</th><th class="r">Errores</th><th class="r">Prioridad</th></tr></thead><tbody>${S.automations.map((a) => `<tr class="${a.on ? '' : 'muted'}"><td><b>${esc(a.name)}</b>${a.pausedReason ? `<div class="xs" style="color:var(--c-red)">${esc(a.pausedReason)}</div>` : ''}</td><td class="small">${OBJ_LABEL[a.trigger.obj] || '—'}</td><td class="small">${esc(ownerOf(a)?.name || '—')}${ownerOf(a)?.active === false ? ' <span class="tag" style="background:#fde4e7;color:#bb3354">inactivo</span>' : ''}</td><td class="r num">${a.actions.length}</td><td class="r num">${S.autolog.filter((l) => l.autoId === a.id && l.at.slice(0, 7) === monthKey()).reduce((s, l) => s + (l.count || 0), 0)}</td><td class="r num">${S.autolog.filter((l) => l.autoId === a.id && l.status === 'error').length}</td><td class="r num">${a.priority || 100}</td></tr>`).join('')}</tbody></table></div><div class="card mt12 small"><b>Buenas prácticas</b><ul><li>Propietario: el usuario de servicio «Automatizaciones». Si el propietario se desactiva, la automatización se pausa con un error legible.</li><li>Una automatización, una responsabilidad. Estados terminales y condiciones de corte para evitar bucles (se corta a ${S.autoV2.maxDepth} niveles o 5 ejecuciones por minuto).</li><li>Usa «Origen del cambio ≠ automation» para no reaccionar a tus propias acciones.</li><li>Valores por defecto (botón «Reglas» de cada tablero) en lugar de «cuando se crea, establecer»: no gastan acciones.</li></ul><button class="btn sm outline" data-act="reassign-service">Reasignar todas al usuario de servicio y reactivar</button></div>`; }
 };
 ACT['recipe-install'] = (code) => installRecipeV2(code);
 ACT['budget-save'] = () => { S.autoV2.budget = Number(document.getElementById('bud').value) || 0; S.autoV2.mode = document.getElementById('bmode').value; S.autoV2.maxDepth = Math.max(2, Number(document.getElementById('bdep').value) || 10); refresh(); toast('Guardado', 'ok'); };
@@ -3025,7 +3108,7 @@ function xlTypeDialog(obj, col) {
   };
   const draw = () => { const p = plan(); const ok = p.res.filter((r) => r.st === 'ok').length, lost = p.res.filter((r) => r.st === 'lost'); m.querySelector('#pv').innerHTML = `<div class="kpis" style="grid-template-columns:repeat(3,1fr)"><div class="kpi"><div class="l">Se convierten</div><div class="v num" style="color:var(--c-green)">${ok}</div></div><div class="kpi"><div class="l">Vacías</div><div class="v num">${p.res.filter((r) => r.st === 'empty').length}</div></div><div class="kpi"><div class="l">Se pierden</div><div class="v num" style="color:${lost.length ? 'var(--c-red)' : 'inherit'}">${lost.length}</div></div></div>${lost.length ? `<p class="xs muted mt8">Ejemplos que no encajan: ${lost.slice(0, 5).map((r) => `«${esc(r.t)}»`).join(', ')}</p>` : ''}${p.opts ? `<p class="xs muted mt8">Se crearán ${p.opts.length} etiquetas: ${p.opts.slice(0, 8).map((o) => esc(o.label)).join(', ')}</p>` : ''}`; };
   m.querySelector('#nt').onchange = draw; draw();
-  m.querySelector('#ok').onclick = () => { const p = plan(); const before = S[obj].map((it) => [it.id, (it.custom || {})[cdef.key]]); const from = cdef.type; cdef.type = p.to; if (p.opts) cdef.options = p.opts; if (p.to === 'rating') cdef.max = cdef.max || 5; p.res.forEach(({ it, v }) => { it.custom = it.custom || {}; it.custom[cdef.key] = v; }); audit(obj, null, 'column', { columna: cdef.label, tipo: [from, p.to] }); XL.undo = XL.undo.filter((e) => !e.ops.some((o) => o.key === col.key)); m.close(); refresh(); toast(`Columna convertida a ${(XL_TYPES.find((t) => t[0] === p.to) || [])[1] || p.to}`, 'ok'); void before; };
+  m.querySelector('#ok').onclick = () => { const p = plan(); const before = S[obj].map((it) => [it.id, (it.custom || {})[cdef.key]]); const from = cdef.type; const wsBk = { type: from, options: JSON.parse(JSON.stringify(cdef.options || null)), max: cdef.max }; cdef.type = p.to; if (p.opts) cdef.options = p.opts; if (p.to === 'rating') cdef.max = cdef.max || 5; p.res.forEach(({ it, v }) => { it.custom = it.custom || {}; it.custom[cdef.key] = v; }); audit(obj, null, 'column', { columna: cdef.label, tipo: [from, p.to] }); XL.undo = XL.undo.filter((e) => !(e.ops || []).some((o) => o.key === col.key)); if (typeof wsColBackup === 'function') wsColBackup(obj, cdef, col.key, wsBk, before); m.close(); refresh(); toast(`Columna convertida a ${(XL_TYPES.find((t) => t[0] === p.to) || [])[1] || p.to}`, 'ok'); void before; };
 }
 
 /* ---------------------------------------------------------------- formato condicional */
@@ -3235,7 +3318,7 @@ const pdfWidth = (s, size) => [...String(s)].reduce((a, ch) => a + PDF_W(ch), 0)
 function pdfBuild(pages, title) {
   const objs = []; const add = (s) => { objs.push(s); return objs.length; };
   const cat = add(''), pagesId = add(''), f1 = add('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>'), f2 = add('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>');
-  const info = add(`<< /Title ${pdfStr(title)} /Producer (CRM demo) /CreationDate (D:${new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14)}) >>`);
+  const info = add(`<< /Title ${pdfStr(title)} /Producer (CRM CLM) /CreationDate (D:${new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14)}) >>`);
   const kids = pages.map((ops) => { const c = add(`<< /Length ${ops.length} >>\nstream\n${ops}\nendstream`); return add(`<< /Type /Page /Parent ${pagesId} 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 ${f1} 0 R /F2 ${f2} 0 R >> >> /Contents ${c} 0 R >>`); });
   objs[cat - 1] = `<< /Type /Catalog /Pages ${pagesId} 0 R >>`; objs[pagesId - 1] = `<< /Type /Pages /Kids [${kids.map((k) => `${k} 0 R`).join(' ')}] /Count ${kids.length} >>`;
   let out = '%PDF-1.4\n'; const offs = [];
@@ -4279,6 +4362,704 @@ const cusTutGo = (h) => { if (location.hash === h) refresh(); else location.hash
 
 <script>
 /* ============================================================
+   Espacios de trabajo y carpetas · versión final
+   - Varios espacios de trabajo, cada uno con sus propios datos,
+     carpetas y apariencia; crear en blanco, con ejemplos o duplicar
+   - Carpetas y subcarpetas personalizables: nombre, icono, color,
+     descripción, visibilidad por rol, contadores, orden (arrastrar),
+     tableros, vistas guardadas y enlaces externos
+   - Copias de seguridad: exportar e importar uno o todos los espacios
+   - Controles de la auditoría v3: aprobaciones ligadas a la versión,
+     contrato firmado inmutable, OTP con 3 intentos y caducidad,
+     guardado con aviso, fechas imposibles, cuotas a céntimo, bucles,
+     SHA-256 por versión, conversión de columnas reversible
+   ============================================================ */
+'use strict';
+const WSX = { IDX: 'crm-workspaces', MAIN_KEY: 'crm-tutorial-v1', CAP: 5000000, drag: null, lim: {}, toastAt: 0, saveFailed: false };
+const PAGE_OBJ = { contactos: 'contacts', empresas: 'companies', negocios: 'deals', tareas: 'tasks', tickets: 'tickets', productos: 'products', presupuestos: 'quotes', contratos: 'contracts' };
+const NAV_PAGES = { inicio: 'Inicio', 'mi-dia': 'Mi día', contactos: 'Contactos', empresas: 'Empresas', negocios: 'Pipeline comercial', presupuestos: 'Presupuestos', productos: 'Productos', contratos: 'Contratos (CLM)', tareas: 'Tareas', tickets: 'Soporte · Tickets', listas: 'Listas y segmentos', formularios: 'Formularios web', informes: 'Informes', automatizaciones: 'Automatizaciones' };
+const NAV_SHORT = { contactos: 'Contactos', empresas: 'Empresas', negocios: 'Pipeline', presupuestos: 'Presupuestos', productos: 'Productos', contratos: 'Contratos', tareas: 'Tareas', tickets: 'Tickets', listas: 'Listas', formularios: 'Formularios', informes: 'Informes', automatizaciones: 'Automatizaciones', inicio: 'Inicio', 'mi-dia': 'Mi día' };
+const NAV_COLORS = ['#579bfc', '#a25ddc', '#00c875', '#fdab3d', '#e2445c', '#66ccff', '#5559df', '#175a63', '#ff5ac4', '#9cd326', '#784bd1', '#7f5347', '#c4c4c4', '#323338'];
+const WS_ACCENTS = ['#0073ea', '#4b4acf', '#0f6e6e', '#037f4c', '#b4245d', '#c2410c', '#6b4fbb', '#323338'];
+const NAV_EMOJI = ['📁', '💼', '⚖️', '📄', '🤝', '📈', '🗂️', '🛠️', '⭐', '🔒', '🏢', '🎯'];
+const WS_ICO = {
+  folder: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>',
+  caret: '<svg class="wsx-car" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>',
+  more: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>',
+  view: '<svg class="wsx-vk" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-label="Vista guardada"><path d="M3 5h18M6 12h12M10 19h4"/></svg>',
+  chev: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg>',
+  ext: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>',
+};
+const wsClone = (x) => JSON.parse(JSON.stringify(x));
+const wsSlug = (s) => norm(String(s || 'espacio')).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'espacio';
+const wsValidDate = (s) => { const d = new Date(s + 'T00:00:00Z'); return !isNaN(d) && d.toISOString().slice(0, 10) === s; };
+const wsMB = (n) => (n / 1e6).toLocaleString('es-ES', { maximumFractionDigits: 1, minimumFractionDigits: 1 }) + ' MB';
+
+/* ---------------------------------------------------------------- índice de espacios */
+function wsIdx() {
+  let ix = null; try { ix = JSON.parse(localStorage.getItem(WSX.IDX) || 'null'); } catch (_) { ix = null; }
+  if (!ix || !Array.isArray(ix.list) || !ix.list.length) { ix = { active: 'ws_main', list: [{ id: 'ws_main', key: WSX.MAIN_KEY, name: S.settings.company || 'Mi empresa', icon: '', color: '#5559df', desc: '', createdAt: nowISO(), template: 'main' }] }; wsIdxSave(ix); }
+  if (!ix.list.some((w) => w.id === ix.active)) ix.active = ix.list[0].id;
+  return ix;
+}
+function wsIdxSave(ix) { try { localStorage.setItem(WSX.IDX, JSON.stringify(ix)); return true; } catch (_) { toast('No se pudo guardar la lista de espacios: el navegador no tiene espacio', 'err'); return false; } }
+const wsActive = () => { const ix = wsIdx(); return ix.list.find((w) => w.id === ix.active); };
+const wsBadge = (w, cls = '') => `<span class="wsi wsx-wsi ${cls}" style="background:${esc(w.color || '#5559df')}" aria-hidden="true">${esc(w.icon || String(w.name || '?').trim().charAt(0).toUpperCase() || '?')}</span>`;
+function wsUsage() { let n = 0; try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); n += k.length + (localStorage.getItem(k) || '').length; } } catch (_) { /* sin acceso */ } return n; }
+function wsSizeOf(w) { try { return (localStorage.getItem(w.key) || '').length; } catch (_) { return 0; } }
+function wsDataOf(w) { if (w.id === wsIdx().active) return S; try { return JSON.parse(localStorage.getItem(w.key) || 'null'); } catch (_) { return null; } }
+
+/* ---------------------------------------------------------------- guardado con aviso */
+save = function () {
+  try { localStorage.setItem(KEY, JSON.stringify(S)); if (WSX.saveFailed) { WSX.saveFailed = false; wsBanner(); toast('Guardado de nuevo correctamente', 'ok'); } return true; }
+  catch (e) {
+    const first = !WSX.saveFailed; WSX.saveFailed = true; wsBanner();
+    if (first || Date.now() - WSX.toastAt > 15000) { WSX.toastAt = Date.now(); toast('No se ha guardado: el almacenamiento del navegador está lleno. Exporta una copia y libera espacio.', 'err'); }
+    return false;
+  }
+};
+function wsBanner() {
+  let b = document.getElementById('wsxBanner');
+  if (!WSX.saveFailed) { if (b) b.remove(); return; }
+  if (b) return;
+  b = document.createElement('div'); b.id = 'wsxBanner'; b.className = 'wsx-banner'; b.setAttribute('role', 'alert');
+  b.innerHTML = `<span><b>Los cambios no se están guardando.</b> El almacenamiento del navegador está lleno: si cierras la pestaña perderás lo que no se haya guardado.</span><button class="btn sm" data-act="ws-export" data-arg="${wsActive().id}">Exportar copia</button><button class="btn sm outline" data-go="#/espacios">Liberar espacio</button>`;
+  document.body.appendChild(b);
+}
+
+/* ---------------------------------------------------------------- crear, cambiar, borrar espacios */
+function wsZero(o) { if (!o || typeof o !== 'object') return; for (const k of Object.keys(o)) { if (typeof o[k] === 'number') o[k] = 0; else if (o[k] && typeof o[k] === 'object' && !Array.isArray(o[k])) wsZero(o[k]); } }
+function wsBlankData(name) {
+  const d = wsClone(S);
+  for (const k of ['contacts', 'companies', 'deals', 'tasks', 'tickets', 'products', 'quotes', 'activities', 'emails', 'submissions', 'contracts', 'audit', 'notifs', 'trash', 'merges', 'gdpr', 'imports', 'autolog', 'lists']) if (Array.isArray(d[k])) d[k] = [];
+  wsZero(d.counters); if (d.clm) wsZero(d.clm.counters);
+  d.clmSeeded = true; if (d.pro) d.pro.seeded = true;
+  if (d.autoV2) Object.assign(d.autoV2, { seeded: true, usage: {}, schedule: [], approvals: [], alerts: {}, fcache: {} });
+  (d.automations || []).forEach((a) => { a.runs = 0; a.loopCuts = 0; });
+  if (d.xl) d.xl.colBackups = [];
+  d.ui = { view: {}, b: {} }; d.settings.company = name; d.nav = null;
+  return d;
+}
+function wsCreate(meta, template, data) {
+  const ix = wsIdx(); const id = 'ws_' + uid() + uid(); const key = 'crm-ws-' + id;
+  let d = data || null;
+  if (!d && template === 'dup') d = wsClone(S);
+  if (!d && template === 'blank') d = wsBlankData(meta.name);
+  if (d) {
+    d.settings = d.settings || {}; d.settings.company = meta.name; d._wsNamed = id;
+    try { localStorage.setItem(key, JSON.stringify(d)); } catch (_) { toast('El navegador no tiene espacio para otro espacio de trabajo: exporta y elimina alguno', 'err'); return null; }
+  }
+  ix.list.push({ id, key, name: meta.name, icon: meta.icon || '', color: meta.color || NAV_COLORS[ix.list.length % NAV_COLORS.length], desc: meta.desc || '', createdAt: nowISO(), template });
+  return wsIdxSave(ix) ? id : null;
+}
+function wsSwitch(id) { const ix = wsIdx(); if (!ix.list.some((w) => w.id === id)) return; save(); ix.active = id; if (!wsIdxSave(ix)) return; location.hash = '#/inicio'; location.reload(); }
+
+function wsEditModal(w) {
+  const isNew = !w; const cur = w || { name: '', icon: '', color: NAV_COLORS[wsIdx().list.length % NAV_COLORS.length], desc: '' };
+  const sw = NAV_COLORS.map((c) => `<button type="button" class="wsx-sw ${c === cur.color ? 'on' : ''}" data-c="${c}" style="background:${c}" aria-label="Color ${c}" aria-pressed="${c === cur.color}"></button>`).join('');
+  const tpl = isNew ? `<fieldset class="fld full wsx-tpl"><legend>Contenido inicial</legend>
+    <label><input type="radio" name="wsT" value="blank" checked/><span><b>En blanco, listo para CRM y CLM</b><small>Sin contactos, negocios ni contratos. Conserva usuarios, pipeline, tipos de contrato, cláusulas, plantillas, playbooks y automatizaciones de «${esc(S.settings.company)}».</small></span></label>
+    <label><input type="radio" name="wsT" value="demo"/><span><b>Con datos de ejemplo</b><small>Contactos, negocios y contratos ficticios para probar sin miedo.</small></span></label>
+    <label><input type="radio" name="wsT" value="dup"/><span><b>Copia de «${esc(S.settings.company)}»</b><small>Duplica todos los datos, carpetas y configuración del espacio actual.</small></span></label></fieldset>` : '';
+  const m = modal({ title: isNew ? 'Nuevo espacio de trabajo' : 'Editar espacio de trabajo', body: `<div class="fgrid">
+    <div class="fld full"><label for="wsN">Nombre</label><input class="inp" id="wsN" maxlength="60" value="${esc(cur.name)}" placeholder="Por ejemplo: Legal España"/></div>
+    <div class="fld"><label for="wsI">Icono: un emoji o una letra</label><input class="inp" id="wsI" maxlength="4" value="${esc(cur.icon)}" placeholder="⚖️"/></div>
+    <div class="fld"><label>Color</label><div class="wsx-swrow" id="wsC">${sw}<input type="color" id="wsCc" value="${esc(cur.color)}" aria-label="Otro color"/></div></div>
+    <div class="fld full"><label for="wsD">Descripción</label><input class="inp" id="wsD" maxlength="140" value="${esc(cur.desc)}" placeholder="Para qué se usa este espacio"/></div>${tpl}</div>`,
+    footer: `<button class="btn outline" data-no>Cancelar</button><button class="btn primary" id="wsOk">${isNew ? 'Crear espacio' : 'Guardar cambios'}</button>` });
+  let color = cur.color;
+  const pick = (c) => { color = c; m.querySelectorAll('.wsx-sw').forEach((b) => { b.classList.toggle('on', b.dataset.c === c); b.setAttribute('aria-pressed', b.dataset.c === c); }); m.querySelector('#wsCc').value = c; };
+  m.querySelectorAll('.wsx-sw').forEach((b) => (b.onclick = () => pick(b.dataset.c)));
+  m.querySelector('#wsCc').oninput = (e) => pick(e.target.value);
+  m.querySelector('[data-no]').onclick = m.close;
+  setTimeout(() => m.querySelector('#wsN').focus(), 30);
+  m.querySelector('#wsOk').onclick = () => {
+    const name = m.querySelector('#wsN').value.trim(); if (!name) return toast('Ponle un nombre al espacio', 'err');
+    const meta = { name, icon: m.querySelector('#wsI').value.trim(), color, desc: m.querySelector('#wsD').value.trim() };
+    if (isNew) {
+      const t = m.querySelector('input[name="wsT"]:checked').value; const id = wsCreate(meta, t); if (!id) return;
+      m.close(); toast(`Espacio «${name}» creado`, 'ok'); wsSwitch(id);
+    } else {
+      const ix = wsIdx(); const x = ix.list.find((y) => y.id === w.id); Object.assign(x, meta); wsIdxSave(ix);
+      if (x.id === ix.active) { S.settings.company = name; S._wsNamed = x.id; save(); }
+      else { const d = wsDataOf(x); if (d) { d.settings.company = name; d._wsNamed = x.id; try { localStorage.setItem(x.key, JSON.stringify(d)); } catch (_) { /* sin espacio */ } } }
+      m.close(); toast('Espacio actualizado', 'ok'); render();
+    }
+  };
+}
+function wsDownload(name, obj) {
+  const blob = new Blob([JSON.stringify(obj)], { type: 'application/json' }); const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 800);
+}
+const wsMetaOf = (w) => ({ name: w.name, icon: w.icon, color: w.color, desc: w.desc });
+function wsValidData(d) { return d && typeof d === 'object' && d.version === 1 && d.settings && Array.isArray(d.contacts) && Array.isArray(d.deals) && Array.isArray(d.users); }
+
+ACT['ws-menu'] = (_, el) => {
+  const ix = wsIdx();
+  dropdown(el, `<div class="wsx-menu" role="menu">${ix.list.map((w) => `<button role="menuitem" data-act="ws-switch" data-arg="${w.id}" class="${w.id === ix.active ? 'on' : ''}">${wsBadge(w)}<span class="ell grow">${esc(w.name)}</span>${w.id === ix.active ? '<span class="xs muted">activo</span>' : ''}</button>`).join('')}<hr/><button role="menuitem" data-act="ws-new">${ico.plus || ''}Nuevo espacio…</button><button role="menuitem" data-go="#/espacios">${WS_ICO.folder}Gestionar espacios y carpetas</button></div>`, 'list wsx-dd');
+};
+ACT['ws-switch'] = (id) => { closeDd(); if (id === wsIdx().active) return; wsSwitch(id); };
+ACT['ws-new'] = () => { closeDd(); if (!can('admin')) return toast('Solo un administrador puede crear espacios', 'err'); wsEditModal(null); };
+ACT['ws-edit'] = (id) => { if (!can('admin')) return toast('Solo un administrador puede editar espacios', 'err'); wsEditModal(wsIdx().list.find((w) => w.id === id)); };
+ACT['ws-dup'] = (id) => {
+  if (!can('admin')) return toast('Solo un administrador puede duplicar espacios', 'err');
+  const w = wsIdx().list.find((x) => x.id === id); const d = wsDataOf(w); if (!d) return toast('Ese espacio aún no tiene datos: ábrelo una vez antes de duplicarlo', 'err');
+  if (wsCreate({ ...wsMetaOf(w), name: `${w.name} (copia)` }, 'dup', wsClone(d))) { toast(`Copia de «${w.name}» creada`, 'ok'); render(); }
+};
+ACT['ws-del'] = async (id) => {
+  if (!can('admin')) return toast('Solo un administrador puede eliminar espacios', 'err');
+  const ix = wsIdx(); const w = ix.list.find((x) => x.id === id); if (!w) return;
+  if (ix.list.length < 2) return toast('Debe quedar al menos un espacio de trabajo', 'err');
+  if (id === ix.active) return toast('Cambia a otro espacio antes de eliminar este', 'err');
+  const v = await askText(`Para eliminar «${w.name}» y todos sus datos, escribe su nombre`, '', w.name);
+  if (v == null) return; if (v !== w.name) return toast('El nombre no coincide: no se ha eliminado nada', 'err');
+  try { localStorage.removeItem(w.key); localStorage.removeItem('crm-audit-anchor:' + w.key); } catch (_) { /* nada */ }
+  ix.list = ix.list.filter((x) => x.id !== id); wsIdxSave(ix); toast(`Espacio «${w.name}» eliminado`, 'ok'); render();
+};
+ACT['ws-export'] = (id) => {
+  const w = wsIdx().list.find((x) => x.id === id) || wsActive(); const d = wsDataOf(w);
+  if (!d) return toast('Ese espacio aún no tiene datos guardados: ábrelo una vez para crearlos', 'err');
+  wsDownload(`${wsSlug(w.name)}-${dayISO()}.crmclm.json`, { format: 'crm-clm-workspace', version: 1, exportedAt: nowISO(), workspace: wsMetaOf(w), data: d });
+  S.wsLastBackup = nowISO(); save(); toast('Copia exportada', 'ok');
+};
+ACT['ws-export-all'] = () => {
+  const ws = wsIdx().list.map((w) => ({ workspace: wsMetaOf(w), data: wsDataOf(w) })).filter((x) => x.data);
+  wsDownload(`crm-clm-todos-los-espacios-${dayISO()}.crmclm.json`, { format: 'crm-clm-backup', version: 1, exportedAt: nowISO(), workspaces: ws });
+  S.wsLastBackup = nowISO(); save(); toast(`${ws.length} espacio(s) exportado(s)`, 'ok');
+};
+ACT['ws-import'] = () => {
+  if (!can('admin')) return toast('Solo un administrador puede importar espacios', 'err');
+  const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.json,application/json';
+  inp.onchange = () => {
+    const f = inp.files[0]; if (!f) return; const r = new FileReader();
+    r.onload = () => {
+      let j; try { j = JSON.parse(r.result); } catch (_) { return toast('El archivo no es una copia válida (JSON ilegible)', 'err'); }
+      const list = j.format === 'crm-clm-backup' ? j.workspaces || [] : j.format === 'crm-clm-workspace' ? [j] : wsValidData(j) ? [{ workspace: { name: j.settings.company || 'Importado' }, data: j }] : [];
+      let n = 0, bad = 0; const names = new Set(wsIdx().list.map((w) => w.name));
+      for (const x of list) {
+        if (!wsValidData(x.data)) { bad++; continue; }
+        let name = (x.workspace && x.workspace.name) || 'Importado'; while (names.has(name)) name += ' (importado)'; names.add(name);
+        if (wsCreate({ ...(x.workspace || {}), name }, 'import', x.data)) n++;
+      }
+      if (!n) return toast(bad ? 'Ningún espacio válido en el archivo' : 'El archivo no contiene espacios', 'err');
+      toast(`${n} espacio(s) importado(s)${bad ? ` · ${bad} descartado(s) por formato` : ''}`, 'ok'); render();
+    };
+    r.readAsText(f);
+  };
+  inp.click();
+};
+
+/* ---------------------------------------------------------------- apariencia por espacio */
+function wsMix(a, b, t) { const p = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16)); const x = p(a), y = p(b); return '#' + x.map((v, i) => Math.round(v * (1 - t) + y[i] * t).toString(16).padStart(2, '0')).join(''); }
+function wsApplyLook() {
+  const L = S.look || {}; const r = document.documentElement; const acc = L.accent;
+  if (acc && /^#[0-9a-f]{6}$/i.test(acc) && acc.toLowerCase() !== '#0073ea') {
+    const dark = r.dataset.theme === 'dark';
+    r.style.setProperty('--primary', acc); r.style.setProperty('--primary-h', wsMix(acc, '#000000', 0.18));
+    r.style.setProperty('--primary-s', dark ? wsMix(acc, '#181b34', 0.7) : wsMix(acc, '#ffffff', 0.86));
+  } else ['--primary', '--primary-h', '--primary-s'].forEach((p) => r.style.removeProperty(p));
+  r.dataset.density = L.density || 'normal';
+}
+if (typeof proApplyTheme === 'function') { const _pTheme = proApplyTheme; proApplyTheme = function () { const x = _pTheme.apply(this, arguments); wsApplyLook(); return x; }; }
+ACT['ws-accent'] = (c) => { S.look = S.look || {}; S.look.accent = c; save(); wsApplyLook(); render(); };
+ACT['ws-density'] = (d) => { S.look = S.look || {}; S.look.density = d; save(); wsApplyLook(); render(); };
+
+/* ---------------------------------------------------------------- carpetas */
+function navDefault() {
+  const f = (name, color, items) => ({ id: 'f_' + uid(), name, icon: '', color, desc: '', collapsed: false, roles: [], counts: true, parent: null, items: items.map((x) => ({ id: 'i_' + uid(), ...x })) });
+  const pg = (page, color) => ({ kind: 'page', page, label: NAV_SHORT[page] || NAV_PAGES[page], color });
+  const vw = (label, page, color, filter) => ({ kind: 'view', page, label, color, view: 'table', ui: { q: '', person: '', filter, sort: null, hide: [], collapsed: {} } });
+  return { v: 1, folders: [
+    f('Comercial', '#00c875', [pg('contactos', '#579bfc'), pg('empresas', '#a25ddc'), pg('negocios', '#00c875'), pg('presupuestos', '#66ccff'), pg('productos', '#5559df')]),
+    f('Contratos', '#175a63', [pg('contratos', '#175a63'), vw('Por aprobar', 'contratos', '#fdab3d', { key: 'status', value: 'approval' }), vw('En firma', 'contratos', '#579bfc', { key: 'status', value: 'signing' }), vw('Activos', 'contratos', '#00c875', { key: 'status', value: 'active' })]),
+    f('Seguimiento', '#fdab3d', [pg('tareas', '#fdab3d'), pg('tickets', '#e2445c')]),
+    f('Marketing', '#ff5ac4', [pg('listas', '#784bd1'), pg('formularios', '#ff5ac4')]),
+    f('Análisis', '#784bd1', [pg('informes', '#5559df'), pg('automatizaciones', '#fdab3d')]),
+  ] };
+}
+function navEnsure() { if (!S.nav || !Array.isArray(S.nav.folders)) S.nav = navDefault(); return S.nav; }
+const navF = (id) => navEnsure().folders.find((f) => f.id === id);
+function navLoc(iid) { for (const f of navEnsure().folders) { const i = f.items.findIndex((x) => x.id === iid); if (i >= 0) return { f, i, it: f.items[i] }; } return null; }
+const navItem = (iid) => navLoc(iid)?.it || null;
+const navDepth = (f) => { let d = 0, p = f.parent; while (p && d < 5) { d++; p = navF(p)?.parent; } return d; };
+const navIsDesc = (id, anc) => { let p = navF(id)?.parent; while (p) { if (p === anc) return true; p = navF(p)?.parent; } return false; };
+const navCanEdit = () => can('edit');
+const myRoleKey = () => me().role;
+const navVisible = (f) => !(f.roles || []).length || f.roles.includes(myRoleKey()) || can('admin');
+function navCount(page) {
+  try {
+    switch (page) {
+      case 'contactos': return vis('contacts').length; case 'empresas': return vis('companies').length;
+      case 'negocios': return vis('deals').filter((d) => d.status === 'open').length;
+      case 'tareas': return vis('tasks').filter((t) => t.status !== 'done').length;
+      case 'tickets': return vis('tickets').filter((t) => !['resolved', 'closed'].includes(t.status)).length;
+      case 'productos': return S.products.length; case 'presupuestos': return S.quotes.length; case 'listas': return S.lists.length;
+      case 'contratos': return (S.contracts || []).filter((c) => !['archived', 'cancelled', 'expired', 'terminated', 'renewed'].includes(c.status)).length;
+      default: return null;
+    }
+  } catch (_) { return null; }
+}
+function navItemCount(it) {
+  if (it.kind !== 'view') return navCount(it.page);
+  const obj = PAGE_OBJ[it.page]; const f = it.ui && it.ui.filter; if (!obj) return null;
+  if (f && f.key && String(f.key).includes('.')) return null;
+  let arr; try { arr = obj === 'contracts' || obj === 'products' || obj === 'quotes' ? S[obj] || [] : vis(obj); } catch (_) { return null; }
+  if (f && f.key) arr = arr.filter((x) => String(x[f.key] ?? '') === String(f.value));
+  if (it.ui && it.ui.person) arr = arr.filter((x) => x.owner === it.ui.person || x.assignee === it.ui.person);
+  return arr.length;
+}
+function navActiveId() {
+  const page = route.page; const obj = PAGE_OBJ[page]; const vOn = obj && S.ui.navViewOn && S.ui.navViewOn[obj];
+  if (vOn && navItem(vOn)) return vOn;
+  const cur = S.ui.navActive && navItem(S.ui.navActive);
+  if (cur && cur.page === page && cur.kind === 'page') return cur.id;
+  for (const f of navEnsure().folders) { if (!navVisible(f)) continue; const it = f.items.find((x) => x.kind === 'page' && x.page === page); if (it) return it.id; }
+  return null;
+}
+function navApplyView(it) {
+  const obj = PAGE_OBJ[it.page]; if (!obj) return;
+  S.ui.navStash = S.ui.navStash || {}; S.ui.navViewOn = S.ui.navViewOn || {};
+  if (!S.ui.navViewOn[obj]) S.ui.navStash[obj] = wsClone(uiOf(obj));
+  S.ui.b[obj] = Object.assign({ q: '', person: '', filter: null, sort: null, hide: [], collapsed: {} }, wsClone(it.ui || {}));
+  if (it.view) S.ui.view[it.page] = it.view;
+  S.ui.navViewOn[obj] = it.id;
+}
+function navLeaveView(page) {
+  const obj = PAGE_OBJ[page]; if (!obj || !S.ui.navViewOn || !S.ui.navViewOn[obj]) return;
+  const st = S.ui.navStash && S.ui.navStash[obj]; S.ui.b[obj] = st ? wsClone(st) : undefined; uiOf(obj);
+  delete S.ui.navViewOn[obj];
+}
+
+function navItemHtml(it, f, activeId, edit) {
+  const mark = it.icon ? `<span class="wsx-emo" aria-hidden="true">${esc(it.icon)}</span>` : `<i style="background:${esc(it.color || f.color)}"></i>`;
+  if (it.kind === 'link') {
+    return `<div class="wsx-row" data-iid="${it.id}" draggable="${edit}"><a class="board wsx-i" href="${safeHref(it.url)}" target="_blank" rel="noopener noreferrer">${mark}<span class="ell grow">${esc(it.label)}</span><span class="cnt wsx-ext">${WS_ICO.ext}</span></a>${edit ? `<button class="wsx-more" data-act="nav-imenu" data-arg="${it.id}" aria-label="Opciones de ${esc(it.label)}">${WS_ICO.more}</button>` : ''}</div>`;
+  }
+  const n = f.counts !== false ? navItemCount(it) : null; const act = it.id === activeId;
+  return `<div class="wsx-row" data-iid="${it.id}" draggable="${edit}"><a class="board wsx-i ${act ? 'active' : ''}" href="#/${it.page}" data-act="nav-go" data-arg="${it.id}" ${act ? 'aria-current="page"' : ''} title="${esc(it.label)}">${mark}<span class="ell grow">${esc(it.label)}</span>${it.kind === 'view' ? WS_ICO.view : ''}${n != null ? `<span class="cnt">${n}</span>` : ''}</a>${edit ? `<button class="wsx-more" data-act="nav-imenu" data-arg="${it.id}" aria-label="Opciones de ${esc(it.label)}">${WS_ICO.more}</button>` : ''}</div>`;
+}
+function navTreeHtml(parent, depth, activeId, edit) {
+  return navEnsure().folders.filter((f) => (f.parent || null) === parent && navVisible(f)).map((f) => {
+    const open = !f.collapsed; const items = f.items.map((it) => navItemHtml(it, f, activeId, edit)).join(''); const subs = depth < 2 ? navTreeHtml(f.id, depth + 1, activeId, edit) : '';
+    const lock = (f.roles || []).length ? `<span class="wsx-lock" title="Visible para: ${esc(f.roles.map((r) => ROLES[r]?.label || r).join(', '))}" aria-label="Carpeta restringida">🔒</span>` : '';
+    return `<div class="wsx-f" data-fid="${f.id}" style="--fc:${esc(f.color)}"><div class="wsx-fh" data-dragf="${f.id}" draggable="${edit}"><button class="wsx-ft" data-act="nav-fold" data-arg="${f.id}" aria-expanded="${open}" title="${esc(f.desc || f.name)}">${WS_ICO.caret}${f.icon ? `<span class="wsx-emo" aria-hidden="true">${esc(f.icon)}</span>` : `<span class="wsx-fi">${WS_ICO.folder}</span>`}<span class="ell grow">${esc(f.name)}</span>${lock}</button>${edit ? `<button class="wsx-more" data-act="nav-fmenu" data-arg="${f.id}" aria-label="Opciones de la carpeta ${esc(f.name)}">${WS_ICO.more}</button>` : ''}</div><div class="wsx-fb" ${open ? '' : 'hidden'}>${items}${subs}${!items && !subs ? `<div class="wsx-empty">Carpeta vacía${edit ? ` · <button class="wsx-lnk" data-act="nav-additem" data-arg="${f.id}">añadir</button>` : ''}</div>` : ''}</div></div>`;
+  }).join('');
+}
+renderSide = function () {
+  navEnsure(); const ix = wsIdx(); const w = wsActive();
+  if (w && S.settings.company && w.name !== S.settings.company) { w.name = S.settings.company; wsIdxSave(ix); }
+  const edit = navCanEdit(); const activeId = navActiveId();
+  const a = (p, l, i) => `<a href="#/${p}" class="${route.page === p ? 'active' : ''}" ${route.page === p ? 'aria-current="page"' : ''}>${ico[i] || ''}${esc(l)}</a>`;
+  document.getElementById('side').innerHTML = a('inicio', 'Inicio', 'home') + a('mi-dia', 'Mi día', 'sun')
+    + `<div class="sec">Espacio de trabajo</div><button class="wsx-switch" data-act="ws-menu" aria-haspopup="menu" title="Cambiar de espacio de trabajo">${wsBadge(w)}<b class="ell grow">${esc(w.name)}</b>${ix.list.length > 1 ? `<span class="wsx-n">${ix.list.length}</span>` : ''}${WS_ICO.chev}</button>`
+    + `<div class="wsx-tree" id="wsxTree">${navTreeHtml(null, 0, activeId, edit)}</div>`
+    + (edit ? `<button class="wsx-addf" data-act="nav-fnew">${ico.plus || '+'}Nueva carpeta</button>` : '')
+    + `<div class="sec">Configuración</div><a href="#/espacios" class="${route.page === 'espacios' ? 'active' : ''}">${WS_ICO.folder}<span class="grow">Espacios y carpetas</span>${wsBackupDue() ? '<span class="wsx-due" title="Hace más de 7 días que no exportas una copia">copia</span>' : ''}${(() => { try { return wsAuditCheck().ok ? '' : '<span class="wsx-due bad" title="El registro de auditoría se ha alterado">!</span>'; } catch (_) { return ''; } })()}</a>` + a('ajustes', 'Ajustes', 'gear');
+  navBindDnD();
+};
+
+ACT['nav-go'] = (id, el, e) => {
+  const it = navItem(id); if (!it) return; if (e && (e.ctrlKey || e.metaKey || e.shiftKey || e.button === 1)) return; if (e) e.preventDefault();
+  if (it.kind === 'view') navApplyView(it); else navLeaveView(it.page);
+  S.ui.navActive = it.id; save();
+  if (typeof proDrawer === 'function' && matchMedia('(max-width:960px)').matches) proDrawer(false);
+  go('#/' + it.page);
+};
+ACT['nav-fold'] = (id) => { const f = navF(id); if (!f) return; f.collapsed = !f.collapsed; save(); renderSide(); };
+ACT['nav-fmenu'] = (id, el, e) => {
+  if (e) e.preventDefault(); const f = navF(id); if (!f) return; const board = PAGE_OBJ[route.page];
+  dropdown(el, `<button data-act="nav-fedit" data-arg="${id}">Personalizar carpeta…</button><button data-act="nav-additem" data-arg="${id}">Añadir tableros o páginas…</button>${board ? `<button data-act="nav-saveview" data-arg="${id}">Guardar aquí la vista actual de ${esc(NAV_PAGES[route.page])}</button>` : ''}<button data-act="nav-addlink" data-arg="${id}">Añadir enlace externo…</button>${navDepth(f) < 2 ? `<button data-act="nav-fnew" data-arg="${id}">Nueva subcarpeta</button>` : ''}<button data-act="nav-fmove" data-arg='${JSON.stringify({ id, d: -1 })}'>Subir</button><button data-act="nav-fmove" data-arg='${JSON.stringify({ id, d: 1 })}'>Bajar</button><button data-act="nav-fdel" data-arg="${id}" class="danger">Eliminar carpeta</button>`, 'list');
+};
+ACT['nav-fnew'] = async (parent) => {
+  closeDd(); if (!navCanEdit()) return toast('Tu rol es de solo lectura', 'err');
+  const p = typeof parent === 'string' && navF(parent) ? parent : null;
+  const name = await askText(p ? 'Nombre de la subcarpeta' : 'Nombre de la carpeta', '', 'Por ejemplo: Proveedores'); if (!name) return;
+  const base = p ? navF(p) : null;
+  navEnsure().folders.push({ id: 'f_' + uid(), name: name.slice(0, 60), icon: '', color: base ? base.color : NAV_COLORS[navEnsure().folders.length % NAV_COLORS.length], desc: '', collapsed: false, roles: base ? [...(base.roles || [])] : [], counts: true, parent: p, items: [] });
+  if (base) base.collapsed = false; save(); renderSide(); toast(`Carpeta «${name}» creada`, 'ok');
+};
+ACT['nav-fmove'] = ({ id, d }) => {
+  closeDd(); const arr = navEnsure().folders; const f = navF(id); const sib = arr.filter((x) => (x.parent || null) === (f.parent || null));
+  const k = sib.indexOf(f), t = sib[k + d]; if (!t) return;
+  const a = arr.indexOf(f), b = arr.indexOf(t); arr[a] = t; arr[b] = f; save(); renderSide();
+};
+ACT['nav-fdel'] = async (id) => {
+  closeDd(); const f = navF(id); if (!f) return;
+  const subs = navEnsure().folders.filter((x) => x.id === id || navIsDesc(x.id, id));
+  if (!(await ask(`¿Eliminar la carpeta «${f.name}»?`, `Se quitan ${subs.length > 1 ? `la carpeta, ${subs.length - 1} subcarpeta(s) y` : 'la carpeta y'} sus accesos. Las carpetas solo organizan: no se borra ningún contacto, negocio ni contrato.`, 'Eliminar carpeta', true))) return;
+  S.nav.folders = S.nav.folders.filter((x) => !subs.includes(x)); save(); renderSide(); if (route.page === 'espacios') render(); toast('Carpeta eliminada', 'ok');
+};
+ACT['nav-additem'] = (id) => {
+  closeDd(); const f = navF(id); if (!f) return;
+  const m = modal({ title: `Añadir a «${esc(f.name)}»`, body: `<p class="muted small" style="margin-top:0">Un mismo tablero puede estar en varias carpetas.</p><div class="wsx-pick">${Object.entries(NAV_PAGES).map(([p, l]) => `<label><input type="checkbox" value="${p}" ${f.items.some((x) => x.kind === 'page' && x.page === p) ? 'disabled checked' : ''}/> ${esc(l)}</label>`).join('')}</div>`, footer: '<button class="btn outline" data-no>Cancelar</button><button class="btn primary" id="aiOk">Añadir</button>' });
+  m.querySelector('[data-no]').onclick = m.close;
+  m.querySelector('#aiOk').onclick = () => {
+    const sel = [...m.querySelectorAll('input:checked:not(:disabled)')].map((x) => x.value); if (!sel.length) return toast('Marca al menos un tablero o página', 'err');
+    sel.forEach((p, i) => f.items.push({ id: 'i_' + uid(), kind: 'page', page: p, label: NAV_SHORT[p] || NAV_PAGES[p], color: NAV_COLORS[(f.items.length + i) % NAV_COLORS.length] }));
+    f.collapsed = false; save(); m.close(); renderSide(); if (route.page === 'espacios') render(); toast(`${sel.length} acceso(s) añadido(s)`, 'ok');
+  };
+};
+ACT['nav-saveview'] = async (id) => {
+  closeDd(); const f = navF(id); const page = route.page; const obj = PAGE_OBJ[page]; if (!f || !obj) return;
+  const u = uiOf(obj); const bits = [u.filter && u.filter.key ? 'filtro' : '', u.person ? 'persona' : '', u.q ? 'búsqueda' : '', u.sort ? 'orden' : '', (u.hide || []).length ? 'columnas ocultas' : '', u.groupBy !== undefined ? 'agrupación' : ''].filter(Boolean);
+  const name = await askText(`Nombre de la vista (${bits.length ? 'guarda ' + bits.join(', ') : 'sin filtros: guarda el tablero tal cual'})`, `${NAV_PAGES[page]} · mi vista`); if (!name) return;
+  const it = { id: 'i_' + uid(), kind: 'view', page, label: name.slice(0, 60), color: f.color, view: S.ui.view[page] || 'table', ui: wsClone(u) };
+  f.items.push(it); f.collapsed = false; S.ui.navViewOn = S.ui.navViewOn || {}; S.ui.navStash = S.ui.navStash || {};
+  if (!S.ui.navViewOn[obj]) S.ui.navStash[obj] = wsClone(u); S.ui.navViewOn[obj] = it.id; S.ui.navActive = it.id;
+  save(); renderSide(); toast(`Vista «${name}» guardada en «${f.name}»`, 'ok');
+};
+ACT['nav-addlink'] = (id) => {
+  closeDd(); const f = navF(id); if (!f) return;
+  const m = modal({ title: 'Añadir enlace externo', body: `<div class="fgrid"><div class="fld full"><label for="lkL">Texto</label><input class="inp" id="lkL" maxlength="60" placeholder="Por ejemplo: Carpeta de contratos en Drive"/></div><div class="fld full"><label for="lkU">Dirección (https://…)</label><input class="inp" id="lkU" placeholder="https://"/></div></div>`, footer: '<button class="btn outline" data-no>Cancelar</button><button class="btn primary" id="lkOk">Añadir enlace</button>' });
+  m.querySelector('[data-no]').onclick = m.close;
+  m.querySelector('#lkOk').onclick = () => {
+    const label = m.querySelector('#lkL').value.trim(); const url = m.querySelector('#lkU').value.trim();
+    if (!label) return toast('Escribe el texto del enlace', 'err'); if (safeHref(url) === '#') return toast('La dirección debe empezar por https:// y tener un dominio válido', 'err');
+    f.items.push({ id: 'i_' + uid(), kind: 'link', label, url, color: f.color }); save(); m.close(); renderSide(); toast('Enlace añadido', 'ok');
+  };
+};
+ACT['nav-imenu'] = (id, el, e) => {
+  if (e) { e.preventDefault(); e.stopPropagation(); } const it = navItem(id); if (!it) return; const obj = PAGE_OBJ[it.page];
+  dropdown(el, `<button data-act="nav-iedit" data-arg="${id}">Renombrar, color o icono…</button>${it.kind === 'view' && obj && route.page === it.page ? `<button data-act="nav-iupd" data-arg="${id}">Actualizar con la vista actual</button>` : ''}${it.kind === 'page' && obj ? `<button data-act="nav-iasview" data-arg="${id}">Duplicar como vista guardada</button>` : ''}<button data-act="nav-imove" data-arg="${id}">Mover a otra carpeta…</button><button data-act="nav-istep" data-arg='${JSON.stringify({ id, d: -1 })}'>Subir</button><button data-act="nav-istep" data-arg='${JSON.stringify({ id, d: 1 })}'>Bajar</button><button data-act="nav-idel" data-arg="${id}" class="danger">Quitar de la carpeta</button>`, 'list');
+};
+ACT['nav-iedit'] = (id) => {
+  closeDd(); const it = navItem(id); if (!it) return;
+  const m = modal({ title: 'Personalizar acceso', body: `<div class="fgrid"><div class="fld full"><label for="ieL">Nombre en la barra lateral</label><input class="inp" id="ieL" maxlength="60" value="${esc(it.label)}"/></div><div class="fld"><label for="ieI">Icono (emoji, opcional)</label><input class="inp" id="ieI" maxlength="4" value="${esc(it.icon || '')}"/></div><div class="fld"><label for="ieC">Color</label><input type="color" class="wsx-cin" id="ieC" value="${esc(it.color || '#579bfc')}"/></div>${it.kind === 'link' ? `<div class="fld full"><label for="ieU">Dirección</label><input class="inp" id="ieU" value="${esc(it.url || '')}"/></div>` : ''}</div>`, footer: '<button class="btn outline" data-no>Cancelar</button><button class="btn primary" id="ieOk">Guardar</button>' });
+  m.querySelector('[data-no]').onclick = m.close;
+  m.querySelector('#ieOk').onclick = () => {
+    const l = m.querySelector('#ieL').value.trim(); if (!l) return toast('El nombre no puede quedar vacío', 'err');
+    if (it.kind === 'link') { const u = m.querySelector('#ieU').value.trim(); if (safeHref(u) === '#') return toast('Dirección no válida', 'err'); it.url = u; }
+    it.label = l; it.icon = m.querySelector('#ieI').value.trim(); it.color = m.querySelector('#ieC').value; save(); m.close(); renderSide();
+  };
+};
+ACT['nav-iupd'] = (id) => { closeDd(); const it = navItem(id); const obj = PAGE_OBJ[it.page]; it.ui = wsClone(uiOf(obj)); it.view = S.ui.view[it.page] || 'table'; save(); renderSide(); toast(`Vista «${it.label}» actualizada`, 'ok'); };
+ACT['nav-iasview'] = (id) => { closeDd(); const L = navLoc(id); const it = L.it; const obj = PAGE_OBJ[it.page]; L.f.items.splice(L.i + 1, 0, { id: 'i_' + uid(), kind: 'view', page: it.page, label: `${it.label} · vista`, color: it.color, view: S.ui.view[it.page] || 'table', ui: wsClone(uiOf(obj)) }); save(); renderSide(); toast('Vista creada con los filtros actuales del tablero', 'ok'); };
+ACT['nav-istep'] = ({ id, d }) => { closeDd(); const L = navLoc(id); const j = L.i + d; if (j < 0 || j >= L.f.items.length) return; const a = L.f.items; [a[L.i], a[j]] = [a[j], a[L.i]]; save(); renderSide(); };
+ACT['nav-idel'] = (id) => { closeDd(); const L = navLoc(id); if (!L) return; L.f.items.splice(L.i, 1); save(); renderSide(); toast(`«${L.it.label}» quitado de «${L.f.name}»`, 'ok'); };
+ACT['nav-imove'] = (id) => {
+  closeDd(); const L = navLoc(id); if (!L) return;
+  const opts = navEnsure().folders.filter((f) => f.id !== L.f.id).map((f) => `<option value="${f.id}">${'— '.repeat(navDepth(f))}${esc(f.name)}</option>`).join('');
+  if (!opts) return toast('Crea otra carpeta primero', 'err');
+  const m = modal({ title: `Mover «${esc(L.it.label)}»`, body: `<div class="fld"><label for="mvF">Carpeta de destino</label><select class="inp" id="mvF">${opts}</select></div><label class="row small mt8"><input type="checkbox" id="mvC"/> Dejar también una copia en «${esc(L.f.name)}»</label>`, footer: '<button class="btn outline" data-no>Cancelar</button><button class="btn primary" id="mvOk">Mover</button>' });
+  m.querySelector('[data-no]').onclick = m.close;
+  m.querySelector('#mvOk').onclick = () => { const t = navF(m.querySelector('#mvF').value); const copy = m.querySelector('#mvC').checked; if (copy) t.items.push({ ...wsClone(L.it), id: 'i_' + uid() }); else { L.f.items.splice(L.i, 1); t.items.push(L.it); } t.collapsed = false; save(); m.close(); renderSide(); toast(copy ? 'Copiado' : 'Movido', 'ok'); };
+};
+ACT['nav-fedit'] = (id) => {
+  closeDd(); const f = navF(id); if (!f) return; const tmp = wsClone(f);
+  const roles = Object.entries(ROLES).map(([k, r]) => `<label><input type="checkbox" value="${k}" ${tmp.roles.includes(k) ? 'checked' : ''}/> ${esc(r.label)}</label>`).join('');
+  const parents = navEnsure().folders.filter((x) => x.id !== f.id && !navIsDesc(x.id, f.id) && navDepth(x) < 2).map((x) => `<option value="${x.id}" ${tmp.parent === x.id ? 'selected' : ''}>${'— '.repeat(navDepth(x))}${esc(x.name)}</option>`).join('');
+  const m = modal({ title: 'Personalizar carpeta', size: 'lg', body: `<div class="fgrid">
+    <div class="fld full"><label for="nfN">Nombre</label><input class="inp" id="nfN" maxlength="60" value="${esc(tmp.name)}"/></div>
+    <div class="fld"><label for="nfI">Icono (emoji, opcional)</label><input class="inp" id="nfI" maxlength="4" value="${esc(tmp.icon)}" placeholder="📁"/><div class="wsx-emos">${NAV_EMOJI.map((x) => `<button type="button" data-emo="${x}" aria-label="Usar ${x}">${x}</button>`).join('')}<button type="button" data-emo="" class="xs">sin icono</button></div></div>
+    <div class="fld"><label>Color</label><div class="wsx-swrow">${NAV_COLORS.map((c) => `<button type="button" class="wsx-sw ${c === tmp.color ? 'on' : ''}" data-c="${c}" style="background:${c}" aria-label="Color ${c}"></button>`).join('')}<input type="color" id="nfC" value="${esc(tmp.color)}" aria-label="Otro color"/></div></div>
+    <div class="fld full"><label for="nfD">Descripción (se ve al pasar el ratón)</label><input class="inp" id="nfD" maxlength="140" value="${esc(tmp.desc || '')}"/></div>
+    <div class="fld"><label for="nfP">Dentro de</label><select class="inp" id="nfP"><option value="">Nivel principal</option>${parents}</select></div>
+    <div class="fld"><label>Opciones</label><label class="row small"><input type="checkbox" id="nfK" ${tmp.counts !== false ? 'checked' : ''}/> Mostrar contadores</label><label class="row small"><input type="checkbox" id="nfX" ${tmp.collapsed ? 'checked' : ''}/> Plegada</label></div>
+    <fieldset class="fld full wsx-roles"><legend>Visible para (sin marcar: todos los roles)</legend>${roles}</fieldset>
+    <div class="fld full"><label>Contenido de la carpeta</label><div id="nfItems" class="wsx-items-ed"></div><div class="row mt8"><button class="btn sm outline" id="nfAdd">Añadir tableros…</button></div></div></div>`,
+    footer: '<button class="btn outline" data-no>Cancelar</button><button class="btn primary" id="nfOk">Guardar carpeta</button>' });
+  const drawItems = () => {
+    m.querySelector('#nfItems').innerHTML = tmp.items.length ? tmp.items.map((it, i) => `<div class="wsx-ie" data-i="${i}"><input type="color" class="wsx-cin" value="${esc(it.color || tmp.color)}" data-k="color" aria-label="Color de ${esc(it.label)}"/><input class="inp" data-k="label" value="${esc(it.label)}" aria-label="Nombre"/><span class="wsx-kind">${it.kind === 'view' ? 'Vista' : it.kind === 'link' ? 'Enlace' : 'Tablero'}</span><button type="button" class="ibtn" data-mv="-1" aria-label="Subir" ${i === 0 ? 'disabled' : ''}>↑</button><button type="button" class="ibtn" data-mv="1" aria-label="Bajar" ${i === tmp.items.length - 1 ? 'disabled' : ''}>↓</button><button type="button" class="ibtn" data-rm aria-label="Quitar ${esc(it.label)}">✕</button></div>`).join('') : '<p class="muted small">Sin accesos. Añade tableros o guarda una vista desde un tablero.</p>';
+  };
+  drawItems();
+  const pick = (c) => { tmp.color = c; m.querySelectorAll('.wsx-sw').forEach((b) => b.classList.toggle('on', b.dataset.c === c)); m.querySelector('#nfC').value = c; };
+  m.querySelectorAll('.wsx-sw').forEach((b) => (b.onclick = () => pick(b.dataset.c)));
+  m.querySelector('#nfC').oninput = (e) => pick(e.target.value);
+  m.querySelectorAll('[data-emo]').forEach((b) => (b.onclick = () => { m.querySelector('#nfI').value = b.dataset.emo; }));
+  m.querySelector('#nfItems').addEventListener('input', (e) => { const row = e.target.closest('[data-i]'); if (!row) return; tmp.items[Number(row.dataset.i)][e.target.dataset.k] = e.target.value; });
+  m.querySelector('#nfItems').addEventListener('click', (e) => {
+    const row = e.target.closest('[data-i]'); if (!row) return; const i = Number(row.dataset.i);
+    if (e.target.closest('[data-rm]')) { tmp.items.splice(i, 1); drawItems(); }
+    const mv = e.target.closest('[data-mv]'); if (mv) { const j = i + Number(mv.dataset.mv); [tmp.items[i], tmp.items[j]] = [tmp.items[j], tmp.items[i]]; drawItems(); }
+  });
+  m.querySelector('#nfAdd').onclick = () => {
+    const free = Object.entries(NAV_PAGES).filter(([p]) => !tmp.items.some((x) => x.kind === 'page' && x.page === p));
+    if (!free.length) return toast('Ya están todos los tableros', 'err');
+    dropdown(m.querySelector('#nfAdd'), free.map(([p, l]) => `<button type="button" data-pg="${p}">${esc(l)}</button>`).join(''), 'list');
+    document.querySelectorAll('.dd [data-pg]').forEach((b) => (b.onclick = () => { tmp.items.push({ id: 'i_' + uid(), kind: 'page', page: b.dataset.pg, label: NAV_SHORT[b.dataset.pg] || NAV_PAGES[b.dataset.pg], color: NAV_COLORS[tmp.items.length % NAV_COLORS.length] }); closeDd(); drawItems(); }));
+  };
+  m.querySelector('[data-no]').onclick = m.close;
+  m.querySelector('#nfOk').onclick = () => {
+    const name = m.querySelector('#nfN').value.trim(); if (!name) return toast('La carpeta necesita un nombre', 'err');
+    if (tmp.items.some((x) => !String(x.label || '').trim())) return toast('Hay un acceso sin nombre', 'err');
+    Object.assign(f, { name, icon: m.querySelector('#nfI').value.trim(), color: tmp.color, desc: m.querySelector('#nfD').value.trim(), parent: m.querySelector('#nfP').value || null, counts: m.querySelector('#nfK').checked, collapsed: m.querySelector('#nfX').checked, roles: [...m.querySelectorAll('.wsx-roles input:checked')].map((x) => x.value), items: tmp.items.map((x) => ({ ...x, label: String(x.label).trim() })) });
+    audit('nav', f.id, 'update', { carpeta: name }); save(); m.close(); renderSide(); if (route.page === 'espacios') render(); toast('Carpeta guardada', 'ok');
+  };
+};
+ACT['nav-reset'] = async () => { if (!(await ask('¿Restablecer las carpetas?', 'Vuelven las carpetas de serie: Comercial, Contratos, Seguimiento, Marketing y Análisis. Se pierden tus carpetas, vistas guardadas y enlaces; los datos no se tocan.', 'Restablecer carpetas', true))) return; S.nav = navDefault(); S.ui.navViewOn = {}; save(); render(); toast('Carpetas restablecidas', 'ok'); };
+
+function navBindDnD() {
+  const tree = document.getElementById('wsxTree'); if (!tree || !navCanEdit()) return;
+  const clear = () => tree.querySelectorAll('.wsx-over').forEach((x) => x.classList.remove('wsx-over'));
+  tree.addEventListener('dragstart', (e) => {
+    const r = e.target.closest('[data-iid]'), fh = e.target.closest('[data-dragf]');
+    WSX.drag = r ? { t: 'i', id: r.dataset.iid } : fh ? { t: 'f', id: fh.dataset.dragf } : null; if (!WSX.drag) return;
+    e.dataTransfer.effectAllowed = 'move'; try { e.dataTransfer.setData('text/plain', WSX.drag.id); } catch (_) { /* nada */ }
+  });
+  tree.addEventListener('dragover', (e) => { if (!WSX.drag) return; const t = e.target.closest('[data-iid],.wsx-fh'); if (!t) return; e.preventDefault(); clear(); t.classList.add('wsx-over'); });
+  tree.addEventListener('dragleave', (e) => { if (!tree.contains(e.relatedTarget)) clear(); });
+  tree.addEventListener('dragend', () => { WSX.drag = null; clear(); });
+  tree.addEventListener('drop', (e) => {
+    const d = WSX.drag; WSX.drag = null; clear(); if (!d) return; e.preventDefault();
+    const ti = e.target.closest('[data-iid]'), tf = e.target.closest('.wsx-f'); const target = tf && navF(tf.dataset.fid); if (!target) return;
+    if (d.t === 'i') {
+      if (ti && ti.dataset.iid === d.id) return; const src = navLoc(d.id); if (!src) return;
+      src.f.items.splice(src.i, 1);
+      if (ti) { const dst = navLoc(ti.dataset.iid); dst.f.items.splice(dst.i, 0, src.it); } else target.items.push(src.it);
+      target.collapsed = false;
+    } else {
+      if (target.id === d.id || navIsDesc(target.id, d.id)) return; const arr = navEnsure().folders; const src = arr.splice(arr.findIndex((x) => x.id === d.id), 1)[0];
+      src.parent = target.parent || null; arr.splice(arr.findIndex((x) => x.id === target.id), 0, src);
+    }
+    save(); renderSide();
+  });
+}
+
+/* ---------------------------------------------------------------- página Espacios y carpetas */
+PAGES.espacios = () => {
+  setHead({ title: 'Espacios y carpetas', desc: 'Cada espacio de trabajo guarda sus propios contactos, negocios, contratos, carpetas y apariencia. Las carpetas organizan la barra lateral y no mueven ni borran datos.' });
+  const ix = wsIdx(); const adm = can('admin'); const used = wsUsage(); const pct = Math.min(100, Math.round((used / WSX.CAP) * 100));
+  const card = (w) => { const act = w.id === ix.active; const d = act ? S : null; const sz = act ? JSON.stringify(S).length : wsSizeOf(w);
+    return `<div class="wsx-card ${act ? 'on' : ''}" style="--wc:${esc(w.color)}"><div class="row">${wsBadge(w, 'lg')}<div class="grow"><b>${esc(w.name)}</b>${act ? ' <span class="pill-s">activo</span>' : ''}<div class="small muted">${esc(w.desc || (w.template === 'blank' ? 'Creado en blanco' : w.template === 'demo' ? 'Con datos de ejemplo' : w.template === 'dup' ? 'Copia de otro espacio' : w.template === 'import' ? 'Importado' : 'Espacio principal'))}</div></div></div>
+      <div class="small muted mt8">${sz ? wsMB(sz) : 'sin datos aún'}${d ? ` · ${S.contacts.length} contactos · ${S.deals.length} negocios · ${(S.contracts || []).length} contratos` : ''} · creado ${fdate(String(w.createdAt || '').slice(0, 10))}</div>
+      <div class="row wrap mt12" style="gap:6px">${act ? '' : `<button class="btn sm primary" data-act="ws-switch" data-arg="${w.id}">Abrir</button>`}${adm ? `<button class="btn sm outline" data-act="ws-edit" data-arg="${w.id}">Editar</button><button class="btn sm outline" data-act="ws-dup" data-arg="${w.id}">Duplicar</button>` : ''}<button class="btn sm outline" data-act="ws-export" data-arg="${w.id}">Exportar</button>${adm && !act ? `<button class="btn sm outline wsx-danger" data-act="ws-del" data-arg="${w.id}">Eliminar</button>` : ''}</div></div>`; };
+  const L = S.look || {};
+  const folderRows = (parent, depth) => navEnsure().folders.filter((f) => (f.parent || null) === parent).map((f) => `<tr><td style="padding-left:${12 + depth * 22}px"><span class="wsx-dot" style="background:${esc(f.color)}"></span>${f.icon ? esc(f.icon) + ' ' : ''}<b>${esc(f.name)}</b>${f.desc ? `<div class="xs muted">${esc(f.desc)}</div>` : ''}</td><td>${f.items.length}</td><td>${(f.roles || []).length ? esc(f.roles.map((r) => ROLES[r]?.label || r).join(', ')) : 'Todos'}</td><td class="r">${navCanEdit() ? `<button class="btn sm outline" data-act="nav-fedit" data-arg="${f.id}">Personalizar</button>` : ''}</td></tr>${folderRows(f.id, depth + 1)}`).join('');
+  const bk = (S.xl && S.xl.colBackups) || [];
+  document.getElementById('content').innerHTML = `
+  <section class="card"><div class="row wrap mb12"><h3 class="grow" style="margin:0">Espacios de trabajo</h3>${adm ? `<button class="btn sm outline" data-act="ws-import">Importar copia</button>` : ''}<button class="btn sm outline" data-act="ws-export-all">Exportar todos</button>${adm ? `<button class="btn sm primary" data-act="ws-new">${ico.plus || ''}Nuevo espacio</button>` : ''}</div>
+    <div class="wsx-cards">${ix.list.map(card).join('')}</div>
+    <div class="wsx-meter mt16" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}" aria-label="Almacenamiento usado"><div class="row small"><span class="grow">Almacenamiento del navegador: <b>${wsMB(used)}</b> de unos ${wsMB(WSX.CAP)} (${pct} %)</span><span class="muted">${S.wsLastBackup ? `Última copia exportada: ${fdate(S.wsLastBackup.slice(0, 10))}` : 'Aún no has exportado ninguna copia'}${wsBackupDue() ? ` · <button class="wsx-lnk" data-act="ws-export" data-arg="${ix.active}">exportar ahora</button>` : ''}</span></div><div class="wsx-bar"><i style="width:${pct}%;background:${pct > 85 ? 'var(--c-red)' : pct > 65 ? 'var(--c-orange)' : 'var(--primary)'}"></i></div>${pct > 65 ? '<p class="small" style="color:var(--c-red);margin:6px 0 0">Queda poco espacio. Exporta una copia y elimina espacios o datos que ya no uses.</p>' : ''}</div>
+    ${WSX.saveFailed ? '<p class="small" style="color:var(--c-red)"><b>El último guardado ha fallado.</b> Exporta una copia ahora.</p>' : ''}
+  </section>
+  <section class="card mt16"><div class="row wrap mb12"><h3 class="grow" style="margin:0">Carpetas de «${esc(S.settings.company)}»</h3>${navCanEdit() ? `<button class="btn sm outline" data-act="nav-reset">Restablecer carpetas</button><button class="btn sm primary" data-act="nav-fnew">${ico.plus || ''}Nueva carpeta</button>` : ''}</div>
+    <p class="small muted" style="margin-top:0">También puedes arrastrar carpetas y accesos en la barra lateral, y usar el menú ⋯ de cada uno. Desde cualquier tablero, «Guardar aquí la vista actual» crea un acceso con sus filtros, búsqueda, orden y columnas.</p>
+    <div class="tscroll"><table class="t"><thead><tr><th>Carpeta</th><th>Accesos</th><th>Visible para</th><th></th></tr></thead><tbody>${folderRows(null, 0) || '<tr><td colspan="4" class="muted">Sin carpetas</td></tr>'}</tbody></table></div>
+  </section>
+  ${wsAuditCard()}
+  <section class="card mt16"><h3 style="margin-top:0">Apariencia de este espacio</h3>
+    <div class="fld"><label>Color principal</label><div class="wsx-swrow">${WS_ACCENTS.map((c) => `<button class="wsx-sw ${(L.accent || '#0073ea') === c ? 'on' : ''}" data-act="ws-accent" data-arg="${c}" style="background:${c}" aria-label="Color principal ${c}" aria-pressed="${(L.accent || '#0073ea') === c}"></button>`).join('')}<input type="color" id="wsAcc" value="${esc(L.accent || '#0073ea')}" aria-label="Otro color principal"/></div></div>
+    <div class="fld mt12"><label>Densidad de las tablas</label><div class="pro-theme-seg" role="group" aria-label="Densidad">${[['compact', 'Compacta'], ['normal', 'Normal'], ['comfy', 'Amplia']].map(([k, l]) => `<button class="${(L.density || 'normal') === k ? 'on' : ''}" data-act="ws-density" data-arg="${k}" aria-pressed="${(L.density || 'normal') === k}">${l}</button>`).join('')}</div></div>
+    <p class="small muted">El tema claro u oscuro es de cada persona y se cambia en Ajustes.</p></section>
+  <section class="card mt16"><h3 style="margin-top:0">Columnas convertidas</h3><p class="small muted" style="margin-top:0">Al cambiar el tipo de una columna se guarda una copia de sus valores durante 30 días para poder recuperarlos.</p>
+    ${bk.length ? `<table class="t"><thead><tr><th>Columna</th><th>Tablero</th><th>Cambio</th><th>Fecha</th><th></th></tr></thead><tbody>${bk.map((b, i) => `<tr><td>${esc(b.label)}</td><td>${esc(b.obj)}</td><td>${esc(b.from)} → ${esc(b.to)}</td><td>${fdate(b.at.slice(0, 10))}</td><td class="r"><button class="btn sm outline" data-act="ws-colrestore" data-arg="${i}">Restaurar valores</button></td></tr>`).join('')}</tbody></table>` : '<p class="muted small">No hay conversiones recientes.</p>'}</section>`;
+  const acc = document.getElementById('wsAcc'); if (acc) acc.onchange = () => ACT['ws-accent'](acc.value);
+};
+
+/* ---------------------------------------------------------------- paginación de tablas */
+function wsLimit(obj, g) { return WSX.lim[obj + '|' + g] || 60; }
+function wsMoreRow(obj, g, total, lim, ncols) {
+  if (!(total > lim)) return '';
+  const arg = (n) => esc(JSON.stringify({ obj, g, n }));
+  return `<div class="addrow wsx-morerow" style="display:contents"><div class="cell gbar" style="opacity:.45"></div><div class="cell"></div><div class="cell" style="grid-column:span ${ncols + 1};gap:8px"><span class="small muted">Mostrando ${lim} de ${total}</span><button class="btn sm outline" data-act="ws-more" data-arg="${arg(lim + 200)}">Mostrar 200 más</button><button class="btn sm outline" data-act="ws-more" data-arg="${arg(total)}">Mostrar los ${total}</button></div></div>`;
+}
+ACT['ws-more'] = ({ obj, g, n }) => { WSX.lim[obj + '|' + g] = n; render(); };
+
+/* ---------------------------------------------------------------- CLM: integridad y firma */
+const CLM_LOCK = ['signing', 'partial', 'active', 'expired', 'terminated', 'renewed', 'archived'];
+const CLM_FIELDS = ['title', 'value', 'currency', 'startDate', 'endDate', 'termMonths', 'renewal', 'noticeDays', 'paymentDays', 'payModel', 'typeId', 'companyId', 'direction', 'law', 'paper', 'personalData', 'number', 'kind', 'parentId'];
+const clmLocked = (c) => !!c && CLM_LOCK.includes(c.status);
+const clmLockMsg = () => { if (Date.now() - (WSX.lockAt || 0) > 1500) { WSX.lockAt = Date.now(); toast('Contrato firmado o en firma: las condiciones solo cambian con una enmienda', 'err'); } };
+CAPPR.invalidated = { label: 'Invalidada', color: C.grey };
+async function wsSha(v) {
+  try { if (!(window.crypto && crypto.subtle) || !v || v.sha256) return; const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(v.text || '')); v.sha256 = [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join(''); v.hash = v.sha256.slice(0, 16); } catch (_) { /* sin cifrado disponible */ }
+}
+const _clmVersionW = clmVersion;
+clmVersion = function (c, text, source) {
+  if (clmLocked(c) && source !== 'signed') { clmLockMsg(); return null; }
+  const hadAppr = ['approval', 'approved'].includes(c.status) && (c.approvals || []).length && source !== 'signed';
+  const v = _clmVersionW.apply(this, arguments);
+  if (v) wsSha(v).then(() => save());
+  if (v && hadAppr) {
+    (c.approvals || []).forEach((a) => { if (a.status !== 'invalidated') { a.prevStatus = a.status; a.status = 'invalidated'; } });
+    clmSetStatus(c, 'negotiation', `nueva versión v${v.n}: las aprobaciones anteriores quedan invalidadas`);
+    toast('Nueva versión: el contrato vuelve a negociación y hay que pedir de nuevo las aprobaciones', 'err');
+  }
+  return v;
+};
+const _clmReqApprW = clmRequestApproval;
+clmRequestApproval = function (c) { const r = _clmReqApprW.apply(this, arguments); (c.approvals || []).forEach((a) => { a.versionId = c.currentVersionId; a.versionN = cver(c)?.n; }); return r; };
+const _clmChecklistW = clmChecklist;
+clmChecklist = function (c) {
+  const items = _clmChecklistW.apply(this, arguments); const ap = c.approvals || []; const vid = c.currentVersionId;
+  if (ap.length) { const stale = ap.some((a) => a.status === 'invalidated' || (a.versionId && a.versionId !== vid)); items.push(stale ? { ok: false, t: 'Las aprobaciones no corresponden a la versión actual: pídelas de nuevo' } : { ok: true, t: `Aprobaciones sobre la versión actual (v${cver(c)?.n || '?'})` }); }
+  return items;
+};
+const _setFieldW = setField;
+setField = function (obj, item, key, value, opts) {
+  if (obj === 'contracts' && clmLocked(item) && CLM_FIELDS.includes(key)) { clmLockMsg(); return false; }
+  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && !wsValidDate(value)) { toast(`«${value}» no es una fecha válida`, 'err'); return false; }
+  return _setFieldW.apply(this, arguments);
+};
+const _xlSetRawW = xlSetRaw;
+xlSetRaw = function (obj, it, col) { if (obj === 'contracts' && clmLocked(it) && col && (CLM_FIELDS.includes(col.key) || col.key === 'status')) { clmLockMsg(); return false; } return _xlSetRawW.apply(this, arguments); };
+const _xlParseW = xlParse;
+xlParse = function (obj, col, text) { const r = _xlParseW.apply(this, arguments); if (r && typeof r.v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(r.v) && !wsValidDate(r.v)) return { err: `«${String(text).trim()}» no es una fecha válida` }; return r; };
+if (ACT['clm-edit']) { const _ce = ACT['clm-edit']; ACT['clm-edit'] = (id, el, e) => { const c = typeof cref === 'function' ? cref(id) : null; if (clmLocked(c)) return clmLockMsg(); return _ce(id, el, e); }; }
+const _clmSignerOtpW = clmSignerOtp;
+clmSignerOtp = function (c, s) { s.otpTries = 0; return _clmSignerOtpW.apply(this, arguments); };
+const _clmSignW = clmSign;
+clmSign = async function (c, s, code, consent) {
+  if (consent && s.otp && s.otpAt && Date.now() - new Date(s.otpAt).getTime() > 10 * 60000) { s.otp = null; c.envelope.events.push({ at: nowISO(), t: `${s.name}: código caducado (10 minutos)` }); save(); return 'El código ha caducado (10 minutos): solicita uno nuevo'; }
+  const r = await _clmSignW.apply(this, arguments);
+  if (r && consent && /incorrecto/i.test(r)) {
+    s.otpTries = (s.otpTries || 0) + 1;
+    if (s.otpTries >= 3) { s.otp = null; s.otpTries = 0; c.envelope.events.push({ at: nowISO(), t: `${s.name}: 3 intentos fallidos, código anulado` }); save(); return 'Tres intentos fallidos: el código se ha anulado. Solicita uno nuevo.'; }
+    save(); return `Código incorrecto: te queda${3 - s.otpTries === 1 ? '' : 'n'} ${3 - s.otpTries} intento${3 - s.otpTries === 1 ? '' : 's'}`;
+  }
+  if (!r) s.otpTries = 0;
+  return r;
+};
+const _clmPaymentsW = clmPayments;
+clmPayments = function (c) {
+  const r = _clmPaymentsW.apply(this, arguments); const p = c.payments || [];
+  if (p.length > 1) { const v = Number(c.value) || 0; const rest = p.slice(0, -1).reduce((s, x) => s + x.amount, 0); p[p.length - 1].amount = r2(v - rest); }
+  return r;
+};
+
+/* ---------------------------------------------------------------- automatizaciones: bucles */
+const _logRunW = logRun;
+logRun = function (a, obj, it, status, log, count, extra = {}) {
+  const r = _logRunW.apply(this, arguments);
+  if (a && status === 'error' && /bucle/i.test(String(extra.error || ''))) {
+    a.loopCuts = (a.loopCuts || 0) + 1;
+    if (a.loopCuts >= 3 && a.on) {
+      a.on = false; const to = a.owner && a.owner !== 'service' ? a.owner : (S.users.find((u) => u.role === 'admin') || {}).id;
+      notify(to, `Automatización desactivada: ${a.name}`, 'Se ha cortado 3 veces por un bucle. Revisa sus condiciones antes de volver a activarla.', '#/automatizaciones', 'warn');
+    }
+  }
+  return r;
+};
+
+/* ---------------------------------------------------------------- columnas convertidas: copia y deshacer */
+function wsColBackup(obj, cdef, colKey, bk, before) {
+  ensureXl(); const list = (S.xl.colBackups = S.xl.colBackups || []);
+  const e = { obj, key: cdef.key, colKey, label: cdef.label, from: bk.type, to: cdef.type, at: nowISO(), def: bk, values: before };
+  list.unshift(e); const lim = Date.now() - 30 * 864e5; S.xl.colBackups = list.filter((x) => new Date(x.at).getTime() > lim).slice(0, 10);
+  XL.undo.push({ kind: 'coltype', label: `Cambiar el tipo de «${cdef.label}»`, obj, ops: [], backup: e });
+}
+function wsColRestore(e) {
+  const cdef = (S.customCols[e.obj] || []).find((x) => x.key === e.key); if (!cdef) return toast('La columna ya no existe', 'err');
+  cdef.type = e.def.type; cdef.options = e.def.options || undefined; if (e.def.max != null) cdef.max = e.def.max;
+  let n = 0; for (const [id, v] of e.values || []) { const it = byId(e.obj, id); if (!it) continue; it.custom = it.custom || {}; it.custom[e.key] = v; n++; }
+  audit(e.obj, null, 'column', { columna: cdef.label, restaurada: e.from }); save(); render(); toast(`Columna «${cdef.label}» restaurada: ${n} valores recuperados`, 'ok');
+}
+const _xlUndoRedoW = xlUndoRedo;
+xlUndoRedo = function (redo) {
+  const st = redo ? XL.redo : XL.undo; const e = st[st.length - 1];
+  if (e && e.kind === 'coltype') { st.pop(); if (redo) return toast('Repite la conversión desde el menú de la columna'); return wsColRestore(e.backup); }
+  return _xlUndoRedoW.apply(this, arguments);
+};
+ACT['ws-colrestore'] = (i) => { const e = (S.xl.colBackups || [])[Number(i)]; if (e) wsColRestore(e); };
+
+
+/* ---------------------------------------------------------------- kanban paginado */
+function wsKanbanMore(obj, lane, total) {
+  const lim = wsLimit(obj, 'k:' + lane); if (!(total > lim)) return '';
+  return `<div class="wsx-kmore"><span class="xs muted">${lim} de ${total}</span><button class="btn sm outline" data-act="ws-more" data-arg="${esc(JSON.stringify({ obj, g: 'k:' + lane, n: lim + 100 }))}">Ver 100 más</button></div>`;
+}
+
+/* ---------------------------------------------------------------- registro de auditoría sellado
+   Cada entrada lleva el SHA-256 de su contenido y del sello anterior (cadena) y un número
+   correlativo; la cabeza de la cadena se guarda aparte. Detecta entradas editadas, borradas o
+   insertadas desde el navegador. No impide la manipulación: eso exige un servidor. */
+const wsSha256 = (() => {
+  const K = [0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5, 0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174, 0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da, 0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967, 0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85, 0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070, 0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3, 0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2];
+  return (str) => {
+    const b = new TextEncoder().encode(str); const l = b.length; const n = Math.ceil((l + 9) / 64) * 16; const w = new Uint32Array(n);
+    for (let i = 0; i < l; i++) w[i >> 2] |= b[i] << (24 - (i % 4) * 8);
+    w[l >> 2] |= 0x80 << (24 - (l % 4) * 8); w[n - 1] = l * 8;
+    let h0 = 0x6a09e667, h1 = 0xbb67ae85, h2 = 0x3c6ef372, h3 = 0xa54ff53a, h4 = 0x510e527f, h5 = 0x9b05688c, h6 = 0x1f83d9ab, h7 = 0x5be0cd19; const W = new Uint32Array(64);
+    const r = (x, k) => (x >>> k) | (x << (32 - k));
+    for (let i = 0; i < n; i += 16) {
+      for (let t = 0; t < 64; t++) W[t] = t < 16 ? w[i + t] : (r(W[t - 2], 17) ^ r(W[t - 2], 19) ^ (W[t - 2] >>> 10)) + W[t - 7] + (r(W[t - 15], 7) ^ r(W[t - 15], 18) ^ (W[t - 15] >>> 3)) + W[t - 16];
+      let a = h0, bb = h1, c = h2, d = h3, e = h4, f = h5, g = h6, h = h7;
+      for (let t = 0; t < 64; t++) { const t1 = (h + (r(e, 6) ^ r(e, 11) ^ r(e, 25)) + ((e & f) ^ (~e & g)) + K.at(t) + W[t]) | 0; const t2 = ((r(a, 2) ^ r(a, 13) ^ r(a, 22)) + ((a & bb) ^ (a & c) ^ (bb & c))) | 0; h = g; g = f; f = e; e = (d + t1) | 0; d = c; c = bb; bb = a; a = (t1 + t2) | 0; }
+      h0 = (h0 + a) | 0; h1 = (h1 + bb) | 0; h2 = (h2 + c) | 0; h3 = (h3 + d) | 0; h4 = (h4 + e) | 0; h5 = (h5 + f) | 0; h6 = (h6 + g) | 0; h7 = (h7 + h) | 0;
+    }
+    return [h0, h1, h2, h3, h4, h5, h6, h7].map((x) => (x >>> 0).toString(16).padStart(8, '0')).join('');
+  };
+})();
+const WS_ANCHOR = () => 'crm-audit-anchor:' + KEY;
+const wsAuditBody = (e) => [e.seq, e.prev, e.at, e.user, e.obj, e.rid, e.action, JSON.stringify(e.changes || {})].join('|');
+function wsSeal(e) { const head = S.audit.find((x) => x !== e && x.h); if (!S.auditId) S.auditId = uid() + uid(); S.auditSeq = (S.auditSeq || 0) + 1; e.seq = S.auditSeq; e.prev = head ? head.h : ''; e.h = wsSha256(wsAuditBody(e)); try { localStorage.setItem(WS_ANCHOR(), JSON.stringify({ id: S.auditId, seq: e.seq, h: e.h })); } catch (_) { /* sin espacio */ } }
+const _auditW = audit;
+audit = function () { const r = _auditW.apply(this, arguments); if (S.audit[0]) wsSeal(S.audit[0]); return r; };
+function wsAuditCheck() {
+  const sealed = S.audit.filter((e) => e.h); const legacy = S.audit.length - sealed.length; const chain = [...sealed].reverse();
+  let anchor = null; try { anchor = JSON.parse(localStorage.getItem(WS_ANCHOR()) || 'null'); } catch (_) { anchor = null; }
+  for (let i = 0; i < chain.length; i++) {
+    const e = chain[i];
+    if (wsSha256(wsAuditBody(e)) !== e.h) return { ok: false, total: S.audit.length, sealed: sealed.length, legacy, bad: e, why: 'una entrada se ha modificado' };
+    if (i > 0 && (e.prev !== chain[i - 1].h || e.seq !== chain[i - 1].seq + 1)) return { ok: false, total: S.audit.length, sealed: sealed.length, legacy, bad: e, why: 'faltan o sobran entradas antes de esta' };
+  }
+  const head = chain.at(-1);
+  if (head && anchor && anchor.id === S.auditId && (anchor.seq !== head.seq || anchor.h !== head.h)) return { ok: false, total: S.audit.length, sealed: sealed.length, legacy, bad: head, why: 'se han borrado las entradas más recientes' };
+  if (head && (S.auditSeq || 0) !== head.seq) return { ok: false, total: S.audit.length, sealed: sealed.length, legacy, bad: head, why: 'el contador de entradas no coincide' };
+  return { ok: true, total: S.audit.length, sealed: sealed.length, legacy };
+}
+function wsAuditCard() {
+  const r = wsAuditCheck(); const b = r.bad;
+  const state = r.ok ? `<p class="wsx-ok"><b>Íntegro.</b> ${r.sealed} entrada(s) selladas sin alteraciones${r.legacy ? `; ${r.legacy} anterior(es) al sellado no se pueden comprobar` : ''}.</p>`
+    : `<p class="wsx-bad" role="alert"><b>Alteración detectada:</b> ${esc(r.why)} (entrada nº ${b.seq} del ${fdate(String(b.at).slice(0, 10))}, ${esc(b.obj || '')} · ${esc(b.action || '')}). Restaura una copia exportada anterior a esa fecha si necesitas un registro fiable.</p>`;
+  return `<section class="card mt16"><h3 style="margin-top:0">Registro de auditoría</h3>${state}<p class="small muted" style="margin:6px 0 0">Cada cambio queda sellado con SHA-256 y encadenado al anterior, así que se detecta si alguien edita, borra o inserta entradas desde el navegador. Detectar no es impedir: para un registro que nadie pueda alterar hace falta un servidor.</p></section>`;
+}
+
+/* ---------------------------------------------------------------- recordatorio de copias */
+const wsBackupDue = () => { const n = S.contacts.length + S.deals.length + (S.contracts || []).length; if (!n) return false; const last = S.wsLastBackup ? new Date(S.wsLastBackup).getTime() : 0; return Date.now() - last > 7 * 864e5; };
+
+/* ---------------------------------------------------------------- inicio */
+(function wsInit() {
+  const w = wsActive();
+  if (S._wsNamed !== w.id) { S.settings.company = w.name; S._wsNamed = w.id; }
+  navEnsure(); S.look = S.look || { accent: '', density: 'normal' };
+  (S.quotes || []).forEach((q) => { q.subtotal = r2(q.subtotal); q.tax = r2(q.tax); q.total = r2(q.total); });
+  (S.contracts || []).forEach((c) => (c.versions || []).forEach((v) => { if (!v.sha256) wsSha(v); }));
+  if (wsBackupDue() && (!S.wsRemindAt || Date.now() - new Date(S.wsRemindAt).getTime() > 864e5)) { S.wsRemindAt = nowISO(); notify(S.me, 'Exporta una copia de seguridad', 'Hace más de 7 días que no exportas este espacio. Los datos solo están en este navegador.', '#/espacios', 'warn'); }
+  wsApplyLook(); save(); render();
+  setTimeout(save, 1500);
+})();
+</script>
+<script>
+/* ============================================================
+   Integración: objetos personalizados («Personalización total»)
+   dentro de los espacios de trabajo y las carpetas
+   - Cada objeto personalizado es un tablero más para las carpetas:
+     se añade solo la primera vez (carpeta «Objetos personalizados»)
+     y después se mueve, renombra o quita como cualquier acceso
+   - Contadores, vistas guardadas y «Añadir tableros» lo incluyen
+   - Un espacio en blanco conserva las definiciones de los objetos
+     pero no sus registros
+   ============================================================ */
+'use strict';
+function wsCusSync() {
+  const objs = (S.cus && S.cus.objects) || []; const nav = navEnsure(); nav.cusSeen = nav.cusSeen || [];
+  for (const o of objs) {
+    const page = 'o-' + o.slug; NAV_PAGES[page] = o.label; NAV_SHORT[page] = o.label; PAGE_OBJ[page] = o.key;
+    if (nav.cusSeen.includes(o.key)) continue; nav.cusSeen.push(o.key);
+    if (nav.folders.some((f) => f.items.some((it) => it.page === page))) continue;
+    let f = nav.folders.find((x) => x.cus);
+    if (!f) { f = { id: 'f_' + uid(), cus: true, name: 'Objetos personalizados', icon: '', color: '#784bd1', desc: 'Tableros creados en Ajustes → Objetos personalizados', collapsed: false, roles: [], counts: true, parent: null, items: [] }; nav.folders.push(f); }
+    f.items.push({ id: 'i_' + uid(), kind: 'page', page, label: o.label, color: o.color });
+  }
+}
+const _navCountCus = navCount;
+navCount = function (page) { const d = String(page).startsWith('o-') ? cusObjBySlug(page.slice(2)) : null; if (d) { try { return vis(d.key).filter((x) => !cusDone(d, x)).length; } catch (_) { return null; } } return _navCountCus.apply(this, arguments); };
+const _navItemHtmlCus = navItemHtml;
+navItemHtml = function (it) { if (it && it.kind !== 'link' && String(it.page || '').startsWith('o-') && !cusObjBySlug(it.page.slice(2))) return ''; return _navItemHtmlCus.apply(this, arguments); };
+const _renderSideWs = renderSide;
+renderSide = function () { try { wsCusSync(); } catch (e) { console.warn(e); } return _renderSideWs.apply(this, arguments); };
+const _wsBlankDataCus = wsBlankData;
+wsBlankData = function () {
+  const d = _wsBlankDataCus.apply(this, arguments);
+  for (const o of (d.cus && d.cus.objects) || []) { if (Array.isArray(d[o.key])) d[o.key] = []; if (o.counters) wsZero(o.counters); }
+  return d;
+};
+renderSide();
+</script>
+<script>
+/* ============================================================
    Tutorial guiado · pasos con resaltado en pantalla
    ============================================================ */
 'use strict';
@@ -4286,7 +5067,7 @@ const TUT_KEY = 'crm-tutorial-progress';
 const goView = (page, view) => { if (view) S.ui.view[page] = view; if (location.hash === `#/${page}`) refresh(); else location.hash = `#/${page}`; };
 const firstId = (coll) => (S[coll] || [])[0]?.id;
 const STEPS = [
-  { id: 'inicio', t: 'Bienvenido al CRM', s: 'Inicio', go: () => goView('inicio'), sel: '.kpis', b: 'Esta es la página de inicio: pipeline abierto, ganado del mes, conversión y leads nuevos. Debajo, negocios estancados, cierres próximos y el ranking del equipo. Todo lo que veas se puede tocar: es una demo completa que guarda los cambios en tu navegador.', try: 'Pulsa una tarjeta de cifras para ir al tablero correspondiente.' },
+  { id: 'inicio', t: 'Bienvenido al CRM', s: 'Inicio', go: () => goView('inicio'), sel: '.kpis', b: 'Esta es la página de inicio: pipeline abierto, ganado del mes, conversión y leads nuevos. Debajo, negocios estancados, cierres próximos y el ranking del equipo. Todo lo que veas se puede tocar: todo se puede tocar y los cambios se guardan en este navegador.', try: 'Pulsa una tarjeta de cifras para ir al tablero correspondiente.' },
   { id: 'nav', t: 'Tableros y herramientas', s: 'Navegación', go: () => goView('inicio'), sel: '#side', b: 'La barra lateral agrupa los tableros de color (Contactos, Empresas, Pipeline, Tareas, Tickets, Productos, Presupuestos, Listas) y las herramientas (Automatizaciones, Formularios, Ajustes). El número indica cuántos elementos tienes a la vista.' },
   { id: 'buscar', t: 'Búsqueda global', s: 'Navegación', go: () => goView('inicio'), sel: '#openPalette', b: 'Busca cualquier contacto, empresa, negocio o ticket desde aquí o con Ctrl K. También sirve como paleta de acciones rápidas (nuevo contacto, nueva tarea…).', try: 'Pulsa Ctrl K y escribe «ret» para encontrar Retail Ibérica.' },
   { id: 'grupos', t: 'El tablero de contactos', s: 'Tableros', go: () => goView('contactos', 'table'), sel: '.group', b: 'Cada tablero es una tabla agrupada por color. En Contactos los grupos son las etapas del ciclo de vida (Lead, MQL, SQL, Cliente…). Pliega un grupo con la flecha; al pie de cada grupo verás sumas, medias y la distribución de estados.' },
@@ -4311,7 +5092,7 @@ const STEPS = [
   { id: 'informes', t: 'Informes', s: 'Análisis', go: () => goView('informes'), sel: '.kpis', b: 'Embudo de conversión, ventas por comercial, origen de los leads, actividad y tiempos de respuesta. Los gráficos respetan lo que cada rol puede ver.' },
   { id: 'forms', t: 'Formularios web', s: 'Captación', go: () => goView('formularios'), sel: '.chart', b: 'Cada formulario tiene página pública y código para insertar en tu web. Un envío crea o actualiza el contacto, lo asigna por turnos, crea la tarea de llamada y dispara las reglas.', try: 'Abre la vista pública y envía un lead de prueba.' },
   { id: 'roles', t: 'Usuarios, roles y permisos', s: 'Administración', go: () => goView('ajustes'), sel: '#btnUser', b: 'Cambia de usuario arriba a la derecha para ver el CRM como administrador, manager, comercial, soporte o solo lectura: la visibilidad (todo, equipo o lo propio) y los permisos de edición cambian al instante. En Ajustes gestionas usuarios, equipos, pipeline, campos, plantillas, papelera y privacidad.' },
-  { id: 'datos', t: 'Importar y exportar', s: 'Administración', go: () => goView('contactos', 'table'), sel: '[data-act="b-export"]', b: 'Exporta cualquier tablero a CSV con los filtros aplicados e importa contactos o empresas desde CSV con detección de duplicados. Para empezar de cero: «restablecer demo» en Inicio.' },
+  { id: 'datos', t: 'Importar y exportar', s: 'Administración', go: () => goView('contactos', 'table'), sel: '[data-act="b-export"]', b: 'Exporta cualquier tablero a CSV con los filtros aplicados e importa contactos o empresas desde CSV con detección de duplicados. Para empezar de cero, crea un espacio en blanco en «Espacios y carpetas».' },
   { id: 'clm', t: 'Contratos (CLM)', s: 'Contratos', go: () => goView('contratos', 'table'), sel: '.group', b: 'El tablero de contratos sigue el mismo principio: grupos por estado del ciclo de vida (Borrador, Revisión, Negociación, Aprobación, Firma, Activo…), columnas editables, agrupación por tipo, riesgo o renovación, reglas y exportación. Cada fila es un contrato con número propio (MSA-2026-00001).' },
   { id: 'clm-intake', t: 'Solicitud guiada', s: 'Contratos', go: () => goView('contratos', 'table'), sel: '[data-act="clm-new"]', b: 'Con «Nuevo contrato» rellenas la solicitud en cuatro pasos: tipo y contraparte, condiciones económicas y de vigencia, documento (se genera desde la plantilla o pegas el papel de la contraparte) y resumen con las aprobaciones previstas.', try: 'Crea un NDA con cualquier empresa y mira cómo se genera la versión 1.' },
   { id: 'clm-review', t: 'Revisión contra el playbook', s: 'Contratos', go: () => { goView('contratos', 'table'); const c = (S.contracts || []).find((x) => x.paper === 'external' && x.status === 'review'); if (c) setTimeout(() => (location.hash = `#/contratos/${c.id}/review`), 80); }, sel: '.finding', b: 'La extracción identifica las cláusulas del texto (duración, pago, responsabilidad, ley aplicable…) y el playbook marca desviaciones menores, mayores, cláusulas ausentes y prohibidas, con el aprobador que exige cada una y la cláusula estándar sugerida. El riesgo se explica factor a factor.', try: 'Pulsa «Sustituir por E01-STD» para corregir una cláusula: se crea una versión nueva.' },
@@ -4329,7 +5110,7 @@ const STEPS = [
   { id: 'v2-reglas', t: 'Valores por defecto y obligatorias', s: 'Celdas y automatizaciones', go: () => goView('negocios', 'table'), sel: '[data-act="b-boardrules"]', b: 'Con «Reglas» defines valores por defecto al crear elementos y columnas obligatorias según el estado (p. ej. no se puede pasar a Ganado sin importe ni fecha de cierre). Las personas reciben un aviso; las automatizaciones no se bloquean pero dejan constancia.', try: 'Pulsa «Reglas» en la barra del tablero.' },
   { id: 'v2-editor', t: 'Editor «Cuando… solo si… entonces…»', s: 'Celdas y automatizaciones', go: () => goView('automatizaciones', 'list'), sel: '[data-act="auto-new"]', b: 'Cada automatización es una frase: un disparador (de X a Y, cualquier columna, fecha ± días a una hora, sin cambios en N días, periódico, botón, subelementos, notas), condiciones Y/O anidadas y una lista de acciones con ramas si/si no, esperas y aprobaciones. Elige propietario o el usuario de servicio «Automatizaciones», prioridad y si se ejecuta de forma atómica. «Simular» indica qué haría con el primer elemento y cuántas acciones gastaría.', try: 'Crea una automatización nueva y añade una rama.' },
   { id: 'v2-recetas', t: 'Recetas listas para usar', s: 'Celdas y automatizaciones', go: () => goView('automatizaciones', 'recipes'), sel: '.rgrid', b: 'Las recetas del manual (R1–R22) se instalan con un clic: crean las columnas auxiliares que necesiten y la automatización ya configurada, que luego puedes editar. Ejemplos: recordatorio antes del vencimiento, escalado si no cambia en N días, aprobación por importe o cierre cuando todas las subtareas están hechas.', try: 'Instala una receta y ábrela en el editor.' },
-  { id: 'v2-fechas', t: 'Disparadores de fecha y reloj', s: 'Celdas y automatizaciones', go: () => goView('automatizaciones', 'sched'), sel: '.card', b: 'El planificador calcula la hora exacta de cada disparador de fecha (con días laborables y zona horaria) en cuanto cambia la fecha, y lo reprograma si la mueves. Para probarlo sin esperar, adelanta el reloj de la demo: las automatizaciones vencidas se ejecutan y aparecen en el historial.', try: 'Pulsa «+7 días» y revisa el Historial.' },
+  { id: 'v2-fechas', t: 'Disparadores de fecha y reloj', s: 'Celdas y automatizaciones', go: () => goView('automatizaciones', 'sched'), sel: '.card', b: 'El planificador calcula la hora exacta de cada disparador de fecha (con días laborables y zona horaria) en cuanto cambia la fecha, y lo reprograma si la mueves. Para probarlo sin esperar, adelanta el reloj de pruebas: las automatizaciones vencidas se ejecutan y aparecen en el historial.', try: 'Pulsa «+7 días» y revisa el Historial.' },
   { id: 'v2-aprob', t: 'Aprobaciones en el flujo', s: 'Celdas y automatizaciones', go: () => goView('automatizaciones', 'approvals'), sel: '.card', b: 'La acción «Pedir aprobación» detiene la automatización y crea una solicitud para el aprobador. Al aprobar o rechazar, el flujo continúa por la rama correspondiente y ejecuta el resto de acciones.' },
   { id: 'v2-uso', t: 'Uso, presupuesto y bucles', s: 'Celdas y automatizaciones', go: () => goView('automatizaciones', 'usage'), sel: '.kpis', b: 'Cada acción ejecutada cuenta contra el presupuesto mensual, con avisos al 60, 80 y 100 %. Al agotarse puedes bloquear la edición o pausar todo. La protección de bucles corta cadenas más profundas que el límite (10 por defecto) o más de 5 ejecuciones por minuto sobre el mismo elemento, y pausa la regla responsable. En Gobierno ves quién ejecuta cada regla y reasignas las de usuarios desactivados.' },
   { id: 'xl-etiquetas', t: 'Etiquetas editables dentro del desplegable', s: 'Libertad tipo Excel', go: () => goView('tickets', 'table'), sel: '.cell.status', b: 'Abre cualquier estado y pulsa «Editar etiquetas»: sin salir del desplegable cambias el texto y el color, las ordenas arrastrando, ocultas las que no uses y creas etiquetas nuevas. En las columnas del sistema (Estado del ticket, Prioridad, Etapa del contacto…) las etiquetas originales no se borran porque las usa la lógica del CRM; las nuevas eligen «se comporta como»: «Resuelto por proveedor ≈ Resuelto» cierra el SLA igual que Resuelto. En la etapa del pipeline editas directamente las etapas.', try: 'En «Estado» de un ticket crea «Resuelto por proveedor» que se comporte como Resuelto y aplícala.' },
@@ -4356,6 +5137,8 @@ const STEPS = [
   { id: 'cus-tablero', t: 'Un objeto propio en acción', s: 'Personalización total', go: () => { const d = S.cus?.objects?.[0]; cusTutGo(d ? '#/o-' + d.slug : '#/ajustes/objetos'); }, sel: '.cus-obj-board, .cus-objects', b: 'Proyectos funciona como cualquier tablero: tabla con grupos por estado, kanban arrastrable, ficha con detalles y relaciones, y lista «Proyectos» en la ficha de la empresa, del negocio y del contrato relacionados.' },
   { id: 'cus-clm', t: 'Ciclo de vida del contrato por tipo', s: 'Personalización total', go: () => cusTutGo('#/contratos/configuracion/ciclo'), sel: '.cus-states', b: 'En la configuración del CLM, cada tipo de contrato puede tener estados propios dentro de cada fase (p. ej. «Revisión fiscal» dentro de Revisión), con las transiciones permitidas y los datos obligatorios para entrar, su numeración ({TIPO}-{YYYY}-{CP}-{SEQ:4}…), campos propios en la solicitud y días de alerta de cada hito.' },
   { id: 'cus-matriz', t: 'Matriz de aprobación', s: 'Personalización total', go: () => cusTutGo('#/contratos/configuracion/ciclo'), sel: '.cus-matrix', b: 'Reglas «si… entonces aprueban…»: condiciones sobre valor, duración, papel, riesgo, datos personales o campos de la solicitud, y pasos ordenados (usuario, rol, manager o propietario) en paralelo o en secuencia. Pueden sumarse al circuito estándar o sustituirlo, y se prueban contra un contrato real antes de guardar.' },
+  { id: 'ws-espacios', t: 'Varios espacios de trabajo', s: 'Espacios y carpetas', go: () => goView('inicio'), sel: '.wsx-switch', b: 'Cada espacio guarda sus propios contactos, negocios, contratos, carpetas y apariencia. Desde aquí cambias de espacio o creas uno nuevo: en blanco (con usuarios, tipos de contrato, cláusulas y playbooks ya configurados), con datos de ejemplo o como copia del actual.' },
+  { id: 'ws-carpetas', t: 'Carpetas a tu medida', s: 'Espacios y carpetas', go: () => goView('contratos'), sel: '#wsxTree', b: 'Arrastra carpetas y accesos para reordenarlos. Con el menú ⋯ de una carpeta cambias nombre, icono, color y quién la ve, añades tableros o enlaces y creas subcarpetas. «Guardar aquí la vista actual» convierte los filtros de un tablero en un acceso, como «Por aprobar» o «En firma».' },
   { id: 'fin', t: '¡Listo!', s: 'Fin', go: () => goView('inicio'), sel: '#tutBtn', b: 'Ya conoces el CRM. Vuelve a este tutorial cuando quieras desde el botón flotante; cada capítulo te lleva a la pantalla y la resalta. Todo lo que cambies se queda guardado en este navegador.' },
 ];
 let TUT = { idx: -1, done: [] };
@@ -4396,7 +5179,7 @@ document.getElementById('tutBtn').onclick = () => { const el = document.getEleme
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { tutHide(); document.getElementById('tut').classList.remove('open'); } });
 tutDrawPanel();
 if (!localStorage.getItem(TUT_KEY)) {
-  const m = modal({ title: 'Bienvenido a la demo del CRM', size: 'lg', body: `<div class="welcome"><p>Un CRM completo y <b>totalmente personalizable</b>, con la estética de monday: tableros con grupos de color, celdas editables, columnas y etiquetas a medida, kanban con etapas configurables y reglas «cuando… entonces…». Los datos son de ejemplo y se guardan en tu navegador.</p><div class="feat"><div><b>Tableros</b>Contactos, empresas, pipeline, tareas, tickets, productos y presupuestos.</div><div><b>Personalización</b>Columnas nuevas, etiquetas y colores, grupos, etapas del pipeline.</div><div><b>Automatizaciones</b>Reglas por tablero y editor completo con condiciones.</div><div><b>Roles</b>Cambia de usuario para ver permisos y visibilidad.</div></div><p class="small muted">El tutorial te lleva por ${STEPS.length} pasos cortos y resalta cada elemento en pantalla. Puedes retomarlo cuando quieras desde el botón «Tutorial».</p></div>`, footer: `<button class="btn outline" id="wExplore">Explorar por mi cuenta</button><button class="btn primary" id="wStart">Empezar el tutorial</button>` });
+  const m = modal({ title: 'Bienvenido a tu CRM y CLM', size: 'lg', body: `<div class="welcome"><p>Un CRM completo y <b>totalmente personalizable</b>, con la estética de monday: tableros con grupos de color, celdas editables, columnas y etiquetas a medida, kanban con etapas configurables y reglas «cuando… entonces…». Los datos son de ejemplo y se guardan en tu navegador.</p><div class="feat"><div><b>Tableros</b>Contactos, empresas, pipeline, tareas, tickets, productos y presupuestos.</div><div><b>Personalización</b>Columnas nuevas, etiquetas y colores, grupos, etapas del pipeline.</div><div><b>Automatizaciones</b>Reglas por tablero y editor completo con condiciones.</div><div><b>Roles</b>Cambia de usuario para ver permisos y visibilidad.</div></div><p class="small muted">El tutorial te lleva por ${STEPS.length} pasos cortos y resalta cada elemento en pantalla. Puedes retomarlo cuando quieras desde el botón «Tutorial».</p></div>`, footer: `<button class="btn outline" id="wExplore">Explorar por mi cuenta</button><button class="btn primary" id="wStart">Empezar el tutorial</button>` });
   m.querySelector('#wExplore').onclick = () => { tutSave(); m.close(); };
   m.querySelector('#wStart').onclick = () => { m.close(); tutShow(0); };
 }
