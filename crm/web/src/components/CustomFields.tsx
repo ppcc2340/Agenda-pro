@@ -1,4 +1,5 @@
 import { useApp, type CustomField, type StatusLabel } from "../lib/app";
+import { locale } from "../lib/prefs";
 import { Field } from "./ui";
 
 /** Renders custom field inputs for an object, grouped by section, honoring show_if dependencies. */
@@ -49,10 +50,10 @@ export function formatCustom(def: CustomField, v: unknown, userName: (id: string
     case "timeline": { const o = v as { from?: string; to?: string }; return `${o.from ?? ""} – ${o.to ?? ""}`; }
     case "mirror": return Array.isArray(v) ? v.join(", ") : typeof v === "boolean" ? (v ? "Sí" : "No") : String(v);
     case "formula": return typeof v === "boolean" ? (v ? "Sí" : "No") : String(v);
-    case "creation_log": case "last_updated": return new Date(String(v)).toLocaleString("es-ES");
+    case "creation_log": case "last_updated": return new Date(String(v)).toLocaleString(locale());
     case "button": return "";
     case "boolean": return v === true || v === 1 || v === "true" ? "Sí" : "No";
-    case "currency": return new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR" }).format(Number(v));
+    case "currency": return new Intl.NumberFormat(locale(), { style: "currency", currency: "EUR" }).format(Number(v));
     case "percent": return `${v}%`;
     case "multiselect": return Array.isArray(v) ? v.join(", ") : String(v);
     case "user": return userName(String(v));

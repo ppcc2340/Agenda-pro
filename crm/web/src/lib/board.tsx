@@ -3,6 +3,7 @@ import { api } from "../api";
 import { useApp, type CustomField, type StatusLabel } from "./app";
 import type { Column, StatusOption } from "../components/DataTable";
 import { fmtDate } from "./format";
+import { locale } from "./prefs";
 import type { CondRule, NumFormat } from "./grid";
 
 /** monday-like colour palette for labels, groups and stages */
@@ -25,6 +26,8 @@ export interface BoardConfig {
   num_formats?: Record<string, NumFormat>;
   cond_formats?: CondRule[];
   freeze?: number;
+  /** campos que se ven en cada tarjeta en el móvil */
+  mobile_fields?: string[];
   defaults?: Record<string, unknown>;
   required?: { when_field: string; values: string[]; fields: string[] }[];
 }
@@ -70,12 +73,12 @@ export function customColumns<T extends { id: string; custom?: Record<string, un
       case "button": return { ...base, sortable: false, onEdit: undefined, field: undefined, readOnlyReason: "Botón: púlsalo para lanzar sus automatizaciones", render: (r) => <button className="cellbtn" style={{ background: String(st.color ?? "#0073ea") }} onClick={async (e) => { e.stopPropagation(); const b = e.currentTarget; const t = b.textContent; b.disabled = true; try { await api.post(`cells/${object}/${r.id}/button/${f.key}`, {}); b.textContent = "✓ Hecho"; } catch { b.textContent = "Error"; } setTimeout(() => { b.textContent = t; b.disabled = false; }, 1600); }}>{String(st.label ?? f.label)}</button> };
       case "formula": {
         const isNum = st.result === "number";
-        if (isNum) return { ...base, type: "number", onEdit: undefined, field: undefined, readOnlyReason: "Fórmula: se calcula sola (puedes convertirla en valores)", render: (r) => { const e = err(r); return e ? <span className="risk small" title={e}>#ERROR</span> : value(r) == null || value(r) === "" ? <span className="muted">—</span> : <span className="num">{new Intl.NumberFormat("es-ES", { maximumFractionDigits: 2 }).format(Number(value(r)))}</span>; } };
+        if (isNum) return { ...base, type: "number", onEdit: undefined, field: undefined, readOnlyReason: "Fórmula: se calcula sola (puedes convertirla en valores)", render: (r) => { const e = err(r); return e ? <span className="risk small" title={e}>#ERROR</span> : value(r) == null || value(r) === "" ? <span className="muted">—</span> : <span className="num">{new Intl.NumberFormat(locale(), { maximumFractionDigits: 2 }).format(Number(value(r)))}</span>; } };
         return ro((v) => (typeof v === "boolean" ? (v ? "Sí" : "No") : String(v)), { custom: f });
       }
       case "mirror": {
         const numeric = ["sum", "avg", "median", "min", "max", "count", "count_not_empty", "pct_eq"].includes(String(st.agg));
-        if (numeric) return { ...base, type: "number", field: undefined, readOnlyReason: "Reflejo: se calcula a partir de los registros conectados", agg: ["avg", "median", "pct_eq", "min", "max"].includes(String(st.agg)) ? "avg" : "sum", onEdit: undefined, render: (r) => (value(r) == null ? <span className="muted">—</span> : <span className="num" title="Reflejo">{new Intl.NumberFormat("es-ES", { maximumFractionDigits: 2 }).format(Number(value(r)))}{st.agg === "pct_eq" ? " %" : ""}</span>) };
+        if (numeric) return { ...base, type: "number", field: undefined, readOnlyReason: "Reflejo: se calcula a partir de los registros conectados", agg: ["avg", "median", "pct_eq", "min", "max"].includes(String(st.agg)) ? "avg" : "sum", onEdit: undefined, render: (r) => (value(r) == null ? <span className="muted">—</span> : <span className="num" title="Reflejo">{new Intl.NumberFormat(locale(), { maximumFractionDigits: 2 }).format(Number(value(r)))}{st.agg === "pct_eq" ? " %" : ""}</span>) };
         return ro((v) => (typeof v === "boolean" ? <span className={`badge ${v ? "ok" : ""}`}>{v ? "Sí" : "No"}</span> : Array.isArray(v) ? (v.length ? v.join(", ") : <span className="muted">—</span>) : String(v)));
       }
       case "autonumber": return ro((v) => <code>{String(v)}</code>);

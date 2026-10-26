@@ -45,8 +45,8 @@ export function BoardRules({ object, columns, onClose }: { object: "contact" | "
                 <div className="bold ell">{w.name}</div>
                 <div className="xs muted">{describe(w, columns)}{w.runs ? ` · ${w.runs} ejecuciones` : ""}{w.last_run_at ? ` · última ${relTime(w.last_run_at)}` : ""}{w.errors ? ` · ${w.errors} errores` : ""}</div>
               </div>
-              <button className="iconbtn" title="Editar en detalle" onClick={() => setEditing(w)}><Pencil size={14} /></button>
-              <button className="iconbtn" title="Borrar" onClick={() => del(w)}><Trash2 size={14} /></button>
+              <button className="iconbtn" title="Editar en detalle" onClick={() => setEditing(w)} aria-label="Editar en detalle"><Pencil size={14} /></button>
+              <button className="iconbtn" title="Borrar" onClick={() => del(w)} aria-label="Borrar"><Trash2 size={14} /></button>
             </div>
           ))}
         </div>
@@ -144,7 +144,7 @@ function RecipeBuilder({ object, columns, onClose, onSaved }: { object: string; 
         </div>
       </div>
       <div className="card mt12" style={{ background: "var(--panel)" }}><div className="xs muted mb8">Vista previa</div><div className="bold">{sentence()}</div></div>
-      <div className="mt12"><input className="input" placeholder="Nombre de la regla (opcional)" value={name} onChange={(e) => setName(e.target.value)} /></div>
+      <div className="mt12"><input aria-label="Nombre de la regla (opcional)" className="input" placeholder="Nombre de la regla (opcional)" value={name} onChange={(e) => setName(e.target.value)} /></div>
       <p className="xs muted mt8">¿Necesitas condiciones, varias acciones o esperas? Crea la regla y pulsa el lápiz para abrir el editor completo.</p>
     </Modal>
   );

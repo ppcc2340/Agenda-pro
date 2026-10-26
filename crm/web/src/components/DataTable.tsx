@@ -6,7 +6,7 @@
  */
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Filter, Download, Columns3, Save, ChevronUp, ChevronDown, X, Bookmark, ChevronDown as Caret, Plus, Trash2, Zap, Pencil, Palette, ArrowLeft, ArrowRight, EyeOff, Tag, Copy, FolderInput, Layers, Undo2, Redo2, Paintbrush, Hash, Repeat, Pin, Keyboard, Lock } from "lucide-react";
+import { Filter, Download, Columns3, Save, ChevronUp, ChevronDown, X, Bookmark, ChevronDown as Caret, Plus, Trash2, Zap, Pencil, Palette, ArrowLeft, ArrowRight, EyeOff, Tag, Copy, FolderInput, Layers, Undo2, Redo2, Paintbrush, Hash, Repeat, Pin, Keyboard, Lock, Smartphone } from "lucide-react";
 import { api, qs, downloadFile } from "../api";
 import { FilterBuilder, describeFilters, type FilterGroup } from "./FilterBuilder";
 import { Modal, Pager, Spinner, Empty, Field, useToast, useDebounce, errorMessage, Menu, Avatar, useConfirm } from "./ui";
@@ -18,6 +18,8 @@ import { BoardRules } from "./BoardRules";
 import { onLive } from "../lib/live";
 import { ColorPicker, LabelEditor, CondFormatDialog, NumFormatDialog, ChangeTypeDialog, Pop, TagsEditor, LongTextEditor, RangeEditor, RelationPicker, SHORTCUTS, type LabelItem, type LabelCaps } from "./GridDialogs";
 import { norm, parseNumber, parseDate, parseBool, parseTSV, toTSV, fmtIsoDate, formatNumber, ruleMatches, SUMMARY_FNS, summaryKind, numericStats, fillSeries, type CondRule, type NumFormat } from "../lib/grid";
+import { pillStyle, readable } from "../lib/colors";
+import { t } from "../lib/i18n";
 
 export { ColorPicker };
 export type ColumnType = "text" | "name" | "status" | "person" | "money" | "number" | "date" | "tags" | "check" | "longtext" | "datetime" | "timeline" | "relation";
@@ -91,6 +93,13 @@ const isEmpty = (v: unknown) => v === null || v === undefined || v === "" || (Ar
 const same = (a: unknown, b: unknown) => (isEmpty(a) && isEmpty(b)) || JSON.stringify(a) === JSON.stringify(b);
 const colType = <T,>(c: Column<T>, i: number): ColumnType => c.type ?? (i === 0 ? "name" : "text");
 
+/** true por debajo de 720 px: la tabla pasa a lista de tarjetas. */
+function useNarrow(q = "(max-width: 720px)") {
+  const [m, setM] = useState(() => typeof window !== "undefined" && !!window.matchMedia?.(q).matches);
+  useEffect(() => { const mq = window.matchMedia?.(q); if (!mq) return; const h = () => setM(mq.matches); mq.addEventListener("change", h); return () => mq.removeEventListener("change", h); }, [q]);
+  return m;
+}
+
 export function DataTable<T extends { id: string }>({ object, endpoint, columns: rawColumns, board, onRowClick, toolbar, bulkActions, exportUrl, extraParams, refreshKey, emptyText, defaultSort, groupOptions, defaultGroup, onNew, newLabel, onCreate, onDuplicate, onDelete }: Props<T>) {
   const { me, refresh, can, users } = useApp();
   const toast = useToast();
@@ -138,6 +147,7 @@ export function DataTable<T extends { id: string }>({ object, endpoint, columns:
   const gridRef = useRef<HTMLDivElement>(null);
   const canEdit = can(object, "update");
   const cfg = board.config;
+  const narrow = useNarrow();
 
   const columns = useMemo(() => applyBoard(rawColumns, board), [rawColumns, board.config]);
   const [visible, setVisible] = useState<string[] | null>(() => { try { const s = localStorage.getItem(storageKey); if (s) return JSON.parse(s); } catch { /* ignore */ } return null; });
@@ -590,9 +600,9 @@ export function DataTable<T extends { id: string }>({ object, endpoint, columns:
 
   // ---- header menu ----
   const headerMenu = (c: Column<T>, i: number) => {
-    const t = typeOf(c); const lm = labelModel(c);
+    const ct = typeOf(c); const lm = labelModel(c);
     return (
-      <Menu fixed trigger={<button className="th-menu" aria-label="Opciones de columna"><Caret size={13} /></button>}>
+      <Menu fixed trigger={<button className="th-menu" aria-label={`${t("grid.colOptions")}: ${c.label}`}><Caret size={13} /></button>}>
         {c.sortable && <button onClick={() => setSort({ field: c.key, dir: "asc" })}><ChevronUp />Ordenar ascendente</button>}
         {c.sortable && <button onClick={() => setSort({ field: c.key, dir: "desc" })}><ChevronDown />Ordenar descendente</button>}
         {canEdit && <button onClick={() => setRenaming(c)}><Pencil />Renombrar</button>}
@@ -605,60 +615,62 @@ export function DataTable<T extends { id: string }>({ object, endpoint, columns:
         {canEdit && <button onClick={() => moveCol(c.key, 1)}><ArrowRight />Mover a la derecha</button>}
         {canEdit && (cfg.columns?.find((x) => x.key === c.key)?.width) && <button onClick={() => board.update((b) => ({ ...b, columns: (b.columns ?? []).map((x) => (x.key === c.key ? { ...x, width: undefined } : x)) }))}><Columns3 />Ancho automático</button>}
         <button onClick={() => saveCols(visibleKeys.filter((k) => k !== c.key))}><EyeOff />Ocultar columna</button>
-        {canEdit && c.custom && <button onClick={() => deleteCustom(c)} style={{ color: "var(--risk)" }}><Trash2 />Borrar columna</button>}
-        {t === "status" && <span className="xs muted" style={{ display: "block", padding: "4px 10px" }}>Haz clic en una etiqueta y pulsa «Editar etiquetas» para cambiarlas ahí mismo.</span>}
+        {canEdit && c.custom && <button onClick={() => deleteCustom(c)} style={{ color: "var(--risk-ink)" }}><Trash2 />Borrar columna</button>}
+        {ct === "status" && <span className="xs muted" style={{ display: "block", padding: "4px 10px" }}>Haz clic en una etiqueta y pulsa «Editar etiquetas» para cambiarlas ahí mismo.</span>}
       </Menu>
     );
   };
 
   const undoN = undoStack.current.length, redoN = redoStack.current.length;
+  const mobileKeys = (cfg.mobile_fields ?? cols.filter((c) => typeOf(c) !== "name").slice(0, 3).map((c) => c.key)).filter((k) => cols.some((c) => c.key === k));
   return (
     <div>
       <div className="filterbar">
-        {onNew && <button className="btn primary" onClick={onNew}><Plus />{newLabel ?? "Nuevo"}</button>}
-        <input className="input" style={{ maxWidth: 220 }} placeholder="Buscar…" value={q} onChange={(e) => setQ(e.target.value)} />
-        <Menu trigger={<button className="btn ghost"><Bookmark />{currentView ? currentView.name : "Todas"}<ChevronDown /></button>}>
-          <button onClick={() => applyView(null)}>Todos los registros</button>
+        {onNew && <button className="btn primary" onClick={onNew}><Plus />{newLabel ?? t("grid.new")}</button>}
+        <input className="input" style={{ maxWidth: 220 }} placeholder={t("grid.search")} aria-label={t("grid.search")} type="search" value={q} onChange={(e) => setQ(e.target.value)} />
+        <Menu trigger={<button className="btn ghost"><Bookmark />{currentView ? currentView.name : t("grid.all")}<ChevronDown /></button>}>
+          <button onClick={() => applyView(null)}>{t("grid.allRecords")}</button>
           {views.length > 0 && <div className="sep" />}
           {views.map((v) => <button key={v.id} onClick={() => applyView(v)} style={{ fontWeight: v.id === viewId ? 700 : 400 }}>{v.name}{v.shared ? <span className="badge xs right">compartida</span> : null}{(v.user_id === me.id || me.role.permissions.admin) && <span className="iconbtn" style={{ width: 20, height: 20, marginLeft: "auto" }} onClick={(e) => { e.stopPropagation(); deleteView(v); }} title="Borrar vista"><X size={12} /></span>}</button>)}
         </Menu>
-        <button className={`btn ghost ${filters.conditions.length ? "on" : ""}`} onClick={() => setShowFilters(true)}><Filter />Filtros{filters.conditions.length ? ` (${filters.conditions.length})` : ""}</button>
-        {filters.conditions.length > 0 && <button className="btn ghost sm" onClick={() => { setFilters(EMPTY); setViewId(null); }}><X />Limpiar</button>}
+        <button className={`btn ghost ${filters.conditions.length ? "on" : ""}`} onClick={() => setShowFilters(true)}><Filter />{t("grid.filters")}{filters.conditions.length ? ` (${filters.conditions.length})` : ""}</button>
+        {filters.conditions.length > 0 && <button className="btn ghost sm" onClick={() => { setFilters(EMPTY); setViewId(null); }}><X />{t("grid.clear")}</button>}
         {groupOptions && groupOptions.length > 0 && (
-          <Menu trigger={<button className="btn ghost"><Layers />{go ? `Agrupar: ${columns.find((c) => c.key === go.key)?.label ?? go.label}` : "Sin agrupar"}<ChevronDown /></button>}>
-            <button onClick={() => board.update({ group_by: null })} style={{ fontWeight: !go ? 700 : 400 }}>Sin agrupar</button>
+          <Menu trigger={<button className="btn ghost"><Layers />{go ? t("grid.group", { col: columns.find((c) => c.key === go.key)?.label ?? go.label }) : t("grid.noGroup")}<ChevronDown /></button>}>
+            <button onClick={() => board.update({ group_by: null })} style={{ fontWeight: !go ? 700 : 400 }}>{t("grid.noGroup")}</button>
             <div className="sep" />
             {groupOptions.map((g) => <button key={g.key} onClick={() => board.update({ group_by: g.key })} style={{ fontWeight: go?.key === g.key ? 700 : 400 }}>{columns.find((c) => c.key === g.key)?.label ?? g.label}</button>)}
           </Menu>
         )}
-        <button className="btn ghost" onClick={() => setRules(true)}><Zap />Automatizaciones</button>
-        {canEdit && <button className={`btn ghost ${(cfg.cond_formats ?? []).length ? "on" : ""}`} onClick={() => setCondOpen(true)} title="Formato condicional"><Paintbrush />Formato{(cfg.cond_formats ?? []).length ? ` (${(cfg.cond_formats ?? []).length})` : ""}</button>}
+        <button className="btn ghost" onClick={() => setRules(true)}><Zap />{t("grid.automations")}</button>
+        {canEdit && <button className={`btn ghost ${(cfg.cond_formats ?? []).length ? "on" : ""}`} onClick={() => setCondOpen(true)} title="Formato condicional"><Paintbrush />{t("grid.format")}{(cfg.cond_formats ?? []).length ? ` (${(cfg.cond_formats ?? []).length})` : ""}</button>}
         <span className="right row">
           {toolbar}
-          {canEdit && <><button className="btn ghost" disabled={!undoN || busy} onClick={() => replay("undo")} title={undoN ? `Deshacer: ${undoStack.current[undoN - 1]!.label} (Ctrl+Z)` : "Deshacer (Ctrl+Z)"}><Undo2 /></button><button className="btn ghost" disabled={!redoN || busy} onClick={() => replay("redo")} title="Rehacer (Ctrl+Y)"><Redo2 /></button></>}
-          <button className="btn ghost" onClick={() => setHelp(true)} title="Atajos de teclado"><Keyboard /></button>
-          <button className="btn ghost" onClick={() => setShowCols(true)} title="Columnas"><Columns3 /></button>
-          {filters.conditions.length > 0 && <button className="btn ghost" onClick={() => setSaveView(true)} title="Guardar vista"><Save /></button>}
-          {exportUrl && <button className="btn ghost" onClick={exportCsv} title="Exportar CSV"><Download /></button>}
+          {canEdit && <><button className="btn ghost" disabled={!undoN || busy} onClick={() => replay("undo")} title={undoN ? `${undoStack.current[undoN - 1]!.label} · ${t("grid.undo")}` : t("grid.undo")} aria-label={t("grid.undo")}><Undo2 /></button><button className="btn ghost" disabled={!redoN || busy} onClick={() => replay("redo")} title={t("grid.redo")} aria-label={t("grid.redo")}><Redo2 /></button></>}
+          <button className="btn ghost" onClick={() => setHelp(true)} title={t("grid.shortcuts")} aria-label={t("grid.shortcuts")}><Keyboard /></button>
+          <button className="btn ghost" onClick={() => setShowCols(true)} title={t("grid.columns")} aria-label={t("grid.columns")}><Columns3 /></button>
+          {narrow && canEdit && <Menu fixed trigger={<button className="btn ghost" title={t("grid.cardFields")} aria-label={t("grid.cardFields")}><Smartphone /></button>}><span className="xs muted" style={{ display: "block", padding: "4px 10px", maxWidth: 220 }}>{t("grid.cardFieldsHelp")}</span>{cols.filter((c) => typeOf(c) !== "name").map((c) => { const on = mobileKeys.includes(c.key); return <button key={c.key} role="menuitemcheckbox" aria-checked={on} onClick={() => board.update((b) => ({ ...b, mobile_fields: on ? mobileKeys.filter((k) => k !== c.key) : [...mobileKeys, c.key].slice(-3) }))}>{on ? "☑" : "☐"} {c.label}</button>; })}</Menu>}
+          {filters.conditions.length > 0 && <button className="btn ghost" onClick={() => setSaveView(true)} title={t("grid.saveView")} aria-label={t("grid.saveView")}><Save /></button>}
+          {exportUrl && <button className="btn ghost" onClick={exportCsv} title={t("grid.export")} aria-label={t("grid.export")}><Download /></button>}
         </span>
       </div>
       {filters.conditions.length > 0 && <div className="small sub mb8">Filtro: {describeFilters(filters)}</div>}
 
       {loading && !data && <Spinner />}
-      {data && data.items.length === 0 && !onCreate && <div className="card"><Empty title={emptyText ?? "No hay registros"} text={dq || filters.conditions.length ? "Prueba a cambiar la búsqueda o los filtros." : undefined} /></div>}
-      <div ref={gridRef} className="grid-focus" tabIndex={0} onKeyDown={onKey}
-        onCopy={(e) => { if (editing || !active || (e.target as HTMLElement).closest("input,textarea")) return; e.preventDefault(); e.clipboardData.setData("text/plain", copyText()); toast("Copiado: pégalo aquí o en Excel", "ok"); }}
+      {data && data.items.length === 0 && !onCreate && <div className="card"><Empty title={emptyText ?? t("grid.empty")} text={dq || filters.conditions.length ? "Prueba a cambiar la búsqueda o los filtros." : undefined} /></div>}
+      <div ref={gridRef} className="grid-focus" tabIndex={0} onKeyDown={onKey} aria-label={t("grid.shortcuts") + ": ?"} aria-activedescendant={active && !narrow ? `cell-${active.r}-${active.c}` : undefined}
+        onCopy={(e) => { if (editing || !active || (e.target as HTMLElement).closest("input,textarea")) return; e.preventDefault(); e.clipboardData.setData("text/plain", copyText()); toast(t("grid.copied"), "ok"); }}
         onCut={(e) => { if (editing || !active || (e.target as HTMLElement).closest("input,textarea")) return; e.preventDefault(); e.clipboardData.setData("text/plain", copyText()); clearRange("Cortar"); }}
         onPaste={(e) => { if (editing || !active || (e.target as HTMLElement).closest("input,textarea")) return; if (!canEdit) return; e.preventDefault(); paste(e.clipboardData.getData("text/plain")); }}>
         {data && (data.items.length > 0 || onCreate) && groups.map((g) => (
           <div key={g.key} className={`mgroup ${collapsed[g.key] ? "collapsed" : ""}`} style={{ "--gc": g.color } as React.CSSProperties}>
             {go && (
               <div className="ghead">
-                <button className="caret" onClick={() => setCollapsed((c) => ({ ...c, [g.key]: !c[g.key] }))} aria-label="Plegar grupo"><Caret size={16} /></button>
+                <button className="caret" onClick={() => setCollapsed((c) => ({ ...c, [g.key]: !c[g.key] }))} aria-label={t("grid.collapse")} aria-expanded={!collapsed[g.key]}><Caret size={16} /></button>
                 <GroupTitle label={g.label} color={g.color} editable={canEdit && g.key !== "__other"} onRename={(l) => setGroupCfg(g.key, { label: l })} onColor={(c) => setGroupCfg(g.key, { color: c })} />
-                <span className="count">{g.rows.length} {g.rows.length === 1 ? "elemento" : "elementos"}</span>
+                <span className="count">{g.rows.length === 1 ? t("grid.item") : t("grid.items", { n: g.rows.length })}</span>
                 {canEdit && g.key !== "__other" && (
-                  <Menu trigger={<button className="menu-dot show" aria-label="Opciones del grupo">⋯</button>}>
+                  <Menu trigger={<button className="menu-dot show" aria-label={t("grid.groupOptions")}>⋯</button>}>
                     <button onClick={() => moveGroup(g.key, -1)}><ChevronUp />Subir grupo</button>
                     <button onClick={() => moveGroup(g.key, 1)}><ChevronDown />Bajar grupo</button>
                     <button onClick={() => setCollapsed(Object.fromEntries(groups.map((x) => [x.key, true])))}>Plegar todos</button>
@@ -668,29 +680,38 @@ export function DataTable<T extends { id: string }>({ object, endpoint, columns:
                 )}
               </div>
             )}
+            {narrow && <div className="mcards" role="list" aria-label={g.label || undefined}>
+              {g.rows.map((row) => { const cf = condFor(row); const nameCol = cols.find((c) => typeOf(c) === "name") ?? cols[0]; const fields = mobileKeys.map((k) => cols.find((c) => c.key === k)).filter((c): c is Column<T> => !!c && c !== nameCol);
+                return <div key={row.id} role="listitem" className="mcard" style={cf.row}>
+                  <button className="mcard-main" onClick={() => onRowClick?.(row)}><b className="ell">{nameCol ? (typeOf(nameCol) === "name" ? String(rawVal(nameCol, row) ?? "") : textOf(nameCol, row)) : row.id}</b>{nameCol?.sub && <span className="xs muted ell">{nameCol.sub(row)}</span>}</button>
+                  <dl>{fields.map((c) => <div key={c.key}><dt>{c.label}</dt><dd>{typeOf(c) === "status" ? (() => { const o = c.options?.[String(rawVal(c, row) ?? "")]; return o ? <span className="pill-mini" style={pillStyle(o.color)}>{o.label}</span> : <span className="muted">—</span>; })() : (["money", "number"].includes(typeOf(c)) && rawVal(c, row) != null ? showNum(c, Number(rawVal(c, row))) : textOf(c, row) || <span className="muted">—</span>)}</dd></div>)}</dl>
+                </div>; })}
+            </div>}
+            {narrow && onCreate && canEdit && <div className="mcard add"><AddRowInput onCreate={(name) => create(name, g.key)} /></div>}
+            {narrow ? null :
             <div className="mwrap">
-              <table className="mtbl xg" style={{ width: tableW, tableLayout: "fixed" }}>
+              <table className="mtbl xg" role="grid" aria-label={g.label || undefined} aria-rowcount={g.rows.length + 1} aria-colcount={cols.length} style={{ width: tableW, tableLayout: "fixed" }}>
                 <colgroup><col style={{ width: 6 }} />{bulkActions && <col style={{ width: 36 }} />}{cols.map((c) => <col key={c.key} style={{ width: widthOf(c) }} />)}<col style={{ width: 44 }} /></colgroup>
-                <thead><tr>
-                  <th className="gbar" style={{ position: "sticky", left: 0, zIndex: 3 }} />
-                  {bulkActions && <th className="check" style={{ position: "sticky", left: 6, zIndex: 3 }}><input type="checkbox" checked={g.rows.length > 0 && g.rows.every((r) => sel.includes(r.id))} onChange={(e) => setSel((s) => (e.target.checked ? Array.from(new Set([...s, ...g.rows.map((r) => r.id)])) : s.filter((id) => !g.rows.some((r) => r.id === id))))} /></th>}
+                <thead><tr role="row" aria-rowindex={1}>
+                  <th className="gbar" role="presentation" style={{ position: "sticky", left: 0, zIndex: 3 }} />
+                  {bulkActions && <th className="check" style={{ position: "sticky", left: 6, zIndex: 3 }}><input type="checkbox" aria-label={`${t("grid.selectAll")}${g.label ? ` · ${g.label}` : ""}`} checked={g.rows.length > 0 && g.rows.every((r) => sel.includes(r.id))} onChange={(e) => setSel((s) => (e.target.checked ? Array.from(new Set([...s, ...g.rows.map((r) => r.id)])) : s.filter((id) => !g.rows.some((r) => r.id === id))))} /></th>}
                   {cols.map((c, i) => (
-                    <th key={c.key} className={`${i === 0 || typeOf(c) === "name" ? "l" : ""} ${c.className ?? ""} ${i === freeze - 1 ? "frz-last" : ""} ${dragCol === c.key ? "dragging" : ""}`} style={frz(i)}
+                    <th key={c.key} role="columnheader" aria-colindex={i + 1} aria-sort={sort.field === c.key ? (sort.dir === "asc" ? "ascending" : "descending") : c.sortable ? "none" : undefined} className={`${i === 0 || typeOf(c) === "name" ? "l" : ""} ${c.className ?? ""} ${i === freeze - 1 ? "frz-last" : ""} ${dragCol === c.key ? "dragging" : ""}`} style={frz(i)}
                       draggable={canEdit && !resize} onDragStart={(e) => { setDragCol(c.key); e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/x-col", c.key); }} onDragEnd={() => setDragCol(null)}
                       onDragOver={(e) => { if (dragCol && dragCol !== c.key) e.preventDefault(); }} onDrop={(e) => { e.preventDefault(); if (dragCol && dragCol !== c.key) moveColTo(dragCol, c.key); setDragCol(null); }}>
                       <span className="th-in"><span className="th-label" title={c.readOnlyReason ?? (!isEditable(c) && canEdit ? "Solo lectura" : undefined)} onClick={() => c.sortable && setSort((s) => ({ field: c.key, dir: s.field === c.key && s.dir === "desc" ? "asc" : "desc" }))}>{!isEditable(c) && canEdit && <Lock size={10} className="muted" />}{c.label}{sort.field === c.key && (sort.dir === "asc" ? <ChevronUp size={12} /> : <ChevronDown size={12} />)}</span>{headerMenu(c, i)}</span>
                       {canEdit && <span className="th-resize" onMouseDown={(e) => startResize(e, c)} onClick={(e) => e.stopPropagation()} title="Arrastra para cambiar el ancho" />}
                     </th>
                   ))}
-                  <th className="menu addcol">{canEdit && <button className="menu-dot show" title="Añadir columna" onClick={() => setAddCol(true)}><Plus size={15} /></button>}</th>
+                  <th className="menu addcol">{canEdit && <button className="menu-dot show" title={t("grid.addColumn")} aria-label={t("grid.addColumn")} onClick={() => setAddCol(true)}><Plus size={15} /></button>}</th>
                 </tr></thead>
                 <tbody>
                   {g.rows.map((row) => {
                     const cf = condFor(row); const ri = rowIdx.get(row.id) ?? -1;
                     return (
-                      <tr key={row.id} className={sel.includes(row.id) ? "sel" : ""}>
-                        <td className="gbar" style={{ position: "sticky", left: 0, zIndex: 1 }} />
-                        {bulkActions && <td className="check" style={{ position: "sticky", left: 6, zIndex: 1, ...(cf.row ?? {}) }}><input type="checkbox" checked={sel.includes(row.id)} onChange={(e) => setSel((s) => (e.target.checked ? [...s, row.id] : s.filter((x) => x !== row.id)))} /></td>}
+                      <tr key={row.id} role="row" aria-rowindex={g.rows.indexOf(row) + 2} aria-selected={sel.includes(row.id) || undefined} className={sel.includes(row.id) ? "sel" : ""}>
+                        <td className="gbar" role="presentation" style={{ position: "sticky", left: 0, zIndex: 1 }} />
+                        {bulkActions && <td className="check" style={{ position: "sticky", left: 6, zIndex: 1, ...(cf.row ?? {}) }}><input type="checkbox" aria-label={t("grid.selectRow")} checked={sel.includes(row.id)} onChange={(e) => setSel((s) => (e.target.checked ? [...s, row.id] : s.filter((x) => x !== row.id)))} /></td>}
                         {cols.map((c, i) => {
                           const inR = !!rng && ri >= rng.r0 && ri <= rng.r1 && i >= rng.c0 && i <= rng.c1;
                           const isAct = active?.r === row.id && active.c === c.key;
@@ -699,17 +720,17 @@ export function DataTable<T extends { id: string }>({ object, endpoint, columns:
                           const inFill = fillTo !== null && !!rng && i >= rng.c0 && i <= rng.c1 && ((ri > rng.r1 && ri <= fillTo) || (ri < rng.r0 && ri >= fillTo));
                           const nf = fmtFor_(c);
                           const style: React.CSSProperties = { ...(cf.row ?? {}), ...(cf.cells[c.key] ?? {}), ...(frz(i) ?? {}), ...(nf?.align ? { textAlign: nf.align } : {}), ...(nf?.wrap ? { whiteSpace: "normal", lineHeight: 1.3, height: "auto", paddingTop: 6, paddingBottom: 6 } : {}) };
-                          return <GridCell key={c.key} col={c} type={typeOf(c)} row={row} raw={rawVal(c, row)} edVal={editorVal(c, row)} editable={isEditable(c)} active={isAct} inRange={inR && !isAct} inFill={inFill} editing={isEdit} seed={isEdit ? editing?.seed : undefined} handle={handle} style={style} frozenLast={i === freeze - 1} numFmt={nf} showNum={showNum}
+                          return <GridCell key={c.key} ci={i + 1} col={c} type={typeOf(c)} row={row} raw={rawVal(c, row)} edVal={editorVal(c, row)} editable={isEditable(c)} active={isAct} inRange={inR && !isAct} inFill={inFill} editing={isEdit} seed={isEdit ? editing?.seed : undefined} handle={handle} style={style} frozenLast={i === freeze - 1} numFmt={nf} showNum={showNum}
                             onOpen={onRowClick} onClickCell={(e) => cellClick(e, row, c)} onMouseDown={(e) => cellDown(e, row, c)} onMouseEnter={() => cellEnter(row, c)} onDouble={() => startEdit({ r: row.id, c: c.key })} onStartEdit={() => { setAnchor(null); setActive({ r: row.id, c: c.key }); startEdit({ r: row.id, c: c.key }); }}
                             onCommit={(v, mv) => editCommit(row, c, v, mv)} onCancel={() => afterEdit(null)} onFillStart={(e) => { e.preventDefault(); e.stopPropagation(); filling.current = true; setFillTo(rng?.r1 ?? null); }}
                             labelModel={() => labelModel(c)} onSaveLabels={(items, removed) => saveLabels(c, items, removed)} canEditLabels={canEdit && !!labelModel(c)} suggestions={typeOf(c) === "tags" ? Array.from(new Set((data?.items ?? []).flatMap((r) => (Array.isArray(rawVal(c, r)) ? (rawVal(c, r) as string[]) : [])))).concat(c.custom?.options ?? []) : []} />;
                         })}
                         <td className="menu">
-                          <Menu fixed trigger={<button className="menu-dot" aria-label="Acciones">⋯</button>}>
-                            {onRowClick && <button onClick={() => onRowClick(row)}>Abrir</button>}
+                          <Menu fixed trigger={<button className="menu-dot" aria-label={t("grid.rowActions")}>⋯</button>}>
+                            {onRowClick && <button onClick={() => onRowClick(row)}>{t("grid.open")}</button>}
                             {onDuplicate && <button onClick={() => duplicate(row)}><Copy />Duplicar</button>}
                             {go?.setValue && groups.filter((x) => x.key !== g.key && x.key !== "__other").map((x) => <button key={x.key} onClick={() => moveRow(row, x.key)}><FolderInput />Mover a <span className="gdot" style={{ background: x.color }} />{x.label}</button>)}
-                            {onDelete && <button onClick={() => onDelete([row.id])} style={{ color: "var(--risk)" }}><Trash2 />Borrar</button>}
+                            {onDelete && <button onClick={() => onDelete([row.id])} style={{ color: "var(--risk-ink)" }}><Trash2 />Borrar</button>}
                           </Menu>
                         </td>
                       </tr>
@@ -730,15 +751,15 @@ export function DataTable<T extends { id: string }>({ object, endpoint, columns:
                   </tr>}
                 </tbody>
               </table>
-            </div>
+            </div>}
           </div>
         ))}
       </div>
       {go && canEdit && Object.values(cfg.groups?.[go.key] ?? {}).some((x) => x.hidden) && <button className="btn ghost sm" onClick={() => board.update((c) => ({ ...c, groups: { ...(c.groups ?? {}), [go.key]: Object.fromEntries(Object.entries(c.groups?.[go.key] ?? {}).map(([k, v]) => [k, { ...v, hidden: false }])) } }))}>Mostrar grupos ocultos</button>}
       {data && data.total > pageSize && <div className="card tight" style={{ padding: "0 8px" }}><Pager page={page} pageSize={pageSize} total={data.total} onPage={setPage} /></div>}
 
-      {statusBar && <div className="xl-status">{statusBar.cells} celdas · Recuento: <b>{statusBar.filled}</b>{statusBar.s && <> · Suma: <b>{fmtNum(Math.round(statusBar.s.sum * 100) / 100)}</b> · Promedio: <b>{fmtNum(Math.round(statusBar.s.avg * 100) / 100)}</b> · Mín: <b>{fmtNum(statusBar.s.min)}</b> · Máx: <b>{fmtNum(statusBar.s.max)}</b></>}<span className="xs muted" style={{ marginLeft: 10 }}>Ctrl+C copia · Supr vacía · Ctrl+D rellena</span></div>}
-      {busy && <div className="xl-busy">Guardando…</div>}
+      {statusBar && <div className="xl-status" role="status" aria-live="polite">{statusBar.cells} celdas · Recuento: <b>{statusBar.filled}</b>{statusBar.s && <> · Suma: <b>{fmtNum(Math.round(statusBar.s.sum * 100) / 100)}</b> · Promedio: <b>{fmtNum(Math.round(statusBar.s.avg * 100) / 100)}</b> · Mín: <b>{fmtNum(statusBar.s.min)}</b> · Máx: <b>{fmtNum(statusBar.s.max)}</b></>}<span className="xs muted" style={{ marginLeft: 10 }}>Ctrl+C copia · Supr vacía · Ctrl+D rellena</span></div>}
+      {busy && <div className="xl-busy" role="status">{t("grid.saving")}</div>}
       {sel.length > 0 && bulkActions && <div className="sel-bar"><span className="n">{sel.length}</span><span className="small sub" style={{ marginRight: 8 }}>seleccionados</span>{bulkActions(sel, clearSel)}{onDelete && <button className="btn sm danger" onClick={async () => { await onDelete(sel); clearSel(); }}><Trash2 />Borrar</button>}<button className="iconbtn" onClick={() => setSel([])} aria-label="Quitar selección"><X size={16} /></button></div>}
 
       {showFilters && (
@@ -775,6 +796,7 @@ function setPath<T>(row: T, key: string, value: unknown): T {
 
 /* ------------------------------------------------------------------ celda */
 interface CellProps<T> {
+  ci: number;
   col: Column<T>; type: ColumnType; row: T; raw: unknown; edVal: unknown; editable: boolean; active: boolean; inRange: boolean; inFill: boolean; editing: boolean; seed?: string; handle: boolean; style: React.CSSProperties; frozenLast: boolean; numFmt?: NumFormat; showNum: (c: Column<T>, n: number) => string;
   onOpen?: (row: T) => void; onMouseDown: (e: React.MouseEvent) => void; onMouseEnter: () => void; onDouble: () => void; onStartEdit: () => void; onCommit: (v: unknown, move: Move) => void; onCancel: () => void; onFillStart: (e: React.MouseEvent) => void; onClickCell: (e: React.MouseEvent) => void;
   labelModel: () => { items: LabelItem[]; caps: LabelCaps } | null; onSaveLabels: (items: LabelItem[], removed: LabelItem[]) => Promise<boolean>; canEditLabels: boolean; suggestions: string[];
@@ -788,7 +810,7 @@ function GridCell<T extends { id: string }>(p: CellProps<T>) {
   useLayoutEffect(() => { if (p.editing && ref.current) { const r = ref.current.getBoundingClientRect(); setAt({ x: Math.min(r.left, window.innerWidth - 270), y: r.bottom + 4 }); } else { setAt(null); setLabelEdit(false); } }, [p.editing]);
   useEffect(() => { if (p.active && ref.current) ref.current.scrollIntoView({ block: "nearest", inline: "nearest" }); }, [p.active]);
   const cls = `${p.active ? "act" : ""} ${p.inRange ? "rng" : ""} ${p.inFill ? "fillp" : ""} ${p.editable ? "" : "ro"} ${p.frozenLast ? "frz-last" : ""}`;
-  const common = { ref, style: p.style, onMouseDown: p.onMouseDown, onMouseEnter: p.onMouseEnter, onDoubleClick: (e: React.MouseEvent) => { if ((e.target as HTMLElement).closest("a,button,input,.cdd,.cpop")) return; p.onDouble(); } };
+  const common = { ref, id: `cell-${row.id}-${c.key}`, role: "gridcell", "aria-colindex": p.ci, "aria-selected": p.active || p.inRange || undefined, "aria-readonly": !p.editable || undefined, style: p.style, onMouseDown: p.onMouseDown, onMouseEnter: p.onMouseEnter, onDoubleClick: (e: React.MouseEvent) => { if ((e.target as HTMLElement).closest("a,button,input,.cdd,.cpop")) return; p.onDouble(); } };
   const handle = p.handle ? <span className="fillh" onMouseDown={p.onFillStart} title="Arrastra para rellenar" /> : null;
   const keyDown = (e: React.KeyboardEvent<HTMLInputElement>, commitVal: () => unknown) => {
     e.stopPropagation();
@@ -796,21 +818,21 @@ function GridCell<T extends { id: string }>(p: CellProps<T>) {
     if (e.key === "Enter") { e.preventDefault(); p.onCommit(commitVal(), e.shiftKey ? "up" : "down"); }
     if (e.key === "Tab") { e.preventDefault(); p.onCommit(commitVal(), e.shiftKey ? "left" : "right"); }
   };
-  const numText = (n: number) => { const s = p.showNum(c, n); return p.numFmt?.neg_red && n < 0 ? <span style={{ color: "var(--risk)" }}>{s}</span> : s; };
+  const numText = (n: number) => { const s = p.showNum(c, n); return p.numFmt?.neg_red && n < 0 ? <span style={{ color: "var(--risk-ink)" }}>{s}</span> : s; };
 
   if (type === "name") {
     if (p.editing) { const v0 = p.seed ?? String(raw ?? ""); return <td {...common} className={`name l edit ${cls} ${c.className ?? ""}`}><input className="ce" autoFocus defaultValue={v0} onFocus={(e) => { if (p.seed !== undefined) e.currentTarget.setSelectionRange(v0.length, v0.length); }} onKeyDown={(e) => keyDown(e, () => e.currentTarget.value.trim() || raw)} onBlur={(e) => { const v = e.target.value.trim(); if (v && v !== String(raw ?? "")) p.onCommit(v, null); else p.onCancel(); }} /></td>; }
-    return <td {...common} className={`name l ${cls} ${c.className ?? ""}`}>{c.render ? c.render(row) : <a href="#" onClick={(e) => { e.preventDefault(); p.onOpen?.(row); }}>{String(raw ?? "")}</a>}{c.sub && <span className="sub ell">{c.sub(row)}</span>}{p.editable && <button className="rename" title="Renombrar (F2)" onClick={(e) => { e.stopPropagation(); p.onStartEdit(); }}><Pencil size={12} /></button>}{handle}</td>;
+    return <td {...common} className={`name l ${cls} ${c.className ?? ""}`}>{c.render ? c.render(row) : <a href="#" onClick={(e) => { e.preventDefault(); p.onOpen?.(row); }}>{String(raw ?? "")}</a>}{c.sub && <span className="sub ell">{c.sub(row)}</span>}{p.editable && <button className="rename" title="Renombrar (F2)" onClick={(e) => { e.stopPropagation(); p.onStartEdit(); }} aria-label="Renombrar (F2)"><Pencil size={12} /></button>}{handle}</td>;
   }
   if (type === "status") {
     const opt = c.options?.[String(raw ?? "")];
     const model = labelEdit ? p.labelModel() : null;
     return (
       <td {...common} className={`status ${cls} ${c.className ?? ""}`} onClick={(e) => p.editable && !p.editing && p.onClickCell(e)} style={{ ...p.style, ...(!p.editable ? { cursor: "default" } : {}) }}>
-        <div className="pill" style={{ background: opt?.color ?? "var(--c-grey)" }}>{opt?.label ?? (raw ? String(raw) : "—")}</div>
+        <div className="pill" style={pillStyle(opt?.color ?? "#c4c4c4")}>{opt?.label ?? (raw ? String(raw) : "—")}</div>
         {handle}
         {p.editing && at && (model ? <div className="cdd ledit-wrap" style={{ left: Math.min(at.x, window.innerWidth - 360), top: Math.min(at.y, window.innerHeight - 380) }} onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}><LabelEditor items={model.items} caps={model.caps} onCancel={() => setLabelEdit(false)} onSave={async (items, removed) => { if (await p.onSaveLabels(items, removed)) setLabelEdit(false); }} /></div>
-          : <Dropdown at={at} onClose={p.onCancel} footer={p.canEditLabels ? <button className="btn ghost sm" style={{ width: "100%" }} onClick={() => setLabelEdit(true)}><Pencil />Editar etiquetas</button> : undefined}>{Object.entries(c.options ?? {}).filter(([k, o]) => !o.hidden || k === String(raw ?? "")).map(([k, o]) => <button key={k} style={{ background: o.color }} title={o.base ? `Se comporta como «${c.options?.[o.base]?.label ?? o.base}»` : undefined} onClick={() => p.onCommit(k, null)}>{o.label}</button>)}{!c.fixedOptions && c.custom && <button style={{ background: "var(--panel)", color: "var(--ink2)", border: "1px dashed var(--rule)" }} onClick={() => p.onCommit(null, null)}>— vacío —</button>}</Dropdown>)}
+          : <Dropdown at={at} onClose={p.onCancel} footer={p.canEditLabels ? <button className="btn ghost sm" style={{ width: "100%" }} onClick={() => setLabelEdit(true)}><Pencil />Editar etiquetas</button> : undefined}>{Object.entries(c.options ?? {}).filter(([k, o]) => !o.hidden || k === String(raw ?? "")).map(([k, o]) => <button key={k} style={pillStyle(o.color)} title={o.base ? `Se comporta como «${c.options?.[o.base]?.label ?? o.base}»` : undefined} onClick={() => p.onCommit(k, null)}>{o.label}</button>)}{!c.fixedOptions && c.custom && <button style={{ background: "var(--panel)", color: "var(--ink2)", border: "1px dashed var(--rule)" }} onClick={() => p.onCommit(null, null)}>— vacío —</button>}</Dropdown>)}
       </td>
     );
   }
@@ -836,7 +858,7 @@ function GridCell<T extends { id: string }>(p: CellProps<T>) {
     return (
       <td {...common} className={`date edit ${cls} ${c.className ?? ""}`} onClick={(e) => p.editable && !p.editing && p.onClickCell(e)}>
         {p.editing ? (p.seed !== undefined
-          ? <input className="ce" autoFocus defaultValue={p.seed} placeholder="dd/mm/aaaa" onKeyDown={(e) => keyDown(e, () => parseDate(e.currentTarget.value) ?? raw)} onBlur={(e) => { const v = parseDate(e.target.value); if (v) p.onCommit(v, null); else p.onCancel(); }} />
+          ? <input aria-label="dd/mm/aaaa" className="ce" autoFocus defaultValue={p.seed} placeholder="dd/mm/aaaa" onKeyDown={(e) => keyDown(e, () => parseDate(e.currentTarget.value) ?? raw)} onBlur={(e) => { const v = parseDate(e.target.value); if (v) p.onCommit(v, null); else p.onCancel(); }} />
           : <input className="ce" type={type === "datetime" ? "datetime-local" : "date"} autoFocus defaultValue={type === "datetime" ? iso.slice(0, 16) : iso.slice(0, 10)} onKeyDown={(e) => keyDown(e, () => e.currentTarget.value ? (type === "datetime" ? new Date(e.currentTarget.value).toISOString() : e.currentTarget.value) : null)} onBlur={(e) => { const v = e.target.value ? (type === "datetime" ? new Date(e.target.value).toISOString() : e.target.value) : null; if ((v ?? "") !== (type === "datetime" ? iso : iso.slice(0, 10))) p.onCommit(v, null); else p.onCancel(); }} />)
           : c.render ? c.render(row) : d && !Number.isNaN(d.getTime()) ? <><i className={`ddot ${late ? "late" : soon ? "soon" : ""}`} />{fmtDate(String(raw), type === "datetime" ? { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" } : { day: "2-digit", month: "short" })}</> : <span className="muted">—</span>}
         {handle}
@@ -883,8 +905,8 @@ function GroupTitle({ label, color, editable, onRename, onColor }: { label: stri
   if (editing) return <input className="input sm" autoFocus defaultValue={label} style={{ width: 220, color }} onBlur={(e) => { setEditing(false); if (e.target.value.trim() && e.target.value.trim() !== label) onRename(e.target.value.trim()); }} onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); if (e.key === "Escape") setEditing(false); }} />;
   return (
     <span className="row" style={{ gap: 6, position: "relative" }}>
-      <h2 onClick={() => editable && setEditing(true)} style={editable ? { cursor: "text" } : undefined} title={editable ? "Clic para renombrar" : undefined}>{label}</h2>
-      {editable && <button className="iconbtn" style={{ width: 22, height: 22 }} title="Color del grupo" onClick={() => setPick((x) => !x)}><Palette size={13} /></button>}
+      <h2 onClick={() => editable && setEditing(true)} style={{ color: readable(color), ...(editable ? { cursor: "text" } : {}) }} title={editable ? "Clic para renombrar" : undefined}>{label}</h2>
+      {editable && <button className="iconbtn" style={{ width: 22, height: 22 }} title="Color del grupo" onClick={() => setPick((x) => !x)} aria-label="Color del grupo"><Palette size={13} /></button>}
       {pick && <ColorPicker value={color} onPick={(c) => { onColor(c); setPick(false); }} onClose={() => setPick(false)} />}
     </span>
   );
@@ -894,7 +916,12 @@ function AddRow({ colSpan, onCreate, onPasteMany }: { colSpan: number; onCreate:
   const [v, setV] = useState("");
   const [busy, setBusy] = useState(false);
   const submit = async () => { if (!v.trim() || busy) return; setBusy(true); try { await onCreate(v); setV(""); } finally { setBusy(false); } };
-  return <tr className="addrow"><td className="gbar" /><td colSpan={colSpan} className="l"><span className="row"><Plus size={14} className="muted" /><input className="addrow-in" placeholder="+ Añadir elemento (o pega una lista desde Excel)" value={v} onChange={(e) => setV(e.target.value)} onKeyDown={(e) => { e.stopPropagation(); if (e.key === "Enter") submit(); if (e.key === "Escape") setV(""); }} onPaste={(e) => { const lines = parseTSV(e.clipboardData.getData("text/plain")).map((l) => (l[0] ?? "").trim()).filter(Boolean); if (lines.length > 1) { e.preventDefault(); e.stopPropagation(); setBusy(true); onPasteMany(lines).finally(() => setBusy(false)); } }} onBlur={() => v.trim() && submit()} disabled={busy} /></span></td></tr>;
+  return <tr className="addrow"><td className="gbar" /><td colSpan={colSpan} className="l"><span className="row"><Plus size={14} className="muted" /><input className="addrow-in" placeholder={t("grid.addItem")} aria-label={t("grid.addItem")} value={v} onChange={(e) => setV(e.target.value)} onKeyDown={(e) => { e.stopPropagation(); if (e.key === "Enter") submit(); if (e.key === "Escape") setV(""); }} onPaste={(e) => { const lines = parseTSV(e.clipboardData.getData("text/plain")).map((l) => (l[0] ?? "").trim()).filter(Boolean); if (lines.length > 1) { e.preventDefault(); e.stopPropagation(); setBusy(true); onPasteMany(lines).finally(() => setBusy(false)); } }} onBlur={() => v.trim() && submit()} disabled={busy} /></span></td></tr>;
+}
+
+function AddRowInput({ onCreate }: { onCreate: (name: string) => Promise<void> | void }) {
+  const [v, setV] = useState("");
+  return <input className="input" placeholder={t("grid.addItem")} aria-label={t("grid.addItem")} value={v} onChange={(e) => setV(e.target.value)} onKeyDown={async (e) => { if (e.key === "Enter" && v.trim()) { await onCreate(v.trim()); setV(""); } }} />;
 }
 
 function Dropdown({ at, list, children, footer, onClose }: { at: { x: number; y: number }; list?: boolean; children: ReactNode; footer?: ReactNode; onClose: () => void }) {
@@ -936,7 +963,7 @@ function AddColumnDialog({ object, onClose, onCreated }: { object: string; onClo
         <Field label="Nombre de la columna"><input className="input" autoFocus value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Ej. Prioridad interna" onKeyDown={(e) => e.key === "Enter" && save()} /></Field>
         <Field label="Tipo"><div className="type-grid">{COL_TYPES.map((t) => <button key={t.key} className={`type-btn ${type === t.key ? "active" : ""}`} onClick={() => { setType(t.key); setSettings({}); }}><b>{t.label}</b>{t.help && <span>{t.help}</span>}</button>)}</div></Field>
         <div className="form-grid" style={{ padding: 0 }}><ColumnSettings object={object} type={type} settings={settings} onChange={setSettings} /></div>
-        {(type === "select" || type === "multiselect") && <Field label="Opciones"><div className="col" style={{ gap: 6 }}>{options.map((o, i) => <div key={i} className="row"><span className="gdot" style={{ background: PALETTE[(i * 3) % PALETTE.length] }} /><input className="input sm" value={o} onChange={(e) => setOptions(options.map((x, j) => (j === i ? e.target.value : x)))} /><button className="iconbtn" onClick={() => setOptions(options.filter((_, j) => j !== i))}><X size={14} /></button></div>)}<button className="btn ghost sm" onClick={() => setOptions([...options, ""])}><Plus />Añadir opción</button></div></Field>}
+        {(type === "select" || type === "multiselect") && <Field label="Opciones"><div className="col" style={{ gap: 6 }}>{options.map((o, i) => <div key={i} className="row"><span className="gdot" style={{ background: PALETTE[(i * 3) % PALETTE.length] }} /><input className="input sm" value={o} onChange={(e) => setOptions(options.map((x, j) => (j === i ? e.target.value : x)))} /><button className="iconbtn" onClick={() => setOptions(options.filter((_, j) => j !== i))} aria-label="Cerrar"><X size={14} /></button></div>)}<button className="btn ghost sm" onClick={() => setOptions([...options, ""])}><Plus />Añadir opción</button></div></Field>}
       </div>
     </Modal>
   );

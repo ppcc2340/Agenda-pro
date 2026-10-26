@@ -33,7 +33,7 @@ export function MfaGate() {
             <p className="small mt8">2. Escribe el código de 6 cifras que muestra la app:</p>
             <div className="row"><input className="input" inputMode="numeric" autoComplete="one-time-code" aria-label="Código de 6 cifras" value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))} onKeyDown={(e) => e.key === "Enter" && enable()} /><button className="btn primary" disabled={code.length !== 6} onClick={enable}>Activar</button></div>
           </>}
-          {err && <p className="small" role="alert" style={{ color: "var(--risk)" }}>{err}</p>}
+          {err && <p className="small" role="alert" style={{ color: "var(--risk-ink)" }}>{err}</p>}
         </> : <>
           <p className="small">Listo. Guarda estos <b>códigos de recuperación</b> en un lugar seguro: cada uno sirve una vez si pierdes el móvil. No se volverán a mostrar.</p>
           <pre style={{ columns: 2, background: "var(--panel)", padding: 10, borderRadius: 6 }}>{codes.join("\n")}</pre>

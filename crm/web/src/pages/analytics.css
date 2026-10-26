@@ -15,7 +15,7 @@
 .an-grip { cursor: grab; flex: none; }
 .an-kpi { height: 100%; display: flex; flex-direction: column; justify-content: center; }
 .an-kpi .v { font-size: 30px; font-weight: 700; letter-spacing: -.02em; }
-.an-kpi .d { font-size: 12px; margin-top: 2px; } .an-kpi .d.up { color: #037f4c; } .an-kpi .d.down { color: var(--risk); }
+.an-kpi .d { font-size: 12px; margin-top: 2px; } .an-kpi .d.up { color: #037f4c; } .an-kpi .d.down { color: var(--risk-ink); }
 .rc-kpi { display: flex; flex-wrap: wrap; gap: 24px; align-items: center; height: 100%; padding: 8px 0; }
 .rc-kpi-v { font-size: 30px; font-weight: 700; } .rc-kpi-l { font-size: 12px; color: var(--ink2); }
 .rc-empty { display: grid; place-items: center; height: 100%; min-height: 80px; color: var(--ink3); font-size: 13px; text-align: center; }
@@ -31,7 +31,7 @@
 .an-cols .input.sm { width: auto; min-width: 0; flex: 1; }
 .an-charts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
 .an-chartbtn { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--rule); background: var(--raised); color: var(--ink); border-radius: 6px; padding: 6px 10px; cursor: pointer; font: inherit; font-size: 13px; }
-.an-chartbtn.on { border-color: var(--sea); background: var(--sea-soft); color: var(--sea); font-weight: 600; }
+.an-chartbtn.on { border-color: var(--sea); background: var(--sea-soft); color: var(--sea-ink); font-weight: 600; }
 .an-preview .badge { margin-left: 6px; }
 .an-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
 .an-quota { display: flex; flex-direction: column; gap: 6px; }
@@ -39,7 +39,7 @@
 .an-q-name { width: 140px; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .an-q-bar { flex: 1; height: 14px; background: var(--rule2); border-radius: 7px; overflow: hidden; min-width: 60px; } .an-q-bar i { display: block; height: 100%; border-radius: 7px; }
 .an-q-val { white-space: nowrap; } .an-q-in { width: 100px !important; display: inline-block; }
-.an .tag.on { background: var(--sea-soft); color: var(--sea); }
+.an .tag.on { background: var(--sea-soft); color: var(--sea-ink); }
 .an .tag input { margin: 0 2px 0 0; vertical-align: -1px; }
 @media (max-width: 960px) {
   .an-builder { grid-template-columns: 1fr; } .an-list { position: static; max-height: 220px; }

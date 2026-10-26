@@ -1,11 +1,12 @@
-export const fmtMoney = (n: number | null | undefined, currency = "EUR") => new Intl.NumberFormat("es-ES", { style: "currency", currency, maximumFractionDigits: 0 }).format(Number(n) || 0);
-export const fmtMoney2 = (n: number | null | undefined, currency = "EUR") => new Intl.NumberFormat("es-ES", { style: "currency", currency }).format(Number(n) || 0);
-export const fmtNum = (n: number | null | undefined) => new Intl.NumberFormat("es-ES").format(Number(n) || 0);
+import { locale } from "./prefs";
+export const fmtMoney = (n: number | null | undefined, currency = "EUR") => new Intl.NumberFormat(locale(), { style: "currency", currency, maximumFractionDigits: 0 }).format(Number(n) || 0);
+export const fmtMoney2 = (n: number | null | undefined, currency = "EUR") => new Intl.NumberFormat(locale(), { style: "currency", currency }).format(Number(n) || 0);
+export const fmtNum = (n: number | null | undefined) => new Intl.NumberFormat(locale()).format(Number(n) || 0);
 export function fmtDate(iso: string | null | undefined, opts: Intl.DateTimeFormatOptions = { day: "2-digit", month: "short", year: "numeric" }) {
   if (!iso) return "";
   const d = new Date(iso.length === 10 ? iso + "T00:00:00" : iso);
   if (Number.isNaN(d.getTime())) return iso;
-  return new Intl.DateTimeFormat("es-ES", opts).format(d);
+  return new Intl.DateTimeFormat(locale(), opts).format(d);
 }
 export const fmtDateTime = (iso: string | null | undefined) => fmtDate(iso, { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
 export const fmtTime = (iso: string | null | undefined) => fmtDate(iso, { hour: "2-digit", minute: "2-digit" });

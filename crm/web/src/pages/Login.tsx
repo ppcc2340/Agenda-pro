@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { api } from "../api";
 import { errorMessage } from "../components/ui";
+import { t } from "../lib/i18n";
 
 export function Login({ onLogin }: { onLogin: () => void }) {
   const [email, setEmail] = useState("");
@@ -18,22 +19,22 @@ export function Login({ onLogin }: { onLogin: () => void }) {
   };
   return (
     <div className="login">
-      <form className="box" onSubmit={submit}>
-        <div className="row mb16"><span className="logo avatar" style={{ borderRadius: 8 }}>C</span><h1>CRM</h1></div>
+      <main className="box-wrap"><form className="box" onSubmit={submit}>
+        <div className="row mb16"><span className="logo avatar" style={{ borderRadius: 8 }} aria-hidden="true">C</span><h1>CRM</h1></div>
         {step === "login" ? (<>
-          <p className="sub mb16">Inicia sesión con tu cuenta de empresa.</p>
+          <p className="sub mb16">{t("login.title")}</p>
           <div className="col" style={{ gap: 12 }}>
-            <div className="field"><label>Email</label><input className="input" type="email" autoComplete="username" autoFocus value={email} onChange={(e) => setEmail(e.target.value)} required /></div>
-            <div className="field"><label>Contraseña</label><input className="input" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required /></div>
+            <div className="field"><label htmlFor="login-email">{t("login.email")}</label><input id="login-email" className="input" type="email" autoComplete="username" autoFocus value={email} onChange={(e) => setEmail(e.target.value)} required /></div>
+            <div className="field"><label htmlFor="login-pass">{t("login.password")}</label><input id="login-pass" className="input" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required /></div>
           </div>
         </>) : (<>
-          <p className="sub mb16">Introduce el código de 6 dígitos de tu aplicación de autenticación.</p>
-          <div className="field"><label>Código</label><input className="input" inputMode="numeric" autoFocus value={code} onChange={(e) => setCode(e.target.value)} required maxLength={8} style={{ fontSize: 22, letterSpacing: 6, textAlign: "center" }} /></div>
+          <p className="sub mb16">{t("login.codeHelp")}</p>
+          <div className="field"><label htmlFor="login-code">{t("login.code")}</label><input id="login-code" className="input" inputMode="numeric" autoComplete="one-time-code" autoFocus value={code} onChange={(e) => setCode(e.target.value)} required maxLength={8} style={{ fontSize: 22, letterSpacing: 6, textAlign: "center" }} /></div>
         </>)}
-        {err && <div className="alert error mt12">{err}</div>}
-        <button className="btn primary mt16" style={{ width: "100%" }} disabled={busy}>{step === "login" ? "Entrar" : "Verificar"}</button>
-        {step === "2fa" && <button type="button" className="btn ghost mt8" style={{ width: "100%" }} onClick={() => setStep("login")}>Volver</button>}
-      </form>
+        {err && <div className="alert error mt12" role="alert">{err}</div>}
+        <button className="btn primary mt16" style={{ width: "100%" }} disabled={busy}>{step === "login" ? t("login.enter") : t("login.verify")}</button>
+        {step === "2fa" && <button type="button" className="btn ghost mt8" style={{ width: "100%" }} onClick={() => setStep("login")}>{t("login.back")}</button>}
+      </form></main>
     </div>
   );
 }

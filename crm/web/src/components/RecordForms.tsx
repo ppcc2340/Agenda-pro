@@ -44,7 +44,7 @@ export function ContactForm({ initial, onClose, onSaved }: { initial?: Rec | nul
         <Field label="Teléfono"><input className="input" type="tel" value={String(f.phone ?? "")} onChange={(e) => set("phone", e.target.value)} /></Field>
         <Field label="Cargo"><input className="input" value={String(f.job_title ?? "")} onChange={(e) => set("job_title", e.target.value)} /></Field>
         <Field label="Empresa" hint={!f.company_id ? "Si no existe, escribe el nombre en el campo de abajo" : undefined}><Picker kind="company" value={f.company_id as string | null} onChange={(id) => set("company_id", id)} /></Field>
-        {!f.company_id && <Field label="…o nueva empresa"><input className="input" placeholder="Nombre de la empresa (se crea al guardar)" value={String(f.company_name ?? "")} onChange={(e) => set("company_name", e.target.value)} /></Field>}
+        {!f.company_id && <Field label="…o nueva empresa"><input aria-label="Nombre de la empresa (se crea al guardar)" className="input" placeholder="Nombre de la empresa (se crea al guardar)" value={String(f.company_name ?? "")} onChange={(e) => set("company_name", e.target.value)} /></Field>}
         <Field label="Etapa del ciclo de vida"><select className="input" value={String(f.lifecycle_stage)} onChange={(e) => set("lifecycle_stage", e.target.value)}>{Object.entries(LIFECYCLE).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></Field>
         <Field label="Estado del lead"><select className="input" value={String(f.lead_status)} onChange={(e) => set("lead_status", e.target.value)}>{Object.entries(LEAD_STATUS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></Field>
         {f.lead_status === "unqualified" && <Field label="Motivo de descalificación *"><input className="input" value={String(f.disqualify_reason ?? "")} onChange={(e) => set("disqualify_reason", e.target.value)} /></Field>}
@@ -52,7 +52,7 @@ export function ContactForm({ initial, onClose, onSaved }: { initial?: Rec | nul
         <Field label="Propietario"><select className="input" value={String(f.owner_id ?? "")} onChange={(e) => set("owner_id", e.target.value || null)}><option value="">Sin asignar</option>{users.filter((u) => u.active).map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}</select></Field>
         <Field label="Ciudad"><input className="input" value={String(f.city ?? "")} onChange={(e) => set("city", e.target.value)} /></Field>
         <Field label="País"><input className="input" value={String(f.country ?? "")} onChange={(e) => set("country", e.target.value)} /></Field>
-        <Field label="LinkedIn"><input className="input" placeholder="https://linkedin.com/in/…" value={String(f.linkedin ?? "")} onChange={(e) => set("linkedin", e.target.value)} /></Field>
+        <Field label="LinkedIn"><input aria-label="https://linkedin.com/in/…" className="input" placeholder="https://linkedin.com/in/…" value={String(f.linkedin ?? "")} onChange={(e) => set("linkedin", e.target.value)} /></Field>
         <Field label="Cumpleaños"><input className="input" type="date" value={String(f.birthday ?? "").slice(0, 10)} onChange={(e) => set("birthday", e.target.value)} /></Field>
         <Field label="Etiquetas" full><TagInput value={(f.tags as string[]) ?? []} onChange={(v) => set("tags", v)} /></Field>
         <div className="full row wrap"><label className="checkbox"><input type="checkbox" checked={!!f.consent_marketing} onChange={(e) => set("consent_marketing", e.target.checked)} />Consentimiento de marketing (RGPD)</label><label className="checkbox"><input type="checkbox" checked={!!f.do_not_contact} onChange={(e) => set("do_not_contact", e.target.checked)} />No contactar</label></div>
@@ -82,7 +82,7 @@ export function CompanyForm({ initial, onClose, onSaved }: { initial?: Rec | nul
       {dup && <div className="alert warn mb12">Ya existe <a href={`/empresas/${dup.id}`} target="_blank" rel="noreferrer">{dup.name}</a> con ese nombre o dominio. <button className="btn sm" style={{ marginLeft: 8 }} onClick={() => save(true)}>Crear de todos modos</button></div>}
       <div className="form-grid">
         <Field label="Nombre *"><input className="input" autoFocus value={String(f.name ?? "")} onChange={(e) => set("name", e.target.value)} /></Field>
-        <Field label="Dominio web"><input className="input" placeholder="empresa.com" value={String(f.domain ?? "")} onChange={(e) => set("domain", e.target.value)} /></Field>
+        <Field label="Dominio web"><input aria-label="empresa.com" className="input" placeholder="empresa.com" value={String(f.domain ?? "")} onChange={(e) => set("domain", e.target.value)} /></Field>
         <Field label="Sector"><input className="input" value={String(f.sector ?? "")} onChange={(e) => set("sector", e.target.value)} /></Field>
         <Field label="Tipo"><select className="input" value={String(f.type)} onChange={(e) => set("type", e.target.value)}>{Object.entries(COMPANY_TYPES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></Field>
         <Field label="Empleados"><input className="input" type="number" value={String(f.size ?? "")} onChange={(e) => set("size", e.target.value)} /></Field>
@@ -123,7 +123,7 @@ export function DealForm({ initial, defaults, onClose, onSaved }: { initial?: Re
   return (
     <Modal title={edit ? "Editar negocio" : "Nuevo negocio"} size="lg" onClose={onClose} footer={<><button className="btn" onClick={onClose}>Cancelar</button><button className="btn primary" disabled={busy} onClick={save}>{edit ? "Guardar" : "Crear negocio"}</button></>}>
       <div className="form-grid">
-        <Field label="Nombre *" full><input className="input" autoFocus placeholder="Ej. Implantación CRM · Empresa" value={String(f.name ?? "")} onChange={(e) => set("name", e.target.value)} /></Field>
+        <Field label="Nombre *" full><input aria-label="Ej. Implantación CRM · Empresa" className="input" autoFocus placeholder="Ej. Implantación CRM · Empresa" value={String(f.name ?? "")} onChange={(e) => set("name", e.target.value)} /></Field>
         <Field label="Empresa"><Picker kind="company" value={f.company_id as string | null} onChange={(id) => set("company_id", id)} /></Field>
         {!edit && <Field label="Contacto principal"><Picker kind="contact" value={((f.contact_ids as string[]) ?? [])[0] ?? null} onChange={(id) => set("contact_ids", id ? [id] : [])} /></Field>}
         {!edit && <Field label="Pipeline"><select className="input" value={String(f.pipeline_id ?? "")} onChange={(e) => { const p = pipelines.find((x) => x.id === e.target.value); set("pipeline_id", e.target.value); set("stage_id", p?.stages.find((s) => s.kind === "open")?.id); }}>{pipelines.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select></Field>}

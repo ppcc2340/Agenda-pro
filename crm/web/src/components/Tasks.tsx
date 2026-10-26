@@ -71,7 +71,7 @@ export function TaskRow({ task, onChanged, onEdit, showLinks = true }: { task: T
       <div className="grow" style={{ minWidth: 0, cursor: onEdit ? "pointer" : "default" }} onClick={() => onEdit?.(task)}>
         <div className="row wrap" style={{ gap: 6 }}><span className={done ? "" : "bold"} style={{ textDecoration: done ? "line-through" : "none" }}>{task.title}</span><span className="badge">{TASK_TYPES[task.type]}</span>{task.priority === "high" && <span className="badge risk">Alta</span>}{task.recurrence && <span className="badge" title="Recurrente"><RotateCcw size={10} /></span>}</div>
         <div className="small muted row wrap" style={{ gap: 6 }}>
-          {task.due_at && <span className={over ? "bold" : ""} style={over ? { color: "var(--risk)" } : isToday(task.due_at) ? { color: "var(--sea)", fontWeight: 600 } : undefined}>{fmtDateTime(task.due_at)}</span>}
+          {task.due_at && <span className={over ? "bold" : ""} style={over ? { color: "var(--risk-ink)" } : isToday(task.due_at) ? { color: "var(--sea-ink)", fontWeight: 600 } : undefined}>{fmtDateTime(task.due_at)}</span>}
           {task.assignee_name && <span>· {task.assignee_name}</span>}
           {showLinks && task.contact_id && <Link to={`/contactos/${task.contact_id}`} onClick={(e) => e.stopPropagation()}>· {task.contact_name}</Link>}
           {showLinks && task.deal_id && <Link to={`/negocios/${task.deal_id}`} onClick={(e) => e.stopPropagation()}>· {task.deal_name}</Link>}
