@@ -87,6 +87,9 @@ interface UndoCell { rowId: string; colKey: string; before: unknown; after: unkn
 interface UndoStep { label: string; cells: UndoCell[] }
 
 const EMPTY: FilterGroup = { logic: "and", conditions: [] };
+/** Columna → campo que protege (las columnas de nombre derivan de su id). */
+const ALIAS_FIELD: Record<string, string> = { owner_name: "owner_id", assignee_name: "assignee_id", legal_owner_name: "legal_owner_id", company_name: "company_id", counterparty_name: "counterparty_company_id", contact_name: "contact_id", stage_name: "stage_id", weighted_amount: "amount", pipeline_name: "pipeline_id", type_name: "type_id" };
+export const fieldOfColumn = (k: string) => ALIAS_FIELD[k] ?? k;
 const getPath = (row: unknown, key: string): unknown => key.split(".").reduce<unknown>((o, k) => (o && typeof o === "object" ? (o as Record<string, unknown>)[k] : undefined), row);
 const DEFAULT_W: Record<string, number> = { name: 280, status: 140, person: 110, money: 130, number: 110, date: 120, datetime: 150, tags: 180, check: 80, longtext: 220, timeline: 170, relation: 170, text: 160 };
 const isEmpty = (v: unknown) => v === null || v === undefined || v === "" || (Array.isArray(v) && !v.length);
@@ -101,7 +104,7 @@ function useNarrow(q = "(max-width: 720px)") {
 }
 
 export function DataTable<T extends { id: string }>({ object, endpoint, columns: rawColumns, board, onRowClick, toolbar, bulkActions, exportUrl, extraParams, refreshKey, emptyText, defaultSort, groupOptions, defaultGroup, onNew, newLabel, onCreate, onDuplicate, onDelete }: Props<T>) {
-  const { me, refresh, can, users } = useApp();
+  const { me, refresh, can, users, access } = useApp();
   const toast = useToast();
   const confirm = useConfirm();
   const [params, setParams] = useSearchParams();
@@ -149,7 +152,13 @@ export function DataTable<T extends { id: string }>({ object, endpoint, columns:
   const cfg = board.config;
   const narrow = useNarrow();
 
-  const columns = useMemo(() => applyBoard(rawColumns, board), [rawColumns, board.config]);
+  // seguridad por campo: las columnas ocultas para el rol no aparecen y las de solo lectura llevan candado
+  const columns = useMemo(() => applyBoard(rawColumns, board).flatMap((c) => {
+    const f = fieldOfColumn(c.field ?? c.key);
+    const a = access(object, f);
+    if (a === "hidden") return [];
+    return a === "read" ? [{ ...c, onEdit: undefined, field: undefined, readOnlyReason: "Campo de solo lectura para tu rol" }] : [c];
+  }), [rawColumns, board.config, access, object]); // eslint-disable-line react-hooks/exhaustive-deps
   const [visible, setVisible] = useState<string[] | null>(() => { try { const s = localStorage.getItem(storageKey); if (s) return JSON.parse(s); } catch { /* ignore */ } return null; });
   const visibleKeys = useMemo(() => visible ?? columns.filter((c) => c.default !== false).map((c) => c.key), [visible, columns]);
 

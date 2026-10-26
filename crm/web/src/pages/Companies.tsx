@@ -14,6 +14,8 @@ import { api } from "../api";
 import { useApp } from "../lib/app";
 import { COMPANY_TYPES, LIFECYCLE, fmtMoney, fmtNum, fmtDate, relTime } from "../lib/format";
 import { COMPANY_TYPE_OPTS } from "../lib/colors";
+import { LayoutPanel } from "../components/LayoutPanel";
+import { ShareButton } from "../components/ShareButton";
 
 type Rec = Record<string, unknown>;
 interface Co { id: string; name: string; domain: string | null; sector: string | null; size: number | null; city: string | null; country: string | null; type: string; owner_id: string | null; owner_name: string | null; contacts_count: number; open_deals: number; tags: string[]; last_activity_at: string | null; created_at: string; custom: Rec; revenue: number | null }
@@ -94,7 +96,7 @@ export function CompanyDetailPage() {
           <div className="card">
             <div className="row" style={{ alignItems: "flex-start" }}>
               <span className="avatar lg" style={{ borderRadius: 10, background: "var(--info)" }}><Building2 size={22} /></span>
-              <div className="grow" style={{ minWidth: 0 }}><h1 style={{ fontSize: 18 }}>{c.name}</h1><div className="row wrap mt8" style={{ gap: 4 }}><span className={`badge ${c.type === "customer" ? "ok" : ""}`}>{COMPANY_TYPES[c.type]}</span>{c.sector && <span className="badge">{c.sector}</span>}</div></div>
+              <div className="grow" style={{ minWidth: 0 }}><h1 style={{ fontSize: 18 }}>{c.name}</h1><ShareButton object="company" id={c.id} /><div className="row wrap mt8" style={{ gap: 4 }}><span className={`badge ${c.type === "customer" ? "ok" : ""}`}>{COMPANY_TYPES[c.type]}</span>{c.sector && <span className="badge">{c.sector}</span>}</div></div>
               <Menu trigger={<button className="iconbtn" aria-label="Más acciones"><MoreHorizontal size={18} /></button>}><button onClick={() => setEditing(true)}><Pencil />Editar</button><div className="sep" />{can("company", "delete") && <button className="danger" onClick={del}><Trash2 />Borrar</button>}</Menu>
             </div>
             <div className="quick-actions mt12">
@@ -103,20 +105,7 @@ export function CompanyDetailPage() {
               <button onClick={() => { setTab("timeline"); window.scrollTo({ top: 0 }); }}><StickyNote />Nota</button>
               <button onClick={() => setTaskForm("new")}><CheckSquare />Tarea</button>
             </div>
-            <dl className="kv mt16">
-              {c.domain && <><dt><Globe size={13} /></dt><dd><a href={`https://${c.domain}`} target="_blank" rel="noreferrer">{c.domain}</a></dd></>}
-              {c.phone && <><dt><Phone size={13} /></dt><dd><a href={`tel:${c.phone}`}>{c.phone}</a></dd></>}
-              {(c.address || c.city) && <><dt><MapPin size={13} /></dt><dd>{[c.address, c.city, c.country].filter(Boolean).join(", ")}</dd></>}
-              <dt>Tipo</dt><dd><select aria-label="Tipo" className="input sm" value={c.type} onChange={(e) => patch({ type: e.target.value })}>{Object.entries(COMPANY_TYPES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></dd>
-              <dt>Propietario</dt><dd><select aria-label="Propietario" className="input sm" value={c.owner_id ?? ""} onChange={(e) => patch({ owner_id: e.target.value || null })}><option value="">Sin asignar</option>{users.filter((u) => u.active).map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}</select></dd>
-              {c.size != null && <><dt>Empleados</dt><dd>{fmtNum(c.size)}</dd></>}
-              {c.revenue != null && <><dt>Facturación</dt><dd>{fmtMoney(c.revenue)}</dd></>}
-              {c.tax_id && <><dt>CIF</dt><dd>{c.tax_id}</dd></>}
-              {c.parent_id && <><dt>Matriz</dt><dd><Link to={`/empresas/${c.parent_id}`}>{c.parent_name}</Link></dd></>}
-              <dt>Etiquetas</dt><dd className="row wrap" style={{ gap: 3 }}>{c.tags.length ? c.tags.map((t) => <span key={t} className="tag">{t}</span>) : <span className="muted">—</span>}</dd>
-              <dt>Creada</dt><dd className="small">{fmtDate(c.created_at)}</dd>
-              {customFields.filter((f) => f.object === "company").map((f) => <Fragment key={f.id}><dt>{f.label}</dt><dd>{formatCustom(f, c.custom?.[f.key], (uid) => userName(uid)) || <span className="muted">—</span>}</dd></Fragment>)}
-            </dl>
+            <div className="mt16"><LayoutPanel object="company" record={c as unknown as Record<string, unknown>} onPatch={patch} editable={can("company", "update")} extra={{ domain: c.domain ? <a href={`https://${c.domain}`} target="_blank" rel="noreferrer">{c.domain}</a> : undefined, parent_id: c.parent_id ? <Link to={`/empresas/${c.parent_id}`}>{c.parent_name}</Link> : undefined }} /></div>
             <button className="btn sm mt12" style={{ width: "100%" }} onClick={() => setEditing(true)}><Pencil />Editar todos los campos</button>
           </div>
           <div className="card"><div className="card-title"><h3>Resumen comercial</h3></div><dl className="kv"><dt>Ganado</dt><dd className="num">{fmtMoney(c.stats.won_amount)} <span className="muted">({c.stats.won_count})</span></dd><dt>Abierto</dt><dd className="num">{fmtMoney(c.stats.open_amount)}</dd></dl></div>

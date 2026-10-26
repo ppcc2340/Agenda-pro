@@ -14,6 +14,7 @@ import { HttpError } from "./lib/errors.js";
 import { requireAuth } from "./auth.js";
 import { buildOpenApi, DOCS_HTML, DOCS_CSS, DOCS_JS } from "./openapi.js";
 import { liveRoutes } from "./live.js";
+import { layoutRoutes, fieldGuard } from "./routes/layouts.js";
 import { requestLog, securityHeaders, optimisticConcurrency } from "./http.js";
 import { authRoutes } from "./routes/auth.js";
 import { contactRoutes } from "./routes/contacts.js";
@@ -59,6 +60,7 @@ export function createApp(db: Db) {
   const api = express.Router();
   api.use(requireAuth(db));
   api.use(optimisticConcurrency(db));
+  api.use(fieldGuard());
   const mounts: [string, ReturnType<typeof express.Router>][] = [
     ["/contacts", contactRoutes()],
     ["/companies", companyRoutes()],
@@ -79,6 +81,7 @@ export function createApp(db: Db) {
     ["/cells", cellRoutes()],
     ["", miscRoutes()],
     ["", liveRoutes()],
+    ["", layoutRoutes()],
   ];
   for (const [p, r] of mounts) { if (p) api.use(p, r); else api.use(r); }
   // especificación OpenAPI y lector (públicos: no exponen datos)

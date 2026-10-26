@@ -3,9 +3,9 @@ import { locale } from "../lib/prefs";
 import { Field } from "./ui";
 
 /** Renders custom field inputs for an object, grouped by section, honoring show_if dependencies. */
-export function CustomFieldsForm({ object, value, onChange, record }: { object: string; value: Record<string, unknown>; onChange: (v: Record<string, unknown>) => void; record?: Record<string, unknown> }) {
+export function CustomFieldsForm({ object, value, onChange, record, allow, readOnly }: { object: string; value: Record<string, unknown>; onChange: (v: Record<string, unknown>) => void; record?: Record<string, unknown>; allow?: (d: CustomField) => boolean; readOnly?: (d: CustomField) => boolean }) {
   const { customFields, users } = useApp();
-  const defs = customFields.filter((f) => f.object === object && !["formula", "mirror", "autonumber", "creation_log", "last_updated", "button"].includes(f.type));
+  const defs = customFields.filter((f) => f.object === object && !["formula", "mirror", "autonumber", "creation_log", "last_updated", "button"].includes(f.type) && (!allow || allow(f)));
   if (!defs.length) return null;
   const visible = defs.filter((d) => { if (!d.show_if) return true; const dep = d.show_if.field.startsWith("custom.") ? value[d.show_if.field.slice(7)] : record?.[d.show_if.field]; return String(dep ?? "") === d.show_if.value; });
   const sections = Array.from(new Set(visible.map((d) => d.section ?? "")));
@@ -15,14 +15,14 @@ export function CustomFieldsForm({ object, value, onChange, record }: { object: 
       {sections.map((s) => (
         <div key={s} className="form-grid full" style={{ gridColumn: "1 / -1", padding: 0 }}>
           <div className="form-section">{s || "Campos personalizados"}</div>
-          {visible.filter((d) => (d.section ?? "") === s).map((d) => <CustomInput key={d.id} def={d} value={value[d.key]} onChange={(v) => set(d.key, v)} users={users} />)}
+          {visible.filter((d) => (d.section ?? "") === s).map((d) => readOnly?.(d) ? <fieldset key={d.id} disabled className="lay-ro" title="Solo lectura para tu rol"><CustomInput def={d} value={value[d.key]} onChange={() => undefined} users={users} /></fieldset> : <CustomInput key={d.id} def={d} value={value[d.key]} onChange={(v) => set(d.key, v)} users={users} />)}
         </div>
       ))}
     </>
   );
 }
 
-function CustomInput({ def: d, value, onChange, users }: { def: CustomField; value: unknown; onChange: (v: unknown) => void; users: { id: string; name: string; active: boolean }[] }) {
+export function CustomInput({ def: d, value, onChange, users }: { def: CustomField; value: unknown; onChange: (v: unknown) => void; users: { id: string; name: string; active: boolean }[] }) {
   const label = d.required ? `${d.label} *` : d.label;
   const v = value === null || value === undefined ? "" : value;
   switch (d.type) {

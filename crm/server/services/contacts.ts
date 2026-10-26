@@ -4,7 +4,7 @@ import type { Ctx } from "../context.js";
 import { parseJson, type Row } from "../db.js";
 import { id, now, normalizeEmail, normalizePhone, capitalizeName, domainFromEmail, FREE_EMAIL_DOMAINS } from "../lib/util.js";
 import { badRequest, conflict, notFound, forbidden } from "../lib/errors.js";
-import { assert, canSeeRecord } from "../lib/permissions.js";
+import { assert, canSeeRecord, assertCanEdit } from "../lib/permissions.js";
 import { audit, diff } from "./audit.js";
 import { emit } from "./events.js";
 import { tagsSchema, validateCustom, nullableStr, listRecords, type ListQuery, JSON_COLS } from "./records.js";
@@ -54,7 +54,7 @@ const JC = JSON_COLS.contact ?? [];
 export function getContact(ctx: Ctx, cid: string, opts: { allowDeleted?: boolean } = {}): Row {
   const c = parseJson(ctx.db.get<Row>("SELECT c.*, co.name AS company_name, co.domain AS company_domain, u.name AS owner_name FROM contacts c LEFT JOIN companies co ON co.id=c.company_id LEFT JOIN users u ON u.id=c.owner_id WHERE c.id=? AND c.workspace_id=?", cid, ctx.ws), JC);
   if (!c || (c.deleted_at && !opts.allowDeleted)) throw notFound("Contacto");
-  if (!canSeeRecord(ctx, c.owner_id as string | null)) throw forbidden("Este contacto pertenece a otro equipo");
+  if (!canSeeRecord(ctx, c.owner_id as string | null, { object: "contact", id: cid })) throw forbidden("Este contacto pertenece a otro equipo");
   return c;
 }
 
@@ -166,6 +166,7 @@ export function withRelated(ctx: Ctx, c: Row): Row {
 export function updateContact(ctx: Ctx, cid: string, patch: Partial<ContactInput>, opts: { depth?: number; actor?: string } = {}): Row {
   assert(ctx, "contact", "update");
   const prev = getContact(ctx, cid);
+  assertCanEdit(ctx, prev.owner_id as string | null, "contact", cid);
   const data = normalize(patch, ctx);
   if (patch.company_name && !patch.company_id) data.company_id = resolveCompany(ctx, patch, (data.email as string | null) ?? (prev.email as string | null), true);
   if (patch.custom) data.custom = validateCustom(ctx, "contact", patch.custom, prev.custom as Record<string, unknown>, true);
@@ -198,6 +199,7 @@ export function labelLifecycle(s: string) {
 export function deleteContact(ctx: Ctx, cid: string) {
   assert(ctx, "contact", "delete");
   const c = getContact(ctx, cid);
+  assertCanEdit(ctx, c.owner_id as string | null, "contact", cid);
   ctx.db.update("contacts", cid, { deleted_at: now() });
   audit(ctx, "contact", cid, "delete", { name: `${c.first_name} ${c.last_name}` });
   emit(ctx, { type: "contact.deleted", object: "contact", record: c });

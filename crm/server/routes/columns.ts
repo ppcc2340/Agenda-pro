@@ -13,6 +13,7 @@ import { loadRecord, applyPatch, cellsToPatch, validatedPatch, OBJECT_TABLE } fr
 import { OBJECT_FIELDS } from "../lib/filters.js";
 import { convertField } from "../services/convert.js";
 import { assert } from "../lib/permissions.js";
+import { visibleColumns, redactAll, assertWritable } from "../services/fieldSecurity.js";
 
 const OBJ = z.enum(["contact", "company", "deal", "ticket", "contract"]);
 export function columnRoutes() {
@@ -77,7 +78,7 @@ export function cellRoutes() {
     const ro = new Set([...builtinColumns(object).filter((c) => ["creation_log", "last_updated"].includes(c.type)).map((c) => c.id), "id", "workspace_id", "created_at", "updated_at", "deleted_at"]);
     const byRec = new Map<string, Record<string, unknown>>();
     const errors: { id: string; column_id: string; error: string }[] = [];
-    for (const c of b.changes) { if (ro.has(c.column_id)) { errors.push({ id: c.id, column_id: c.column_id, error: "Solo lectura" }); continue; } byRec.set(c.id, { ...(byRec.get(c.id) ?? {}), [c.column_id]: c.value ?? null }); }
+    for (const c of b.changes) { if (ro.has(c.column_id)) { errors.push({ id: c.id, column_id: c.column_id, error: "Solo lectura" }); continue; } try { assertWritable(req.ctx, object, [c.column_id.startsWith("custom._lbl_") ? c.column_id.replace("custom._lbl_", "") : c.column_id]); } catch (e) { errors.push({ id: c.id, column_id: c.column_id, error: (e as Error).message }); continue; } byRec.set(c.id, { ...(byRec.get(c.id) ?? {}), [c.column_id]: c.value ?? null }); }
     let ok = 0;
     for (const [rid, values] of byRec) {
       try { req.ctx.db.transaction(() => applyPatch(req.ctx, object, rid, validatedPatch(object, cellsToPatch(values)))); ok += Object.keys(values).length; }

@@ -9,6 +9,8 @@ import { fmtMoney, fmtDate, fmtDateTime, relTime } from "../lib/format";
 import { CSTATUS, RISK, RENEWAL, PAPER, URGENCY, PAYMENT_MODEL, KIND, DEVIATION, OBL_STATUS, OBL_TYPE, MS_TYPE, PAY_STATUS, APPROVAL_STATUS, SIGNER_STATUS, ENV_STATUS, TERMINATION_CAUSES, TIMELINE_ICON, daysUntil } from "../lib/clm";
 import { useClmMeta } from "./Contracts";
 import { pillStyle } from "../lib/colors";
+import { LayoutPanel } from "../components/LayoutPanel";
+import { ShareButton } from "../components/ShareButton";
 
 type Any = Record<string, unknown>;
 interface Detail extends Any { id: string; number: string; title: string; status: string; substatus: string | null; kind: string; type_name: string; type_code: string; type_color: string; direction: string; min_signature_level: string; counterparty_company_id: string | null; counterparty_name: string | null; owner_id: string | null; owner_name: string | null; legal_owner_id: string | null; legal_owner_name: string | null; total_value: number; annual_value: number; currency: string; effective_date: string | null; end_date: string | null; notice_deadline: string | null; next_renewal_date: string | null; renewal_type: string; renewal_period_months: number | null; notice_period_days: number | null; term_type: string; term_months: number | null; payment_model: string; payment_terms_days: number; risk_level: string; risk_score: number; risk_factors: { factor: string; weight: number; value: number; contribution: number; explanation: string }[]; risk_override: string | null; paper_origin: string; urgency: string; governing_law: string; jurisdiction: string | null; contains_personal_data: number; data_role: string | null; international_transfer: number; confidentiality: string; description: string | null; signed_at: string | null; requested_at: string | null; sla_due_at: string | null; sla_paused: number; parent_id: string | null; parent_number: string | null; parent_title: string | null; deal_id: string | null; deal_name: string | null; legal_hold: number; legal_hold_reason: string | null; retention_until: string | null; termination_date: string | null; termination_cause: string | null; effective_values: Any; intake: Any; current_version_id: string | null; signed_version_id: string | null; tags: string[]; transitions: string[]; versions: Any[]; current_body: string; clauses: Any[]; approvals: Any[]; envelopes: Any[]; obligations: Any[]; milestones: Any[]; payments: Any[]; children: Any[]; timeline: Any[]; comments: Any[]; renewals: Any[]; audits: Any[]; pending_for_me: number; approval_preview: { name: string; reason: string; approver_user_id: string | null; approver_role: string; sla_hours: number }[]; checklist: { errors: string[]; warnings: string[] } | null }
@@ -45,6 +47,7 @@ export function ContractDetailPage() {
           <div className="grow" style={{ minWidth: 0 }}>
             <div className="row wrap"><span className="badge" style={pillStyle(c.type_color)}>{c.type_name}</span>{c.kind !== "master" && <span className="badge">{KIND[c.kind]} de {c.parent_number}</span>}{pill(CSTATUS, c.status)}{c.substatus && <span className="badge warn">{c.substatus === "UNDER_AMENDMENT" ? "Enmienda en curso" : c.substatus === "SLA_BREACHED" ? "SLA vencido" : String(c.substatus)}</span>}{pill(RISK, c.risk_level, ` · ${c.risk_score}`)}{!!c.legal_hold && <span className="badge risk"><Lock size={11} /> bloqueo legal</span>}{c.pending_for_me > 0 && <span className="badge sea">Tienes {c.pending_for_me} aprobación pendiente</span>}</div>
             <h1 className="mt8">{c.title}</h1>
+            <ShareButton object="contract" id={c.id} />
             <div className="sub row wrap mt8" style={{ gap: 14 }}>
               <span className="num">{c.number}</span>
               {c.counterparty_company_id && <Link to={`/empresas/${c.counterparty_company_id}`}>{c.counterparty_name}</Link>}
@@ -72,7 +75,7 @@ export function ContractDetailPage() {
       </div>
       <Tabs items={tabs} value={tab} onChange={setTab} />
       <div className="mt12">
-        {tab === "summary" && <Summary c={c} onEdit={() => setModal({ kind: "edit" })} onRisk={() => setModal({ kind: "risk" })} />}
+        {tab === "summary" && <><div className="card mb12"><div className="card-title"><h3>Ficha</h3></div><LayoutPanel object="contract" record={c as unknown as Record<string, unknown>} editable={editable} onPatch={(p) => act(() => api.patch(`clm/contracts/${c.id}`, p))} /></div><Summary c={c} onEdit={() => setModal({ kind: "edit" })} onRisk={() => setModal({ kind: "risk" })} /></>}
         {tab === "document" && <DocumentTab c={c} meta={meta} reload={load} editable={editable} />}
         {tab === "versions" && <VersionsTab c={c} />}
         {tab === "clauses" && <ClausesTab c={c} reload={load} editable={editable} />}

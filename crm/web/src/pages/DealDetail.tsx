@@ -12,6 +12,8 @@ import { HistoryList } from "./ContactDetail";
 import { formatCustom } from "../components/CustomFields";
 import { fmtMoney, fmtMoney2, fmtDate, fmtDateTime, relTime, LOSS_REASONS, ROLE_LABEL, QUOTE_STATUS, todayISO } from "../lib/format";
 import { inkOn } from "../lib/colors";
+import { LayoutPanel } from "../components/LayoutPanel";
+import { ShareButton } from "../components/ShareButton";
 
 type Rec = Record<string, unknown>;
 interface Deal extends Rec { id: string; name: string; company_id: string | null; company_name: string | null; pipeline_id: string; pipeline_name: string; stage_id: string; stage_name: string; stage_color: string; stage_expected_days: number; status: string; amount: number; currency: string; probability: number; weighted_amount: number; expected_close_date: string | null; closed_at: string | null; loss_reason: string | null; competitor: string | null; owner_id: string | null; owner_name: string | null; source: string | null; tags: string[]; custom: Rec; days_in_stage: number; created_at: string; last_activity_at: string | null; next_activity_at: string | null; contacts: { id: string; first_name: string; last_name: string; email: string | null; phone: string | null; job_title: string | null; role: string }[]; products: Line[]; stage_history: { id: string; stage_name: string; user_name: string | null; entered_at: string; left_at: string | null }[]; tasks: Task[]; quotes: { id: string; number: string; version: number; status: string; total: number; date: string; valid_until: string | null; views: number; token: string }[] }
@@ -55,11 +57,11 @@ export function DealDetailPage() {
       <div className="card mb16">
         <div className="row wrap between" style={{ alignItems: "flex-start" }}>
           <div className="grow" style={{ minWidth: 0 }}>
-            <div className="row wrap"><h1>{d.name}</h1>{d.status === "won" && <span className="badge ok">Ganado {fmtDate(d.closed_at)}</span>}{d.status === "lost" && <span className="badge risk">Perdido · {LOSS_REASONS[d.loss_reason ?? ""] ?? d.loss_reason}{d.competitor ? ` (${d.competitor})` : ""}</span>}{stale && <span className="badge warn">{d.days_in_stage} d en etapa (esperado {d.stage_expected_days})</span>}</div>
+            <div className="row wrap"><h1>{d.name}</h1><ShareButton object="deal" id={d.id} />{d.status === "won" && <span className="badge ok">Ganado {fmtDate(d.closed_at)}</span>}{d.status === "lost" && <span className="badge risk">Perdido · {LOSS_REASONS[d.loss_reason ?? ""] ?? d.loss_reason}{d.competitor ? ` (${d.competitor})` : ""}</span>}{stale && <span className="badge warn">{d.days_in_stage} d en etapa (esperado {d.stage_expected_days})</span>}</div>
             <div className="sub row wrap mt8" style={{ gap: 14 }}>
               {d.company_id && <Link to={`/empresas/${d.company_id}`}>{d.company_name}</Link>}
-              <span className="num bold" style={{ color: "var(--ink)", fontSize: 16 }}>{fmtMoney2(d.amount, d.currency)}</span>
-              <span className="num">{d.probability}% · pond. {fmtMoney(d.weighted_amount, d.currency)}</span>
+              {d.amount !== undefined && <span className="num bold" style={{ color: "var(--ink)", fontSize: 16 }}>{fmtMoney2(d.amount, d.currency)}</span>}
+              <span className="num">{d.probability}%{d.weighted_amount !== undefined && <> · pond. {fmtMoney(d.weighted_amount, d.currency)}</>}</span>
               {d.expected_close_date && <span>Cierre: {fmtDate(d.expected_close_date)}</span>}
               <span>{d.owner_name}</span>
             </div>
@@ -90,20 +92,7 @@ export function DealDetailPage() {
         <aside className="side r">
           <div className="card">
             <div className="card-title"><h3>Detalles</h3><button className="btn xs ghost" onClick={() => setEditing(true)} aria-label="Editar"><Pencil /></button></div>
-            <dl className="kv">
-              <dt>Pipeline</dt><dd>{d.pipeline_name}</dd>
-              <dt>Etapa</dt><dd><span className="badge dot" style={{ color: d.stage_color }}>{d.stage_name}</span></dd>
-              <dt>Importe</dt><dd className="num">{fmtMoney2(d.amount, d.currency)}{d.products.length > 0 && <div className="xs muted">calculado de {d.products.length} líneas</div>}</dd>
-              <dt>Probabilidad</dt><dd><input aria-label="Probabilidad" className="input sm num" type="number" min={0} max={100} style={{ width: 80 }} defaultValue={d.probability} key={d.probability} onBlur={(e) => Number(e.target.value) !== d.probability && patch({ probability: Number(e.target.value) })} disabled={d.status !== "open"} /></dd>
-              <dt>Cierre previsto</dt><dd><input aria-label="Cierre previsto" className="input sm" type="date" min={d.status === "open" ? todayISO() : undefined} value={d.expected_close_date ?? ""} onChange={(e) => patch({ expected_close_date: e.target.value || null })} /></dd>
-              <dt>Propietario</dt><dd><select aria-label="Propietario" className="input sm" value={d.owner_id ?? ""} onChange={(e) => patch({ owner_id: e.target.value || null })}><option value="">Sin asignar</option>{users.filter((u) => u.active).map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}</select></dd>
-              <dt>Origen</dt><dd>{d.source ?? "—"}</dd>
-              <dt>Etiquetas</dt><dd className="row wrap" style={{ gap: 3 }}>{d.tags.length ? d.tags.map((t) => <span key={t} className="tag">{t}</span>) : <span className="muted">—</span>}</dd>
-              <dt>Creado</dt><dd className="small">{fmtDate(d.created_at)}</dd>
-              <dt>Últ. actividad</dt><dd className="small">{d.last_activity_at ? relTime(d.last_activity_at) : "nunca"}</dd>
-              <dt>Próx. actividad</dt><dd className="small">{d.next_activity_at ? fmtDateTime(d.next_activity_at) : <span style={{ color: "var(--warn-ink)" }}>ninguna programada</span>}</dd>
-              {customFields.filter((f) => f.object === "deal").map((f) => <Fragment key={f.id}><dt>{f.label}</dt><dd>{formatCustom(f, d.custom?.[f.key], (uid) => userName(uid)) || <span className="muted">—</span>}</dd></Fragment>)}
-            </dl>
+            <LayoutPanel object="deal" record={d as unknown as Record<string, unknown>} onPatch={patch} editable={can("deal", "update")} extra={{ stage_id: <span className="badge dot" style={{ color: d.stage_color }}>{d.stage_name}</span>, amount: <span className="num">{fmtMoney2(d.amount, d.currency)}{d.products.length > 0 && <div className="xs muted">calculado de {d.products.length} líneas</div>}</span> }} />
           </div>
           <div className="card">
             <div className="card-title"><h3>Contactos</h3><button className="btn xs" onClick={() => setAddContact(true)}><Users />Añadir</button></div>

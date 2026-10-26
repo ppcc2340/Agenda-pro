@@ -4,7 +4,7 @@ import type { Ctx } from "../context.js";
 import { parseJson, type Row } from "../db.js";
 import { id, now, round2, daysBetween, monthKey } from "../lib/util.js";
 import { badRequest, notFound, forbidden } from "../lib/errors.js";
-import { assert, canSeeRecord, ownerScope } from "../lib/permissions.js";
+import { assert, canSeeRecord, ownerScope, assertCanEdit } from "../lib/permissions.js";
 import { audit, diff } from "./audit.js";
 import { emit } from "./events.js";
 import { tagsSchema, validateCustom, nullableStr, listRecords, type ListQuery, parseFilters } from "./records.js";
@@ -39,7 +39,7 @@ export function getDeal(ctx: Ctx, did: string): Row {
   const d = parseJson(ctx.db.get<Row>(`SELECT d.*, co.name AS company_name, u.name AS owner_name, s.name AS stage_name, s.color AS stage_color, s.expected_days AS stage_expected_days, s.kind AS stage_kind, p.name AS pipeline_name
      FROM deals d LEFT JOIN companies co ON co.id=d.company_id LEFT JOIN users u ON u.id=d.owner_id LEFT JOIN stages s ON s.id=d.stage_id LEFT JOIN pipelines p ON p.id=d.pipeline_id WHERE d.id=? AND d.workspace_id=?`, did, ctx.ws), JC);
   if (!d || d.deleted_at) throw notFound("Negocio");
-  if (!canSeeRecord(ctx, d.owner_id as string | null)) throw forbidden("Este negocio pertenece a otro equipo");
+  if (!canSeeRecord(ctx, d.owner_id as string | null, { object: "deal", id: did })) throw forbidden("Este negocio pertenece a otro equipo");
   d.contacts = ctx.db.all<Row>("SELECT c.id, c.first_name, c.last_name, c.email, c.phone, c.job_title, dc.role FROM deal_contacts dc JOIN contacts c ON c.id=dc.contact_id WHERE dc.deal_id=? AND c.deleted_at IS NULL", did);
   d.products = ctx.db.all<Row>("SELECT * FROM deal_products WHERE deal_id=?", did);
   d.weighted_amount = round2(((d.amount as number) * (d.probability as number)) / 100);
@@ -109,6 +109,7 @@ export function createDeal(ctx: Ctx, input: DealInput, opts: { depth?: number } 
 export function updateDeal(ctx: Ctx, did: string, patch: Partial<DealInput>, opts: { depth?: number } = {}): Row {
   assert(ctx, "deal", "update");
   const prev = getDeal(ctx, did);
+  assertCanEdit(ctx, prev.owner_id as string | null, "deal", did);
   const data: Record<string, unknown> = { ...patch };
   delete data.contact_ids; delete data.contacts; delete data.stage_id; delete data.pipeline_id;
   if (patch.expected_close_date && prev.status === "open" && patch.expected_close_date < now().slice(0, 10)) throw badRequest("La fecha de cierre prevista no puede ser anterior a hoy");
@@ -138,6 +139,7 @@ export function updateDeal(ctx: Ctx, did: string, patch: Partial<DealInput>, opt
 export function moveStage(ctx: Ctx, did: string, stageId: string, opts: { depth?: number; skipValidation?: boolean } = {}): Row {
   assert(ctx, "deal", "update");
   const prev = getDeal(ctx, did);
+  assertCanEdit(ctx, prev.owner_id as string | null, "deal", did);
   const stage = getStage(ctx, stageId);
   if (stage.pipeline_id !== prev.pipeline_id) throw badRequest("La etapa pertenece a otro pipeline");
   if (stage.kind === "won") return closeDeal(ctx, did, { status: "won" }, opts);
@@ -222,6 +224,7 @@ export function reopenDeal(ctx: Ctx, did: string): Row {
 export function deleteDeal(ctx: Ctx, did: string) {
   assert(ctx, "deal", "delete");
   const d = getDeal(ctx, did);
+  assertCanEdit(ctx, d.owner_id as string | null, "deal", did);
   ctx.db.update("deals", did, { deleted_at: now() });
   audit(ctx, "deal", did, "delete", { name: d.name });
   emit(ctx, { type: "deal.deleted", object: "deal", record: d });
@@ -252,7 +255,7 @@ export function setDealProducts(ctx: Ctx, did: string, lines: z.infer<typeof lin
 export function board(ctx: Ctx, pipelineId: string, q: { filters?: unknown; owner_id?: string; q?: string }) {
   assert(ctx, "deal", "read");
   const stages = ctx.db.all<Row>("SELECT * FROM stages WHERE pipeline_id=? AND workspace_id=? ORDER BY position", pipelineId, ctx.ws);
-  const scope = ownerScope(ctx, "d.owner_id");
+  const scope = ownerScope(ctx, "d.owner_id", { object: "deal", idCol: "d.id" });
   const f = buildWhere("deal", parseFilters(q.filters), "d");
   const params: unknown[] = [ctx.ws, pipelineId, ...scope.params, ...f.params];
   let extra = "";

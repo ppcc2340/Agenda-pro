@@ -4,6 +4,7 @@ import App from "./App";
 import "@fontsource-variable/figtree/wght.css";
 import "./styles.css";
 import "./components/pro.css";
+import "./components/layouts.css";
 import { MfaGate } from "./components/MfaGate";
 import { applyTheme } from "./lib/prefs";
 applyTheme();

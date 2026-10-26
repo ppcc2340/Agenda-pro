@@ -3,6 +3,7 @@
  * embudo etapa a etapa, previsión vs real, cuotas, motivos de pérdida, informes programados y alertas de métricas.
  * Todo respeta la visibilidad del rol igual que los listados (ownerScope sobre la columna de propietario).
  */
+import { assertReadable } from "./fieldSecurity.js";
 import { z } from "zod";
 import type { Ctx } from "../context.js";
 import type { Db, Row } from "../db.js";
@@ -128,6 +129,8 @@ export function runReport(ctx: Ctx, object: string, rawConfig: unknown, g: Globa
   if (!REPORT_OBJECTS.includes(object as never)) throw badRequest("Objeto no válido para informes");
   assert(ctx, PERM_OBJ[object] ?? object, "read");
   const cfg = reportConfigSchema.parse(rawConfig ?? {});
+  // un rol no puede agrupar, medir ni filtrar por un campo que tiene oculto
+  assertReadable(ctx, object, [...cfg.dims.map((d) => d.field), ...cfg.metrics.map((m) => m.field ?? ""), ...((cfg.filters as { conditions?: { field?: string }[] } | undefined)?.conditions ?? []).map((c) => c.field ?? "")].filter(Boolean));
   const w = baseWhere(ctx, object, cfg.filters as FilterGroup, g, cfg.date_field);
   const sel: string[] = []; const groupBy: string[] = [];
   const dims = cfg.dims.map((d, i) => {

@@ -11,6 +11,8 @@ import { ContactForm } from "../components/RecordForms";
 import { Modal, Field, Menu, Tabs, Spinner, ScoreBar, useToast, useConfirm, errorMessage, Avatar } from "../components/ui";
 import { formatCustom } from "../components/CustomFields";
 import { LIFECYCLE, LEAD_STATUS, SOURCES, fmtMoney, fmtDate, relTime, fmtDateTime, todayISO } from "../lib/format";
+import { LayoutPanel } from "../components/LayoutPanel";
+import { ShareButton } from "../components/ShareButton";
 
 type Rec = Record<string, unknown>;
 interface Contact extends Rec { id: string; first_name: string; last_name: string; email: string | null; phone: string | null; job_title: string | null; company_id: string | null; company_name: string | null; lifecycle_stage: string; lead_status: string; disqualify_reason: string | null; source: string | null; owner_id: string | null; owner_name: string | null; score: number; tags: string[]; custom: Rec; qualification: Rec; consent_marketing: number; consent_date: string | null; consent_source: string | null; do_not_contact: number; created_at: string; last_activity_at: string | null; last_contacted_at: string | null; city: string | null; country: string | null; linkedin: string | null; birthday: string | null; anonymized_at: string | null; utm: Rec; deals: { id: string; name: string; amount: number; currency: string; status: string; stage_name: string; stage_color: string; role: string }[]; tasks: Task[]; tickets: { id: string; number: number; subject: string; status: string }[]; lists: { id: string; name: string }[]; submissions: { id: string; created_at: string; form_name: string; data: string }[] }
@@ -51,6 +53,7 @@ export function ContactDetailPage() {
               <Avatar name={name} size="lg" />
               <div className="grow" style={{ minWidth: 0 }}>
                 <h1 style={{ fontSize: 18 }}>{name}</h1>
+                <ShareButton object="contact" id={c.id} />
                 {c.job_title && <div className="sub small">{c.job_title}</div>}
                 {c.company_id && <div className="small row"><Building2 size={13} className="muted" /><Link to={`/empresas/${c.company_id}`}>{c.company_name}</Link></div>}
               </div>
@@ -71,23 +74,7 @@ export function ContactDetailPage() {
             </div>
             {c.do_not_contact ? <div className="alert error mt12 small">Ha pedido no ser contactado.</div> : null}
             {c.anonymized_at ? <div className="alert warn mt12 small">Datos anonimizados el {fmtDate(c.anonymized_at)}.</div> : null}
-            <dl className="kv mt16">
-              <dt>Email</dt><dd><ChannelList kind="email" items={c.emails as Channel[] | undefined} fallback={c.email} onSave={(list) => patch({ emails: list })} /></dd>
-              <dt>Teléfono</dt><dd><ChannelList kind="phone" items={c.phones as Channel[] | undefined} fallback={c.phone} onSave={(list) => patch({ phones: list })} /></dd>
-              <dt>Etapa</dt><dd><select aria-label="Etapa" className="input sm" value={c.lifecycle_stage} onChange={(e) => patch({ lifecycle_stage: e.target.value })}>{Object.entries(LIFECYCLE).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></dd>
-              <dt>Estado lead</dt><dd><select aria-label="Estado lead" className="input sm" value={c.lead_status} onChange={(e) => { if (e.target.value === "unqualified") { const r = prompt("Motivo de descalificación"); if (!r) return; patch({ lead_status: "unqualified", disqualify_reason: r }); } else patch({ lead_status: e.target.value }); }}>{Object.entries(LEAD_STATUS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select>{c.disqualify_reason && c.lead_status === "unqualified" && <div className="xs muted">{c.disqualify_reason}</div>}</dd>
-              <dt>Puntuación</dt><dd><ScoreBar value={c.score} /></dd>
-              <dt>Propietario</dt><dd><select aria-label="Propietario" className="input sm" value={c.owner_id ?? ""} onChange={(e) => patch({ owner_id: e.target.value || null })}><option value="">Sin asignar</option>{users.filter((u) => u.active).map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}</select></dd>
-              <dt>Origen</dt><dd>{SOURCES[c.source ?? ""] ?? c.source ?? "—"}{Object.keys(c.utm ?? {}).length > 0 && <div className="xs muted">{Object.entries(c.utm).map(([k, v]) => `${k.replace("utm_", "")}: ${v}`).join(" · ")}</div>}</dd>
-              {(c.city || c.country) && <><dt>Ubicación</dt><dd>{[c.city, c.country].filter(Boolean).join(", ")}</dd></>}
-              {c.linkedin && <><dt>LinkedIn</dt><dd><a href={c.linkedin} target="_blank" rel="noreferrer">Perfil <ExternalLink size={11} /></a></dd></>}
-              {c.birthday && <><dt>Cumpleaños</dt><dd>{fmtDate(c.birthday)}</dd></>}
-              <dt>Etiquetas</dt><dd className="row wrap" style={{ gap: 3 }}>{c.tags.length ? c.tags.map((t) => <span key={t} className="tag">{t}</span>) : <span className="muted">—</span>}</dd>
-              <dt>RGPD</dt><dd className="small">{c.consent_marketing ? <span className="badge ok">consentimiento</span> : <span className="badge">sin consentimiento</span>}{c.consent_date && <div className="xs muted">{fmtDate(c.consent_date)} · {c.consent_source}</div>}</dd>
-              <dt>Creado</dt><dd className="small">{fmtDate(c.created_at)}</dd>
-              <dt>Últ. actividad</dt><dd className="small">{c.last_activity_at ? relTime(c.last_activity_at) : "nunca"}</dd>
-              {customFields.filter((f) => f.object === "contact").map((f) => <Fragment key={f.id}><dt>{f.label}</dt><dd>{formatCustom(f, c.custom?.[f.key], (uid) => userName(uid)) || <span className="muted">—</span>}</dd></Fragment>)}
-            </dl>
+            <div className="mt16"><LayoutPanel object="contact" record={c as unknown as Record<string, unknown>} onPatch={patch} editable={can("contact", "update")} extra={{ source: <>{SOURCES[c.source ?? ""] ?? c.source ?? "—"}{Object.keys(c.utm ?? {}).length > 0 && <div className="xs muted">{Object.entries(c.utm).map(([k, v]) => `${k.replace("utm_", "")}: ${v}`).join(" · ")}</div>}</> }} /></div>
             <button className="btn sm mt12" style={{ width: "100%" }} onClick={() => setEditing(true)}><Pencil />Editar todos los campos</button>
           </div>
           <div className="card">
