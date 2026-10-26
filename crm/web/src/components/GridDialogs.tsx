@@ -9,6 +9,7 @@ import { api } from "../api";
 import { Modal, Field, useToast, errorMessage } from "./ui";
 import { PALETTE } from "../lib/board";
 import { COND_OPS, type CondRule, type NumFormat, formatNumber, norm } from "../lib/grid";
+import { pillStyle } from "../lib/colors";
 
 export function ColorPicker({ value, onPick, onClose }: { value: string; onPick: (c: string) => void; onClose: () => void }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -49,7 +50,7 @@ export function LabelEditor({ items: initial, caps, onCancel, onSave }: { items:
           {it.kind === "extra" && caps.bases && <select className="input sm" style={{ width: 110 }} title="Se comporta como" value={it.base} onChange={(e) => upd(i, { base: e.target.value })}>{caps.bases.map((b) => <option key={b.key} value={b.key}>≈ {b.label}</option>)}</select>}
           {caps.hasDone && <label className="xs muted" title="Cuenta como hecho"><input type="checkbox" checked={!!it.done} onChange={(e) => upd(i, { done: e.target.checked })} />✓</label>}
           {caps.canHide && it.kind === "builtin" && <button type="button" className="iconbtn" title={it.hidden ? "Mostrar en el desplegable" : "Ocultar del desplegable"} onClick={() => upd(i, { hidden: !it.hidden })}>{it.hidden ? <EyeOff size={14} /> : <Eye size={14} />}</button>}
-          {caps.canDelete(it) ? <button type="button" className="iconbtn" title="Quitar etiqueta" onClick={() => { if (!it.isNew) setRemoved((r) => [...r, it]); setItems((xs) => xs.filter((_, j) => j !== i)); }}><Trash2 size={14} /></button> : <span style={{ width: 28 }} />}
+          {caps.canDelete(it) ? <button type="button" className="iconbtn" title="Quitar etiqueta" onClick={() => { if (!it.isNew) setRemoved((r) => [...r, it]); setItems((xs) => xs.filter((_, j) => j !== i)); }} aria-label="Quitar etiqueta"><Trash2 size={14} /></button> : <span style={{ width: 28 }} />}
         </div>
       ))}
       {caps.canAdd && <button type="button" className="btn ghost sm" onClick={add}><Plus />Nueva etiqueta</button>}
@@ -93,9 +94,9 @@ export function CondFormatDialog({ columns, rules: initial, onClose, onSave }: {
               <label className="xs"><input type="checkbox" checked={!!r.bold} onChange={(e) => upd(i, { bold: e.target.checked })} />N</label>
               <select className="input sm" value={r.scope ?? "cell"} onChange={(e) => upd(i, { scope: e.target.value as "cell" })}><option value="cell">la celda</option><option value="row">toda la fila</option></select>
               <span className="cfprev" style={{ background: r.bg, color: r.color || undefined, fontWeight: r.bold ? 700 : undefined }}>Ejemplo</span>
-              <button className="iconbtn" onClick={() => move(i, -1)} title="Subir"><ArrowUp size={13} /></button>
-              <button className="iconbtn" onClick={() => move(i, 1)} title="Bajar"><ArrowDown size={13} /></button>
-              <button className="iconbtn" onClick={() => setRules((rs) => rs.filter((_, j) => j !== i))} title="Borrar"><Trash2 size={13} /></button>
+              <button className="iconbtn" onClick={() => move(i, -1)} title="Subir" aria-label="Subir"><ArrowUp size={13} /></button>
+              <button className="iconbtn" onClick={() => move(i, 1)} title="Bajar" aria-label="Bajar"><ArrowDown size={13} /></button>
+              <button className="iconbtn" onClick={() => setRules((rs) => rs.filter((_, j) => j !== i))} title="Borrar" aria-label="Borrar"><Trash2 size={13} /></button>
             </div>
           );
         })}
@@ -114,7 +115,7 @@ export function NumFormatDialog({ label, numeric, value, onClose, onSave }: { la
         {numeric && <>
           <Field label="Decimales"><input className="input" type="number" min={0} max={6} value={f.decimals ?? 0} onChange={(e) => set({ decimals: Math.max(0, Math.min(6, Number(e.target.value))) })} /></Field>
           <Field label="Separador de miles"><label className="checkbox"><input type="checkbox" checked={f.thousands !== false} onChange={(e) => set({ thousands: e.target.checked })} />1.234.567</label></Field>
-          <Field label="Prefijo"><input className="input" value={f.prefix ?? ""} maxLength={6} placeholder="Ej. $" onChange={(e) => set({ prefix: e.target.value })} /></Field>
+          <Field label="Prefijo"><input aria-label="Ej. $" className="input" value={f.prefix ?? ""} maxLength={6} placeholder="Ej. $" onChange={(e) => set({ prefix: e.target.value })} /></Field>
           <Field label="Sufijo / unidad"><div className="row wrap" style={{ gap: 4 }}><input className="input sm" style={{ width: 90 }} value={f.suffix ?? ""} maxLength={8} onChange={(e) => set({ suffix: e.target.value })} />{[" €", " %", " h", " uds"].map((s) => <button key={s} type="button" className="tag" onClick={() => set({ suffix: s })}>{s.trim()}</button>)}</div></Field>
           <Field label="Negativos"><label className="checkbox"><input type="checkbox" checked={!!f.neg_red} onChange={(e) => set({ neg_red: e.target.checked })} />en rojo</label></Field>
           <Field label="Vista previa"><b style={{ color: f.neg_red ? "var(--risk)" : undefined }}>{formatNumber(-1234.5678, f)}</b> · <b>{formatNumber(98765.4321, f)}</b></Field>
@@ -141,8 +142,8 @@ export function ChangeTypeDialog({ field, onClose, onDone }: { field: { id: stri
       <Field label="Nuevo tipo"><div className="type-grid">{CHANGE_TYPES.filter((t) => t[0] !== field.type).map(([k, l]) => <button key={k} type="button" className={`type-btn ${type === k ? "active" : ""}`} onClick={() => setType(k)}><b>{l}</b></button>)}</div></Field>
       {!rep ? <p className="small muted">Calculando…</p> : (
         <div className="mt12">
-          <p className="small"><b>{rep.converted}</b> de {rep.filled} valores se convierten{rep.lost ? <> · <b style={{ color: "var(--risk)" }}>{rep.lost} no se pueden convertir y quedarán vacíos</b></> : " sin pérdidas"} · {rep.total - rep.filled} celdas vacías.</p>
-          {rep.labels && <p className="small">Etiquetas que se crearán: {rep.labels.map((l) => <span key={l.label} className="pill-mini" style={{ background: l.color }}>{l.label}</span>)}</p>}
+          <p className="small"><b>{rep.converted}</b> de {rep.filled} valores se convierten{rep.lost ? <> · <b style={{ color: "var(--risk-ink)" }}>{rep.lost} no se pueden convertir y quedarán vacíos</b></> : " sin pérdidas"} · {rep.total - rep.filled} celdas vacías.</p>
+          {rep.labels && <p className="small">Etiquetas que se crearán: {rep.labels.map((l) => <span key={l.label} className="pill-mini" style={pillStyle(l.color)}>{l.label}</span>)}</p>}
           {rep.options && <p className="small">Opciones: {rep.options.join(", ") || "—"}</p>}
           {rep.samples.length > 0 && <table className="table mt8"><thead><tr><th>Antes</th><th>Después</th></tr></thead><tbody>{rep.samples.map((s, i) => <tr key={i}><td>{s.before}</td><td>{s.after}</td></tr>)}</tbody></table>}
         </div>
@@ -165,7 +166,7 @@ export function TagsEditor({ value, suggestions, onCommit, onCancel }: { value: 
   return (
     <div onKeyDown={(e) => { e.stopPropagation(); if (e.key === "Escape") onCancel(); }}>
       <div className="row wrap" style={{ gap: 4, marginBottom: 6 }}>{tags.map((t) => <span key={t} className="tag">{t}<button type="button" onClick={() => setTags(tags.filter((x) => x !== t))} aria-label={`Quitar ${t}`}><X size={11} /></button></span>)}{!tags.length && <span className="xs muted">Sin etiquetas</span>}</div>
-      <input className="input sm" autoFocus placeholder="Escribe y pulsa Enter…" value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === ",") { e.preventDefault(); if (text.trim()) add(text); else onCommit(tags); } if (e.key === "Backspace" && !text && tags.length) setTags(tags.slice(0, -1)); }} />
+      <input aria-label="Escribe y pulsa Enter…" className="input sm" autoFocus placeholder="Escribe y pulsa Enter…" value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === ",") { e.preventDefault(); if (text.trim()) add(text); else onCommit(tags); } if (e.key === "Backspace" && !text && tags.length) setTags(tags.slice(0, -1)); }} />
       {sug.length > 0 && <div className="row wrap mt8" style={{ gap: 4 }}>{sug.map((s) => <button key={s} type="button" className="tag" onClick={() => add(s)}>+ {s}</button>)}</div>}
       <div className="row mt8" style={{ justifyContent: "flex-end", gap: 6 }}><button type="button" className="btn sm" onClick={onCancel}>Cancelar</button><button type="button" className="btn primary sm" onClick={() => onCommit(text.trim() ? [...tags, text.trim()] : tags)}>Guardar</button></div>
     </div>
@@ -182,7 +183,7 @@ export function RangeEditor({ value, onCommit, onCancel }: { value: { from?: str
 export function RelationPicker({ endpoint, labelOf, onPick, onCancel }: { endpoint: string; labelOf: (r: Record<string, unknown>) => string; onPick: (r: Record<string, unknown> | null) => void; onCancel: () => void }) {
   const [q, setQ] = useState(""); const [items, setItems] = useState<Record<string, unknown>[]>([]);
   useEffect(() => { const t = setTimeout(() => { api.get<{ items: Record<string, unknown>[] }>(`${endpoint}?q=${encodeURIComponent(q)}&page_size=8`).then((r) => setItems(r.items)).catch(() => undefined); }, 150); return () => clearTimeout(t); }, [q, endpoint]);
-  return <div onKeyDown={(e) => { e.stopPropagation(); if (e.key === "Escape") onCancel(); if (e.key === "Enter" && items[0]) onPick(items[0]); }}><div className="row" style={{ gap: 6 }}><Search size={14} className="muted" /><input className="input sm grow" autoFocus placeholder="Buscar…" value={q} onChange={(e) => setQ(e.target.value)} /></div><div className="col mt8" style={{ gap: 2 }}>{items.map((r) => <button key={String(r.id)} type="button" className="pick" onClick={() => onPick(r)}>{labelOf(r)}</button>)}<button type="button" className="pick muted" onClick={() => onPick(null)}>— Quitar —</button></div></div>;
+  return <div onKeyDown={(e) => { e.stopPropagation(); if (e.key === "Escape") onCancel(); if (e.key === "Enter" && items[0]) onPick(items[0]); }}><div className="row" style={{ gap: 6 }}><Search size={14} className="muted" /><input aria-label="Buscar…" className="input sm grow" autoFocus placeholder="Buscar…" value={q} onChange={(e) => setQ(e.target.value)} /></div><div className="col mt8" style={{ gap: 2 }}>{items.map((r) => <button key={String(r.id)} type="button" className="pick" onClick={() => onPick(r)}>{labelOf(r)}</button>)}<button type="button" className="pick muted" onClick={() => onPick(null)}>— Quitar —</button></div></div>;
 }
 
 export const SHORTCUTS: [string, string][] = [

@@ -1,6 +1,6 @@
 import { ChannelList, type Channel } from "../components/ChannelList";
 import { RecordAutomations } from "./AutomationCenter";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, Fragment } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { Phone, Mail, StickyNote, CheckSquare, Pencil, Trash2, ArrowRightLeft, Shield, Download, MoreHorizontal, Building2, ExternalLink } from "lucide-react";
 import { api, downloadFile } from "../api";
@@ -54,7 +54,7 @@ export function ContactDetailPage() {
                 {c.job_title && <div className="sub small">{c.job_title}</div>}
                 {c.company_id && <div className="small row"><Building2 size={13} className="muted" /><Link to={`/empresas/${c.company_id}`}>{c.company_name}</Link></div>}
               </div>
-              <Menu trigger={<button className="iconbtn"><MoreHorizontal size={18} /></button>}>
+              <Menu trigger={<button className="iconbtn" aria-label="Más acciones"><MoreHorizontal size={18} /></button>}>
                 <button onClick={() => setEditing(true)}><Pencil />Editar</button>
                 <button onClick={() => setConverting(true)}><ArrowRightLeft />Convertir en oportunidad</button>
                 <button onClick={() => downloadFile(`/api/contacts/${c.id}/gdpr-export`).then(() => toast("Datos exportados", "ok"))}><Download />Exportar datos (RGPD)</button>
@@ -74,10 +74,10 @@ export function ContactDetailPage() {
             <dl className="kv mt16">
               <dt>Email</dt><dd><ChannelList kind="email" items={c.emails as Channel[] | undefined} fallback={c.email} onSave={(list) => patch({ emails: list })} /></dd>
               <dt>Teléfono</dt><dd><ChannelList kind="phone" items={c.phones as Channel[] | undefined} fallback={c.phone} onSave={(list) => patch({ phones: list })} /></dd>
-              <dt>Etapa</dt><dd><select className="input sm" value={c.lifecycle_stage} onChange={(e) => patch({ lifecycle_stage: e.target.value })}>{Object.entries(LIFECYCLE).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></dd>
-              <dt>Estado lead</dt><dd><select className="input sm" value={c.lead_status} onChange={(e) => { if (e.target.value === "unqualified") { const r = prompt("Motivo de descalificación"); if (!r) return; patch({ lead_status: "unqualified", disqualify_reason: r }); } else patch({ lead_status: e.target.value }); }}>{Object.entries(LEAD_STATUS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select>{c.disqualify_reason && c.lead_status === "unqualified" && <div className="xs muted">{c.disqualify_reason}</div>}</dd>
+              <dt>Etapa</dt><dd><select aria-label="Etapa" className="input sm" value={c.lifecycle_stage} onChange={(e) => patch({ lifecycle_stage: e.target.value })}>{Object.entries(LIFECYCLE).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></dd>
+              <dt>Estado lead</dt><dd><select aria-label="Estado lead" className="input sm" value={c.lead_status} onChange={(e) => { if (e.target.value === "unqualified") { const r = prompt("Motivo de descalificación"); if (!r) return; patch({ lead_status: "unqualified", disqualify_reason: r }); } else patch({ lead_status: e.target.value }); }}>{Object.entries(LEAD_STATUS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select>{c.disqualify_reason && c.lead_status === "unqualified" && <div className="xs muted">{c.disqualify_reason}</div>}</dd>
               <dt>Puntuación</dt><dd><ScoreBar value={c.score} /></dd>
-              <dt>Propietario</dt><dd><select className="input sm" value={c.owner_id ?? ""} onChange={(e) => patch({ owner_id: e.target.value || null })}><option value="">Sin asignar</option>{users.filter((u) => u.active).map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}</select></dd>
+              <dt>Propietario</dt><dd><select aria-label="Propietario" className="input sm" value={c.owner_id ?? ""} onChange={(e) => patch({ owner_id: e.target.value || null })}><option value="">Sin asignar</option>{users.filter((u) => u.active).map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}</select></dd>
               <dt>Origen</dt><dd>{SOURCES[c.source ?? ""] ?? c.source ?? "—"}{Object.keys(c.utm ?? {}).length > 0 && <div className="xs muted">{Object.entries(c.utm).map(([k, v]) => `${k.replace("utm_", "")}: ${v}`).join(" · ")}</div>}</dd>
               {(c.city || c.country) && <><dt>Ubicación</dt><dd>{[c.city, c.country].filter(Boolean).join(", ")}</dd></>}
               {c.linkedin && <><dt>LinkedIn</dt><dd><a href={c.linkedin} target="_blank" rel="noreferrer">Perfil <ExternalLink size={11} /></a></dd></>}
@@ -86,7 +86,7 @@ export function ContactDetailPage() {
               <dt>RGPD</dt><dd className="small">{c.consent_marketing ? <span className="badge ok">consentimiento</span> : <span className="badge">sin consentimiento</span>}{c.consent_date && <div className="xs muted">{fmtDate(c.consent_date)} · {c.consent_source}</div>}</dd>
               <dt>Creado</dt><dd className="small">{fmtDate(c.created_at)}</dd>
               <dt>Últ. actividad</dt><dd className="small">{c.last_activity_at ? relTime(c.last_activity_at) : "nunca"}</dd>
-              {customFields.filter((f) => f.object === "contact").map((f) => <span key={f.id} style={{ display: "contents" }}><dt>{f.label}</dt><dd>{formatCustom(f, c.custom?.[f.key], (uid) => userName(uid)) || <span className="muted">—</span>}</dd></span>)}
+              {customFields.filter((f) => f.object === "contact").map((f) => <Fragment key={f.id}><dt>{f.label}</dt><dd>{formatCustom(f, c.custom?.[f.key], (uid) => userName(uid)) || <span className="muted">—</span>}</dd></Fragment>)}
             </dl>
             <button className="btn sm mt12" style={{ width: "100%" }} onClick={() => setEditing(true)}><Pencil />Editar todos los campos</button>
           </div>

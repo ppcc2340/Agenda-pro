@@ -6,6 +6,7 @@ import { useApp } from "../lib/app";
 import { Menu, Modal, Field, useToast, useConfirm, errorMessage } from "./ui";
 import { ColorPicker, RenameDialog } from "./DataTable";
 import { fmtMoney, fmtDate, initials } from "../lib/format";
+import { inkOn } from "../lib/colors";
 
 export interface BoardDeal { id: string; name: string; company_name: string | null; amount: number; currency: string; probability: number; expected_close_date: string | null; owner_name: string | null; days_in_stage: number; stale: boolean; light: "green" | "yellow" | "red"; next_task_at: string | null; status: string; weighted_amount: number }
 export interface BoardStage { id: string; name: string; color: string; kind: string; expected_days: number; deals: BoardDeal[]; count: number; amount: number; weighted: number }
@@ -33,7 +34,7 @@ export function Kanban({ stages, pipelineId, editable, onMove, onOpen, onStagesC
         {stages.map((s, i) => <Column key={s.id} stage={s} index={i} all={stages} pipelineId={pipelineId} editable={!!editable} onOpen={onOpen} onChanged={onStagesChanged} />)}
         {editable && pipelineId && (
           <div className="kcol kadd">
-            {adding ? <div className="col"><input className="input sm" autoFocus placeholder="Nombre de la etapa" value={newName} onChange={(e) => setNewName(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") addStage(); if (e.key === "Escape") setAdding(false); }} /><div className="row"><button className="btn primary sm" onClick={addStage}>Añadir</button><button className="btn ghost sm" onClick={() => setAdding(false)}>Cancelar</button></div></div>
+            {adding ? <div className="col"><input aria-label="Nombre de la etapa" className="input sm" autoFocus placeholder="Nombre de la etapa" value={newName} onChange={(e) => setNewName(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") addStage(); if (e.key === "Escape") setAdding(false); }} /><div className="row"><button className="btn primary sm" onClick={addStage}>Añadir</button><button className="btn ghost sm" onClick={() => setAdding(false)}>Cancelar</button></div></div>
               : <button className="btn ghost" style={{ width: "100%", justifyContent: "center" }} onClick={() => setAdding(true)}><Plus />Añadir etapa</button>}
           </div>
         )}
@@ -57,7 +58,7 @@ function Column({ stage, index, all, pipelineId, editable, onOpen, onChanged }: 
   const del = async () => { if (!pipelineId) return; if (!(await confirm({ title: `¿Borrar la etapa «${stage.name}»?`, text: stage.count ? "Mueve antes los negocios a otra etapa." : undefined, danger: true, confirmText: "Borrar" }))) return; try { await api.del(`pipelines/${pipelineId}/stages/${stage.id}`); toast("Etapa borrada", "ok"); onChanged?.(); } catch (e) { toast(errorMessage(e), "error"); } };
   const canEdit = editable && !!pipelineId;
   return (
-    <div className={`kcol ${isOver ? "over" : ""}`} style={{ "--stage": stage.color } as React.CSSProperties}>
+    <div className={`kcol ${isOver ? "over" : ""}`} style={{ "--stage": stage.color, "--stage-ink": inkOn(stage.color) } as React.CSSProperties}>
       <div className="kcol-head" style={{ position: "relative" }}>
         <div className="t"><span className="ell" onClick={() => canEdit && setRename(true)} style={canEdit ? { cursor: "text" } : undefined} title={canEdit ? "Clic para renombrar" : undefined}>{stage.name}</span><span className="row" style={{ gap: 4 }}><span className="num">{stage.count}</span>{canEdit && <Menu trigger={<button className="kmenu" aria-label="Opciones de etapa">⋯</button>}>
           <button onClick={() => setRename(true)}><Pencil />Renombrar</button>
@@ -66,7 +67,7 @@ function Column({ stage, index, all, pipelineId, editable, onOpen, onChanged }: 
           {stage.kind === "open" && <button onClick={() => setEdit("expected_days")}><CalendarClock />Días esperados: {stage.expected_days}</button>}
           {stage.kind === "open" && index > 0 && <button onClick={() => move(-1)}><ArrowLeft />Mover a la izquierda</button>}
           {stage.kind === "open" && <button onClick={() => move(1)}><ArrowRight />Mover a la derecha</button>}
-          {stage.kind === "open" && <button onClick={del} style={{ color: "var(--risk)" }}><Trash2 />Borrar etapa</button>}
+          {stage.kind === "open" && <button onClick={del} style={{ color: "var(--risk-ink)" }}><Trash2 />Borrar etapa</button>}
         </Menu>}</span></div>
         <div className="m num">{fmtMoney(stage.amount)} · pond. {fmtMoney(stage.weighted)}</div>
         {pick && <ColorPicker value={stage.color} onPick={(c) => { setPick(false); patch({ color: c }); }} onClose={() => setPick(false)} />}
@@ -106,7 +107,7 @@ function Card({ d, overlay }: { d: BoardDeal; overlay?: boolean }) {
         {d.expected_close_date && <span className="right num" title="Cierre previsto">{fmtDate(d.expected_close_date, { day: "2-digit", month: "short" })}</span>}
       </div>
       <div className="f" style={{ marginTop: 5 }}>
-        {d.stale ? <span style={{ color: "var(--warn)" }} className="row" title={`Más de lo esperado en etapa`}><AlertTriangle size={12} /> {d.days_in_stage} d</span> : <span className="row"><Clock size={12} /> {d.days_in_stage} d</span>}
+        {d.stale ? <span style={{ color: "var(--warn-ink)" }} className="row" title={`Más de lo esperado en etapa`}><AlertTriangle size={12} /> {d.days_in_stage} d</span> : <span className="row"><Clock size={12} /> {d.days_in_stage} d</span>}
         {d.owner_name && <span className="right avatar sm" title={d.owner_name}>{initials(d.owner_name)}</span>}
       </div>
     </div>

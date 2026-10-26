@@ -1,7 +1,9 @@
-import { createContext, useContext, useEffect, useRef, useState, type ReactNode, useLayoutEffect } from "react";
+import { createContext, useContext, useEffect, useId, useRef, useState, type ReactNode, useLayoutEffect, isValidElement, cloneElement, Children, type ReactElement } from "react";
 import { X, ChevronLeft, ChevronRight, Check, Search } from "lucide-react";
 import { initials } from "../lib/format";
 import { api } from "../api";
+import { t } from "../lib/i18n";
+const tr = t;
 
 // ---------- Toasts ----------
 type Toast = { id: number; text: string; kind?: "ok" | "error" | "info" };
@@ -18,10 +20,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       {children}
       <div className="toasts" role="status" aria-live="polite">
         {items.map((t) => (
-          <div key={t.id} className={`toast ${t.kind ?? ""}`}>
+          <div key={t.id} className={`toast ${t.kind ?? ""}`} role={t.kind === "error" ? "alert" : undefined}>
             {t.kind === "ok" && <Check size={16} />}
             <span>{t.text}</span>
-            <button onClick={() => setItems((x) => x.filter((i) => i.id !== t.id))} aria-label="Cerrar">×</button>
+            <button onClick={() => setItems((x) => x.filter((i) => i.id !== t.id))} aria-label={tr("common.close")}>×</button>
           </div>
         ))}
       </div>
@@ -41,8 +43,8 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
       {children}
       {state && (
         <Modal title={state.title} onClose={() => { state.resolve(false); setState(null); }} footer={<>
-          <button className="btn" onClick={() => { state.resolve(false); setState(null); }}>Cancelar</button>
-          <button className={`btn ${state.danger ? "danger" : "primary"}`} autoFocus onClick={() => { state.resolve(true); setState(null); }}>{state.confirmText ?? "Confirmar"}</button>
+          <button className="btn" onClick={() => { state.resolve(false); setState(null); }}>{t("common.cancel")}</button>
+          <button className={`btn ${state.danger ? "danger" : "primary"}`} autoFocus onClick={() => { state.resolve(true); setState(null); }}>{state.confirmText ?? t("common.confirm")}</button>
         </>}>
           {state.text && <p className="sub">{state.text}</p>}
         </Modal>
@@ -53,16 +55,39 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
 export const useConfirm = () => useContext(ConfirmCtx);
 
 // ---------- Modal / Drawer ----------
-export function Modal({ title, onClose, children, footer, size }: { title: ReactNode; onClose: () => void; children: ReactNode; footer?: ReactNode; size?: "lg" | "xl" }) {
+const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+/** Diálogo accesible: Escape cierra (solo el de encima), el foco queda atrapado dentro y vuelve al elemento que lo abrió. */
+function useDialog(onClose: () => void) {
+  const ref = useRef<HTMLDivElement>(null);
+  const closeRef = useRef(onClose); closeRef.current = onClose;
   useEffect(() => {
-    const h = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    const prev = document.activeElement as HTMLElement | null;
+    const el = ref.current;
+    if (el && !el.contains(document.activeElement)) { const first = el.querySelector<HTMLElement>("[autofocus], .modal-body " + FOCUSABLE) ?? el.querySelector<HTMLElement>(FOCUSABLE); (first ?? el).focus({ preventScroll: true }); }
+    const h = (e: KeyboardEvent) => {
+      const all = Array.from(document.querySelectorAll<HTMLElement>("[data-dialog]"));
+      if (all[all.length - 1] !== ref.current) return; // solo el diálogo superior
+      if (e.key === "Escape") { e.stopPropagation(); closeRef.current(); return; }
+      if (e.key === "Tab" && ref.current) {
+        const f = Array.from(ref.current.querySelectorAll<HTMLElement>(FOCUSABLE)).filter((x) => x.offsetParent !== null || x === document.activeElement);
+        if (!f.length) return;
+        const first = f[0]!, last = f[f.length - 1]!;
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }
+    };
     window.addEventListener("keydown", h);
-    return () => window.removeEventListener("keydown", h);
-  }, [onClose]);
+    return () => { window.removeEventListener("keydown", h); if (prev && document.contains(prev)) prev.focus({ preventScroll: true }); };
+  }, []);
+  return ref;
+}
+export function Modal({ title, onClose, children, footer, size }: { title: ReactNode; onClose: () => void; children: ReactNode; footer?: ReactNode; size?: "lg" | "xl" }) {
+  const ref = useDialog(onClose);
+  const id = useId();
   return (
     <div className="overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className={`modal ${size ?? ""}`} role="dialog" aria-modal="true">
-        <div className="modal-head"><h2>{title}</h2><button className="iconbtn" onClick={onClose} aria-label="Cerrar"><X size={18} /></button></div>
+      <div ref={ref} data-dialog className={`modal ${size ?? ""}`} role="dialog" aria-modal="true" aria-labelledby={`${id}-t`} tabIndex={-1}>
+        <div className="modal-head"><h2 id={`${id}-t`}>{title}</h2><button className="iconbtn" onClick={onClose} aria-label={t("common.close")}><X size={18} /></button></div>
         <div className="modal-body">{children}</div>
         {footer && <div className="modal-foot">{footer}</div>}
       </div>
@@ -70,15 +95,12 @@ export function Modal({ title, onClose, children, footer, size }: { title: React
   );
 }
 export function Drawer({ title, onClose, children, footer }: { title: ReactNode; onClose: () => void; children: ReactNode; footer?: ReactNode }) {
-  useEffect(() => {
-    const h = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
-    window.addEventListener("keydown", h);
-    return () => window.removeEventListener("keydown", h);
-  }, [onClose]);
+  const ref = useDialog(onClose);
+  const id = useId();
   return (
     <div className="drawer-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="drawer" role="dialog" aria-modal="true">
-        <div className="modal-head"><h2>{title}</h2><button className="iconbtn" onClick={onClose} aria-label="Cerrar"><X size={18} /></button></div>
+      <div ref={ref} data-dialog className="drawer" role="dialog" aria-modal="true" aria-labelledby={`${id}-t`} tabIndex={-1}>
+        <div className="modal-head"><h2 id={`${id}-t`}>{title}</h2><button className="iconbtn" onClick={onClose} aria-label={t("common.close")}><X size={18} /></button></div>
         <div className="modal-body grow">{children}</div>
         {footer && <div className="modal-foot">{footer}</div>}
       </div>
@@ -87,7 +109,7 @@ export function Drawer({ title, onClose, children, footer }: { title: ReactNode;
 }
 
 // ---------- Misc ----------
-export const Spinner = () => <div className="spinner" aria-label="Cargando" />;
+export const Spinner = () => <div className="spinner" role="status" aria-label={t("common.loading")} />;
 export function Empty({ title, text, action }: { title: string; text?: string; action?: ReactNode }) {
   return <div className="empty"><h3>{title}</h3>{text && <p>{text}</p>}{action && <div className="mt12">{action}</div>}</div>;
 }
@@ -98,23 +120,29 @@ export function Tabs({ items, value, onChange }: { items: { key: string; label: 
   return <div className="tabs" role="tablist">{items.map((t) => <button key={t.key} role="tab" aria-selected={value === t.key} className={value === t.key ? "active" : ""} onClick={() => onChange(t.key)}>{t.label}{t.count !== undefined && <span className="muted"> {t.count}</span>}</button>)}</div>;
 }
 export function Seg<T extends string>({ items, value, onChange }: { items: { key: T; label: string }[]; value: T; onChange: (k: T) => void }) {
-  return <div className="seg">{items.map((t) => <button key={t.key} className={value === t.key ? "active" : ""} onClick={() => onChange(t.key)}>{t.label}</button>)}</div>;
+  return <div className="seg" role="group">{items.map((t) => <button key={t.key} className={value === t.key ? "active" : ""} aria-pressed={value === t.key} onClick={() => onChange(t.key)}>{t.label}</button>)}</div>;
 }
 export function Pager({ page, pageSize, total, onPage }: { page: number; pageSize: number; total: number; onPage: (p: number) => void }) {
   const pages = Math.max(1, Math.ceil(total / pageSize));
   return (
     <div className="pager">
-      <span>{total === 0 ? "Sin resultados" : `${(page - 1) * pageSize + 1}–${Math.min(total, page * pageSize)} de ${total}`}</span>
+      <span>{total === 0 ? t("common.noResults") : t("common.of", { a: (page - 1) * pageSize + 1, b: Math.min(total, page * pageSize), total })}</span>
       <span className="right row">
-        <button className="btn sm ghost" disabled={page <= 1} onClick={() => onPage(page - 1)}><ChevronLeft /></button>
+        <button className="btn sm ghost" disabled={page <= 1} onClick={() => onPage(page - 1)} aria-label={t("common.prev")}><ChevronLeft /></button>
         <span>{page} / {pages}</span>
-        <button className="btn sm ghost" disabled={page >= pages} onClick={() => onPage(page + 1)}><ChevronRight /></button>
+        <button className="btn sm ghost" disabled={page >= pages} onClick={() => onPage(page + 1)} aria-label={t("common.next")}><ChevronRight /></button>
       </span>
     </div>
   );
 }
 export function Field({ label, children, hint, error, full }: { label?: string; children: ReactNode; hint?: string; error?: string; full?: boolean }) {
-  return <div className={`field ${full ? "full" : ""}`}>{label && <label>{label}</label>}{children}{hint && !error && <span className="hint">{hint}</span>}{error && <span className="error">{error}</span>}</div>;
+  const id = useId();
+  // el primer control nativo del campo queda asociado a su etiqueta (lectores de pantalla y clic en la etiqueta)
+  const kids = Children.toArray(children);
+  const first = kids[0];
+  const ctl = isValidElement(first) && typeof first.type === "string" && ["input", "select", "textarea"].includes(first.type) && !(first.props as Record<string, unknown>).id;
+  const out = ctl ? [cloneElement(first as ReactElement<Record<string, unknown>>, { id }), ...kids.slice(1)] : children;
+  return <div className={`field ${full ? "full" : ""}`} role={!ctl && label ? "group" : undefined} aria-labelledby={!ctl && label ? `${id}-l` : undefined}>{label && <label id={`${id}-l`} htmlFor={ctl ? id : undefined}>{label}</label>}{out}{hint && !error && <span className="hint">{hint}</span>}{error && <span className="error">{error}</span>}</div>;
 }
 export function Menu({ trigger, children, fixed }: { trigger: ReactNode; children: ReactNode; /** posición fija: no lo recorta un contenedor con scroll (tablas) */ fixed?: boolean }) {
   const [open, setOpen] = useState(false);
@@ -130,9 +158,22 @@ export function Menu({ trigger, children, fixed }: { trigger: ReactNode; childre
     if (!open) return;
     const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
     document.addEventListener("mousedown", h);
+    // el foco entra en la primera opción para poder usar las flechas
+    setTimeout(() => ref.current?.querySelector<HTMLElement>(".menu button:not([disabled]), .menu a")?.focus({ preventScroll: true }), 0);
     return () => document.removeEventListener("mousedown", h);
   }, [open]);
-  return <div ref={ref} style={{ position: "relative", display: "inline-block" }}><span onClick={() => setOpen((o) => !o)}>{trigger}</span>{open && <div className="menu" style={pos} onClick={() => setOpen(false)}>{children}</div>}</div>;
+  const items = () => Array.from(ref.current?.querySelectorAll<HTMLElement>(".menu button:not([disabled]), .menu a") ?? []);
+  const onKey = (e: React.KeyboardEvent) => {
+    if (!open) { if ((e.key === "ArrowDown" || e.key === "Enter" || e.key === " ") && (e.target as HTMLElement).closest("button") && !(e.target as HTMLElement).closest(".menu")) { /* el botón abre con su clic */ } return; }
+    const list = items(); const i = list.indexOf(document.activeElement as HTMLElement);
+    if (e.key === "ArrowDown") { e.preventDefault(); e.stopPropagation(); list[(i + 1) % list.length]?.focus(); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); e.stopPropagation(); list[(i - 1 + list.length) % list.length]?.focus(); }
+    else if (e.key === "Home") { e.preventDefault(); list[0]?.focus(); }
+    else if (e.key === "End") { e.preventDefault(); list[list.length - 1]?.focus(); }
+    else if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); setOpen(false); ref.current?.querySelector<HTMLElement>("button")?.focus(); }
+    else if (e.key === "Tab") setOpen(false);
+  };
+  return <div ref={ref} style={{ position: "relative", display: "inline-block" }} onKeyDown={onKey}><span onClick={() => setOpen((o) => !o)}>{isValidElement(trigger) && trigger.type === "button" ? cloneElement(trigger as ReactElement<Record<string, unknown>>, { "aria-haspopup": "menu", "aria-expanded": open }) : trigger}</span>{open && <div className="menu" role="menu" style={pos} onClick={() => setOpen(false)}>{children}</div>}</div>;
 }
 export function TagInput({ value, onChange, placeholder }: { value: string[]; onChange: (v: string[]) => void; placeholder?: string }) {
   const [text, setText] = useState("");

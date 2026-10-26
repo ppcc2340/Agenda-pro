@@ -20,7 +20,7 @@ export function ChannelList({ kind, items, fallback, onSave }: { kind: "email" |
     <div className="col" style={{ gap: 6 }}>
       {edit.map((c, i) => (
         <div key={i} className="row" style={{ gap: 4 }}>
-          <button className={`iconbtn xs ${c.primary ? "on" : ""}`} title={c.primary ? "Principal" : "Marcar como principal"} aria-pressed={!!c.primary} onClick={() => upd(i, { primary: true })}><Star size={13} fill={c.primary ? "currentColor" : "none"} /></button>
+          <button className={`iconbtn xs ${c.primary ? "on" : ""}`} title={c.primary ? "Principal" : "Marcar como principal"} aria-pressed={!!c.primary} onClick={() => upd(i, { primary: true })} aria-label={c.primary ? "Principal" : "Marcar como principal"}><Star size={13} fill={c.primary ? "currentColor" : "none"} /></button>
           <input className="input sm grow" type={kind === "email" ? "email" : "tel"} value={c.value} aria-label={kind === "email" ? "Email" : "Teléfono"} onChange={(e) => upd(i, { value: e.target.value })} />
           <select className="input sm" style={{ width: 110 }} value={c.label ?? "Trabajo"} aria-label="Etiqueta" onChange={(e) => upd(i, { label: e.target.value })}>{LABELS.map((l) => <option key={l}>{l}</option>)}</select>
           <button className="iconbtn xs" aria-label="Quitar" onClick={() => setEdit((xs) => xs!.filter((_, j) => j !== i))}><X size={13} /></button>

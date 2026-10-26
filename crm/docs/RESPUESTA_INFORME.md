@@ -31,7 +31,7 @@ Leyenda:
 | CLM con archivos y SHA-256 | ✅ ya existía | Versiones con `sha256`; aprobaciones ligadas al hash; versión firmada bloqueada |
 | Eliminar simulaciones | 🟡 parcial | Email por SMTP real (o modo de prueba), seguimiento de aperturas y clics propio, firma con OTP por email y evidencias. Pendiente: proveedor eIDAS y buzón conectado (ver A8) |
 | Identificadores en servidor | ✅ ya existía | UUID generados en el servidor (`crypto.randomUUID`) |
-| Catálogo de idiomas | 🟡 parcial | Ver A5 |
+| Catálogo de idiomas | 🟡 parcial | `es.json` y `en.json` para la interfaz común; las páginas interiores siguen en español |
 | **PostgreSQL** | ⏳ pendiente (decisión) | Se mantiene SQLite. Ver la nota de migración al final |
 
 ### A2. Arquitectura
@@ -96,7 +96,7 @@ Para pasar a varias instancias del servidor harían falta PostgreSQL y una cola 
 | Sondeos sustituidos por eventos | 🆕 hecho. `GET /api/events` (Server-Sent Events): cada cambio avisa a las demás sesiones del espacio de trabajo y la tabla se recarga en silencio sin mover filas ni cortar una edición. El canal no expone datos: solo tipo, objeto e id |
 | Debounce en búsqueda | ✅ ya existía (250 ms) |
 | Virtualización de filas | 🟡 parcial. Se carga por páginas de 100 (o cursor de hasta 500). La virtualización completa queda para tableros de más de 10.000 filas visibles |
-| Responsive, accesibilidad, modo oscuro e i18n | Ver la sección «Interfaz» al final |
+| Responsive, accesibilidad, modo oscuro e i18n | 🆕 hecho; ver la sección «Interfaz» al final |
 | Fuente autoalojada | 🆕 hecho. Figtree se sirve desde el propio servidor (`@fontsource-variable/figtree`), funciona sin red y cumple la CSP |
 | CSP y enlaces seguros | 🆕 hecho. Detalle en A9 |
 
@@ -218,7 +218,7 @@ Los sprints 0–7 del informe quedan cubiertos con la arquitectura actual; tambi
 | Informes y paneles | 2 | 4 | 🆕 Ver «Informes y paneles» |
 | Administración y permisos | 2 | 3 | Roles editables, 2FA por rol 🆕, auditoría verificable 🆕. Pendientes: permisos por campo y SSO |
 | Importación, exportación, API | 1 | 3 | Importación de contactos, empresas y negocios; API con OpenAPI 🆕; webhooks |
-| Móvil, accesibilidad, idiomas | 1 | — | Ver «Interfaz» |
+| Móvil, accesibilidad, idiomas | 1 | 3 | Ver «Interfaz»: móvil, ARIA, modo oscuro, español e inglés en la interfaz común |
 | IA | 0 | 0 | ⏳ Requiere elegir un proveedor con residencia en la UE |
 
 ### Presupuestos
@@ -245,7 +245,28 @@ Generador PDF propio, sin dependencias.
 
 ## Interfaz: móvil, accesibilidad, modo oscuro e idiomas
 
-*(Se completa al integrar la rama de interfaz; ver más abajo.)*
+🆕 Hecho en el CRM real y en la demo:
+
+- **Modo oscuro:** Sistema, Claro u Oscuro, en el menú de usuario; se recuerda entre sesiones.
+- **Contraste de las etiquetas:** el texto de cada etiqueta de color se elige según la luminancia del fondo (texto oscuro sobre amarillo y lima).
+- **Móvil:** cortes a 1280, 960 y 720 px.
+  - Por debajo de 960 px el menú lateral pasa a ser un cajón.
+  - Por debajo de 720 px las tablas se ven como tarjetas con hasta 3 campos elegidos por tablero, los diálogos ocupan toda la pantalla y los botones miden al menos 44 px.
+  - A 390 px ninguna de las 15 rutas tiene desplazamiento horizontal.
+- **Accesibilidad:**
+  - tabla con roles `grid`, `row`, `gridcell` y `columnheader`, `aria-sort` y celda seleccionada;
+  - diálogos con `aria-modal`, foco atrapado que vuelve a su sitio al cerrar, y Escape;
+  - menús que se manejan con las flechas;
+  - avisos con `aria-live`;
+  - etiquetas en los botones de solo icono;
+  - enlace «Saltar al contenido»;
+  - animaciones desactivadas si el sistema pide movimiento reducido.
+- **Revisión con axe-core:** las incidencias graves pasan de unas 3.200 a 185. Todas las que quedan son de contraste en colores de etiqueta intermedios (morado, gris) que el usuario puede cambiar desde «Editar etiquetas».
+- **Idiomas:** `t()` con catálogos en español e inglés para el menú, la barra superior, la búsqueda, el inicio de sesión, los diálogos comunes y la barra de las tablas. Fechas e importes siguen el idioma elegido.
+  - 🟡 Las páginas interiores siguen en español.
+- **Atajos de teclado:**
+  - g+c, g+e, g+n, g+t, g+h, g+a para navegar;
+  - `n` para crear un elemento nuevo, `/` para buscar, `?` para ver la ayuda.
 
 ## Nota: migración a PostgreSQL (cuando haga falta)
 

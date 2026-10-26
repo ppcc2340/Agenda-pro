@@ -2,6 +2,7 @@
  * Utilidades de la tabla tipo Excel: lectura de lo que se pega (formato español), TSV, formatos de número,
  * formato condicional y funciones de resumen del pie.
  */
+import { locale } from "./prefs";
 export const norm = (s: unknown) => String(s ?? "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
 
 /** «1.234,56 €» → 1234.56 · «12 %» → 12 · «-3» → -3. */
@@ -58,7 +59,7 @@ export function toTSV(rows: string[][]): string {
 export interface NumFormat { decimals?: number; thousands?: boolean; prefix?: string; suffix?: string; neg_red?: boolean; align?: "left" | "center" | "right"; wrap?: boolean }
 export function formatNumber(n: number, f: NumFormat): string {
   const d = f.decimals ?? 0;
-  const s = new Intl.NumberFormat("es-ES", { minimumFractionDigits: d, maximumFractionDigits: d, useGrouping: f.thousands !== false }).format(n);
+  const s = new Intl.NumberFormat(locale(), { minimumFractionDigits: d, maximumFractionDigits: d, useGrouping: f.thousands !== false }).format(n);
   return `${f.prefix ?? ""}${s}${f.suffix ?? ""}`;
 }
 

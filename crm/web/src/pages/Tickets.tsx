@@ -111,17 +111,17 @@ export function TicketDetailPage() {
         </section>
         <aside className="side r">
           <div className="card"><dl className="kv">
-            <dt>Estado</dt><dd><select className="input sm" value={t.status} onChange={(e) => patch({ status: e.target.value })}>{Object.entries(TICKET_STATUS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></dd>
-            <dt>Prioridad</dt><dd><select className="input sm" value={t.priority} onChange={(e) => patch({ priority: e.target.value })}>{["low", "normal", "high", "urgent"].map((k) => <option key={k} value={k}>{PRIORITY[k]}</option>)}</select></dd>
-            <dt>Asignado</dt><dd><select className="input sm" value={t.assignee_id ?? ""} onChange={(e) => patch({ assignee_id: e.target.value || null })}><option value="">Sin asignar</option>{users.filter((u) => u.active).map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}</select></dd>
-            <dt>Categoría</dt><dd><input className="input sm" defaultValue={t.category ?? ""} key={t.category} onBlur={(e) => e.target.value !== (t.category ?? "") && patch({ category: e.target.value })} /></dd>
+            <dt>Estado</dt><dd><select aria-label="Estado" className="input sm" value={t.status} onChange={(e) => patch({ status: e.target.value })}>{Object.entries(TICKET_STATUS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></dd>
+            <dt>Prioridad</dt><dd><select aria-label="Prioridad" className="input sm" value={t.priority} onChange={(e) => patch({ priority: e.target.value })}>{["low", "normal", "high", "urgent"].map((k) => <option key={k} value={k}>{PRIORITY[k]}</option>)}</select></dd>
+            <dt>Asignado</dt><dd><select aria-label="Asignado" className="input sm" value={t.assignee_id ?? ""} onChange={(e) => patch({ assignee_id: e.target.value || null })}><option value="">Sin asignar</option>{users.filter((u) => u.active).map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}</select></dd>
+            <dt>Categoría</dt><dd><input aria-label="Categoría" className="input sm" defaultValue={t.category ?? ""} key={t.category} onBlur={(e) => e.target.value !== (t.category ?? "") && patch({ category: e.target.value })} /></dd>
             <dt>Contacto</dt><dd>{t.contact_id ? <Link to={`/contactos/${t.contact_id}`}>{t.contact_name}</Link> : "—"}</dd>
             <dt>Empresa</dt><dd>{t.company_id ? <Link to={`/empresas/${t.company_id}`}>{t.company_name}</Link> : "—"}</dd>
             <dt>Canal</dt><dd>{t.channel}</dd>
             <dt>Creado</dt><dd className="small">{fmtDateTime(t.created_at)}</dd>
-            <dt>SLA 1ª resp.</dt><dd className="small" style={slaBreached ? { color: "var(--risk)" } : undefined}>{t.first_response_at ? `respondido ${relTime(t.first_response_at)}` : fmtDateTime(t.sla_due_at)}</dd>
+            <dt>SLA 1ª resp.</dt><dd className="small" style={slaBreached ? { color: "var(--risk-ink)" } : undefined}>{t.first_response_at ? `respondido ${relTime(t.first_response_at)}` : fmtDateTime(t.sla_due_at)}</dd>
             {t.resolved_at && <><dt>Resuelto</dt><dd className="small">{fmtDateTime(t.resolved_at)}</dd></>}
-            <dt>CSAT</dt><dd><select className="input sm" value={t.csat ?? ""} onChange={(e) => patch({ csat: e.target.value ? Number(e.target.value) : null })}><option value="">—</option>{[1, 2, 3, 4, 5].map((n) => <option key={n} value={n}>{"★".repeat(n)}</option>)}</select></dd>
+            <dt>CSAT</dt><dd><select aria-label="CSAT" className="input sm" value={t.csat ?? ""} onChange={(e) => patch({ csat: e.target.value ? Number(e.target.value) : null })}><option value="">—</option>{[1, 2, 3, 4, 5].map((n) => <option key={n} value={n}>{"★".repeat(n)}</option>)}</select></dd>
           </dl></div>
         </aside>
       </div>

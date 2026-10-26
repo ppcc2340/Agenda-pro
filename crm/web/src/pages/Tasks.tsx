@@ -22,8 +22,8 @@ export function TasksPage() {
       <div className="page-head"><div><h1>Tareas</h1><p className="sub">Llamadas, emails, reuniones y seguimientos pendientes.</p></div><button className="btn primary" onClick={() => setEditing("new")}><Plus />Nueva tarea</button></div>
       <div className="filterbar">
         <Seg items={[{ key: "open", label: "Pendientes" }, { key: "overdue", label: "Vencidas" }, { key: "done", label: "Completadas" }, { key: "all", label: "Todas" }]} value={status} onChange={setStatus} />
-        {(isAdmin || me.role.visibility !== "own") && <select className="input sm" style={{ width: "auto" }} value={assignee} onChange={(e) => setAssignee(e.target.value)}><option value="">Todos</option>{users.filter((u) => u.active).map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}</select>}
-        <input className="input sm" style={{ maxWidth: 240 }} placeholder="Buscar…" value={q} onChange={(e) => setQ(e.target.value)} />
+        {(isAdmin || me.role.visibility !== "own") && <select aria-label="Asignado" className="input sm" style={{ width: "auto" }} value={assignee} onChange={(e) => setAssignee(e.target.value)}><option value="">Todos</option>{users.filter((u) => u.active).map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}</select>}
+        <input aria-label="Buscar…" className="input sm" style={{ maxWidth: 240 }} placeholder="Buscar…" value={q} onChange={(e) => setQ(e.target.value)} />
       </div>
       <div className="card">{!data ? <Spinner /> : data.items.length === 0 ? <Empty title="No hay tareas" text="Crea una tarea o cambia el filtro." /> : data.items.map((t) => <TaskRow key={t.id} task={t} onChanged={load} onEdit={(x) => setEditing(x)} />)}</div>
       {editing && <TaskForm task={editing === "new" ? null : editing} onClose={() => setEditing(null)} onSaved={load} />}
