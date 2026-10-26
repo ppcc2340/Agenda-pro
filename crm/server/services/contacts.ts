@@ -43,6 +43,9 @@ export const contactSchema = z.object({
   tags: tagsSchema.optional(),
   custom: z.record(z.unknown()).optional(),
   qualification: z.record(z.unknown()).optional(),
+  /** varios emails y teléfonos con etiqueta; el principal se refleja en email / phone */
+  emails: z.array(z.object({ value: z.string().trim().email("Email no válido"), label: z.string().trim().max(30).optional(), primary: z.boolean().optional() })).max(10).optional(),
+  phones: z.array(z.object({ value: z.string().trim().min(3).max(40), label: z.string().trim().max(30).optional(), primary: z.boolean().optional() })).max(10).optional(),
 });
 export type ContactInput = z.infer<typeof contactSchema>;
 
@@ -63,22 +66,42 @@ export function listContacts(ctx: Ctx, q: ListQuery) {
 }
 
 export interface DupCandidate { id: string; name: string; email: string | null; phone: string | null; reason: string }
-export function findDuplicateCandidates(ctx: Ctx, data: { email?: string | null; phone?: string | null; first_name?: string; last_name?: string; company_id?: string | null }, excludeId?: string): DupCandidate[] {
+export function findDuplicateCandidates(ctx: Ctx, data: { email?: string | null; phone?: string | null; emails?: string[]; phones?: string[]; first_name?: string; last_name?: string; company_id?: string | null }, excludeId?: string): DupCandidate[] {
   const out: DupCandidate[] = [];
   const push = (rows: Row[], reason: string) => {
     for (const r of rows) if (r.id !== excludeId && !out.some((o) => o.id === r.id)) out.push({ id: r.id as string, name: `${r.first_name} ${r.last_name}`.trim(), email: r.email as string | null, phone: r.phone as string | null, reason });
   };
-  if (data.email) push(ctx.db.all<Row>("SELECT * FROM contacts WHERE workspace_id=? AND email=? AND deleted_at IS NULL", ctx.ws, data.email), "mismo email");
-  if (data.phone) push(ctx.db.all<Row>("SELECT * FROM contacts WHERE workspace_id=? AND phone=? AND deleted_at IS NULL", ctx.ws, data.phone), "mismo teléfono");
+  for (const e of new Set([data.email, ...(data.emails ?? [])].filter(Boolean) as string[])) push(ctx.db.all<Row>(`SELECT * FROM contacts WHERE workspace_id=? AND ${sameChannel("emails", "email")} AND deleted_at IS NULL`, ctx.ws, e, e), "mismo email");
+  for (const p of new Set([data.phone, ...(data.phones ?? [])].filter(Boolean) as string[])) push(ctx.db.all<Row>(`SELECT * FROM contacts WHERE workspace_id=? AND ${sameChannel("phones", "phone")} AND deleted_at IS NULL`, ctx.ws, p, p), "mismo teléfono");
   if (data.first_name && data.last_name && data.company_id) push(ctx.db.all<Row>("SELECT * FROM contacts WHERE workspace_id=? AND lower(first_name)=lower(?) AND lower(last_name)=lower(?) AND company_id=? AND deleted_at IS NULL", ctx.ws, data.first_name, data.last_name, data.company_id), "mismo nombre y empresa");
   return out;
 }
 
+export interface Channel { value: string; label?: string; primary?: boolean }
+/** Normaliza una lista (sin repetidos, un único principal) y devuelve también el valor principal. */
+function channels(list: Channel[], norm: (v: string) => string | null): { list: Channel[]; primary: string | null } {
+  const seen = new Set<string>(); const out: Channel[] = [];
+  for (const c of list) { const v = norm(c.value); if (!v || seen.has(v)) continue; seen.add(v); out.push({ value: v, label: c.label || undefined, primary: !!c.primary }); }
+  const pi = Math.max(0, out.findIndex((c) => c.primary)); out.forEach((c, i) => (c.primary = i === pi));
+  return { list: out, primary: out[pi]?.value ?? null };
+}
+/** Si solo cambia el email/teléfono principal, lo coloca como principal en la lista conservando los demás. */
+function withPrimary(prev: unknown, value: string | null): Channel[] {
+  const list = (Array.isArray(prev) ? (prev as Channel[]) : []).map((c) => ({ ...c, primary: false }));
+  if (!value) return list.filter((c) => c.value);
+  const i = list.findIndex((c) => c.value === value);
+  if (i >= 0) list[i]!.primary = true; else list.unshift({ value, label: "Trabajo", primary: true });
+  return list;
+}
+const sameChannel = (col: "emails" | "phones", one: "email" | "phone") => `(${one}=? OR EXISTS (SELECT 1 FROM json_each(COALESCE(${col},'[]')) j WHERE json_extract(j.value,'$.value')=?))`;
+
 function normalize(input: Partial<ContactInput>, ctx: Ctx) {
   const out: Record<string, unknown> = { ...input };
+  if (input.emails) { const r = channels(input.emails, (v) => normalizeEmail(v)); out.emails = r.list; out.email = r.primary; }
+  if (input.phones) { const r = channels(input.phones, (v) => normalizePhone(v, ctx.settings.default_country_code)); out.phones = r.list; out.phone = r.primary; }
   delete out.company_name;
-  if (input.email !== undefined) out.email = normalizeEmail(input.email);
-  if (input.phone !== undefined) out.phone = normalizePhone(input.phone, ctx.settings.default_country_code);
+  if (input.email !== undefined && !input.emails) out.email = normalizeEmail(input.email);
+  if (input.phone !== undefined && !input.phones) out.phone = normalizePhone(input.phone, ctx.settings.default_country_code);
   if (input.first_name !== undefined) out.first_name = capitalizeName(input.first_name);
   if (input.last_name !== undefined) out.last_name = capitalizeName(input.last_name);
   if (input.consent_marketing !== undefined) out.consent_marketing = input.consent_marketing ? 1 : 0;
@@ -115,13 +138,13 @@ export function createContact(ctx: Ctx, input: ContactInput, opts: { force?: boo
   const email = (data.email as string | null) ?? null;
   if (email && ctx.settings.internal_domains.includes(domainFromEmail(email) ?? "")) throw badRequest("Ese email pertenece a un dominio interno de tu empresa; no se crean contactos de compañeros");
   if (!opts.force) {
-    const dups = findDuplicateCandidates(ctx, { email, phone: data.phone as string | null, first_name: data.first_name as string, last_name: data.last_name as string, company_id: input.company_id });
+    const dups = findDuplicateCandidates(ctx, { email, phone: data.phone as string | null, emails: ((data.emails as Channel[] | undefined) ?? []).map((c) => c.value), phones: ((data.phones as Channel[] | undefined) ?? []).map((c) => c.value), first_name: data.first_name as string, last_name: data.last_name as string, company_id: input.company_id });
     if (dups.length) throw conflict("Puede que este contacto ya exista", { duplicates: dups });
   }
   const custom = validateCustom(ctx, "contact", input.custom ?? {});
   const company_id = resolveCompany(ctx, input, email, opts.autoCreateCompany ?? false);
   const row = {
-    id: id(), workspace_id: ctx.ws, first_name: data.first_name, last_name: data.last_name ?? "", email, phone: data.phone ?? null, job_title: data.job_title ?? null, company_id,
+    id: id(), workspace_id: ctx.ws, first_name: data.first_name, last_name: data.last_name ?? "", email, phone: data.phone ?? null, emails: (data.emails as Channel[] | undefined) ?? withPrimary([], email), phones: (data.phones as Channel[] | undefined) ?? withPrimary([], (data.phone as string | null) ?? null), job_title: data.job_title ?? null, company_id,
     lifecycle_stage: input.lifecycle_stage ?? "lead", lead_status: input.lead_status ?? "new", disqualify_reason: null, source: input.source ?? opts.source ?? "other", utm: input.utm ?? {},
     owner_id: input.owner_id === undefined ? ctx.user.id : input.owner_id, score: 0, language: data.language ?? null, timezone: data.timezone ?? null, address: data.address ?? null, city: data.city ?? null, country: data.country ?? null, linkedin: data.linkedin ?? null, birthday: data.birthday ?? null,
     consent_marketing: data.consent_marketing ?? 0, consent_date: input.consent_marketing ? now() : null, consent_source: data.consent_source ?? null, do_not_contact: data.do_not_contact ?? 0,
@@ -148,9 +171,12 @@ export function updateContact(ctx: Ctx, cid: string, patch: Partial<ContactInput
   if (patch.custom) data.custom = validateCustom(ctx, "contact", patch.custom, prev.custom as Record<string, unknown>, true);
   checkRequired(ctx, "contact", prev, data);
   if (patch.consent_marketing !== undefined && !!patch.consent_marketing !== !!prev.consent_marketing) data.consent_date = now();
-  if (data.email && data.email !== prev.email) {
-    const dup = ctx.db.get<Row>("SELECT id FROM contacts WHERE workspace_id=? AND email=? AND id!=? AND deleted_at IS NULL", ctx.ws, data.email, cid);
-    if (dup) throw conflict("Ya existe otro contacto con ese email", { duplicates: [{ id: dup.id }] });
+  if (patch.email !== undefined && !patch.emails) data.emails = withPrimary(prev.emails, (data.email as string | null) ?? null);
+  if (patch.phone !== undefined && !patch.phones) data.phones = withPrimary(prev.phones, (data.phone as string | null) ?? null);
+  // ningún email de la lista puede pertenecer a otro contacto
+  for (const e of ((data.emails as Channel[] | undefined) ?? []).map((c) => c.value)) {
+    const dup = ctx.db.get<Row>(`SELECT id FROM contacts WHERE workspace_id=? AND ${sameChannel("emails", "email")} AND id!=? AND deleted_at IS NULL`, ctx.ws, e, e, cid);
+    if (dup) throw conflict(`Ya existe otro contacto con el email ${e}`, { duplicates: [{ id: dup.id }] });
   }
   if (patch.lead_status === "unqualified" && !patch.disqualify_reason && !prev.disqualify_reason) throw badRequest("Indica el motivo de descalificación");
   const changes = diff(prev, data);
@@ -198,6 +224,10 @@ export function mergeContacts(ctx: Ctx, survivorId: string, mergedId: string, ch
   const tags = Array.from(new Set([...(a.tags as string[]), ...(b.tags as string[])]));
   patch.tags = tags;
   patch.custom = { ...(b.custom as Record<string, unknown>), ...(a.custom as Record<string, unknown>) };
+  // la fusión conserva todos los emails y teléfonos de ambos (el principal es el elegido)
+  const union = (x: unknown, y: unknown, primary: unknown) => { const all = [...((x as Channel[]) ?? []), ...((y as Channel[]) ?? [])]; const seen = new Set<string>(); return all.filter((c) => c?.value && !seen.has(c.value) && seen.add(c.value)).map((c) => ({ ...c, primary: c.value === primary })); };
+  patch.emails = union(a.emails, b.emails, patch.email ?? a.email);
+  patch.phones = union(a.phones, b.phones, patch.phone ?? a.phone);
   patch.score = Math.max(a.score as number, b.score as number);
   patch.consent_marketing = (a.consent_marketing as number) || (b.consent_marketing as number) ? 1 : 0;
   ctx.db.transaction(() => {

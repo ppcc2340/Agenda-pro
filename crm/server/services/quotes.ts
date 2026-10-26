@@ -102,12 +102,12 @@ export function publicView(ctx: Ctx, tok: string): Row | undefined {
   return getQuote(ctx, q.id as string);
 }
 
-export function publicDecision(ctx: Ctx, tok: string, decision: "accepted" | "rejected", signer: { name: string; ip: string }) {
+export function publicDecision(ctx: Ctx, tok: string, decision: "accepted" | "rejected", signer: { name: string; ip: string; user_agent?: string; content_sha256?: string }) {
   const q = ctx.db.get<Row>("SELECT * FROM quotes WHERE token=?", tok);
   if (!q) throw notFound("Presupuesto");
   if (["accepted", "rejected"].includes(q.status as string)) throw badRequest("Este presupuesto ya tiene una decisión registrada");
   ctx.db.update("quotes", q.id as string, { status: decision, decided_at: now(), signer: JSON.stringify({ ...signer, at: now() }) });
-  audit(ctx, "quote", q.id as string, "update", { status: [q.status, decision], signer: signer.name, ip: signer.ip });
+  audit(ctx, "quote", q.id as string, "update", { status: [q.status, decision], signer: signer.name, ip: signer.ip, content_sha256: signer.content_sha256 });
   if (decision === "accepted") onAccepted(ctx, q.id as string, signer.name);
   else {
     const d = getDeal(ctx, q.deal_id as string);

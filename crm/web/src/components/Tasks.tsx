@@ -6,11 +6,12 @@ import { Modal, Field, Picker, useToast, errorMessage } from "./ui";
 import { useApp } from "../lib/app";
 import { fmtDateTime, isOverdue, isToday, TASK_TYPES, PRIORITY, toLocalInput, fromLocalInput } from "../lib/format";
 
-export interface Task { id: string; title: string; type: string; due_at: string | null; priority: string; assignee_id: string | null; assignee_name?: string | null; contact_id: string | null; contact_name?: string | null; company_id: string | null; company_name?: string | null; deal_id: string | null; deal_name?: string | null; ticket_id?: string | null; description: string | null; completed_at: string | null; outcome: string | null; recurrence: string | null }
+export interface Task { id: string; title: string; type: string; due_at: string | null; priority: string; assignee_id: string | null; assignee_name?: string | null; contact_id: string | null; contact_name?: string | null; company_id: string | null; company_name?: string | null; deal_id: string | null; deal_name?: string | null; ticket_id?: string | null; description: string | null; completed_at: string | null; outcome: string | null; recurrence: string | null; recurrence_interval?: number; recurrence_days?: number[] | string | null; duration_min?: number | null }
 
 export function TaskForm({ task, defaults, onClose, onSaved }: { task?: Task | null; defaults?: Partial<Task>; onClose: () => void; onSaved: () => void }) {
   const { me, users } = useApp();
   const toast = useToast();
+  const [days, setDays] = useState<number[]>(() => { const v = task?.recurrence_days; try { return Array.isArray(v) ? v : v ? JSON.parse(v) : []; } catch { return []; } });
   const [f, setF] = useState<Partial<Task>>({ title: "", type: "todo", priority: "normal", assignee_id: me.id, due_at: new Date(Date.now() + 86400000).toISOString(), ...defaults, ...(task ?? {}) });
   const [busy, setBusy] = useState(false);
   const set = (k: keyof Task, v: unknown) => setF((x) => ({ ...x, [k]: v }));
@@ -18,7 +19,7 @@ export function TaskForm({ task, defaults, onClose, onSaved }: { task?: Task | n
     if (!f.title?.trim()) { toast("Indica el título", "error"); return; }
     setBusy(true);
     try {
-      const payload = { title: f.title, type: f.type, due_at: f.due_at ?? null, priority: f.priority, assignee_id: f.assignee_id ?? null, contact_id: f.contact_id ?? null, company_id: f.company_id ?? null, deal_id: f.deal_id ?? null, ticket_id: f.ticket_id ?? null, description: f.description ?? null, recurrence: f.recurrence ?? null };
+      const payload = { title: f.title, type: f.type, due_at: f.due_at ?? null, priority: f.priority, assignee_id: f.assignee_id ?? null, contact_id: f.contact_id ?? null, company_id: f.company_id ?? null, deal_id: f.deal_id ?? null, ticket_id: f.ticket_id ?? null, description: f.description ?? null, recurrence: f.recurrence ?? null, recurrence_interval: f.recurrence ? Math.max(1, Number(f.recurrence_interval) || 1) : 1, recurrence_days: f.recurrence === "weekly" && days.length ? days : null, duration_min: f.duration_min ? Number(f.duration_min) : null };
       if (task) await api.put(`tasks/${task.id}`, payload); else await api.post("tasks", payload);
       toast(task ? "Tarea actualizada" : "Tarea creada", "ok"); onSaved(); onClose();
     } catch (e) { toast(errorMessage(e), "error"); } finally { setBusy(false); }
@@ -34,7 +35,9 @@ export function TaskForm({ task, defaults, onClose, onSaved }: { task?: Task | n
         <Field label="Contacto"><Picker kind="contact" value={f.contact_id} onChange={(id) => set("contact_id", id)} /></Field>
         <Field label="Empresa"><Picker kind="company" value={f.company_id} onChange={(id) => set("company_id", id)} /></Field>
         <Field label="Negocio"><Picker kind="deal" value={f.deal_id} onChange={(id) => set("deal_id", id)} /></Field>
-        <Field label="Repetir"><select className="input" value={f.recurrence ?? ""} onChange={(e) => set("recurrence", e.target.value || null)}><option value="">No</option><option value="daily">Cada día</option><option value="weekly">Cada semana</option><option value="monthly">Cada mes</option></select></Field>
+        <Field label="Duración"><select className="input" value={String(f.duration_min ?? "")} onChange={(e) => set("duration_min", e.target.value ? Number(e.target.value) : null)}><option value="">—</option>{[15, 30, 45, 60, 90, 120, 240].map((m) => <option key={m} value={m}>{m < 60 ? `${m} min` : `${m / 60} h`}</option>)}</select></Field>
+        <Field label="Repetir"><div className="row" style={{ gap: 6 }}><select className="input" value={f.recurrence ?? ""} onChange={(e) => set("recurrence", e.target.value || null)}><option value="">No</option><option value="daily">Cada día</option><option value="weekdays">Días laborables (lun-vie)</option><option value="weekly">Cada semana</option><option value="monthly">Cada mes</option><option value="yearly">Cada año</option></select>{f.recurrence && <label className="row xs" style={{ gap: 4, whiteSpace: "nowrap" }}>cada<input className="input sm" type="number" min={1} max={365} style={{ width: 60 }} value={Number(f.recurrence_interval ?? 1)} onChange={(e) => set("recurrence_interval", Number(e.target.value))} />{({ daily: "días", weekdays: "días háb.", weekly: "semanas", monthly: "meses", yearly: "años" } as Record<string, string>)[f.recurrence]}</label>}</div></Field>
+        {f.recurrence === "weekly" && <Field label="Los días" full><div className="row wrap" style={{ gap: 4 }}>{["L", "M", "X", "J", "V", "S", "D"].map((l, i) => { const wd = (i + 1) % 7; const on = days.includes(wd); return <button key={l} type="button" className={`btn sm ${on ? "primary" : ""}`} aria-pressed={on} onClick={() => setDays(on ? days.filter((x) => x !== wd) : [...days, wd])}>{l}</button>; })}<span className="xs muted">Vacío = el mismo día de la semana</span></div></Field>}
         <Field label="Descripción" full><textarea className="input" value={f.description ?? ""} onChange={(e) => set("description", e.target.value)} /></Field>
       </div>
     </Modal>

@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { DatabaseSync } from "node:sqlite";
 import fs from "node:fs";
 import path from "node:path";
@@ -37,6 +38,22 @@ export class Db {
     add("workflow_runs", "depth", "INTEGER NOT NULL DEFAULT 0");
     add("workflow_runs", "error", "TEXT");
     add("workflow_runs", "duration_ms", "INTEGER");
+    // registro de auditoría encadenado (solo INSERT): cada fila guarda el hash de la anterior del mismo espacio
+    add("audit_log", "seq", "INTEGER");
+    add("audit_log", "prev_hash", "TEXT");
+    add("audit_log", "chain_hash", "TEXT");
+    this.sql.exec("CREATE TRIGGER IF NOT EXISTS audit_log_no_update BEFORE UPDATE ON audit_log BEGIN SELECT RAISE(ABORT, 'audit_log es de solo inserción'); END;");
+    this.sql.exec("CREATE TRIGGER IF NOT EXISTS audit_log_no_delete BEFORE DELETE ON audit_log BEGIN SELECT RAISE(ABORT, 'audit_log es de solo inserción'); END;");
+    add("users", "recovery_codes", "TEXT");
+    add("users", "password_changed_at", "TEXT");
+    add("contacts", "emails", "TEXT NOT NULL DEFAULT '[]'");
+    add("contacts", "phones", "TEXT NOT NULL DEFAULT '[]'");
+    add("tasks", "recurrence_interval", "INTEGER NOT NULL DEFAULT 1");
+    add("tasks", "recurrence_days", "TEXT");
+    add("tasks", "duration_min", "INTEGER");
+    add("tickets", "csat_token", "TEXT");
+    add("tickets", "csat_comment", "TEXT");
+    add("tickets", "csat_sent_at", "TEXT");
   }
   run(q: string, ...params: unknown[]) {
     return this.sql.prepare(q).run(...(params as never[]));
@@ -64,9 +81,16 @@ export class Db {
   }
   /** Insert a plain object into a table. JSON values are serialized. */
   insert(table: string, data: Row) {
+    if (table === "audit_log") data = this.chainAudit(data);
     const keys = Object.keys(data);
     const vals = keys.map((k) => serialize(data[k]));
     this.run(`INSERT INTO ${table} (${keys.join(",")}) VALUES (${keys.map(() => "?").join(",")})`, ...vals);
+  }
+  /** Calcula seq, prev_hash y chain_hash = sha256(prev_hash | campos canónicos) para una fila de auditoría. */
+  private chainAudit(data: Row): Row {
+    const last = this.get<{ seq: number; chain_hash: string }>("SELECT seq, chain_hash FROM audit_log WHERE workspace_id=? AND seq IS NOT NULL ORDER BY seq DESC LIMIT 1", data.workspace_id);
+    const seq = (last?.seq ?? 0) + 1; const prev = last?.chain_hash ?? "GENESIS";
+    return { ...data, seq, prev_hash: prev, chain_hash: auditHash(prev, { ...data, seq }) };
   }
   /** Update: keys with value `undefined` are left untouched (use null to clear). */
   update(table: string, id: string, data: Row) {
@@ -102,4 +126,11 @@ export function parseJson<T extends Row>(row: T | undefined, cols: string[]): T 
     }
   }
   return row;
+}
+
+/** Hash de una fila de auditoría (orden de campos fijo para que la verificación sea reproducible). */
+export function auditHash(prev: string, r: Row): string {
+  const changes = typeof r.changes === "string" ? r.changes : JSON.stringify(r.changes ?? {});
+  const canon = [r.seq, r.id, r.workspace_id, r.user_id ?? "", r.object, r.record_id ?? "", r.action, changes, r.ip ?? "", r.created_at].join("\u001f");
+  return createHash("sha256").update(`${prev}|${canon}`).digest("hex");
 }

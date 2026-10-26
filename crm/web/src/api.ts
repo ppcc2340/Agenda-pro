@@ -17,6 +17,7 @@ async function request<T>(method: string, url: string, body?: unknown, opts: { r
   if (!res.ok) {
     const d = data as { error?: string; details?: unknown } | null;
     if (res.status === 401 && !url.includes("auth/")) window.dispatchEvent(new CustomEvent("crm:unauthorized"));
+    if (res.status === 403 && (d?.details as { code?: string } | undefined)?.code === "mfa_setup_required") window.dispatchEvent(new CustomEvent("crm:mfa-required"));
     throw new ApiError(res.status, d?.error ?? `Error ${res.status}`, d?.details);
   }
   return data as T;

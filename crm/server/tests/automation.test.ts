@@ -221,7 +221,7 @@ describe("automatizaciones v2", () => {
     expect(csv.text.split("\n")[0]).toContain("automatización");
   });
   it("un propietario desactivado pausa la automatización con un error legible; reasignar la reactiva", async () => {
-    const u = await admin.post("/api/admin/users").send({ name: "Temporal", email: "temporal@test.local", password: "Temporal1234!", role_id: db.get<{ id: string }>("SELECT id FROM roles WHERE key='admin'")!.id });
+    const u = await admin.post("/api/admin/users").send({ name: "Temporal", email: "temporal@test.local", password: "Clave-Segura-1234", role_id: db.get<{ id: string }>("SELECT id FROM roles WHERE key='admin'")!.id });
     const wf = await admin.post("/api/workflows").send({ name: "Del temporal", owner_id: u.body.id, allow_reenroll: true, trigger: { type: "record_created", object: "company" }, actions: [{ type: "add_tag", tag: "nueva" }] });
     db.run("UPDATE users SET active=0 WHERE id=?", u.body.id);
     await admin.post("/api/companies").send({ name: "Dispara SA" });

@@ -1,4 +1,6 @@
 import { convertField } from "../services/convert.js";
+import { passwordSchema } from "../lib/security.js";
+import { auditHash } from "../db.js";
 import { CUSTOM_TYPES } from "../services/columns.js";
 import { validateFieldSettings, fieldDependents } from "../services/columnAdmin.js";
 import { Router } from "express";
@@ -23,7 +25,7 @@ export function adminRoutes() {
   r.get("/users", h(async (req) => ({ items: req.ctx.db.all<Row>("SELECT * FROM users WHERE workspace_id=? ORDER BY active DESC, name", req.ctx.ws).map((u) => publicUser(req.ctx.db, u)) })));
   r.post("/users", h(async (req) => {
     assertAdmin(req.ctx);
-    const b = parse(z.object({ name: z.string().trim().min(1), email: z.string().email(), password: z.string().min(10, "Mínimo 10 caracteres"), role_id: z.string(), team_id: z.string().nullable().optional(), quota: z.number().nullable().optional() }), req.body);
+    const b = parse(z.object({ name: z.string().trim().min(1), email: z.string().email(), password: passwordSchema(String(req.body?.email ?? "")), role_id: z.string(), team_id: z.string().nullable().optional(), quota: z.number().nullable().optional() }), req.body);
     if (req.ctx.db.get("SELECT id FROM users WHERE email=?", b.email.toLowerCase())) throw badRequest("Ya existe un usuario con ese email");
     const uid = id();
     req.ctx.db.insert("users", { id: uid, workspace_id: req.ctx.ws, name: b.name, email: b.email.toLowerCase(), password_hash: hashPassword(b.password), role_id: b.role_id, team_id: b.team_id ?? null, quota: b.quota ?? null, created_at: now() });
@@ -32,12 +34,12 @@ export function adminRoutes() {
   }));
   r.put("/users/:id", h(async (req) => {
     assertAdmin(req.ctx);
-    const b = parse(z.object({ name: z.string().trim().min(1).optional(), role_id: z.string().optional(), team_id: z.string().nullable().optional(), active: z.boolean().optional(), quota: z.number().nullable().optional(), password: z.string().min(10).optional() }), req.body);
+    const b = parse(z.object({ name: z.string().trim().min(1).optional(), role_id: z.string().optional(), team_id: z.string().nullable().optional(), active: z.boolean().optional(), quota: z.number().nullable().optional(), password: passwordSchema().optional() }), req.body);
     const u = req.ctx.db.get<Row>("SELECT * FROM users WHERE id=? AND workspace_id=?", param(req, "id"), req.ctx.ws);
     if (!u) throw notFound("Usuario");
     if (b.active === false && u.id === req.ctx.user.id) throw badRequest("No puedes desactivarte a ti mismo");
     const patch: Record<string, unknown> = { name: b.name, role_id: b.role_id, team_id: b.team_id, quota: b.quota, active: b.active === undefined ? undefined : b.active ? 1 : 0 };
-    if (b.password) patch.password_hash = hashPassword(b.password);
+    if (b.password) { patch.password_hash = hashPassword(b.password); patch.password_changed_at = now(); }
     req.ctx.db.update("users", u.id as string, patch);
     if (b.active === false) req.ctx.db.run("DELETE FROM sessions WHERE user_id=?", u.id);
     audit(req.ctx, "user", u.id as string, b.role_id && b.role_id !== u.role_id ? "permission" : "update", { role_id: b.role_id ? [u.role_id, b.role_id] : undefined, active: b.active, password_reset: !!b.password });
@@ -135,7 +137,7 @@ export function adminRoutes() {
       internal_domains: z.array(z.string()).optional(), fiscal_year_start: z.number().int().min(1).max(12).optional(), stale_deal_days: z.number().int().min(1).optional(), inactive_deal_days: z.number().int().min(1).optional(), lead_sla_hours: z.number().min(1).optional(),
       mql_threshold: z.number().optional(), sql_threshold: z.number().optional(), retention_months: z.number().int().min(1).optional(), retention_enabled: z.boolean().optional(), quote_prefix: z.string().max(10).optional(), quote_accept_stage_id: z.string().nullable().optional(), ticket_sla_hours: z.record(z.number()).optional(), logo_url: z.string().optional(), brand_color: z.string().optional(),
     });
-    const b = { ...parse(schema, req.body), ...parse(z.object({ automation_budget: z.number().int().min(0).optional(), automation_budget_mode: z.enum(["block_edit", "pause_all"]).optional(), automation_history_days: z.number().int().min(0).optional(), automation_max_depth: z.number().int().min(2).max(25).optional() }), req.body) };
+    const b = { ...parse(schema, req.body), ...parse(z.object({ automation_budget: z.number().int().min(0).optional(), automation_budget_mode: z.enum(["block_edit", "pause_all"]).optional(), automation_history_days: z.number().int().min(0).optional(), automation_max_depth: z.number().int().min(2).max(25).optional(), mfa_required_roles: z.array(z.string().max(40)).max(20).optional(), score_decay_per_week: z.number().min(0).max(20).optional(), csat_enabled: z.boolean().optional() }), req.body) };
     const merged = { ...DEFAULT_SETTINGS, ...req.ctx.settings, ...b };
     req.ctx.db.update("workspaces", req.ctx.ws, { settings: merged, name: merged.company_name });
     audit(req.ctx, "workspace", req.ctx.ws, "update", b);
@@ -171,6 +173,19 @@ export function adminRoutes() {
   r.post("/webhooks/deliveries/:id/retry", h(async (req) => { assertAdmin(req.ctx); await attemptDelivery(req.ctx.db, param(req, "id")); return req.ctx.db.get("SELECT id, status, attempts, response_code, error FROM webhook_deliveries WHERE id=?", param(req, "id")); }));
 
   // ---------- audit ----------
+  /** Verifica la cadena de hashes del registro de auditoría (detecta filas alteradas o borradas). */
+  r.get("/audit/verify", h(async (req) => {
+    assertAdmin(req.ctx);
+    const rows = req.ctx.db.all<Row>("SELECT * FROM audit_log WHERE workspace_id=? AND seq IS NOT NULL ORDER BY seq", req.ctx.ws);
+    let prev = "GENESIS"; let expected = 1;
+    for (const r of rows) {
+      if (r.seq !== expected) return { ok: false, checked: expected - 1, broken_at: expected, reason: `Falta la entrada ${expected} (encontrada ${r.seq})` };
+      if (r.prev_hash !== prev || auditHash(prev, r) !== r.chain_hash) return { ok: false, checked: expected - 1, broken_at: r.seq, reason: "El contenido o el encadenado no coincide" };
+      prev = String(r.chain_hash); expected++;
+    }
+    const legacy = req.ctx.db.get<{ n: number }>("SELECT COUNT(*) n FROM audit_log WHERE workspace_id=? AND seq IS NULL", req.ctx.ws)?.n ?? 0;
+    return { ok: true, checked: rows.length, last_hash: prev, legacy_unchained: legacy };
+  }));
   r.get("/audit", h(async (req) => {
     assertAdmin(req.ctx);
     const page = Number(req.query.page) || 1, size = 50;

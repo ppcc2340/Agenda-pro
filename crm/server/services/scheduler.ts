@@ -1,3 +1,4 @@
+import { recomputeScore } from "./scoring.js";
 /** Background jobs: reminders, overdue tasks, stale/inactive deals, SLA risk, delayed workflow actions, webhook retries, retention. */
 import type { Db } from "../db.js";
 import { parseJson, type Row } from "../db.js";
@@ -115,6 +116,8 @@ function dailyChecks(db: Db, ws: string, ctx: ReturnType<typeof systemCtx>) {
   db.run("DELETE FROM deals WHERE workspace_id=? AND deleted_at IS NOT NULL AND deleted_at < datetime('now','-30 days')", ws);
   db.run("DELETE FROM scheduled_jobs WHERE workspace_id=? AND done_at IS NOT NULL AND done_at < datetime('now','-30 days')", ws);
   db.run("DELETE FROM sessions WHERE expires_at < ?", now());
+  // decaimiento de la puntuación: los leads sin actividad bajan cada semana aunque nadie abra su ficha
+  if ((s.score_decay_per_week ?? 1) > 0) for (const c of db.all<{ id: string }>("SELECT id FROM contacts WHERE workspace_id=? AND deleted_at IS NULL AND score > 0 AND lifecycle_stage NOT IN ('customer','evangelist')", ws)) recomputeScore(ctx, c.id);
   // scheduled daily workflows
   runScheduledDaily(ctx);
 }

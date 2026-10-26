@@ -2,8 +2,9 @@ import { z } from "zod";
 import { applyDefaults, checkRequired } from "./columns.js";
 import type { Ctx } from "../context.js";
 import type { Row } from "../db.js";
-import { id, now } from "../lib/util.js";
-import { notFound, forbidden } from "../lib/errors.js";
+import { id, now, token } from "../lib/util.js";
+import { sendMail } from "./email.js";
+import { notFound, forbidden, badRequest } from "../lib/errors.js";
 import { assert, canSeeRecord } from "../lib/permissions.js";
 import { audit, diff } from "./audit.js";
 import { emit } from "./events.js";
@@ -76,6 +77,7 @@ export function updateTicket(ctx: Ctx, tid: string, patch: Partial<TicketInput>,
   audit(ctx, "ticket", tid, "update", changes);
   if (changes.status) logActivity(ctx, { type: "system", subject: `Estado del ticket: ${changes.status[0]} → ${changes.status[1]}`, ticket_id: tid, contact_id: prev.contact_id as string | null });
   if (changes.assignee_id && patch.assignee_id && patch.assignee_id !== ctx.user.id) notify(ctx.db, ctx.ws, patch.assignee_id, { type: "ticket_assigned", title: `Ticket #${prev.number} asignado: ${prev.subject}`, link: `/tickets/${tid}` });
+  if (changes.status?.[1] === "resolved") sendCsatSurvey(ctx, tid);
   const t = getTicket(ctx, tid);
   emit(ctx, { type: changes.status?.[1] === "resolved" ? "ticket.resolved" : "ticket.updated", object: "ticket", record: t, previous: prev, changes, depth: opts.depth });
   return t;
@@ -94,4 +96,26 @@ export function replyTicket(ctx: Ctx, tid: string, body: string, internal: boole
   const a = logActivity(ctx, { type: internal ? "note" : "email", subject: internal ? "Nota interna" : `Re: ${t.subject}`, body, direction: internal ? null : "outbound", ticket_id: tid, contact_id: t.contact_id as string | null, company_id: t.company_id as string | null });
   if (!internal && t.status === "new") updateTicket(ctx, tid, { status: "open" });
   return a;
+}
+
+/** Encuesta de satisfacción (1-5) por email al resolver; la respuesta se guarda en el ticket y en la ficha. */
+export function sendCsatSurvey(ctx: Ctx, tid: string) {
+  if (ctx.settings.csat_enabled === false) return;
+  const t = ctx.db.get<Row>("SELECT t.*, c.email AS contact_email, c.first_name FROM tickets t LEFT JOIN contacts c ON c.id=t.contact_id WHERE t.id=?", tid);
+  if (!t?.contact_email || t.csat != null || t.csat_sent_at) return;
+  const tok = token(24);
+  ctx.db.update("tickets", tid, { csat_token: tok, csat_sent_at: now() });
+  const base = process.env.PUBLIC_URL ?? "http://localhost:3000";
+  const faces = [1, 2, 3, 4, 5].map((n) => `<a href="${base}/csat/${tok}?s=${n}" style="display:inline-block;margin:0 4px;padding:10px 14px;border-radius:8px;background:#f0f2f8;color:#323338;text-decoration:none;font-size:18px">${["😞", "🙁", "😐", "🙂", "😀"][n - 1]} ${n}</a>`).join("");
+  void sendMail(ctx.db, ctx.ws, { to: String(t.contact_email), subject: `¿Cómo lo hemos hecho? · Ticket #${t.number}`, html: `<p>Hola ${String(t.first_name ?? "")},</p><p>Hemos resuelto tu consulta «${String(t.subject).replace(/[<>&]/g, "")}». ¿Qué tal ha sido la atención?</p><p>${faces}</p><p style="color:#676879;font-size:12px">Un clic basta; también puedes dejar un comentario.</p>`, contactId: t.contact_id as string | null, track: false }).catch((e) => console.warn("[csat]", (e as Error).message));
+}
+/** Registra la respuesta pública de la encuesta. */
+export function recordCsat(ctx: Ctx, tok: string, score: number, comment?: string | null) {
+  const t = ctx.db.get<Row>("SELECT * FROM tickets WHERE csat_token=?", tok);
+  if (!t) throw notFound("Encuesta");
+  if (!Number.isInteger(score) || score < 1 || score > 5) throw badRequest("Puntuación de 1 a 5");
+  ctx.db.update("tickets", t.id as string, { csat: score, csat_comment: comment ? String(comment).slice(0, 2000) : t.csat_comment ?? null, updated_at: now() });
+  logActivity(ctx, { type: "system", subject: `Encuesta de satisfacción: ${score}/5${comment ? ` · «${String(comment).slice(0, 200)}»` : ""}`, ticket_id: t.id as string, contact_id: t.contact_id as string | null });
+  if (score <= 2 && t.assignee_id) notify(ctx.db, ctx.ws, t.assignee_id as string, { type: "csat_low", title: `Valoración baja (${score}/5) en el ticket #${t.number}`, link: `/tickets/${t.id}` });
+  emit(ctx, { type: "ticket.csat", object: "ticket", record: { ...t, csat: score }, meta: { score } });
 }

@@ -50,6 +50,8 @@ export function requireAuth(db: Db): RequestHandler {
     try {
       const { ctx } = resolveCtx(db, req);
       if (!ctx) throw new HttpError(401, "Inicia sesión para continuar");
+      // rol con verificación en dos pasos obligatoria y aún sin activar: solo puede configurarla
+      if (mfaSetupRequired(ctx) && !/^\/api\/(v1\/)?auth\/(me|2fa|logout|sessions)/.test(req.originalUrl)) throw new HttpError(403, "Tu rol exige la verificación en dos pasos. Actívala para continuar.", { code: "mfa_setup_required" });
       (req as AuthedRequest).ctx = ctx;
       next();
     } catch (e) {
@@ -71,3 +73,10 @@ export function rateLimit(limit: number, windowMs: number, keyFn: (req: Request)
     next();
   };
 }
+
+/** ¿El rol del usuario exige TOTP? (Ajustes → Seguridad: mfa_required_roles). Las API keys no se ven afectadas. */
+export function mfaRequiredForRole(ctx: Ctx): boolean {
+  const roles = (ctx.settings as unknown as { mfa_required_roles?: string[] }).mfa_required_roles ?? [];
+  return roles.includes(String((ctx.role as unknown as { key?: string }).key ?? ""));
+}
+export function mfaSetupRequired(ctx: Ctx): boolean { return ctx.via === "session" && mfaRequiredForRole(ctx) && !ctx.user.totp_enabled; }

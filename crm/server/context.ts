@@ -61,6 +61,12 @@ export interface WorkspaceSettings {
   automation_budget_mode: "block_edit" | "pause_all";
   automation_history_days: number;
   automation_max_depth: number;
+  /** roles (clave) que deben usar verificación en dos pasos */
+  mfa_required_roles: string[];
+  /** puntos que pierde la puntuación de un lead por cada semana sin actividad (0 = sin decaimiento) */
+  score_decay_per_week: number;
+  /** enviar encuesta de satisfacción al resolver un ticket */
+  csat_enabled: boolean;
 }
 
 export const DEFAULT_SETTINGS: WorkspaceSettings = {
@@ -87,6 +93,9 @@ export const DEFAULT_SETTINGS: WorkspaceSettings = {
   automation_budget_mode: "block_edit",
   automation_history_days: 365,
   automation_max_depth: 10,
+  score_decay_per_week: 1,
+  csat_enabled: true,
+  mfa_required_roles: process.env.NODE_ENV === "production" ? ["admin", "legal"] : [],
 };
 
 export type AuthedRequest = Request & { ctx: Ctx };

@@ -15,6 +15,7 @@ import { ColumnSettings } from "./ColumnSettings";
 import { fmtMoney, fmtDate, fmtNum } from "../lib/format";
 import { PALETTE, applyBoard, type Board } from "../lib/board";
 import { BoardRules } from "./BoardRules";
+import { onLive } from "../lib/live";
 import { ColorPicker, LabelEditor, CondFormatDialog, NumFormatDialog, ChangeTypeDialog, Pop, TagsEditor, LongTextEditor, RangeEditor, RelationPicker, SHORTCUTS, type LabelItem, type LabelCaps } from "./GridDialogs";
 import { norm, parseNumber, parseDate, parseBool, parseTSV, toTSV, fmtIsoDate, formatNumber, ruleMatches, SUMMARY_FNS, summaryKind, numericStats, fillSeries, type CondRule, type NumFormat } from "../lib/grid";
 
@@ -124,6 +125,7 @@ export function DataTable<T extends { id: string }>({ object, endpoint, columns:
   const [active, setActive] = useState<Pos | null>(null);
   const [anchor, setAnchor] = useState<Pos | null>(null);
   const [editing, setEditing] = useState<{ r: string; c: string; seed?: string } | null>(null);
+  useEffect(() => { editingRef.current = !!editing; });
   const [fillTo, setFillTo] = useState<number | null>(null);
   const [resize, setResize] = useState<{ key: string; w: number } | null>(null);
   const [dragCol, setDragCol] = useState<string | null>(null);
@@ -167,6 +169,13 @@ export function DataTable<T extends { id: string }>({ object, endpoint, columns:
     /* eslint-disable-next-line */
   }, [dq, filters, sort, page, pageSize, endpoint, refreshKey, tick, JSON.stringify(extraParams)]);
 
+  // cambios hechos por otras personas o por automatizaciones: recarga silenciosa (sin mover filas ni perder la edición)
+  const editingRef = useRef(false);
+  useEffect(() => onLive((e) => {
+    if (e.object !== object || e.actor === me.id) return;
+    window.clearTimeout(liveTimer.current); liveTimer.current = window.setTimeout(() => { if (!editingRef.current) load(true); }, 600);
+  }), [object, me.id, dq, filters, sort, page]); // eslint-disable-line react-hooks/exhaustive-deps
+  const liveTimer = useRef<number | undefined>(undefined);
   const cols = useMemo(() => columns.filter((c) => visibleKeys.includes(c.key)), [columns, visibleKeys]);
   const saveCols = (v: string[]) => { setVisible(v); localStorage.setItem(storageKey, JSON.stringify(v)); };
   const applyView = (v: SavedView | null) => { setViewId(v?.id ?? null); if (!v) { setFilters(EMPTY); } };

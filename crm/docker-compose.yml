@@ -1,0 +1,21 @@
+# Despliegue mínimo: un contenedor y un volumen con la base de datos. Pon delante un proxy con TLS (Caddy, Nginx, Traefik).
+services:
+  crm:
+    build: .
+    image: crm-interno:latest
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      PUBLIC_URL: ${PUBLIC_URL:-https://crm.example.com}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@example.com}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Define ADMIN_PASSWORD (mínimo 12 caracteres)}
+      EMAIL_MODE: ${EMAIL_MODE:-fake}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+    volumes:
+      - crm-data:/data
+volumes:
+  crm-data:

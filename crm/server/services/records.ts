@@ -1,6 +1,7 @@
 import { fieldDefs, coerceCustom, COMPUTED_TYPES, enrichList } from "./columns.js";
 /** Shared helpers: listing with filters/sort/pagination, custom field validation, JSON parsing. */
 import { z } from "zod";
+import { createHash } from "node:crypto";
 import type { Ctx } from "../context.js";
 import { parseJson, type Row } from "../db.js";
 import { buildWhere, OBJECT_FIELDS, type FilterGroup } from "../lib/filters.js";
@@ -8,7 +9,7 @@ import { badRequest } from "../lib/errors.js";
 import { ownerScope } from "../lib/permissions.js";
 
 export const JSON_COLS: Record<string, string[]> = {
-  contact: ["tags", "custom", "utm", "qualification"],
+  contact: ["tags", "custom", "utm", "qualification", "emails", "phones"],
   company: ["tags", "custom"],
   deal: ["tags", "custom"],
   ticket: ["tags"],
@@ -17,7 +18,7 @@ export const JSON_COLS: Record<string, string[]> = {
 };
 export const TABLES: Record<string, string> = { contact: "contacts", company: "companies", deal: "deals", ticket: "tickets", task: "tasks", contract: "contracts" };
 export const SEARCH_COLS: Record<string, string[]> = {
-  contact: ["first_name", "last_name", "email", "phone", "job_title"],
+  contact: ["first_name", "last_name", "email", "phone", "job_title", "emails", "phones"],
   company: ["name", "domain", "city", "tax_id"],
   deal: ["name"],
   ticket: ["subject"],
@@ -32,6 +33,9 @@ export const listQuery = z.object({
   dir: z.enum(["asc", "desc"]).optional(),
   page: z.coerce.number().int().min(1).default(1),
   page_size: z.coerce.number().int().min(1).max(500).default(50),
+  /** paginación por cursor opaco (alternativa a page): ?cursor=&limit= (máx. 500) */
+  cursor: z.string().max(200).optional(),
+  limit: z.coerce.number().int().min(1).max(500).optional(),
 });
 export type ListQuery = z.infer<typeof listQuery>;
 
@@ -43,7 +47,13 @@ export function parseFilters(raw: unknown): FilterGroup | undefined {
   return raw as FilterGroup;
 }
 
-export interface ListResult<T> { items: T[]; total: number; page: number; page_size: number }
+export interface ListResult<T> { items: T[]; total: number; page: number; page_size: number; next_cursor: string | null }
+/** El cursor guarda la posición y la huella de la consulta: si cambian filtros u orden, deja de ser válido. */
+const qsig = (object: string, q: ListQuery) => createHash("sha1").update(JSON.stringify([object, q.filters ?? null, q.q ?? null, q.sort ?? null, q.dir ?? null])).digest("base64url").slice(0, 10);
+function decodeCursor(object: string, q: ListQuery): number {
+  try { const [sig, off] = Buffer.from(q.cursor!, "base64url").toString().split("|"); if (sig !== qsig(object, q)) throw new Error(); const n = Number(off); if (!Number.isInteger(n) || n < 0) throw new Error(); return n; }
+  catch { throw badRequest("Cursor no válido para esta consulta"); }
+}
 
 /** Generic list for an object with visibility, filters, text search, sort and pagination. */
 export function listRecords<T extends Row>(ctx: Ctx, object: string, q: ListQuery, extra?: { where?: string; params?: unknown[]; select?: string; joins?: string; ownerCol?: string }): ListResult<T> {
@@ -72,10 +82,13 @@ export function listRecords<T extends Row>(ctx: Ctx, object: string, q: ListQuer
   const dir = q.dir === "asc" ? "ASC" : "DESC";
   const w = where.join(" AND ");
   const total = ctx.db.get<{ n: number }>(`SELECT COUNT(*) n FROM ${table} t ${extra?.joins ?? ""} WHERE ${w}`, ...params)?.n ?? 0;
-  const items = ctx.db.all<T>(`SELECT t.*${extra?.select ? ", " + extra.select : ""} FROM ${table} t ${extra?.joins ?? ""} WHERE ${w} ORDER BY ${sort} ${dir} NULLS LAST, t.id LIMIT ? OFFSET ?`, ...params, q.page_size, (q.page - 1) * q.page_size);
+  const size = q.cursor || q.limit ? (q.limit ?? 100) : q.page_size;
+  const offset = q.cursor ? decodeCursor(object, q) : q.limit ? 0 : (q.page - 1) * q.page_size;
+  const items = ctx.db.all<T>(`SELECT t.*${extra?.select ? ", " + extra.select : ""} FROM ${table} t ${extra?.joins ?? ""} WHERE ${w} ORDER BY ${sort} ${dir} NULLS LAST, t.id LIMIT ? OFFSET ?`, ...params, size, offset);
   for (const it of items) parseJson(it, JSON_COLS[object] ?? []);
   enrichList(ctx, object, items as unknown as Row[]);
-  return { items, total, page: q.page, page_size: q.page_size };
+  const next = offset + items.length < total ? Buffer.from(`${qsig(object, q)}|${offset + items.length}`).toString("base64url") : null;
+  return { items, total, page: q.page, page_size: size, next_cursor: next };
 }
 
 export function customFieldDefs(ctx: Ctx, object: string) {

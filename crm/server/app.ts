@@ -8,6 +8,9 @@ import { fileURLToPath } from "node:url";
 import type { Db } from "./db.js";
 import { HttpError } from "./lib/errors.js";
 import { requireAuth } from "./auth.js";
+import { buildOpenApi, DOCS_HTML, DOCS_CSS, DOCS_JS } from "./openapi.js";
+import { liveRoutes } from "./live.js";
+import { requestLog, securityHeaders, optimisticConcurrency } from "./http.js";
 import { authRoutes } from "./routes/auth.js";
 import { contactRoutes } from "./routes/contacts.js";
 import { companyRoutes } from "./routes/companies.js";
@@ -39,7 +42,8 @@ export function createApp(db: Db) {
   app.use(express.json({ limit: "20mb" }));
   app.use(express.urlencoded({ extended: true }));
   app.use(cookieParser());
-  app.use((_req, res, next) => { res.setHeader("x-content-type-options", "nosniff"); res.setHeader("referrer-policy", "same-origin"); next(); });
+  app.use(requestLog());
+  app.use(securityHeaders());
 
   app.get("/api/health", (_req, res) => res.json({ ok: true, time: new Date().toISOString() }));
   app.use("/api/auth", authRoutes(db));
@@ -49,23 +53,34 @@ export function createApp(db: Db) {
 
   const api = express.Router();
   api.use(requireAuth(db));
-  api.use("/contacts", contactRoutes());
-  api.use("/companies", companyRoutes());
-  api.use("/deals", dealRoutes());
-  api.use("/pipelines", pipelineRoutes());
-  api.use("/tasks", taskRoutes());
-  api.use("/activities", activityRoutes());
-  api.use("/tickets", ticketRoutes());
-  api.use("/products", productRoutes());
-  api.use("/quotes", quoteRoutes());
-  api.use("/admin", adminRoutes());
-  api.use("/workflows", workflowRoutes());
-  api.use("/forms", formAdminRoutes());
-  api.use("/reports", reportRoutes());
-  api.use("/clm", clmRoutes());
-  api.use("/columns", columnRoutes());
-  api.use("/cells", cellRoutes());
-  api.use(miscRoutes());
+  api.use(optimisticConcurrency(db));
+  const mounts: [string, ReturnType<typeof express.Router>][] = [
+    ["/contacts", contactRoutes()],
+    ["/companies", companyRoutes()],
+    ["/deals", dealRoutes()],
+    ["/pipelines", pipelineRoutes()],
+    ["/tasks", taskRoutes()],
+    ["/activities", activityRoutes()],
+    ["/tickets", ticketRoutes()],
+    ["/products", productRoutes()],
+    ["/quotes", quoteRoutes()],
+    ["/admin", adminRoutes()],
+    ["/workflows", workflowRoutes()],
+    ["/forms", formAdminRoutes()],
+    ["/reports", reportRoutes()],
+    ["/clm", clmRoutes()],
+    ["/columns", columnRoutes()],
+    ["/cells", cellRoutes()],
+    ["", miscRoutes()],
+    ["", liveRoutes()],
+  ];
+  for (const [p, r] of mounts) { if (p) api.use(p, r); else api.use(r); }
+  // especificación OpenAPI y lector (públicos: no exponen datos)
+  const spec = buildOpenApi(mounts, process.env.npm_package_version ?? "1.0.0");
+  app.get(["/api/openapi.json", "/api/v1/openapi.json"], (_req, res) => res.json(spec));
+  app.get("/api/docs", (_req, res) => res.type("html").send(DOCS_HTML));
+  app.get("/api/docs.css", (_req, res) => res.type("css").send(DOCS_CSS));
+  app.get("/api/docs.js", (_req, res) => res.type("js").send(DOCS_JS));
   app.use("/api", api);
   app.use("/api/v1", api); // versioned alias for integrations with API key
 
@@ -74,16 +89,16 @@ export function createApp(db: Db) {
   const webDir = candidates.find((d) => fs.existsSync(path.join(d, "assets")) && fs.existsSync(path.join(d, "index.html")));
   if (webDir) {
     app.use(express.static(webDir, { index: false, maxAge: "1h" }));
-    app.get(/^(?!\/api|\/f\/|\/t\/|\/q\/|\/s\/|\/hooks\/).*/, (_req, res) => res.sendFile(path.join(webDir, "index.html")));
+    app.get(/^(?!\/api|\/f\/|\/t\/|\/q\/|\/s\/|\/csat\/|\/hooks\/).*/, (_req, res) => res.sendFile(path.join(webDir, "index.html")));
   }
 
   app.use((req, res) => { res.status(404).json({ error: `Ruta no encontrada: ${req.method} ${req.path}` }); });
-  app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
+  app.use((err: unknown, req: Request, res: Response, _next: NextFunction) => {
     void _next;
     if (err instanceof HttpError) return res.status(err.status).json({ error: err.message, details: err.details ?? null });
     if (err && typeof err === "object" && "type" in err && (err as { type: string }).type === "entity.parse.failed") return res.status(400).json({ error: "JSON no válido" });
-    console.error(err);
-    res.status(500).json({ error: "Error interno del servidor" });
+    console.error(JSON.stringify({ t: new Date().toISOString(), level: "error", request_id: (req as Request & { rid?: string }).rid, path: req.path, error: (err as Error)?.message, stack: (err as Error)?.stack?.split("\n").slice(0, 6) }));
+    res.status(500).json({ error: "Error interno del servidor", request_id: (req as Request & { rid?: string }).rid });
   });
   return app;
 }

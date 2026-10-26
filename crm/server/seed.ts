@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 /** Bootstrap (first run) + optional demo data. Idempotent: only runs on an empty database. */
 import { ensureServiceUser } from "./services/workflows.js";
 import { Db, type Row } from "./db.js";
@@ -19,7 +20,8 @@ export interface BootstrapInfo { createdAdmin: boolean; seededDemo: boolean; adm
 
 export function bootstrap(db: Db, opts: { demo?: boolean; adminEmail?: string; adminPassword?: string } = {}): BootstrapInfo {
   const adminEmail = (opts.adminEmail ?? process.env.ADMIN_EMAIL ?? "admin@crm.local").toLowerCase();
-  const adminPassword = opts.adminPassword ?? process.env.ADMIN_PASSWORD ?? "Admin1234!";
+  // en producción nunca hay contraseña por defecto: o se pasa ADMIN_PASSWORD o se genera una aleatoria (se muestra una vez)
+  const adminPassword = opts.adminPassword ?? process.env.ADMIN_PASSWORD ?? (process.env.NODE_ENV === "production" ? `Crm-${randomBytes(9).toString("base64url")}` : "Admin1234!");
   const existing = db.get<{ id: string }>("SELECT id FROM workspaces LIMIT 1");
   if (existing) return { createdAdmin: false, seededDemo: false, adminEmail, adminPassword, workspaceId: existing.id };
 

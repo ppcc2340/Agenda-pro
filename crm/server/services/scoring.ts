@@ -20,7 +20,7 @@ export function computeScore(ctx: Ctx, contact: Row): number {
   score += Math.min(opens * 2, 20);
   const last = (contact.last_activity_at as string | null) ?? (contact.created_at as string);
   const weeks = Math.floor((Date.now() - new Date(last).getTime()) / (7 * 86400000));
-  score -= Math.max(0, weeks);
+  score -= Math.max(0, weeks) * (ctx.settings.score_decay_per_week ?? 1);
   return Math.max(0, Math.min(100, score));
 }
 

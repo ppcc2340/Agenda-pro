@@ -1,3 +1,4 @@
+import { ChannelList, type Channel } from "../components/ChannelList";
 import { RecordAutomations } from "./AutomationCenter";
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
@@ -71,8 +72,8 @@ export function ContactDetailPage() {
             {c.do_not_contact ? <div className="alert error mt12 small">Ha pedido no ser contactado.</div> : null}
             {c.anonymized_at ? <div className="alert warn mt12 small">Datos anonimizados el {fmtDate(c.anonymized_at)}.</div> : null}
             <dl className="kv mt16">
-              <dt>Email</dt><dd>{c.email ? <a href={`mailto:${c.email}`}>{c.email}</a> : <span className="muted">—</span>}</dd>
-              <dt>Teléfono</dt><dd>{c.phone ? <a href={`tel:${c.phone}`}>{c.phone}</a> : <span className="muted">—</span>}</dd>
+              <dt>Email</dt><dd><ChannelList kind="email" items={c.emails as Channel[] | undefined} fallback={c.email} onSave={(list) => patch({ emails: list })} /></dd>
+              <dt>Teléfono</dt><dd><ChannelList kind="phone" items={c.phones as Channel[] | undefined} fallback={c.phone} onSave={(list) => patch({ phones: list })} /></dd>
               <dt>Etapa</dt><dd><select className="input sm" value={c.lifecycle_stage} onChange={(e) => patch({ lifecycle_stage: e.target.value })}>{Object.entries(LIFECYCLE).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></dd>
               <dt>Estado lead</dt><dd><select className="input sm" value={c.lead_status} onChange={(e) => { if (e.target.value === "unqualified") { const r = prompt("Motivo de descalificación"); if (!r) return; patch({ lead_status: "unqualified", disqualify_reason: r }); } else patch({ lead_status: e.target.value }); }}>{Object.entries(LEAD_STATUS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select>{c.disqualify_reason && c.lead_status === "unqualified" && <div className="xs muted">{c.disqualify_reason}</div>}</dd>
               <dt>Puntuación</dt><dd><ScoreBar value={c.score} /></dd>
