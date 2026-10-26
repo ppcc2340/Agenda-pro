@@ -196,3 +196,14 @@ describe("objetos personalizados: automatizaciones e informes", () => {
     expect(labels).toContain("Planificado");
   });
 });
+
+describe("objetos personalizados: búsqueda global", () => {
+  it("encuentra registros de objetos personalizados por nombre o número", async () => {
+    await admin.post("/api/records/o_proyectos").send({ name: "Torre Mirador Búsqueda" });
+    const r = await admin.get("/api/search?q=Mirador");
+    expect(r.status).toBe(200);
+    const hit = r.body.records.find((x: { name: string }) => x.name === "Torre Mirador Búsqueda");
+    expect(hit).toMatchObject({ object_key: "o_proyectos", object_name: "Proyecto" });
+    expect(hit.number).toMatch(/^PRJ-/);
+  });
+});

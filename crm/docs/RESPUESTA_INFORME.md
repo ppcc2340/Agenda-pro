@@ -268,6 +268,21 @@ Generador PDF propio, sin dependencias.
   - g+c, g+e, g+n, g+t, g+h, g+a para navegar;
   - `n` para crear un elemento nuevo, `/` para buscar, `?` para ver la ayuda.
 
+## Ampliación: personalización a nivel empresarial
+
+Después del informe se pidió que **todo** fuera modificable, incluidas las etiquetas que antes eran «del sistema». El detalle de uso está en el README, sección «Personalización total».
+
+| Capacidad | Estado |
+| --- | --- |
+| Todas las etiquetas de las 17 listas del CRM y del CLM se editan y se borran (con reasignación de registros); cada una declara el comportamiento que activa en la lógica | 🆕 hecho |
+| Diseño de fichas por objeto y rol (secciones, orden, ayudas, visibilidad condicional, obligatorios) | 🆕 hecho |
+| Seguridad por campo y rol (editable / solo lectura / oculto), aplicada en el servidor | 🆕 hecho |
+| Compartir registros con usuarios o equipos | 🆕 hecho |
+| Objetos personalizados con relaciones, tablero, ficha, automatizaciones, informes, CSV y búsqueda | 🆕 hecho |
+| CLM: ciclo de vida por tipo, transiciones, numeración, formulario de solicitud, alertas, matriz de aprobación, sustituciones, exportar/importar configuración | 🆕 hecho |
+| Etiquetas del ciclo del contrato | 🟡 parcial: sus fases se renombran, recolorean, ordenan y ocultan, pero no se borran porque son las fases del motor; los estados finos se crean libremente en el ciclo de vida de cada tipo |
+| Seguridad por campo en las cargas de webhooks salientes | ⏳ pendiente: los webhooks los configura un administrador y envían el registro completo |
+
 ## Nota: migración a PostgreSQL (cuando haga falta)
 
 SQLite aguanta bien un CRM interno: un solo servidor, decenas de usuarios a la vez y cientos de miles de registros, con copias triviales.

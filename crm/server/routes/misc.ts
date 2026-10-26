@@ -3,7 +3,7 @@ import { z } from "zod";
 import { h, parse, param } from "./_helpers.js";
 import { id, now } from "../lib/util.js";
 import { badRequest, notFound } from "../lib/errors.js";
-import { assert } from "../lib/permissions.js";
+import { assert, can } from "../lib/permissions.js";
 import { parseJson, type Row } from "../db.js";
 import { buildWhere, OBJECT_FIELDS, OPS, CUSTOM_RECORD_FIELDS } from "../lib/filters.js";
 import { isBoardObject } from "../lib/objectKeys.js";
@@ -36,6 +36,14 @@ export function miscRoutes() {
       contracts: db.all(`SELECT id, number, title, status FROM contracts WHERE workspace_id=? AND deleted_at IS NULL AND ${ds.sql} AND (title LIKE ? OR number LIKE ?) LIMIT 6`, ws, ...ds.params, like, like),
       quotes: db.all(`SELECT id, number, status, total, deal_id FROM quotes WHERE workspace_id=? AND number LIKE ? LIMIT 5`, ws, like),
     };
+    // registros de objetos personalizados que el rol puede ver
+    const records: Row[] = [];
+    for (const d of listDefs(req.ctx)) {
+      if (records.length >= 8 || !can(req.ctx, d.key, "read")) continue;
+      const sc = ownerScope(req.ctx, "r.owner_id", { object: d.key, idCol: "r.id" });
+      records.push(...db.all<Row>(`SELECT r.id, r.name, r.number, r.object_key, ? object_name FROM custom_records r WHERE r.workspace_id=? AND r.object_key=? AND r.deleted_at IS NULL AND ${sc.sql} AND (r.name LIKE ? OR r.number LIKE ?) LIMIT ?`, d.name, ws, d.key, ...sc.params, like, like, 8 - records.length));
+    }
+    Object.assign(out, { records });
     // los campos ocultos para el rol tampoco aparecen en la búsqueda
     redactAll(req.ctx, "contact", out.contacts as Row[]); redactAll(req.ctx, "company", out.companies as Row[]); redactAll(req.ctx, "deal", out.deals as Row[]); redactAll(req.ctx, "ticket", out.tickets as Row[]); redactAll(req.ctx, "contract", out.contracts as Row[]);
     return out;

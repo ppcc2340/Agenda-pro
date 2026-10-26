@@ -3657,7 +3657,7 @@ const cusLayout = (obj, role = cusRole()) => { const L = S.cus?.layouts?.[obj] |
 const CUS_PERM = { edit: 'Editable', read: 'Solo lectura', hidden: 'Oculto' };
 const CUS_KV_ACTS = ['kv-edit', 'kv-status', 'kv-person', 'kv-bool'];
 const cusFormFn = (obj) => ({ contacts: () => contactForm({}), companies: () => companyForm({}), deals: () => dealForm({}), tasks: () => taskForm({}), tickets: () => ticketForm({}) })[obj] || (cusObj(obj) ? () => cusObjForm(cusObj(obj)) : null);
-const cusFormObj = (title) => ({ 'Nuevo contacto': 'contacts', 'Nueva empresa': 'companies', 'Nuevo negocio': 'deals', 'Nueva tarea': 'tasks', 'Nuevo ticket': 'tickets' })[title] || (S.cus?.objects || []).find((o) => title === 'Nuevo ' + o.single)?.key || null;
+const cusFormObj = (title) => ({ 'Nuevo contacto': 'contacts', 'Nueva empresa': 'companies', 'Nuevo negocio': 'deals', 'Nueva tarea': 'tasks', 'Nuevo ticket': 'tickets' })[title] || (S.cus?.objects || []).find((o) => title === 'Nuevo registro · ' + o.single)?.key || null;
 function cusRawDetails(obj, it) { return cusObj(obj) ? cusObjDetails(obj, it) : _panelDetailsCus(obj, it); }
 /* etiqueta normalizada → clave de campo (columnas + campos de la ficha con data-arg) */
 function cusAlias(obj) {
@@ -3817,7 +3817,7 @@ function cusObjPage(key) {
   const d = cusObj(key); if (!d) return PAGES.inicio();
   const pg = 'o-' + d.slug; const view = S.ui.view[pg] || 'table'; const items = vis(key); const opt = cusObjOpt(d);
   const groups = d.statuses.map((s) => ({ key: s.id, label: s.label, color: s.color, items: items.filter((i) => i.status === s.id) })); const rest = items.filter((i) => !opt[i.status]); if (rest.length) groups.push({ key: '__none', label: 'Sin estado', color: C.grey, items: rest });
-  setHead({ title: esc(d.label), desc: `${items.filter((i) => !cusDone(d, i)).length} abiertos de ${items.length} · objeto personalizado · numeración ${esc(d.pattern)}${d.rel.length ? ' · relacionado con ' + d.rel.map((r) => CUS_REL[r].label.toLowerCase()).join(', ') : ''}`, views: [{ key: 'table', label: 'Tabla principal', icon: 'table' }, { key: 'kanban', label: 'Kanban', icon: 'kanban' }], view, toolbar: boardToolbar(key, COLS[key](), { newLabel: 'Nuevo ' + d.single, newAct: 'cus-o-new', extra: can('admin') ? `<button class="btn" data-act="cus-obj-edit" data-arg="${key}">${ico.gear}Configurar objeto</button>` : '' }) });
+  setHead({ title: esc(d.label), desc: `${items.filter((i) => !cusDone(d, i)).length} abiertos de ${items.length} · objeto personalizado · numeración ${esc(d.pattern)}${d.rel.length ? ' · relacionado con ' + d.rel.map((r) => CUS_REL[r].label.toLowerCase()).join(', ') : ''}`, views: [{ key: 'table', label: 'Tabla principal', icon: 'table' }, { key: 'kanban', label: 'Kanban', icon: 'kanban' }], view, toolbar: boardToolbar(key, COLS[key](), { newLabel: cap1(d.single), newAct: 'cus-o-new', extra: can('admin') ? `<button class="btn" data-act="cus-obj-edit" data-arg="${key}">${ico.gear}Configurar objeto</button>` : '' }) });
   const card = (it) => { const co = byId('companies', it.companyId); return `<div class="grp">${esc(it.number)}</div><div class="t">${esc(it.name)}</div><div class="m"><span>${esc(co?.name || '')}</span>${avatarOf(it.owner, 'sm')}</div>`; };
   document.getElementById('content').innerHTML = `<div class="cus-obj-board">${view === 'table' ? boardTable({ obj: key, cols: COLS[key](), groups, addLabel: 'Añadir ' + d.single, onAddAct: 'cus-o-addrow' }) : kanbanHtml({ obj: key, laneKey: 'status', lanes: groups.map((g) => ({ ...g, items: applyFilters(key, COLS[key](), g.items) })), card })}</div>`;
   if (route.id) { const it = byId(key, route.id); if (it) openPanel(key, it.id); }
@@ -3830,11 +3830,11 @@ function cusObjForm(d, preset = {}) {
   if (!can('edit')) return toast('Solo lectura', 'err');
   const relSel = (r) => { const f = CUS_REL[r].field; const list = r === 'contracts' ? (S.contracts || []) : S[r]; return `<div class="fld"><label>${CUS_REL[r].label}</label><select class="inp" data-f="${f}"><option value="">—</option>${list.map((x) => `<option value="${x.id}" ${preset[f] === x.id ? 'selected' : ''}>${esc(CUS_REL[r].name(x))}</option>`).join('')}</select></div>`; };
   const fin = (f) => f.type === 'person' ? `<div class="fld"><label>${esc(f.label)}</label>${userSel('cf_' + f.key, '').replace(`id="cf_${f.key}"`, `data-f="${f.key}"`)}</div>` : f.type === 'check' ? `<label class="chk full"><input type="checkbox" data-f="${f.key}"/>${esc(f.label)}</label>` : `<div class="fld"><label>${esc(f.label)}</label><input class="inp" data-f="${f.key}" type="${f.type === 'date' ? 'date' : ['number', 'money'].includes(f.type) ? 'number' : 'text'}"/></div>`;
-  const m = modal({ title: 'Nuevo ' + d.single, size: 'lg', body: `<div class="fgrid"><div class="fld full"><label>Nombre *</label><input class="inp" data-f="name"/></div><div class="fld"><label>Estado</label><select class="inp" data-f="status">${d.statuses.map((s) => `<option value="${s.id}">${esc(s.label)}</option>`).join('')}</select></div><div class="fld"><label>Responsable</label>${userSel('cusOw', S.me).replace('id="cusOw"', 'data-f="owner"')}</div>${d.rel.map(relSel).join('')}${d.fields.map(fin).join('')}</div><p class="xs muted">Se numerará como ${esc(cusFormat(d.pattern, { type: d.prefix, cp: 'XXX' }, d.counters, true))}</p>`, footer: '<button class="btn primary" id="ok">Crear</button>' });
+  const m = modal({ title: 'Nuevo registro · ' + d.single, size: 'lg', body: `<div class="fgrid"><div class="fld full"><label>Nombre *</label><input class="inp" data-f="name"/></div><div class="fld"><label>Estado</label><select class="inp" data-f="status">${d.statuses.map((s) => `<option value="${s.id}">${esc(s.label)}</option>`).join('')}</select></div><div class="fld"><label>Responsable</label>${userSel('cusOw', S.me).replace('id="cusOw"', 'data-f="owner"')}</div>${d.rel.map(relSel).join('')}${d.fields.map(fin).join('')}</div><p class="xs muted">Se numerará como ${esc(cusFormat(d.pattern, { type: d.prefix, cp: 'XXX' }, d.counters, true))}</p>`, footer: '<button class="btn primary" id="ok">Crear</button>' });
   m.querySelector('#ok').onclick = () => {
     const data = {}; m.querySelectorAll('[data-f]').forEach((el) => { const k = el.dataset.f; const f = d.fields.find((x) => x.key === k); data[k] = el.type === 'checkbox' ? el.checked : ['number', 'money'].includes(f?.type) ? (el.value === '' ? null : Number(el.value)) : el.value || null; });
     if (!String(data.name || '').trim()) return toast('El nombre es obligatorio', 'err');
-    const r = cusCreateRec(d.key, data); m.close(); toast(`${cap1(d.single)} ${r.number} creado`, 'ok'); go(`#/o-${d.slug}/${r.id}`);
+    const r = cusCreateRec(d.key, data); m.close(); toast(`Registro ${r.number} creado`, 'ok'); go(`#/o-${d.slug}/${r.id}`);
   };
   return m;
 }
@@ -3890,7 +3890,7 @@ runActionV2 = function (x, obj, item, log) {
   if (d.rel.includes('contacts')) data.contactId = obj === 'contacts' ? item.id : item.contactId || item.contactIds?.[0] || null;
   if (d.rel.includes('deals') && obj === 'deals') data.dealId = item.id;
   if (d.rel.includes('contracts') && obj === 'contracts') data.contractId = item.id;
-  const r = cusCreateRec(d.key, data); log.push(`${cap1(d.single)} ${r.number} creado`); return 1;
+  const r = cusCreateRec(d.key, data); log.push(`${d.label}: registro ${r.number} creado`); return 1;
 };
 /* informes */
 const _informesCus = PAGES.informes;
@@ -3999,7 +3999,7 @@ const _clmDetailPageCus = clmDetailPage;
 clmDetailPage = function (id) {
   _clmDetailPageCus.apply(this, arguments); const c = contract(id); const cfg = c && S.cus?.clm?.[c.typeId]; if (!cfg?.states?.length) return;
   const cur = cusClmState(c); const st = cfg.states.find((s) => s.id === cur);
-  const desc = document.querySelector('#head p > span'); if (desc) desc.insertAdjacentHTML('afterbegin', `<span class="pill cus-cstate" style="background:${st ? st.color : CST[c.status]?.color}">${esc(st ? st.label : CST[c.status]?.label)}</span>`);
+  const desc = document.querySelector('#head p > span'); if (desc && st) desc.insertAdjacentHTML('afterbegin', `<span class="pill cus-cstate" style="background:${st.color}" title="Estado propio · fase ${esc(CST[c.status]?.label)}">${esc(st.label)}</span>`);
   const tg = cusClmTargets(c); const tb = document.querySelector('#toolbar .row');
   if (tb && can('edit') && tg.length) tb.insertAdjacentHTML('afterbegin', tg.map((s) => `<button class="btn outline sm cus-cst-btn" data-act="cus-clm-state" data-arg='${JSON.stringify({ id: c.id, k: s.id })}' title="Estado propio de ${esc(ctype(c.typeId)?.code || '')} · fase ${esc(CST[s.phase]?.label)}"><i class="gdot" style="background:${s.color}"></i>${esc(s.label)}</button>`).join(''));
 };
@@ -4049,7 +4049,7 @@ clmTabApprovals = function (c) {
   const t = document.createElement('template'); t.innerHTML = html;
   if (steps.length) t.content.querySelectorAll('.fstep').forEach((el, i) => { const s = steps[i]; if (!s) return; if (s.rule) el.querySelector('.row')?.insertAdjacentHTML('beforeend', `<span class="tag cus-rtag">${s.seq ? 'secuencial' : 'matriz'}</span>`); if (s.status === 'pending' && cusWaiting(c, s)) { const act = el.querySelector('.row.mt8'); if (act) act.outerHTML = '<div class="xs muted mt8 cus-wait">⏳ En espera: se activa cuando se apruebe el paso anterior de la regla.</div>'; } });
   const rules = (cfg?.approval?.rules || []).filter((r) => r.on !== false);
-  const info = rules.length ? `<div class="card mb12 cus-matrix-info"><b>Matriz de aprobación de ${esc(ctype(c.typeId)?.name || '')}</b> · ${cfg.approval.mode === 'replace' ? 'sustituye al circuito estándar cuando aplica una regla' : 'se suma al circuito estándar'}<div class="small mt8">${rules.map((r) => `<div>${cusRuleMatch(c, r) ? '✅' : '▫️'} ${esc(r.name)} — ${(r.conds || []).map((q) => `${esc(CUS_CCOND[q.field] || q.field)} ${CUS_OPS[q.op] || q.op} ${esc(q.value)}`).join(' y ') || 'siempre'} → ${(r.steps || []).map((s) => esc(s.label || s.who)).join(r.seq ? ' → ' : ' + ')}</div>`).join('')}</div>${can('admin') ? `<a class="xs" href="#/contratos/configuracion/ciclo">Editar la matriz</a>` : ''}</div>` : '';
+  const info = rules.length ? `<div class="card mb12 cus-matrix-info"><b>Matriz de aprobación de ${esc(ctype(c.typeId)?.name || '')}</b> · ${cfg.approval.mode === 'replace' ? 'sustituye al circuito estándar cuando aplica una regla' : 'se suma al circuito estándar'}<div class="small mt8">${rules.map((r) => `<div>${cusRuleMatch(c, r) ? '✅' : '▫️'} ${esc(r.name)} — ${(r.conds || []).map((q) => `${esc(CUS_CCOND[q.field] || q.field)} ${CUS_OPS[q.op] || q.op} ${esc(q.value)}`).join(' y ') || 'siempre'} → ${(r.steps || []).map((s) => esc(s.label || cusWhoOpts().find(([k]) => k === s.who)?.[1] || s.who)).join(r.seq ? ' → ' : ' + ')}</div>`).join('')}</div>${can('admin') ? `<a class="xs" href="#/contratos/configuracion/ciclo">Editar la matriz</a>` : ''}</div>` : '';
   return info + t.innerHTML;
 };
 /* solicitud: campos propios por tipo dentro del asistente */

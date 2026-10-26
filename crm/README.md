@@ -163,6 +163,42 @@ Todo se guarda por tablero en `board_configs` y es compartido por el equipo. API
 
 La demo HTML incluye lo mismo y un capítulo del tutorial «Libertad tipo Excel» con diez pasos.
 
+## Personalización total (nivel empresarial)
+
+Nada del vocabulario ni de la estructura queda fijo en el código. Todo se configura en **Ajustes** (y en **Contratos → Configuración** para el CLM), con permisos de administrador o de edición del objeto.
+
+**Listas y etiquetas (Ajustes → Listas y etiquetas).** Las 17 listas del CRM y del CLM (etapa del ciclo de vida, estado del lead, tipo de empresa, estado y prioridad de tickets, tipo y prioridad de tareas, resultado del negocio, estado, riesgo, urgencia, renovación, papel, modelo de pago y confidencialidad del contrato, tipos de obligación y de hito) se editan igual:
+- Todas las etiquetas, también las de fábrica, se renombran, recolorean, reordenan, ocultan o **borran**.
+- Cada etiqueta declara qué **comportamiento** activa en la lógica: SLA, conversión, ganado/perdido, CSAT, informes, automatizaciones. Varias etiquetas pueden compartir un comportamiento; por ejemplo, «Llamado» y «Pendiente de llamar» se comportan como «Contactado».
+- Al borrar una etiqueta en uso se elige a cuál se mueven sus registros. El movimiento pasa por la lógica normal, así que, por ejemplo, un ticket movido a una etiqueta que «se comporta como Resuelto» dispara su SLA y su encuesta.
+- Si un comportamiento se queda sin etiqueta visible, el editor avisa de qué lógica deja de aplicarse.
+- La misma edición está en el menú de cada columna de estado («Editar etiquetas»), en las fichas y en el desplegable de cada celda.
+- Las fases del ciclo del contrato se renombran, recolorean, ordenan y ocultan; los estados finos de cada tipo de contrato se definen en su ciclo de vida (ver abajo).
+- API: `GET/PUT /api/picklists/:clave` con `{ options, reassign }`.
+
+**Diseño de fichas (Ajustes → Diseño de fichas).**
+- Cada objeto (y opcionalmente cada rol) tiene su propia ficha: secciones plegables a una o dos columnas, campos nativos y personalizados en el orden que se quiera, ayudas, visibilidad condicional y campos obligatorios al crear.
+- **Seguridad por campo** por rol (editable, solo lectura u oculto). El servidor la aplica en la API, las tablas, la búsqueda, los filtros, las exportaciones y las fichas.
+- API: `/api/layouts/:objeto` y `/api/field-permissions`.
+
+**Compartir registros.** El botón «Compartir» da acceso de lectura o edición a un usuario o a un equipo más allá de la visibilidad de su rol, y les avisa (`/api/shares/:objeto/:id`).
+
+**Objetos personalizados (Ajustes → Objetos personalizados).** Proyectos, Inmuebles, Vehículos, Pedidos…
+- Cada objeto tiene nombre, icono, color, numeración, estados propios, propietario y relaciones con contactos, empresas, negocios, contratos, tickets u otros objetos.
+- Tiene tablero propio (tabla y kanban) con todas las columnas personalizadas, ficha con historial, notas y tareas, lista relacionada en los registros vinculados, importación/exportación CSV, permisos por rol, automatizaciones (disparadores y acción «crear registro»), informes y búsqueda global.
+- API: `/api/objects` y `/api/records/:objeto`.
+
+**CLM configurable (Contratos → Configuración).**
+- **Ciclo de vida por tipo de contrato:** estados propios dentro de cada fase, con transiciones permitidas, campos obligatorios por estado, plazo y escalado.
+- **Numeración por tipo** con fichas como `{TIPO}-{YYYY}-{CP}-{SEQ:4}` y vista previa.
+- **Formulario de solicitud por tipo:** preguntas, campos obligatorios y obligaciones e hitos por defecto.
+- **Alertas** configurables por tipo de hito, con acuse y escalado.
+- **Matriz de aprobación:** reglas por prioridad (condiciones → pasos secuenciales o en paralelo por usuario, rol, responsable o propietario, con SLA). Se ordenan, se prueban contra un contrato real antes de guardarlas y se combinan con o sustituyen al flujo estándar.
+- **Sustituciones por ausencia.**
+- **Exportar/importar toda la configuración** del CLM en JSON (`/api/clm/config/export` e `/import`) para llevarla de un entorno a otro.
+
+La demo HTML lo reproduce en el capítulo del tutorial «Personalización total».
+
 ## Integraciones externas (puntos de extensión)
 
 El manual contempla sincronización de Gmail/Microsoft 365, telefonía, WhatsApp, etc. El CRM está preparado para ello sin cambiar el modelo:

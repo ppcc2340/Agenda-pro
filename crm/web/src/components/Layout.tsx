@@ -129,7 +129,7 @@ export function Layout({ children, onLogout }: { children: ReactNode; onLogout: 
   );
 }
 
-type SearchRes = { contacts: { id: string; first_name: string; last_name: string; email: string | null; company_name: string | null }[]; companies: { id: string; name: string; domain: string | null; city: string | null }[]; deals: { id: string; name: string; amount: number; currency: string; company_name: string | null; stage_name: string }[]; tickets: { id: string; number: number; subject: string; status: string }[]; quotes: { id: string; number: string; status: string; total: number; deal_id: string }[]; contracts?: { id: string; number: string; title: string; status: string }[] };
+type SearchRes = { contacts: { id: string; first_name: string; last_name: string; email: string | null; company_name: string | null }[]; companies: { id: string; name: string; domain: string | null; city: string | null }[]; deals: { id: string; name: string; amount: number; currency: string; company_name: string | null; stage_name: string }[]; tickets: { id: string; number: number; subject: string; status: string }[]; quotes: { id: string; number: string; status: string; total: number; deal_id: string }[]; contracts?: { id: string; number: string; title: string; status: string }[]; records?: { id: string; name: string; number: string | null; object_key: string; object_name: string }[] };
 
 function Palette({ onClose }: { onClose: () => void }) {
   const [q, setQ] = useState("");
@@ -152,6 +152,7 @@ function Palette({ onClose }: { onClose: () => void }) {
     res.contracts?.forEach((c) => items.push({ label: `${c.number} ${c.title}`, sub: c.status, to: `/contratos/${c.id}`, group: t("nav.contracts"), icon: FileText }));
     res.deals.forEach((d) => items.push({ label: d.name, sub: `${d.stage_name} · ${fmtMoney(d.amount, d.currency)}`, to: `/negocios/${d.id}`, group: t("nav.deals"), icon: Handshake }));
     res.tickets.forEach((x) => items.push({ label: `#${x.number} ${x.subject}`, sub: x.status, to: `/tickets/${x.id}`, group: t("nav.tickets"), icon: LifeBuoy }));
+    res.records?.forEach((x) => items.push({ label: x.number ? `${x.number} ${x.name}` : x.name, sub: x.object_name, to: `/o/${x.object_key}/${x.id}`, group: x.object_name, icon: Search }));
     res.quotes.forEach((x) => items.push({ label: `${x.number}`, sub: `${x.status} · ${fmtMoney(x.total)}`, to: `/negocios/${x.deal_id}`, group: t("nav.quotes"), icon: FileText }));
   } else if (!q.trim()) {
     recent.forEach((r) => items.push({ label: r.label, to: r.to, group: t("shell.recent"), icon: Search }));
