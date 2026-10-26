@@ -925,3 +925,23 @@ CREATE TABLE IF NOT EXISTS record_shares (
 );
 CREATE INDEX IF NOT EXISTS idx_record_shares ON record_shares(workspace_id, object, record_id);
 CREATE INDEX IF NOT EXISTS idx_record_shares_user ON record_shares(workspace_id, user_id);
+-- ===================== CLM configurable (ciclo de vida, matriz de aprobación, sustituciones) =====================
+-- Ciclo de vida por tipo (type_id '*' = por defecto para todos los tipos): estados visibles dentro de las fases del motor.
+CREATE TABLE IF NOT EXISTS clm_lifecycles (
+  id TEXT PRIMARY KEY, workspace_id TEXT NOT NULL, type_id TEXT NOT NULL DEFAULT '*', states TEXT NOT NULL DEFAULT '[]', transitions TEXT NOT NULL DEFAULT '[]',
+  updated_by TEXT, updated_at TEXT NOT NULL, UNIQUE(workspace_id, type_id)
+);
+-- Matriz de aprobación: reglas (condiciones → pasos) evaluadas por prioridad.
+CREATE TABLE IF NOT EXISTS clm_approval_rules (
+  id TEXT PRIMARY KEY, workspace_id TEXT NOT NULL, name TEXT NOT NULL, priority INTEGER NOT NULL DEFAULT 100, active INTEGER NOT NULL DEFAULT 1,
+  type_ids TEXT NOT NULL DEFAULT '[]', conditions TEXT NOT NULL DEFAULT '{"logic":"all","conditions":[]}', steps TEXT NOT NULL DEFAULT '[]',
+  reason TEXT, stop INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_clm_rules_ws ON clm_approval_rules(workspace_id, priority);
+-- Sustituciones por ausencia: las aprobaciones de user_id van a substitute_id entre las fechas.
+CREATE TABLE IF NOT EXISTS clm_delegations (
+  id TEXT PRIMARY KEY, workspace_id TEXT NOT NULL, user_id TEXT NOT NULL, substitute_id TEXT NOT NULL, from_date TEXT NOT NULL, to_date TEXT NOT NULL,
+  reason TEXT, created_by TEXT, created_at TEXT NOT NULL
+);
+-- Ajustes generales del CLM por espacio de trabajo (marcas de inicialización, etc.).
+CREATE TABLE IF NOT EXISTS clm_settings (workspace_id TEXT PRIMARY KEY, data TEXT NOT NULL DEFAULT '{}');

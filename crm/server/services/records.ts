@@ -98,12 +98,13 @@ export function listRecords<T extends Row>(ctx: Ctx, object: string, q: ListQuer
 }
 
 export function customFieldDefs(ctx: Ctx, object: string) {
-  return ctx.db.all<Row & { key: string; label: string; type: string; required: number; options: string; default_value: string | null }>("SELECT * FROM custom_fields WHERE workspace_id=? AND object=? ORDER BY position", ctx.ws, object);
+  return ctx.db.all<Row & { key: string; label: string; type: string; required: number; options: string; default_value: string | null; contract_type_id?: string | null }>("SELECT * FROM custom_fields WHERE workspace_id=? AND object=? ORDER BY position", ctx.ws, object);
 }
 
 /** Validate and coerce custom values against definitions. Merges with existing custom values. */
-export function validateCustom(ctx: Ctx, object: string, input: unknown, existing: Record<string, unknown> = {}, partial = false): Record<string, unknown> {
-  const defs = customFieldDefs(ctx, object);
+export function validateCustom(ctx: Ctx, object: string, input: unknown, existing: Record<string, unknown> = {}, partial = false, scope?: { contract_type_id?: string | null }): Record<string, unknown> {
+  // campos de contrato limitados a un tipo: solo se validan (y exigen) en contratos de ese tipo
+  const defs = customFieldDefs(ctx, object).filter((d) => !d.contract_type_id || !scope || d.contract_type_id === scope.contract_type_id).map((d) => (d.contract_type_id && !scope ? { ...d, required: 0 } : d));
   const inObj = (input && typeof input === "object" ? input : {}) as Record<string, unknown>;
   const out: Record<string, unknown> = { ...existing };
   const errors: string[] = [];

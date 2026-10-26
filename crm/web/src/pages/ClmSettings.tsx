@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Plus, Pencil, Trash2, Eye } from "lucide-react";
+import { Plus, Pencil, Trash2, Eye, Settings2 } from "lucide-react";
 import { api } from "../api";
 import { useApp } from "../lib/app";
 import { Modal, Field, Tabs, Spinner, useToast, useConfirm, errorMessage } from "../components/ui";
@@ -8,19 +8,20 @@ import { fmtDate, fmtMoney } from "../lib/format";
 import { FAMILY, type ContractType } from "../lib/clm";
 import { PALETTE } from "../lib/board";
 import { pillStyle } from "../lib/colors";
+import { LifecycleAdmin, ApprovalMatrixAdmin, DelegationsAdmin, ConfigTransfer, TypeConfigModal, typeConfigSummary } from "./ClmConfigAdmin";
 
 type Any = Record<string, unknown>;
 const CATEGORY_GROUPS: Record<string, string> = { A: "Identificación y estructura", B: "Duración y terminación", C: "Económicas", D: "Obligaciones", E: "Responsabilidad y riesgo", F: "Confidencialidad, datos y seguridad", G: "Propiedad intelectual", H: "Relación y competencia", I: "Resolución de conflictos", J: "Sectoriales" };
 
 export function ClmSettingsPage() {
-  const [tab, setTab] = useState("types");
+  const [tab, setTab] = useState(() => new URLSearchParams(window.location.search).get("tab") ?? "types");
   return (
     <div>
       <div className="row small muted mb8"><Link to="/contratos">Contratos</Link><span>/</span><span>Configuración del CLM</span></div>
-      <div className="page-head"><div><h1>Configuración del CLM</h1><p className="sub">Tipos de contrato, biblioteca de cláusulas con variantes, plantillas con variables, playbooks de negociación y poderes de firma. Todo editable, como el resto del CRM.</p></div></div>
-      <Tabs items={[{ key: "types", label: "Tipos de contrato" }, { key: "clauses", label: "Biblioteca de cláusulas" }, { key: "templates", label: "Plantillas" }, { key: "playbooks", label: "Playbooks" }, { key: "authority", label: "Poderes de firma" }]} value={tab} onChange={setTab} />
+      <div className="page-head"><div><h1>Configuración del CLM</h1><p className="sub">Tipos de contrato (formulario, numeración, alertas), ciclo de vida por tipo, matriz de aprobación, sustituciones, biblioteca de cláusulas, plantillas, playbooks y poderes de firma. Todo editable e importable/exportable.</p></div></div>
+      <Tabs items={[{ key: "types", label: "Tipos de contrato" }, { key: "clauses", label: "Biblioteca de cláusulas" }, { key: "templates", label: "Plantillas" }, { key: "playbooks", label: "Playbooks" }, { key: "authority", label: "Poderes de firma" }, { key: "lifecycle", label: "Ciclo de vida" }, { key: "approvals", label: "Aprobaciones" }, { key: "delegations", label: "Sustituciones" }, { key: "transfer", label: "Importar / exportar" }]} value={tab} onChange={setTab} />
       <div className="mt12">
-        {tab === "types" && <TypesAdmin />}{tab === "clauses" && <ClausesAdmin />}{tab === "templates" && <TemplatesAdmin />}{tab === "playbooks" && <PlaybooksAdmin />}{tab === "authority" && <AuthorityAdmin />}
+        {tab === "types" && <TypesAdmin />}{tab === "clauses" && <ClausesAdmin />}{tab === "templates" && <TemplatesAdmin />}{tab === "playbooks" && <PlaybooksAdmin />}{tab === "authority" && <AuthorityAdmin />}{tab === "lifecycle" && <LifecycleAdmin />}{tab === "approvals" && <ApprovalMatrixAdmin />}{tab === "delegations" && <DelegationsAdmin />}{tab === "transfer" && <ConfigTransfer />}
       </div>
     </div>
   );
@@ -31,15 +32,16 @@ function TypesAdmin() {
   const [items, setItems] = useState<ContractType[] | null>(null);
   const [tpls, setTpls] = useState<Any[]>([]); const [pbs, setPbs] = useState<Any[]>([]);
   const [edit, setEdit] = useState<Any | null>(null);
+  const [configure, setConfigure] = useState<ContractType | null>(null);
   const load = () => { api.get<{ items: ContractType[] }>("clm/types").then((r) => setItems(r.items)); api.get<{ items: Any[] }>("clm/templates").then((r) => setTpls(r.items)); api.get<{ items: Any[] }>("clm/playbooks").then((r) => setPbs(r.items)); };
   useEffect(() => { load(); }, []);
   const save = async () => { if (!edit) return; try { const body = { ...edit, retention_years: Number(edit.retention_years), sla_hours: Number(edit.sla_hours), default_template_id: edit.default_template_id || null, default_playbook_id: edit.default_playbook_id || null }; if (edit.id) await api.put(`clm/types/${edit.id}`, body); else await api.post("clm/types", body); toast("Guardado", "ok"); setEdit(null); load(); } catch (e) { toast(errorMessage(e), "error"); } };
   if (!items) return <Spinner />;
   return (
     <div>
-      <div className="filterbar"><span className="small sub">Cada tipo define familia, dirección, nivel mínimo de firma eIDAS, retención, prefijo de numeración, SLA de legal, plantilla y playbook por defecto. Las reglas de aprobación por defecto (negocio, legal, director legal, finanzas, DPO, dirección) se aplican si el tipo no define las suyas.</span><button className="btn primary right" onClick={() => setEdit({ code: "", name: "", family: "sales", direction: "income", min_signature_level: "SES", retention_years: 6, number_prefix: "", sla_hours: 72, requires_dpa: true, requires_kyc: false, self_service: false, color: PALETTE[0], default_template_id: "", default_playbook_id: "", active: true })}><Plus />Tipo</button></div>
+      <div className="filterbar"><span className="small sub">Cada tipo define familia, dirección, nivel mínimo de firma eIDAS, retención, prefijo de numeración, SLA de legal, plantilla y playbook por defecto. Con <Settings2 size={12} /> configuras su formulario de solicitud, campos propios, numeración con tokens, obligaciones e hitos al activar y alertas. Las aprobaciones se definen en la pestaña «Aprobaciones».</span><button className="btn primary right" onClick={() => setEdit({ code: "", name: "", family: "sales", direction: "income", min_signature_level: "SES", retention_years: 6, number_prefix: "", sla_hours: 72, requires_dpa: true, requires_kyc: false, self_service: false, color: PALETTE[0], default_template_id: "", default_playbook_id: "", active: true })}><Plus />Tipo</button></div>
       <div className="card tight"><table className="table"><thead><tr><th>Código</th><th>Nombre</th><th>Familia</th><th>Dirección</th><th>Firma mín.</th><th className="r">Retención</th><th className="r">SLA</th><th>Plantilla</th><th>Playbook</th><th className="r">Contratos</th><th /></tr></thead><tbody>
-        {items.map((t) => <tr key={t.id} style={{ opacity: t.active ? 1 : 0.5 }}><td><span className="badge" style={pillStyle(t.color)}>{t.code}</span></td><td className="bold">{t.name}</td><td className="small">{FAMILY[t.family]}</td><td className="small">{t.direction === "income" ? "Ingreso" : t.direction === "expense" ? "Gasto" : "Neutral"}</td><td>{t.min_signature_level}</td><td className="r num">{t.retention_years} años</td><td className="r num">{t.sla_hours} h</td><td className="small">{String(tpls.find((x) => x.id === t.default_template_id)?.name ?? "—")}</td><td className="small">{String(pbs.find((x) => x.id === t.default_playbook_id)?.name ?? "por dirección")}</td><td className="r num">{t.contracts}</td><td className="r nowrap"><button className="iconbtn" onClick={() => setEdit({ ...t, requires_dpa: !!t.requires_dpa, requires_kyc: !!t.requires_kyc, self_service: !!t.self_service, active: !!t.active, default_template_id: t.default_template_id ?? "", default_playbook_id: t.default_playbook_id ?? "" })} aria-label="Editar"><Pencil size={14} /></button><button className="iconbtn" onClick={async () => { if (await confirm({ title: `¿Borrar el tipo ${t.code}?`, danger: true, confirmText: "Borrar" })) { try { await api.del(`clm/types/${t.id}`); load(); } catch (e) { toast(errorMessage(e), "error"); } } }} aria-label="Borrar"><Trash2 size={14} /></button></td></tr>)}
+        {items.map((t) => <tr key={t.id} style={{ opacity: t.active ? 1 : 0.5 }}><td><span className="badge" style={pillStyle(t.color)}>{t.code}</span></td><td className="bold">{t.name}</td><td className="small">{FAMILY[t.family]}</td><td className="small">{t.direction === "income" ? "Ingreso" : t.direction === "expense" ? "Gasto" : "Neutral"}</td><td>{t.min_signature_level}</td><td className="r num">{t.retention_years} años</td><td className="r num">{t.sla_hours} h</td><td className="small">{String(tpls.find((x) => x.id === t.default_template_id)?.name ?? "—")}</td><td className="small">{String(pbs.find((x) => x.id === t.default_playbook_id)?.name ?? "por dirección")}</td><td className="r num">{t.contracts}</td><td className="r nowrap"><span className="xs muted" style={{ marginRight: 6 }}>{typeConfigSummary(t)}</span><button className="iconbtn" onClick={() => setConfigure(t)} aria-label={`Configurar ${t.code}`} title="Formulario, numeración, alertas…"><Settings2 size={14} /></button><button className="iconbtn" onClick={() => setEdit({ ...t, requires_dpa: !!t.requires_dpa, requires_kyc: !!t.requires_kyc, self_service: !!t.self_service, active: !!t.active, default_template_id: t.default_template_id ?? "", default_playbook_id: t.default_playbook_id ?? "" })} aria-label="Editar"><Pencil size={14} /></button><button className="iconbtn" onClick={async () => { if (await confirm({ title: `¿Borrar el tipo ${t.code}?`, danger: true, confirmText: "Borrar" })) { try { await api.del(`clm/types/${t.id}`); load(); } catch (e) { toast(errorMessage(e), "error"); } } }} aria-label="Borrar"><Trash2 size={14} /></button></td></tr>)}
       </tbody></table></div>
       {edit && <Modal title={edit.id ? `Editar tipo ${String(edit.code)}` : "Nuevo tipo de contrato"} size="lg" onClose={() => setEdit(null)} footer={<><button className="btn" onClick={() => setEdit(null)}>Cancelar</button><button className="btn primary" onClick={save}>Guardar</button></>}><div className="form-grid">
         <Field label="Código"><input className="input" disabled={!!edit.id} value={String(edit.code)} onChange={(e) => setEdit({ ...edit, code: e.target.value.toUpperCase(), number_prefix: edit.number_prefix || e.target.value.toUpperCase() })} /></Field><Field label="Nombre"><input className="input" value={String(edit.name)} onChange={(e) => setEdit({ ...edit, name: e.target.value })} /></Field>
@@ -50,6 +52,7 @@ function TypesAdmin() {
         <Field label="Color"><div className="cpal" style={{ position: "static", boxShadow: "none", padding: 0 }}>{PALETTE.map((c) => <button key={c} style={{ background: c, outline: edit.color === c ? "2px solid var(--ink)" : undefined }} onClick={() => setEdit({ ...edit, color: c })} />)}</div></Field>
         <div className="col"><label className="checkbox"><input type="checkbox" checked={!!edit.requires_dpa} onChange={(e) => setEdit({ ...edit, requires_dpa: e.target.checked })} />Exige DPA si trata datos personales</label><label className="checkbox"><input type="checkbox" checked={!!edit.requires_kyc} onChange={(e) => setEdit({ ...edit, requires_kyc: e.target.checked })} />Exige KYC (CIF) de la contraparte antes de firmar</label><label className="checkbox"><input type="checkbox" checked={!!edit.self_service} onChange={(e) => setEdit({ ...edit, self_service: e.target.checked })} />Permite autoservicio</label><label className="checkbox"><input type="checkbox" checked={!!edit.active} onChange={(e) => setEdit({ ...edit, active: e.target.checked })} />Activo</label></div>
       </div></Modal>}
+      {configure && <TypeConfigModal type={configure} onClose={() => setConfigure(null)} onSaved={load} />}
     </div>
   );
 }

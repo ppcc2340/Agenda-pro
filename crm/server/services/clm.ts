@@ -19,6 +19,7 @@ import { nextCounter } from "./counters.js";
 import { listRecords, listQuery, type ListQuery, validateCustom } from "./records.js";
 import { sendMail } from "./email.js";
 import { createTask } from "./tasks.js";
+import * as clmCfg from "./clmConfig.js";
 
 export const JC = ["tags", "custom", "effective_values", "intake", "risk_factors"];
 export const STATUSES = ["DRAFT", "INTERNAL_REVIEW", "NEGOTIATION", "PENDING_APPROVAL", "APPROVED", "OUT_FOR_SIGNATURE", "PARTIALLY_SIGNED", "ACTIVE", "EXPIRED", "TERMINATED", "RENEWED", "CANCELLED", "REJECTED", "ON_HOLD", "ARCHIVED"] as const;
@@ -52,10 +53,10 @@ export function addMonths(dateIso: string, months: number): string {
 }
 const addD = (dateIso: string, days: number) => addDays(dateIso.slice(0, 10) + "T00:00:00.000Z", days).slice(0, 10);
 const today = () => now().slice(0, 10);
-const userName = (ctx: Ctx, uid: string | null | undefined) => (uid ? (ctx.db.get<{ name: string }>("SELECT name FROM users WHERE id=?", uid)?.name ?? "") : "");
-function usersWithRole(ctx: Ctx, roleKey: string): Row[] { return ctx.db.all<Row>("SELECT u.* FROM users u JOIN roles r ON r.id=u.role_id WHERE u.workspace_id=? AND u.active=1 AND r.key=? ORDER BY u.name", ctx.ws, roleKey); }
-function roleKeyOf(ctx: Ctx, uid: string | null | undefined): string { return uid ? (ctx.db.get<{ key: string }>("SELECT r.key FROM users u JOIN roles r ON r.id=u.role_id WHERE u.id=?", uid)?.key ?? "") : ""; }
-function managerOf(ctx: Ctx, uid: string | null | undefined): string | null {
+export const userNameOf = (ctx: Ctx, uid: string | null | undefined): string => (uid ? (ctx.db.get<{ name: string }>("SELECT name FROM users WHERE id=?", uid)?.name ?? "") : "");
+export function usersWithRole(ctx: Ctx, roleKey: string): Row[] { return ctx.db.all<Row>("SELECT u.* FROM users u JOIN roles r ON r.id=u.role_id WHERE u.workspace_id=? AND u.active=1 AND r.key=? ORDER BY u.name", ctx.ws, roleKey); }
+export function roleKeyOf(ctx: Ctx, uid: string | null | undefined): string { return uid ? (ctx.db.get<{ key: string }>("SELECT r.key FROM users u JOIN roles r ON r.id=u.role_id WHERE u.id=?", uid)?.key ?? "") : ""; }
+export function managerOf(ctx: Ctx, uid: string | null | undefined): string | null {
   if (!uid) return null;
   const u = ctx.db.get<Row>("SELECT team_id FROM users WHERE id=?", uid);
   const t = u?.team_id ? ctx.db.get<Row>("SELECT manager_id FROM teams WHERE id=?", u.team_id) : null;
@@ -68,10 +69,11 @@ export function tlog(ctx: Ctx, contractId: string, type: string, title: string, 
   ctx.db.insert("contract_timeline", { id: id(), workspace_id: ctx.ws, contract_id: contractId, type, title, body: body ?? null, actor_id: actorType === "user" ? ctx.user.id : null, actor_name: actorName ?? (actorType === "user" ? ctx.user.name : actorType === "system" ? "Sistema" : "Externo"), actor_type: actorType, meta, at: now() });
   ctx.db.run("UPDATE contracts SET last_activity_at=? WHERE id=?", now(), contractId);
 }
+export const TYPE_JSON = ["approval_rules", "intake_form", "default_obligations", "default_milestones", "alert_config"];
 export function getType(ctx: Ctx, typeId: string): Row {
   const t = ctx.db.get<Row>("SELECT * FROM contract_types WHERE id=? AND workspace_id=?", typeId, ctx.ws);
   if (!t) throw notFound("Tipo de contrato");
-  return parseJson(t as Row, ["approval_rules"]);
+  return parseJson(t as Row, TYPE_JSON);
 }
 export function getContract(ctx: Ctx, cid: string): Row {
   const c = ctx.db.get<Row>(`SELECT c.*, t.name AS type_name, t.code AS type_code, t.direction, t.color AS type_color, t.min_signature_level, co.name AS counterparty_name, co.country AS counterparty_country, co.tax_id AS counterparty_tax_id,
@@ -151,6 +153,8 @@ export const typeSchema = z.object({
   code: z.string().trim().min(2).max(12).regex(/^[A-Z0-9_]+$/, "Código en mayúsculas"), name: z.string().trim().min(1), family: z.enum(FAMILIES).optional(), direction: z.enum(["income", "expense", "neutral"]).optional(), description: nullStr,
   min_signature_level: z.enum(["SES", "AdES", "QES"]).optional(), retention_years: z.number().int().min(1).max(30).optional(), retention_basis: z.enum(["termination", "signature"]).optional(), number_prefix: z.string().trim().min(1).max(8).optional(),
   requires_dpa: z.boolean().optional(), requires_kyc: z.boolean().optional(), sla_hours: z.number().int().min(1).optional(), self_service: z.boolean().optional(), approval_rules: z.array(z.any()).optional(), default_template_id: z.string().nullable().optional(), default_playbook_id: z.string().nullable().optional(), color: z.string().optional(), position: z.number().int().optional(), active: z.boolean().optional(),
+  // configuración por tipo (se valida en clmConfig.normalizeTypeConfig)
+  intake_form: z.array(z.any()).optional(), number_format: z.string().trim().max(60).nullable().optional(), default_obligations: z.array(z.any()).optional(), default_milestones: z.array(z.any()).optional(), alert_config: z.record(z.string(), z.any()).optional(),
 });
 export const clauseSchema = z.object({ code: z.string().trim().min(2).max(24), title: z.string().trim().min(1), category: z.string().regex(/^[A-J]\d\d$/), variant_type: z.enum(["standard", "alternative", "fallback", "prohibited"]).optional(), position: z.enum(["preferred", "acceptable", "last_resort", "never"]).optional(), direction: z.enum(["income", "expense", "both"]).optional(), body: z.string().min(1), risk_level: z.enum(["low", "medium", "high"]).optional(), status: z.enum(["draft", "approved", "retired"]).optional(), usage_guide: nullStr, negotiation_notes: nullStr, approver_role: nullStr, language: z.string().optional() });
 export const templateSchema = z.object({ name: z.string().trim().min(1), type_id: z.string().nullable().optional(), language: z.string().optional(), body: z.string().min(1), kind: z.enum(["contract", "amendment", "renewal", "termination", "letter"]).optional(), status: z.enum(["draft", "approved", "retired"]).optional(), description: nullStr });
@@ -495,14 +499,17 @@ export function createContract(ctx: Ctx, input: ContractInput, opts: { source?: 
   assert(ctx, "contract", "create");
   input = applyDefaults(ctx, "contract", input);
   const t = getType(ctx, input.type_id);
+  // formulario de solicitud del tipo: obligatorios, condicionales y volcado a campos del contrato
+  const ik = clmCfg.applyIntake(ctx, t, input as Row);
+  input = { ...input, ...(ik.fields as Partial<ContractInput>), intake: ik.intake, custom: { ...(input.custom ?? {}), ...ik.custom } };
   if ((input.payment_terms_days ?? 30) > 60 && !input.justification) throw badRequest("Plazo de pago superior a 60 días (Ley 3/2004): indica una justificación o reduce el plazo");
   const cpId = ensureCompany(ctx, input);
   if (input.contains_personal_data && !input.data_role) throw badRequest("Indica el rol de tratamiento de datos (responsable, encargado o corresponsable)");
   const cid = id();
-  const custom = validateCustom(ctx, "contract", input.custom ?? {});
+  const custom = validateCustom(ctx, "contract", input.custom ?? {}, {}, false, { contract_type_id: String(t.id) });
   const deal = input.deal_id ? ctx.db.get<Row>("SELECT * FROM deals WHERE id=?", input.deal_id) : null;
   const row: Record<string, unknown> = {
-    id: cid, workspace_id: ctx.ws, number: nextNumber(ctx, String(t.number_prefix)), title: input.title, type_id: t.id, counterparty_company_id: cpId ?? (deal?.company_id as string | null) ?? null, deal_id: input.deal_id ?? null, quote_id: input.quote_id ?? null,
+    id: cid, workspace_id: ctx.ws, number: clmCfg.formatNumber(ctx, t, { department: input.department }) ?? nextNumber(ctx, String(t.number_prefix)), title: input.title, type_id: t.id, counterparty_company_id: cpId ?? (deal?.company_id as string | null) ?? null, deal_id: input.deal_id ?? null, quote_id: input.quote_id ?? null,
     owner_id: input.owner_id ?? ctx.user.id, legal_owner_id: input.legal_owner_id ?? assignLegalOwner(ctx, String(t.id)), department: input.department ?? null, status: "DRAFT", kind: "master",
     paper_origin: input.paper_origin ?? "ours", language: input.language ?? "es", governing_law: input.governing_law ?? "ES", jurisdiction: input.jurisdiction ?? null, arbitration: input.arbitration ? 1 : 0,
     requested_at: now(), effective_date: input.effective_date ?? null, end_date: input.end_date ?? null, term_type: input.term_type ?? "fixed", term_months: input.term_months ?? 12, renewal_type: input.renewal_type ?? "none", renewal_period_months: input.renewal_period_months ?? null,
@@ -513,6 +520,7 @@ export function createContract(ctx: Ctx, input: ContractInput, opts: { source?: 
   };
   Object.assign(row, computeDates(row));
   ctx.db.insert("contracts", row);
+  clmCfg.onPhaseChanged(ctx, cid, "DRAFT", "user");
   audit(ctx, "contract", cid, "create", { number: row.number, title: input.title });
   tlog(ctx, cid, "created", `Solicitud creada (${t.name})`, input.description ?? null);
   if (input.body) createVersion(ctx, cid, { body: input.body, branch: input.paper_origin === "theirs" ? "external" : "internal", source: input.paper_origin === "theirs" ? "counterparty" : "uploaded", file_name: input.file_name ?? null, comment: input.paper_origin === "theirs" ? "Papel de la contraparte" : "Texto inicial" });
@@ -533,7 +541,7 @@ export function updateContract(ctx: Ctx, cid: string, patch: Partial<ContractInp
   delete data.body; delete data.file_name; delete data.template_id; delete data.counterparty_name; delete data.justification;
   if (patch.counterparty_name && !patch.counterparty_company_id) data.counterparty_company_id = ensureCompany(ctx, patch as ContractInput);
   for (const k of ["arbitration", "contains_personal_data", "international_transfer", "dora_in_scope", "public_sector", "counterparty_outside_eea"]) if (k in data) data[k] = data[k] ? 1 : 0;
-  if (patch.custom) data.custom = validateCustom(ctx, "contract", patch.custom, (prev.custom as Record<string, unknown>) ?? {}, true);
+  if (patch.custom) data.custom = validateCustom(ctx, "contract", patch.custom, (prev.custom as Record<string, unknown>) ?? {}, true, { contract_type_id: String(prev.type_id) });
   checkRequired(ctx, "contract", prev, data);
   if (locked) { const allowed = ["tags", "custom", "description", "department", "owner_id", "legal_owner_id", "confidentiality"]; for (const k of Object.keys(data)) if (!allowed.includes(k)) throw conflict("El contrato está en firma: solo se pueden editar etiquetas, descripción y responsables"); }
   if (prev.status === "ACTIVE" && ["total_value", "annual_value", "end_date", "notice_period_days", "renewal_type", "term_months"].some((k) => k in data)) throw conflict("El contrato está activo: los cambios de condiciones se hacen mediante una enmienda");
@@ -558,8 +566,8 @@ export function deleteContract(ctx: Ctx, cid: string) {
 }
 
 /* ---------- aprobaciones ---------- */
-interface ApprovalStep { name: string; reason: string; approver_user_id: string | null; approver_role: string; sla_hours: number }
-function resolveApprover(ctx: Ctx, ref: string, c: Row): { user: string | null; role: string } {
+export type ApprovalStep = Omit<clmCfg.MatrixStep, "stage"> & { stage?: number };
+export function resolveApprover(ctx: Ctx, ref: string, c: Row): { user: string | null; role: string } {
   if (ref === "manager_of_requester") return { user: managerOf(ctx, c.owner_id as string), role: "manager" };
   if (ref === "legal_owner") return { user: (c.legal_owner_id as string) ?? assignLegalOwner(ctx, String(c.type_id)), role: "legal" };
   if (ref.startsWith("user:")) return { user: ref.slice(5), role: roleKeyOf(ctx, ref.slice(5)) || "user" };
@@ -589,16 +597,13 @@ export function computeApprovalSteps(ctx: Ctx, c: Row, findings?: Finding[]): Ap
     steps.push({ name, reason, approver_user_id: a.user, approver_role: a.role, sla_hours: sla });
   };
   if (rules.length) {
+    // reglas heredadas en el propio tipo (expresiones): se mantienen por compatibilidad
     for (const r of rules) { const cond = String(r.when ?? "always"); const ok = cond === "always" || cond.split("||").some((or) => or.split("&&").every((e) => evalExpr(e.trim(), vars))); if (ok) push(String(r.name ?? r.approver), String(r.approver ?? "legal"), `Regla: ${cond}`, Number(r.sla_hours ?? 48)); }
+    steps.forEach((x, i) => (x.stage = i + 1));
     return steps;
   }
-  if (!(value < 5000 && vars.deviations === 0)) push("Aprobación de negocio", "manager_of_requester", value >= 5000 ? `Valor ${fmtMoney(value, String(c.currency))} ≥ 5.000 €` : "Hay desviaciones del playbook");
-  if (cnt("minor") + cnt("major") + cnt("missing") > 0 || c.paper_origin === "theirs") push("Legal", "legal_owner", c.paper_origin === "theirs" ? "Papel de la contraparte" : "Desviaciones del playbook", 72);
-  if (cnt("major") + cnt("prohibited") + cnt("missing") > 0) push("Director legal", "legal_director", `${cnt("major")} desviaciones mayores, ${cnt("prohibited")} prohibidas, ${cnt("missing")} ausentes`);
-  if (value >= 50000 || Number(c.payment_terms_days) > 60 || c.payment_model === "usage") push("Finanzas", "cfo", value >= 50000 ? `Valor ≥ 50.000 €` : Number(c.payment_terms_days) > 60 ? "Plazo de pago > 60 días" : "Modelo de pago por uso");
-  if (c.contains_personal_data && (vars.outside_eea || !dev.some((d) => d.category === "F02" && d.level === "ok"))) push("DPO", "dpo", vars.outside_eea ? "Datos personales con transferencia fuera del EEE" : "Datos personales sin DPA conforme");
-  if (value >= 250000 || term > 36 || cnt("prohibited") > 0 || vars.exclusivity) push("Dirección general", "ceo", value >= 250000 ? "Valor ≥ 250.000 €" : term > 36 ? "Duración > 36 meses" : cnt("prohibited") ? "Cláusula prohibida" : "Exclusividad");
-  return steps;
+  // matriz de aprobación configurable (sembrada con la política por defecto)
+  return clmCfg.matrixSteps(ctx, c, dev);
 }
 export function requestApproval(ctx: Ctx, cid: string): { steps: ApprovalStep[]; auto: boolean } {
   const c = getContract(ctx, cid);
@@ -615,12 +620,30 @@ export function requestApproval(ctx: Ctx, cid: string): { steps: ApprovalStep[];
     ctx.db.insert("contract_approvals", { id: id(), workspace_id: ctx.ws, contract_id: cid, version_id: v.id, version_sha256: v.sha256, step_order: 0, step_name: "Aprobación automática", reason: "Ningún paso aplicable según la política", approver_user_id: null, approver_role: "policy", status: "approved", decided_at: now(), decided_by: null, comment: "auto-approved by policy", created_at: now() });
     return { steps, auto: true };
   }
-  steps.forEach((s, i) => { ctx.db.insert("contract_approvals", { id: id(), workspace_id: ctx.ws, contract_id: cid, version_id: v.id, version_sha256: v.sha256, step_order: i + 1, step_name: s.name, reason: s.reason, approver_user_id: s.approver_user_id, approver_role: s.approver_role, status: "pending", due_at: addDays(now(), s.sla_hours / 24), created_at: now() }); });
+  // step_order = etapa: los pasos de una misma etapa se deciden en paralelo
+  steps.forEach((s, i) => { ctx.db.insert("contract_approvals", { id: id(), workspace_id: ctx.ws, contract_id: cid, version_id: v.id, version_sha256: v.sha256, step_order: s.stage ?? i + 1, step_name: s.name, reason: s.reason, approver_user_id: s.approver_user_id, approver_role: s.approver_role, status: "pending", due_at: addDays(now(), s.sla_hours / 24), approver_group: s.group && s.mode === "any" ? s.group : null, group_mode: s.mode ?? null, expires_at: s.expiry_days ? addDays(now(), s.expiry_days) : null, rule_id: s.rule_id ?? null, substitute_for: s.substitute_for ?? null, created_at: now() }); });
   setStatus(ctx, cid, "PENDING_APPROVAL", `${steps.length} pasos de aprobación`);
-  const first = steps[0]!;
-  if (first.approver_user_id) notify(ctx.db, ctx.ws, first.approver_user_id, { type: "approval", title: `Aprobación pendiente: ${c.number}`, body: `${c.title} · ${first.name} · ${first.reason}`, link: `/contratos/${cid}?tab=approvals` });
+  notifyStage(ctx, cid);
   emit(ctx, { type: "approval.requested", object: "contract", record: getContract(ctx, cid) });
   return { steps, auto: false };
+}
+/** Avisa a los aprobadores de la etapa pendiente más baja (todos los del grupo si es «cualquiera»). */
+function notifyStage(ctx: Ctx, cid: string) {
+  const c = ctx.db.get<Row>("SELECT number, title FROM contracts WHERE id=?", cid)!;
+  const pending = ctx.db.all<Row>("SELECT * FROM contract_approvals WHERE contract_id=? AND status='pending' ORDER BY step_order", cid);
+  const stage = pending[0]?.step_order;
+  for (const a of pending.filter((x) => x.step_order === stage)) {
+    const to = new Set<string>([a.approver_user_id as string, ...approverGroup(a)].filter(Boolean));
+    for (const u of to) notify(ctx.db, ctx.ws, u, { type: "approval", title: `Aprobación pendiente: ${c.number}`, body: `${c.title} · ${a.step_name}${a.reason ? ` · ${a.reason}` : ""}`, link: `/contratos/${cid}?tab=approvals` });
+  }
+}
+const approverGroup = (a: Row): string[] => { const g = a.approver_group; if (!g) return []; try { return Array.isArray(g) ? (g as string[]) : (JSON.parse(String(g)) as string[]); } catch { return []; } };
+/** ¿Puede este usuario decidir el paso? (aprobador, miembro del grupo «cualquiera» o sustituto vigente). */
+export function canDecide(ctx: Ctx, a: Row): boolean {
+  if (a.approver_user_id === ctx.user.id) return true;
+  const group = approverGroup(a);
+  if (group.includes(ctx.user.id)) return true;
+  return [a.approver_user_id as string, ...group].some((u) => u && clmCfg.activeSubstitute(ctx, u) === ctx.user.id);
 }
 export function invalidateApprovals(ctx: Ctx, cid: string, reason: string) {
   const n = ctx.db.all<Row>("SELECT id FROM contract_approvals WHERE contract_id=? AND status IN ('pending','approved')", cid);
@@ -631,8 +654,11 @@ export function decideApproval(ctx: Ctx, approvalId: string, decision: "approved
   const a = ctx.db.get<Row>("SELECT * FROM contract_approvals WHERE id=? AND workspace_id=?", approvalId, ctx.ws);
   if (!a) throw notFound("Aprobación");
   if (a.status !== "pending") throw conflict("Esta aprobación ya está decidida");
-  if (a.approver_user_id !== ctx.user.id && !isAdmin(ctx)) throw forbidden("No eres el aprobador de este paso");
+  if (!canDecide(ctx, a) && !isAdmin(ctx)) throw forbidden("No eres el aprobador de este paso");
+  if (a.expires_at && String(a.expires_at) < now()) throw conflict("La aprobación ha caducado: hay que volver a pedirla");
   const c = getContract(ctx, String(a.contract_id));
+  const earlier = ctx.db.get<{ n: number }>("SELECT COUNT(*) n FROM contract_approvals WHERE contract_id=? AND status='pending' AND step_order < ?", a.contract_id, a.step_order)?.n ?? 0;
+  if (earlier) throw conflict("Antes tiene que decidirse la etapa anterior de aprobación");
   const v = ctx.db.get<Row>("SELECT sha256 FROM contract_versions WHERE id=?", c.current_version_id);
   if (v?.sha256 !== a.version_sha256) throw conflict("La versión del documento ha cambiado desde que se pidió la aprobación");
   if (decision === "rejected" && !comment) throw badRequest("Indica el motivo del rechazo");
@@ -651,7 +677,7 @@ export function decideApproval(ctx: Ctx, approvalId: string, decision: "approved
   if (!pending.length) {
     setStatus(ctx, String(c.id), "APPROVED", "Todas las aprobaciones completadas");
     notify(ctx.db, ctx.ws, c.owner_id as string, { type: "approval", title: `Contrato aprobado: ${c.number}`, body: "Listo para enviar a firma", link: `/contratos/${c.id}?tab=signature` });
-  } else { const nxt = pending[0]!; if (nxt.approver_user_id) notify(ctx.db, ctx.ws, String(nxt.approver_user_id), { type: "approval", title: `Aprobación pendiente: ${c.number}`, body: `${c.title} · ${nxt.step_name}`, link: `/contratos/${c.id}?tab=approvals` }); }
+  } else if (Number(pending[0]!.step_order) > Number(a.step_order)) notifyStage(ctx, String(c.id)); // etapa completada: pasa a la siguiente
   emit(ctx, { type: "approval.decided", object: "contract", record: getContract(ctx, String(c.id)), meta: { status: "approved" } });
 }
 export function delegateApproval(ctx: Ctx, approvalId: string, toUser: string, reason: string) {
@@ -659,7 +685,7 @@ export function delegateApproval(ctx: Ctx, approvalId: string, toUser: string, r
   if (!a || a.status !== "pending") throw notFound("Aprobación pendiente");
   if (a.approver_user_id !== ctx.user.id && !isAdmin(ctx)) throw forbidden("Solo el aprobador puede delegar");
   ctx.db.update("contract_approvals", approvalId, { approver_user_id: toUser, comment: `Delegada por ${ctx.user.name}: ${reason}` });
-  tlog(ctx, String(a.contract_id), "approval", `${a.step_name} delegada a ${userName(ctx, toUser)}`, reason);
+  tlog(ctx, String(a.contract_id), "approval", `${a.step_name} delegada a ${userNameOf(ctx, toUser)}`, reason);
   notify(ctx.db, ctx.ws, toUser, { type: "approval", title: "Aprobación delegada", body: `${a.step_name}: ${reason}`, link: `/contratos/${a.contract_id}?tab=approvals` });
 }
 
@@ -672,8 +698,11 @@ function setStatus(ctx: Ctx, cid: string, to: string, note?: string | null, acto
   ctx.db.update("contracts", cid, { status: to, prev_status: from, substatus: null, sla_paused: ["NEGOTIATION", "ON_HOLD"].includes(to) ? 1 : 0, updated_at: now() });
   audit(ctx, "contract", cid, "status_change", { status: [from, to], note });
   tlog(ctx, cid, "status", `${STATUS_LABEL[from] ?? from} → ${STATUS_LABEL[to] ?? to}`, note ?? null, { from, to }, actorType);
+  clmCfg.onPhaseChanged(ctx, cid, to, actorType);
   emit(ctx, { type: "contract.status_changed", object: "contract", record: getContract(ctx, cid), previous: parseJson(c, JC), changes: { status: [from, to] }, meta: { from, to } });
 }
+/** Cambio de fase hecho por el sistema (caducidades, vencimientos…), sin comprobaciones de usuario. */
+export function setStatusSystem(ctx: Ctx, cid: string, to: string, note?: string | null) { setStatus(ctx, cid, to, note, "system"); }
 export const STATUS_LABEL: Record<string, string> = { DRAFT: "Borrador", INTERNAL_REVIEW: "Revisión interna", NEGOTIATION: "Negociación", PENDING_APPROVAL: "Pendiente de aprobación", APPROVED: "Aprobado", OUT_FOR_SIGNATURE: "En firma", PARTIALLY_SIGNED: "Firmado parcialmente", ACTIVE: "Activo", EXPIRED: "Vencido", TERMINATED: "Terminado", RENEWED: "Renovado", CANCELLED: "Cancelado", REJECTED: "Rechazado", ON_HOLD: "En pausa", ARCHIVED: "Archivado" };
 export const TRANSITIONS: Record<string, { from: string[]; to: string; label: string }> = {
   submit_for_review: { from: ["DRAFT", "REJECTED"], to: "INTERNAL_REVIEW", label: "Enviar a revisión" },
@@ -693,10 +722,21 @@ export function availableTransitions(c: Row): string[] { return Object.entries(T
 export function transition(ctx: Ctx, cid: string, event: string, payload: Record<string, unknown> = {}): Row {
   assert(ctx, "contract", "update");
   const c = getContract(ctx, cid);
+  // sub-estados configurables dentro de la fase actual
+  if (event === "move_state") { if (!payload.state) throw badRequest("Indica el estado de destino"); return clmCfg.moveState(ctx, cid, String(payload.state), payload.note ? String(payload.note) : null); }
   const t = TRANSITIONS[event];
   if (!t) throw badRequest(`Evento desconocido: ${event}`);
   if (!t.from.includes(String(c.status))) throw conflict(`No se puede «${t.label}» desde ${STATUS_LABEL[String(c.status)]}`);
   const note = payload.note ? String(payload.note) : null;
+  // guardas del ciclo de vida del tipo (roles, campos y documento exigidos para entrar en el estado de destino)
+  const targetPhase = t.to === "__prev" ? String(c.prev_status ?? "DRAFT") : t.to;
+  const preferred = typeof payload.state === "string" ? payload.state : null;
+  clmCfg.guardPhaseChange(ctx, c, targetPhase, preferred);
+  const holder = ctx as unknown as { __clmState?: string | null };
+  holder.__clmState = preferred;
+  try { return transitionInner(ctx, cid, c, event, payload, note); } finally { holder.__clmState = null; }
+}
+function transitionInner(ctx: Ctx, cid: string, c: Row, event: string, payload: Record<string, unknown>, note: string | null): Row {
   switch (event) {
     case "submit_for_review": {
       const tp = getType(ctx, String(c.type_id));
@@ -747,8 +787,8 @@ export function checkSignatureAuthority(ctx: Ctx, userId: string, c: Row): strin
   const td = today();
   const ok = auths.find((a) => { const codes = a.type_codes as string[]; return (!codes.length || codes.includes(String(t.code))) && (!a.valid_from || String(a.valid_from) <= td) && (!a.valid_to || String(a.valid_to) >= td) && (a.max_value == null || Number(a.max_value) >= Number(c.total_value)); });
   if (ok) return null;
-  if (!auths.length) return `${userName(ctx, userId)} no tiene poderes de firma registrados`;
-  return `${userName(ctx, userId)} no tiene autoridad vigente para firmar ${t.name} por ${fmtMoney(c.total_value, String(c.currency))}`;
+  if (!auths.length) return `${userNameOf(ctx, userId)} no tiene poderes de firma registrados`;
+  return `${userNameOf(ctx, userId)} no tiene autoridad vigente para firmar ${t.name} por ${fmtMoney(c.total_value, String(c.currency))}`;
 }
 export function preSignatureChecklist(ctx: Ctx, cid: string, signers: z.infer<typeof signerSchema>[]): { errors: string[]; warnings: string[] } {
   const c = getContract(ctx, cid); const errors: string[] = []; const warnings: string[] = [];
@@ -892,6 +932,7 @@ export function activateContract(ctx: Ctx, cid: string, actorType: "user" | "sys
   setStatus(ctx, cid, "ACTIVE", "Firmado por todas las partes", actorType);
   regenerateMilestones(ctx, cid);
   suggestObligations(ctx, cid);
+  clmCfg.applyTypeDefaults(ctx, cid);
   generatePaymentSchedule(ctx, cid);
   if (c.kind === "amendment" && c.parent_id) applyAmendment(ctx, cid);
   if (c.kind === "renewal" && c.parent_id) { setStatus(ctx, String(c.parent_id), "RENEWED", `Sustituido por ${c.number}`, "system"); ctx.db.run("UPDATE obligations SET status='na' WHERE contract_id=? AND status IN ('pending','in_progress') AND survives_termination=0", c.parent_id); }
@@ -904,10 +945,12 @@ export function regenerateMilestones(ctx: Ctx, cid: string) {
   const c = getContractRaw(ctx, cid);
   ctx.db.run("DELETE FROM milestones WHERE contract_id=? AND computed=1 AND status='upcoming'", cid);
   const add = (type: string, label: string, date: string | null, offsets: number[]) => { if (!date) return; if (ctx.db.get("SELECT id FROM milestones WHERE contract_id=? AND type=? AND date=?", cid, type, date)) return; ctx.db.insert("milestones", { id: id(), workspace_id: ctx.ws, contract_id: cid, type, label, date, computed: 1, owner_id: c.owner_id, alert_offsets: offsets, alerted: [], status: date < today() ? "passed" : "upcoming", created_at: now() }); };
-  add("start", "Inicio de vigencia", c.effective_date as string | null, [0]);
-  add("end", "Fin de vigencia", c.end_date as string | null, c.notice_period_days ? [30, 7] : [90, 60, 30, 7]);
-  add("notice_deadline", `Límite de preaviso (${c.notice_period_days} días)`, c.notice_deadline as string | null, [120, 90, 60, 30, 14, 7, 1, 0]);
-  if (c.renewal_type !== "none") add("renewal", c.renewal_type === "auto" ? "Renovación automática" : "Renovación por acuerdo", c.next_renewal_date as string | null, [30]);
+  // desfases de aviso configurables por tipo (Ajustes CLM → Tipos → Alertas)
+  const cfg = clmCfg.alertConfig(ctx, String(c.type_id));
+  add("start", "Inicio de vigencia", c.effective_date as string | null, cfg.start ?? [0]);
+  add("end", "Fin de vigencia", c.end_date as string | null, cfg.end ?? (c.notice_period_days ? [30, 7] : [90, 60, 30, 7]));
+  add("notice_deadline", `Límite de preaviso (${c.notice_period_days} días)`, c.notice_deadline as string | null, cfg.notice ?? [120, 90, 60, 30, 14, 7, 1, 0]);
+  if (c.renewal_type !== "none") add("renewal", c.renewal_type === "auto" ? "Renovación automática" : "Renovación por acuerdo", c.next_renewal_date as string | null, cfg.renewal ?? [30]);
 }
 function suggestObligations(ctx: Ctx, cid: string) {
   const c = getContractRaw(ctx, cid);
@@ -1107,7 +1150,7 @@ export function dailyContractChecks(ctx: Ctx) {
     sysNotify(m.owner_id as string, title, String(m.title), `/contratos/${m.contract_id}?tab=milestones`);
     if (level >= 2 && m.legal_owner_id && m.legal_owner_id !== m.owner_id) sysNotify(m.legal_owner_id as string, title, String(m.title), `/contratos/${m.contract_id}?tab=milestones`);
     if (level >= 3) { const mgr = managerOf(ctx, m.owner_id as string); if (mgr && mgr !== m.owner_id) sysNotify(mgr, `Escalado · ${title}`, String(m.title), `/contratos/${m.contract_id}?tab=milestones`); }
-    ctx.db.update("milestones", String(m.id), { alerted: [...alerted, ...due], status: daysLeft >= 0 ? "alerted" : "upcoming" });
+    ctx.db.update("milestones", String(m.id), { alerted: [...alerted, ...due], status: daysLeft >= 0 ? "alerted" : "upcoming", first_alerted_at: m.first_alerted_at ?? now() });
     emit(ctx, { type: "milestone.approaching", object: "contract", record: getContractRaw(ctx, String(m.contract_id)), meta: { milestone: m.type, days: daysLeft } });
     if (m.type === "notice_deadline" && daysLeft <= 120 && !ctx.db.get("SELECT id FROM tasks WHERE workspace_id=? AND title LIKE ? AND completed_at IS NULL", ctx.ws, `Expediente de renovación ${m.number}%`)) {
       ctx.db.insert("tasks", { id: id(), workspace_id: ctx.ws, title: `Expediente de renovación ${m.number}: decidir renovar / renegociar / no renovar`, type: "todo", due_at: addDays(String(m.date) + "T09:00:00.000Z", -15), priority: "high", assignee_id: m.owner_id, company_id: ctx.db.get<Row>("SELECT counterparty_company_id FROM contracts WHERE id=?", m.contract_id)?.counterparty_company_id ?? null, created_by: null, created_at: now(), updated_at: now() });
@@ -1138,8 +1181,9 @@ export function dailyContractChecks(ctx: Ctx) {
   // 3. obligaciones: recordatorios T-7 e incumplimientos
   for (const o of ctx.db.all<Row>("SELECT o.*, c.number FROM obligations o JOIN contracts c ON c.id=o.contract_id WHERE o.workspace_id=? AND o.status IN ('pending','in_progress') AND o.due_date IS NOT NULL", ctx.ws)) {
     if (String(o.due_date) < td) { ctx.db.update("obligations", String(o.id), { status: "breached", breached_at: now(), updated_at: now() }); emit(ctx, { type: "obligation.breached", object: "contract", record: getContractRaw(ctx, String(o.contract_id)), meta: { obligation_id: o.id, obligation: o.title } }); sysNotify(o.owner_id as string, `Obligación incumplida: ${o.title}`, `${o.number} · vencía el ${o.due_date}`, `/contratos/${o.contract_id}?tab=obligations`); const mgr = managerOf(ctx, o.owner_id as string); if (mgr) sysNotify(mgr, `Escalado · obligación incumplida ${o.number}`, String(o.title), `/contratos/${o.contract_id}?tab=obligations`); tlog(ctx, String(o.contract_id), "obligation", `Obligación incumplida: ${o.title}`, null, {}, "system"); emit(ctx, { type: "obligation.breached", object: "contract", record: getContractRaw(ctx, String(o.contract_id)), meta: { obligation_id: o.id } }); }
-    else if (!o.reminded_at && String(o.due_date) <= addD(td, 7)) { ctx.db.update("obligations", String(o.id), { reminded_at: now() }); sysNotify(o.owner_id as string, `Obligación próxima: ${o.title}`, `${o.number} · vence el ${o.due_date}`, `/contratos/${o.contract_id}?tab=obligations`); }
   }
+  // recordatorios de obligaciones con los desfases del tipo (por defecto T-7)
+  clmCfg.obligationAlerts(ctx);
   // 4. pagos vencidos
   ctx.db.run("UPDATE payment_schedule SET status='overdue' WHERE workspace_id=? AND status='planned' AND due_date < ?", ctx.ws, td);
   // 5. sobres caducados y recordatorios (3, 7, 14 días)
@@ -1153,9 +1197,13 @@ export function dailyContractChecks(ctx: Ctx) {
     const mgr = managerOf(ctx, a.approver_user_id as string);
     ctx.db.update("contract_approvals", String(a.id), { escalated_at: now() });
     sysNotify(a.approver_user_id as string, `Aprobación vencida: ${a.number}`, String(a.step_name), `/contratos/${a.contract_id}?tab=approvals`);
-    if (mgr) sysNotify(mgr, `Escalado · aprobación sin respuesta ${a.number}`, `${a.step_name} · ${userName(ctx, a.approver_user_id as string)}`, `/contratos/${a.contract_id}?tab=approvals`);
+    if (mgr) sysNotify(mgr, `Escalado · aprobación sin respuesta ${a.number}`, `${a.step_name} · ${userNameOf(ctx, a.approver_user_id as string)}`, `/contratos/${a.contract_id}?tab=approvals`);
     emit(ctx, { type: "approval.overdue", object: "contract", record: getContractRaw(ctx, String(a.contract_id)) });
   }
+  // 6b. caducidad de aprobaciones, SLA por estado del ciclo de vida y alertas sin acuse
+  clmCfg.expireApprovals(ctx);
+  clmCfg.checkStateSla(ctx);
+  clmCfg.escalateUnacknowledged(ctx);
   // 7. cola de legal: SLA vencido
   for (const c of ctx.db.all<Row>("SELECT * FROM contracts WHERE workspace_id=? AND status IN ('INTERNAL_REVIEW','PENDING_APPROVAL') AND sla_paused=0 AND sla_due_at < ? AND deleted_at IS NULL AND substatus IS NULL", ctx.ws, now())) { ctx.db.update("contracts", String(c.id), { substatus: "SLA_BREACHED" }); sysNotify(c.legal_owner_id as string, `SLA de legal vencido: ${c.number}`, String(c.title), `/contratos/${c.id}`); }
 }
@@ -1172,11 +1220,14 @@ export function listContracts(ctx: Ctx, q: ListQuery, extra: { type_id?: string;
   if (extra.queue === "legal") { where.push("t.status IN ('INTERNAL_REVIEW','NEGOTIATION','PENDING_APPROVAL')"); }
   if (extra.queue === "expiring") { where.push("t.status='ACTIVE' AND (t.notice_deadline <= ? OR t.end_date <= ?)"); params.push(addD(today(), 180), addD(today(), 180)); }
   if (extra.queue === "mine") { where.push("(t.owner_id=? OR t.legal_owner_id=?)"); params.push(ctx.user.id, ctx.user.id); }
-  return listRecords<Row>(ctx, "contract", q, {
+  const res = listRecords<Row>(ctx, "contract", q, {
     where: where.length ? where.join(" AND ") : undefined, params,
     joins: "JOIN contract_types ct ON ct.id=t.type_id",
     select: "ct.name AS type_name, ct.code AS type_code, ct.direction, ct.color AS type_color, (SELECT name FROM companies WHERE id=t.counterparty_company_id) AS counterparty_name, (SELECT name FROM users WHERE id=t.owner_id) AS owner_name, (SELECT name FROM users WHERE id=t.legal_owner_id) AS legal_owner_name, (SELECT COUNT(*) FROM obligations o WHERE o.contract_id=t.id AND o.status IN ('pending','in_progress')) AS open_obligations, (SELECT COUNT(*) FROM obligations o WHERE o.contract_id=t.id AND o.status='breached') AS breached_obligations, (SELECT COUNT(*) FROM contract_clauses cc WHERE cc.contract_id=t.id AND cc.version_id=t.current_version_id AND cc.deviation_level IN ('minor','major','prohibited','missing')) AS deviations, (SELECT COUNT(*) FROM contract_approvals a WHERE a.contract_id=t.id AND a.status='pending') AS pending_approvals, (SELECT label FROM contract_versions v WHERE v.id=t.current_version_id) AS version_label, (SELECT COUNT(*) FROM contracts ch WHERE ch.parent_id=t.id AND ch.deleted_at IS NULL) AS children, CASE WHEN t.sla_due_at IS NOT NULL AND t.sla_paused=0 AND t.status IN ('INTERNAL_REVIEW','PENDING_APPROVAL') THEN ROUND((julianday(t.sla_due_at)-julianday('now'))*24) ELSE NULL END AS sla_hours_left",
   });
+  const labels = clmCfg.stateLabels(ctx);
+  for (const r of res.items as Row[]) { if (!r.state_key) continue; const st = (labels.get(String(r.type_id)) ?? labels.get("*"))?.get(String(r.state_key)); if (st) { r.state_label = st.label; r.state_color = st.color ?? null; } }
+  return res;
 }
 export function contractDetail(ctx: Ctx, cid: string): Record<string, unknown> {
   const c = getContract(ctx, cid);
@@ -1193,8 +1244,11 @@ export function contractDetail(ctx: Ctx, cid: string): Record<string, unknown> {
   const comments = ctx.db.all<Row>("SELECT * FROM contract_comments WHERE contract_id=? ORDER BY created_at", cid);
   const renewals = ctx.db.all<Row>("SELECT r.*, u.name AS decided_by_name FROM renewal_decisions r LEFT JOIN users u ON u.id=r.decided_by WHERE r.contract_id=? ORDER BY r.decided_at DESC", cid);
   const audits = ctx.db.all<Row>("SELECT a.*, u.name AS user_name FROM audit_log a LEFT JOIN users u ON u.id=a.user_id WHERE a.object='contract' AND a.record_id=? ORDER BY a.created_at DESC LIMIT 100", cid).map((r) => parseJson(r, ["changes"]));
-  const pendingForMe = approvals.filter((a) => a.status === "pending" && a.approver_user_id === ctx.user.id);
-  return { ...c, transitions: availableTransitions(c), versions, current_body: current?.body ?? "", clauses, approvals, envelopes, obligations, milestones, payments, children, timeline, comments, renewals, audits, pending_for_me: pendingForMe.length, approval_preview: ["DRAFT", "INTERNAL_REVIEW", "NEGOTIATION"].includes(String(c.status)) ? computeApprovalSteps(ctx, c) : [], checklist: c.status === "APPROVED" ? preSignatureChecklist(ctx, cid, []) : null };
+  for (const a of approvals) { a.approver_group = approverGroup(a); a.group_names = (a.approver_group as string[]).map((u) => userNameOf(ctx, u)); if (a.substitute_for) a.substitute_for_name = userNameOf(ctx, a.substitute_for as string); a.can_decide = a.status === "pending" && canDecide(ctx, a); }
+  const minStage = Math.min(...approvals.filter((a) => a.status === "pending").map((a) => Number(a.step_order)));
+  const pendingForMe = approvals.filter((a) => a.status === "pending" && a.can_decide && Number(a.step_order) === minStage);
+  const lifecycle = clmCfg.lifecycleView(ctx, c);
+  return { ...c, state_label: lifecycle?.current?.label ?? null, lifecycle, transitions: availableTransitions(c), versions, current_body: current?.body ?? "", clauses, approvals, envelopes, obligations, milestones, payments, children, timeline, comments, renewals, audits, pending_for_me: pendingForMe.length, approval_preview: ["DRAFT", "INTERNAL_REVIEW", "NEGOTIATION"].includes(String(c.status)) ? computeApprovalSteps(ctx, c) : [], checklist: c.status === "APPROVED" ? preSignatureChecklist(ctx, cid, []) : null };
 }
 export function clmReports(ctx: Ctx) {
   assert(ctx, "contract", "read");
