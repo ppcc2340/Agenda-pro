@@ -1,3 +1,4 @@
+import { convertField } from "../services/convert.js";
 import { CUSTOM_TYPES } from "../services/columns.js";
 import { validateFieldSettings, fieldDependents } from "../services/columnAdmin.js";
 import { Router } from "express";
@@ -110,7 +111,15 @@ export function adminRoutes() {
     canEditFields(req.ctx, String(cur.object));
     const b = parse(cfSchema.partial().omit({ object: true, key: true }), req.body);
     const type = b.type ?? String(cur.type);
-    const settings = b.settings !== undefined ? validateFieldSettings(req.ctx, String(cur.object), type, b.settings, String(cur.key), String(cur.id)) : undefined;
+    let settingsIn = b.settings;
+    // cambio de tipo: convierte los valores existentes (y genera etiquetas/opciones a partir de ellos)
+    if (b.type && b.type !== cur.type) {
+      const rep = convertField(req.ctx, String(cur.object), String(cur.key), b.type, (b.settings ?? {}) as Record<string, unknown>, true);
+      if (b.type === "status" && !(b.settings as Record<string, unknown> | undefined)?.labels && !(b.settings as Record<string, unknown> | undefined)?.label_set_id) settingsIn = { ...(b.settings ?? {}), labels: rep.labels ?? [] };
+      if ((b.type === "select" || b.type === "multiselect") && !b.options) b.options = rep.options ?? [];
+      if (settingsIn === undefined) settingsIn = {};
+    }
+    const settings = settingsIn !== undefined ? validateFieldSettings(req.ctx, String(cur.object), type, settingsIn, String(cur.key), String(cur.id)) : undefined;
     req.ctx.db.update("custom_fields", param(req, "id"), { ...b, settings, required: b.required === undefined ? undefined : b.required ? 1 : 0 });
     audit(req.ctx, "custom_field", param(req, "id"), "update", { label: b.label, type: b.type });
     return parseJson(req.ctx.db.get<Row>("SELECT * FROM custom_fields WHERE id=?", param(req, "id")), ["options", "show_if", "settings"]);

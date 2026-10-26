@@ -127,6 +127,8 @@ export function validateCustom(ctx: Ctx, object: string, input: unknown, existin
     if (d.required && (v === null || (Array.isArray(v) && !v.length)) && !(partial && !has)) errors.push(`${d.label} es obligatorio`);
     out[d.key] = v;
   }
+  // subetiquetas de columnas de estado del sistema: custom._lbl_<campo> = id de la etiqueta añadida en el tablero
+  for (const [k, v] of Object.entries(inObj)) if (/^_lbl_[a-z_]+$/.test(k)) { if (v === null || v === undefined || v === "") delete out[k]; else out[k] = String(v).slice(0, 40); }
   if (errors.length) throw badRequest(errors.join(". "), { fields: errors });
   return out;
 }

@@ -400,12 +400,26 @@ export function enrichList(ctx: Ctx, object: string, items: Row[]): Row[] {
 export function enrichOne<T extends Row>(ctx: Ctx, object: string, rec: T): T { if (!rec) return rec; enrichList(ctx, object, [rec]); return rec; }
 
 /* ------------------------------------------------------------------ celdas */
+interface ExtraLabel { id: string; label: string; color: string; base: string }
+/** Etiqueta añadida en el tablero a una columna de estado del sistema; solo cuenta si su estado base coincide. */
+export function sublabel(cfg: Row, field: string, value: unknown, custom: Row): ExtraLabel | null {
+  const sid = custom[`_lbl_${field}`]; if (!sid) return null;
+  const x = ((cfg.extra_labels as Record<string, ExtraLabel[]> | undefined)?.[field] ?? []).find((l) => l.id === sid);
+  return x && x.base === String(value ?? "") ? x : null;
+}
+/** Texto visible de una celda de estado del sistema: subetiqueta, etiqueta renombrada en el tablero o valor. */
+export function builtinLabel(cfg: Row, field: string, value: unknown, custom: Row): string {
+  if (value === null || value === undefined || value === "") return "";
+  const s = sublabel(cfg, field, value, custom); if (s) return s.label;
+  return ((cfg.labels as Record<string, Record<string, { label?: string }>> | undefined)?.[field]?.[String(value)]?.label) ?? String(value);
+}
 export function cellsOf(ctx: Ctx, object: string, rec: Row) {
   const defs = fieldDefs(ctx, object);
   enrichOne(ctx, object, rec);
   const custom = (rec.custom as Row) ?? {};
+  const cfg = boardConfig(ctx, object);
   return [
-    ...builtinColumns(object).map((b) => ({ id: b.id, title: b.title, type: b.type, value: rec[b.id] ?? null, text: cellText(ctx, b.type === "status" ? "text" : b.type, rec[b.id]), builtin: true })),
+    ...builtinColumns(object).map((b) => ({ id: b.id, title: b.title, type: b.type, value: rec[b.id] ?? null, text: b.type === "status" ? builtinLabel(cfg, b.id, rec[b.id], custom) : cellText(ctx, b.type, rec[b.id]), builtin: true, ...(b.type === "status" && sublabel(cfg, b.id, rec[b.id], custom) ? { sublabel: sublabel(cfg, b.id, rec[b.id], custom)!.id } : {}) })),
     ...defs.map((d) => {
       const v = custom[d.key] ?? null;
       const extra = d.type === "status" ? (() => { const l = statusLabels(ctx, d).find((x) => x.id === Number(v)); return { label: l?.label ?? null, color: l?.color ?? null, is_done: !!l?.done }; })() : d.type === "button" ? { label: d.settings.label ?? d.label, color: d.settings.color ?? null } : {};
@@ -416,7 +430,7 @@ export function cellsOf(ctx: Ctx, object: string, rec: Row) {
 
 /* ------------------------------------------------------------------ valores por defecto y obligatorias */
 export interface RequiredRule { when_field: string; values: string[]; fields: string[] }
-function boardConfig(ctx: Ctx, object: string): Row { const r = ctx.db.get<{ config: string }>("SELECT config FROM board_configs WHERE workspace_id=? AND object=?", ctx.ws, object); try { return r ? JSON.parse(r.config) : {}; } catch { return {}; } }
+export function boardConfig(ctx: Ctx, object: string): Row { const r = ctx.db.get<{ config: string }>("SELECT config FROM board_configs WHERE workspace_id=? AND object=?", ctx.ws, object); try { return r ? JSON.parse(r.config) : {}; } catch { return {}; } }
 /** Valores por defecto del tablero: el registro nace con ellos (no generan evento de cambio ni gastan acciones). */
 export function applyDefaults<T extends Record<string, unknown>>(ctx: Ctx, object: string, input: T): T {
   const defaults = (boardConfig(ctx, object).defaults ?? {}) as Record<string, unknown>;

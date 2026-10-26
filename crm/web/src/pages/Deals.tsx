@@ -5,6 +5,7 @@ import { api, qs } from "../api";
 import { useApp } from "../lib/app";
 import { Kanban, type BoardStage } from "../components/Kanban";
 import { DataTable, type Column, type GroupOption } from "../components/DataTable";
+import type { LabelItem } from "../components/GridDialogs";
 import { useBoard, customColumns } from "../lib/board";
 import { DealForm } from "../components/RecordForms";
 import { Seg, Spinner, useToast, errorMessage, Modal } from "../components/ui";
@@ -49,17 +50,31 @@ export function DealsPage() {
   const editable = can("deal", "update");
   const pipeline = pipelines.find((p) => p.id === pid);
   const stageOpts = Object.fromEntries((pipeline?.stages ?? []).map((s) => [s.id, { label: s.name, color: s.color }]));
+  /** Editar etiquetas de la columna Etapa = editar las etapas del pipeline (nombre, color, orden, nuevas, borrar vacías). */
+  const saveStages = async (items: LabelItem[], removed: LabelItem[]) => {
+    if (!pipeline) return;
+    for (const r of removed) await api.del(`pipelines/${pipeline.id}/stages/${r.key}`);
+    const ids: string[] = [];
+    for (const it of items) {
+      const cur = pipeline.stages.find((s) => s.id === it.key);
+      if (!cur) { const st = await api.post<{ id: string }>(`pipelines/${pipeline.id}/stages`, { name: it.label, color: it.color }); ids.push(st.id); continue; }
+      if (cur.name !== it.label || cur.color !== it.color) await api.put(`pipelines/${pipeline.id}/stages/${cur.id}`, { name: it.label, color: it.color });
+      if (cur.kind === "open") ids.push(cur.id);
+    }
+    await api.put(`pipelines/${pipeline.id}/stages-order`, { order: ids });
+    await refreshApp();
+  };
   const toStage = async (d: D, v: string) => { const st = pipeline?.stages.find((s) => s.id === v); if (st && st.kind !== "open") { setClosing({ id: d.id, name: d.name, stage: st.kind }); return; } await api.post(`deals/${d.id}/stage`, { stage_id: v }); };
   const cols: Column<D>[] = [
-    { key: "name", label: "Negocio", type: "name", sub: (d) => (d.company_name && !d.name.includes(d.company_name) ? d.company_name : null), render: (d) => <Link to={`/negocios/${d.id}`} onClick={(e) => e.stopPropagation()}>{d.name}</Link> },
-    { key: "stage_id", label: "Etapa", sortable: true, type: "status", fixedOptions: true, options: stageOpts, value: (d) => d.stage_id, onEdit: editable ? (d, v) => toStage(d, String(v)) : undefined },
-    { key: "status", label: "Estado", sortable: true, type: "status", fixedOptions: true, options: DEAL_STATUS_OPTS },
-    { key: "owner_name", label: "Propietario", type: "person", onEdit: editable ? (d, v) => patch(d, { owner_id: v }) : undefined },
-    { key: "amount", label: "Importe", sortable: true, type: "money", onEdit: editable ? (d, v) => patch(d, { amount: v }) : undefined, render: (d) => <span className="num">{fmtMoney(d.amount, d.currency)}</span> },
+    { key: "name", label: "Negocio", type: "name", field: editable ? "name" : undefined, sub: (d) => (d.company_name && !d.name.includes(d.company_name) ? d.company_name : null), render: (d) => <Link to={`/negocios/${d.id}`} onClick={(e) => e.stopPropagation()}>{d.name}</Link> },
+    { key: "stage_id", label: "Etapa", sortable: true, type: "status", fixedOptions: true, options: stageOpts, value: (d) => d.stage_id, onEdit: editable ? (d, v) => toStage(d, String(v)) : undefined, saveLabels: isAdmin || editable ? saveStages : undefined },
+    { key: "status", label: "Estado", sortable: true, type: "status", fixedOptions: true, options: DEAL_STATUS_OPTS, readOnlyReason: "Cambia la etapa a Ganado o Perdido para cerrarlo" },
+    { key: "owner_name", label: "Propietario", type: "person", field: "owner_id", onEdit: editable ? (d, v) => patch(d, { owner_id: v }) : undefined },
+    { key: "amount", label: "Importe", sortable: true, type: "money", field: "amount", onEdit: editable ? (d, v) => patch(d, { amount: v }) : undefined, render: (d) => <span className="num">{fmtMoney(d.amount, d.currency)}</span> },
     { key: "probability", label: "Prob.", sortable: true, type: "number", agg: "avg", width: 90, render: (d) => `${d.probability}%`, onEdit: editable ? (d, v) => patch(d, { probability: Math.max(0, Math.min(100, Number(v))) }) : undefined },
     { key: "weighted_amount", label: "Ponderado", type: "money", default: false, render: (d) => <span className="num">{fmtMoney(d.weighted_amount, d.currency)}</span> },
-    { key: "expected_close_date", label: "Cierre previsto", sortable: true, type: "date", onEdit: editable ? (d, v) => patch(d, { expected_close_date: v }) : undefined },
-    { key: "company_name", label: "Empresa", className: "l", default: false, render: (d) => d.company_id ? <Link to={`/empresas/${d.company_id}`} onClick={(e) => e.stopPropagation()}>{d.company_name}</Link> : "" },
+    { key: "expected_close_date", label: "Cierre previsto", sortable: true, type: "date", field: "expected_close_date", onEdit: editable ? (d, v) => patch(d, { expected_close_date: v }) : undefined },
+    { key: "company_name", label: "Empresa", className: "l", default: false, type: "relation", field: editable ? "company_id" : undefined, relation: { endpoint: "companies", labelOf: (r) => String(r.name ?? "") }, render: (d) => d.company_id ? <Link to={`/empresas/${d.company_id}`} onClick={(e) => e.stopPropagation()}>{d.company_name}</Link> : "" },
     { key: "pipeline_id", label: "Pipeline", className: "l", default: false, render: (d) => d.pipeline_name },
     { key: "last_activity_at", label: "Últ. actividad", sortable: true, className: "c", render: (d) => <span className="muted">{relTime(d.last_activity_at) || "nunca"}</span> },
     { key: "created_at", label: "Creado", sortable: true, type: "date", default: false, render: (d) => fmtDate(d.created_at) },
@@ -72,7 +87,7 @@ export function DealsPage() {
     { key: "owner_id", label: "Propietario", get: (d) => d.owner_id ?? "", groups: users.filter((u) => u.active).map((u) => ({ key: u.id, label: u.name, color: "var(--c-green)" })), other: "Sin propietario", setValue: (d, g) => patch(d, { owner_id: g }), createValue: (g) => ({ pipeline_id: pid, owner_id: g }) },
     ...customFields.filter((f) => f.object === "deal" && f.type === "select").map<GroupOption<D>>((f) => ({ key: `custom.${f.key}`, label: f.label, get: (d) => String(d.custom?.[f.key] ?? ""), groups: Object.entries(cols.find((c) => c.key === `custom.${f.key}`)?.options ?? {}).map(([key, o]) => ({ key, label: o.label, color: o.color })), other: "Sin valor", setValue: (d, g) => patch(d, { custom: { [f.key]: g } }), createValue: (g) => ({ pipeline_id: pid, custom: { [f.key]: g } }) })),
   ];
-  const create = async (name: string, extra: Record<string, unknown>) => { await api.post("deals", { name, pipeline_id: pid, ...extra }); };
+  const create = async (name: string, extra: Record<string, unknown>) => { return api.post("deals", { name, pipeline_id: pid, ...extra }); };
   const duplicate = async (d: D) => { await api.post("deals", { name: `${d.name} (copia)`, company_id: d.company_id, pipeline_id: d.pipeline_id, stage_id: d.status === "open" ? d.stage_id : undefined, amount: d.amount, currency: d.currency, expected_close_date: d.expected_close_date, owner_id: d.owner_id, tags: d.tags, custom: d.custom }); };
   return (
     <div>

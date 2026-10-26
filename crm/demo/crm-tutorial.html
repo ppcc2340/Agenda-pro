@@ -160,6 +160,59 @@ mark.hl-minor{background:#fff3c4}mark.hl-major{background:#ffd9b3}mark.hl-prohib
 .rgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}.recipe{background:#fff;border-radius:8px;padding:12px 14px;box-shadow:0 1px 3px rgba(0,0,0,.06);display:flex;flex-direction:column;gap:6px}
 .meterb{height:8px;border-radius:4px;background:var(--line2);overflow:hidden;margin-top:6px}.meterb i{display:block;height:100%}
 .auto.off{opacity:.6}
+
+/* ---------- Libertad tipo Excel + etiquetas como monday ---------- */
+.tblwrap{max-height:72vh;overflow:auto}
+.tbl>.cell.hd{position:sticky;top:0;z-index:3}
+.tbl .cell.xl-fz,.sumrow .cell.xl-fz{position:sticky;z-index:2}
+.tbl>.cell.hd.xl-fz{z-index:4}
+.tbl .cell.xl-fzl{box-shadow:3px 0 4px -2px rgba(0,0,0,.12)}
+.tbl .cell.xc{user-select:none}
+.tbl .cell.xl-in{background:#eaf2ff!important}
+.tbl .cell.xl-in.status,.tbl .cell.xl-in.xl-cf{background:inherit}
+.tbl .cell.xl-in.xl-t{box-shadow:inset 0 2px 0 var(--primary)}.tbl .cell.xl-in.xl-b{box-shadow:inset 0 -2px 0 var(--primary)}
+.tbl .cell.xl-in.xl-l{box-shadow:inset 2px 0 0 var(--primary)}.tbl .cell.xl-in.xl-rr{box-shadow:inset -2px 0 0 var(--primary)}
+.tbl .cell.xl-in.xl-t.xl-l{box-shadow:inset 2px 2px 0 var(--primary)}.tbl .cell.xl-in.xl-t.xl-rr{box-shadow:inset -2px 2px 0 var(--primary)}.tbl .cell.xl-in.xl-b.xl-l{box-shadow:inset 2px -2px 0 var(--primary)}.tbl .cell.xl-in.xl-b.xl-rr{box-shadow:inset -2px -2px 0 var(--primary)}
+.tbl .cell.xl-act{outline:2px solid var(--primary);outline-offset:-2px;z-index:1}
+.tbl .cell.xl-fillp{background:#dbe8ff!important;outline:1px dashed var(--primary);outline-offset:-1px}
+.xl-fh{position:absolute;right:-4px;bottom:-4px;width:8px;height:8px;background:var(--primary);border:1.5px solid #fff;border-radius:1px;cursor:crosshair;z-index:5}
+body.xl-dragging,body.xl-dragging *{user-select:none!important}body.xl-col,body.xl-col *{cursor:col-resize!important}
+.tbl .cell.xl-ro{cursor:not-allowed}
+.tbl .cell.xl-ro:hover::after{content:"🔒";position:absolute;right:4px;top:3px;font-size:9px;opacity:.55}
+.tbl .cell.xl-wrap{white-space:normal;line-height:1.3;padding-top:4px;padding-bottom:4px}.tbl .cell.xl-wrap .ell{white-space:normal}
+.xl-rz{position:absolute;right:-3px;top:0;bottom:0;width:7px;cursor:col-resize;z-index:5}.xl-rz:hover,.xl-col .xl-rz{background:var(--primary);opacity:.45}
+.cell.hd.xl-dragc{opacity:.45}.cell.hd.xl-dropc{box-shadow:inset 3px 0 0 var(--primary)}
+.cell.hd[draggable=true]{cursor:grab}
+input.xl-ce{position:absolute;inset:0;width:100%;height:100%;border:2px solid var(--primary);border-radius:0;padding:0 8px;font:inherit;background:#fff;z-index:6;outline:0}
+.xl-ren,.xl-relb{border:0;background:var(--line2);color:var(--ink2);border-radius:4px;width:20px;height:20px;font-size:11px;cursor:pointer;opacity:0;flex:none;margin-left:auto}
+.cell:hover .xl-ren,.cell:hover .xl-relb,.cell.xl-act .xl-ren,.cell.xl-act .xl-relb{opacity:1}
+.cell.name .xl-ren{margin-left:0}
+.xl-sumc{cursor:pointer}.xl-sumc:hover{background:var(--hover)}.xl-sumph{opacity:0;color:var(--ink3)}.xl-sumc:hover .xl-sumph{opacity:1}
+.xl-cnts{display:flex;gap:2px;flex-wrap:wrap}.xl-cnts i{font-style:normal;color:#fff;font-size:11px;font-weight:600;border-radius:3px;padding:0 5px;min-width:16px;text-align:center}
+#xlbar{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:70;background:#323338;color:#fff;border-radius:8px;padding:7px 14px;font-size:12.5px;display:none;gap:14px;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+#xlbar.on{display:flex}#xlbar b{font-weight:700}
+.xl-tb{display:inline-flex;gap:4px;margin-left:4px}.xl-tb .btn[disabled]{opacity:.4;cursor:default}
+.dd.xl-sdd{width:250px}.dd .xl-cur{outline:2px solid var(--ink);outline-offset:1px}
+.dd button.xl-empty{background:var(--panel,#f6f7fb);color:var(--ink2);border:1px dashed var(--line)}
+.dd button.xl-editlab{grid-column:1/-1;background:transparent;color:var(--primary);font-weight:600}
+.dd.xl-ledd{width:430px;padding:0}.xl-led{display:flex;flex-direction:column}
+.xl-ledh{padding:10px 12px;border-bottom:1px solid var(--line2);display:flex;flex-direction:column;gap:3px}
+.xl-lrow{display:flex;align-items:center;gap:6px;padding:4px 10px;flex-wrap:wrap}.xl-lrow.off{opacity:.5}.xl-lrow.over{box-shadow:inset 0 2px 0 var(--primary)}
+.xl-lrow .inp{min-height:30px;padding:4px 8px;flex:1;min-width:110px}.xl-lrow .xl-base{flex:0 0 140px;min-width:0;font-size:12px}
+.xl-grip{cursor:grab;color:var(--ink3);letter-spacing:-2px;font-size:12px}
+.dd .xl-lrow button.xl-sw{width:24px;height:24px;border-radius:4px;flex:none;padding:0;border:0}
+.dd.list .xl-lrow button.ibtn{width:26px;height:26px;min-height:26px;padding:0;justify-content:center;color:var(--ink2)}
+.xl-lock{font-size:11px;opacity:.6;width:26px;text-align:center}.xl-done{display:flex;align-items:center;gap:3px}
+.xl-reas{flex-basis:100%;font-size:12px;color:var(--c-red);display:flex;align-items:center;gap:6px;padding-left:22px}.xl-reas .inp{flex:0 0 160px;min-height:26px}
+.xl-pal{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;padding:4px 12px 8px 40px}.dd.list .xl-pal button{height:20px;min-height:20px;padding:0;border-radius:4px}.xl-pal button.cur{outline:2px solid var(--ink)}
+.xl-ledf{display:flex;align-items:center;gap:6px;padding:8px 10px;border-top:1px solid var(--line2);margin-top:4px}
+.dd.list .xl-ledf .btn{height:30px;min-height:30px;padding:0 10px;width:auto}.dd.list .xl-ledf .btn.primary{background:var(--primary);color:#fff}
+.dd.xl-tagdd{width:300px}.xl-chipbox{display:flex;flex-wrap:wrap;gap:4px;border:1px solid var(--line);border-radius:6px;padding:4px}.xl-chip{background:var(--primary-s);color:var(--primary);border-radius:12px;padding:2px 4px 2px 9px;font-size:12px;display:inline-flex;align-items:center;gap:3px}.xl-chip b{cursor:pointer;padding:0 4px;border-radius:50%}.xl-chip b:hover{background:rgba(0,0,0,.08)}.xl-chipin{border:0;outline:0;flex:1;min-width:90px;font:inherit;padding:3px}
+.dd.xl-longdd{width:380px}.xl-longta{min-height:140px;width:100%;resize:vertical}
+.xl-rl{display:flex;flex-direction:column;gap:2px;max-height:260px;overflow:auto;margin-top:6px}
+.dd.xl-hdd{width:390px}.xl-help{display:flex;flex-direction:column;gap:5px;padding:4px}.xl-help>div{display:flex;gap:10px;font-size:12.5px;align-items:baseline}.xl-help kbd{flex:0 0 165px;font:600 11.5px ui-monospace,monospace;background:var(--line2);border-radius:4px;padding:2px 6px;color:var(--ink)}
+.xl-cfr{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:8px;border:1px solid var(--line2);border-radius:8px;margin-bottom:6px}.xl-cfr.off{opacity:.55}.xl-cfr .inp{width:auto;min-height:30px;padding:4px 8px}.xl-cfr input[type=color]{width:28px;height:24px;border:0;background:none;padding:0;vertical-align:middle}
+.xl-cfp{border-radius:4px;padding:3px 8px;font-size:12px;font-weight:600}
 </style>
 </head>
 <body>
@@ -2262,6 +2315,645 @@ if (route.page === 'automatizaciones') render();
 
 <script>
 /* ============================================================
+   Etiquetas como monday + libertad tipo Excel
+   - Editor de etiquetas dentro del desplegable de cada estado (también
+     columnas del sistema: renombrar, color, orden, ocultar y etiquetas
+     nuevas que «se comportan como» una del sistema)
+   - Celda activa, rango, teclado, copiar/pegar TSV (Excel/Sheets),
+     rellenar, deshacer/rehacer, barra de estado
+   - Ancho y orden de columnas arrastrando, inmovilizar columnas
+   - Resumen del pie por columna, formato condicional, formato numérico,
+     cambiar el tipo de una columna
+   ============================================================ */
+'use strict';
+const XL = { a: null, f: null, undo: [], redo: [], clip: '', batching: false, dirty: false, wasActive: false, drag: false, dragged: false, fill: null, pasteWait: false };
+function ensureXl() { S.xl = S.xl || {}; for (const k of ['lab', 'sum', 'cf', 'fmt', 'freeze']) S.xl[k] = S.xl[k] || {}; }
+const xlLab = (obj, key) => { ensureXl(); const o = (S.xl.lab[obj] = S.xl.lab[obj] || {}); return (o[key] = o[key] || { order: null, hidden: [], subs: [] }); };
+const xlFmt = (obj, key) => (S.xl?.fmt?.[obj] || {})[key] || null;
+const xlNameOf = (u) => u?.name || '';
+
+/* ---------------------------------------------------------------- columnas: estados del sistema con etiquetas propias */
+const _applyColOvX = applyColOv;
+applyColOv = function (obj, cols) { return _applyColOvX(obj, cols).map((c) => xlWrapCol(obj, c)); };
+function xlWrapCol(obj, c) {
+  if (c.cdef && !c.set && ['rating', 'timeline'].includes(c.cdef.type)) { const k = c.cdef.key; c = { ...c, set: (it, v) => { it.custom = it.custom || {}; it.custom[k] = v; } }; }
+  if (c.type !== 'status' || c.custom || !c.opt) return c;
+  if (obj === 'deals' && c.key === 'stageId') return { ...c, builtin: true, stage: true };
+  const L = S.xl?.lab?.[obj]?.[c.key]; if (!L) return { ...c, builtin: true };
+  const orig = c; const baseGet = (it) => colVal(orig, it);
+  const all = [...Object.keys(c.opt), ...L.subs.map((s) => s.id)];
+  const keys = L.order ? [...L.order.filter((k) => all.includes(k)), ...all.filter((k) => !L.order.includes(k))] : all;
+  const opt = {};
+  for (const k of keys) { if (c.opt[k]) opt[k] = c.opt[k]; else { const s = L.subs.find((x) => x.id === k); if (s && c.opt[s.base]) opt[k] = { label: s.label, color: s.color, base: s.base }; } }
+  return { ...c, builtin: true, opt, hiddenKeys: L.hidden || [], baseGet, get: (it) => { const b = baseGet(it); const sid = it._sub?.[c.key]; const s = sid && L.subs.find((x) => x.id === sid); return s && s.base === b ? sid : b; } };
+}
+const xlBaseLabel = (col, k) => col.opt?.[k]?.label || k;
+const _setValX = setVal;
+setVal = function (obj, it, col, v) { if (col && col.builtin && col.type === 'status' && !col.stage) return xlPickStatus(obj, it, col, v); return _setValX(obj, it, col, v); };
+function xlPickStatus(obj, it, col, k, opts = {}) {
+  const L = S.xl?.lab?.[obj]?.[col.key]; const s = L && L.subs.find((x) => x.id === k);
+  const base = s ? s.base : k; const cur = col.baseGet ? col.baseGet(it) : colVal(col, it); const fromShown = colVal(col, it);
+  const prevSub = it._sub?.[col.key];
+  it._sub = it._sub || {}; if (s) it._sub[col.key] = s.id; else delete it._sub[col.key];
+  if (String(base) === String(cur)) { if (String(fromShown) !== String(k)) { audit(obj, it.id, 'update', { [col.label]: [col.opt[fromShown]?.label ?? fromShown, col.opt[k]?.label ?? k] }); it.updatedAt = nowISO(); refresh(); } return true; }
+  if (obj === 'deals' && col.key === 'status') { if (opts.batch) { if (prevSub) it._sub[col.key] = prevSub; else delete it._sub[col.key]; return false; } ACT['deal-close']({ id: it.id, status: base }); return true; }
+  const ok = setField(obj, it, col.key, base);
+  if (ok === false) { if (prevSub) it._sub[col.key] = prevSub; else delete it._sub[col.key]; save(); }
+  return ok !== false;
+}
+const _moveToGroupX = moveToGroup;
+moveToGroup = function (obj, it, col, k) { if (col && col.builtin && col.opt?.[k]?.base) { xlPickStatus(obj, it, col, k); toast('Movido', 'ok'); return; } return _moveToGroupX(obj, it, col, k); };
+const _applyGroupByX = applyGroupBy;
+applyGroupBy = function (obj, cols, groups) {
+  let out = _applyGroupByX(obj, cols, groups);
+  const u = uiOf(obj); const key = u.groupBy === undefined ? DEFAULT_GROUP[obj] : u.groupBy;
+  const col = cols.find((c) => c.key === key && c.builtin && c.baseGet);
+  if (col && (u.groupBy === undefined || u.groupBy === DEFAULT_GROUP[obj])) {
+    const L = S.xl.lab[obj][key]; const gov = S.groupOv?.[obj] || {}; const res = [];
+    for (const g of out) { res.push(g); for (const s of L.subs.filter((x) => x.base === g.key)) { const items = g.items.filter((i) => col.get(i) === s.id); if (!items.length) continue; g.items = g.items.filter((i) => col.get(i) !== s.id); res.push({ key: s.id, label: gov[s.id]?.label || s.label, color: gov[s.id]?.color || s.color, items }); } }
+    out = res.filter((g) => !(col.hiddenKeys || []).includes(g.key) || g.items.length);
+  }
+  return out;
+};
+
+/* desplegable de estado con modo «Editar etiquetas» dentro */
+ACT['cell-status'] = ({ obj, id, key }, el) => { const it = byId(obj, id), col = findCol(key); if (!it || !col) return; if (!can('edit')) return toast('Tu rol es de solo lectura', 'err'); xlStatusDd(obj, it, col, el); };
+function xlStatusDd(obj, it, col, el) {
+  const hidden = col.hiddenKeys || []; const cur = String(colVal(col, it) ?? '');
+  const html = Object.entries(col.opt).filter(([k]) => !hidden.includes(k) || k === cur).map(([k, o]) => `<button data-k="${esc(k)}" class="${k === cur ? 'xl-cur' : ''}" style="background:${o.color}" title="${o.base ? `Se comporta como «${esc(xlBaseLabel(col, o.base))}»` : ''}">${esc(o.label)}</button>`).join('') + (col.custom ? `<button data-k="" class="xl-empty">— vacío —</button>` : '') + `<div class="sep"></div><button class="xl-editlab" data-edit>✎ Editar etiquetas</button>`;
+  const box = dropdown(el, html, 'xl-sdd');
+  box.querySelectorAll('[data-k]').forEach((b) => (b.onclick = () => { closeDd(); const k = b.dataset.k; if (obj === 'deals' && col.key === 'status' && k !== cur && !col.opt[k]?.base && k !== 'open') return ACT['deal-close']({ id: it.id, status: k }); if (col.stage && (k === 'won' || k === 'lost')) return ACT['deal-close']({ id: it.id, status: k }); xlWrite(obj, it, col, k === '' ? null : k, 'Cambiar estado'); }));
+  box.querySelector('[data-edit]').onclick = (e) => { e.stopPropagation(); xlLabelEditor(obj, col, el); };
+  return box;
+}
+ACT['edit-labels'] = ({ obj, key }) => { if (!can('edit')) return toast('Tu rol es de solo lectura', 'err'); const col = findCol(key); if (!col) return; const hd = [...document.querySelectorAll('.hdm')].find((b) => { try { return JSON.parse(b.dataset.arg).key === key; } catch (_) { return false; } }); xlLabelEditor(obj, col, hd?.closest('.cell') || document.getElementById('content')); };
+function xlLabelEditor(obj, col, anchor) {
+  if (!can('edit')) return toast('Tu rol es de solo lectura', 'err');
+  const kind = col.custom ? 'custom' : col.stage ? 'stage' : 'builtin';
+  const cdef = kind === 'custom' ? (S.customCols[obj] || []).find((c) => 'custom.' + c.key === col.key) : null;
+  if (kind === 'custom' && (!cdef || cdef.type !== 'status')) return toast('Esta columna no tiene etiquetas', 'err');
+  let rows;
+  if (kind === 'custom') rows = cdef.options.map((o) => ({ k: String(o.id), label: o.label, color: o.color, done: !!o.done, own: true }));
+  else if (kind === 'stage') rows = S.pipeline.stages.map((s) => ({ k: s.id, label: s.name, color: s.color, own: true }));
+  else rows = Object.entries(col.opt).map(([k, o]) => ({ k, label: o.label, color: o.color, base: o.base || null, hidden: (col.hiddenKeys || []).includes(k), own: !!o.base }));
+  const bases = kind === 'builtin' ? rows.filter((r) => !r.own).map((r) => [r.k, r.label]) : [];
+  const usage = (k) => kind === 'custom' ? S[obj].filter((it) => String((it.custom || {})[cdef.key] ?? '') === k).length : kind === 'stage' ? S.deals.filter((d) => d.stageId === k && d.status === 'open').length : S[obj].filter((it) => it._sub?.[col.key] === k).length;
+  let pick = -1, dragI = -1, n = 0;
+  const box = dropdown(anchor, '<div class="xl-led"></div>', 'xl-ledd list');
+  const draw = () => {
+    box.querySelector('.xl-led').innerHTML = `<div class="xl-ledh"><b>Etiquetas de «${esc(col.label)}»</b><span class="xs muted">${kind === 'builtin' ? 'Las del sistema no se borran (las usa la lógica del CRM); las nuevas «se comportan como» una de ellas.' : kind === 'stage' ? 'Edita las etapas del pipeline.' : 'El elemento guarda el ID: renombrar no reescribe datos.'}</span></div>` +
+      rows.map((r, i) => r.del ? '' : `<div class="xl-lrow ${r.hidden ? 'off' : ''}" draggable="true" data-i="${i}"><span class="xl-grip" title="Arrastra para ordenar">⋮⋮</span><button class="xl-sw" data-c="${i}" style="background:${r.color}" title="Color"></button><input class="inp" data-l="${i}" value="${esc(r.label)}" maxlength="40"/>${kind === 'builtin' && r.own ? `<select class="inp xl-base" data-b="${i}" title="Se comporta como">${bases.map(([k, l]) => `<option value="${esc(k)}" ${r.base === k ? 'selected' : ''}>≈ ${esc(l)}</option>`).join('')}</select>` : ''}${kind === 'custom' ? `<label class="xs xl-done" title="Cuenta como hecho"><input type="checkbox" data-d="${i}" ${r.done ? 'checked' : ''}/>hecho</label>` : ''}${kind === 'builtin' && !r.own ? `<button class="ibtn" data-h="${i}" title="${r.hidden ? 'Mostrar en el selector' : 'Ocultar en el selector'}">${r.hidden ? '◌' : '●'}</button><span class="xl-lock" title="Etiqueta del sistema: no se puede borrar">🔒</span>` : `<button class="ibtn" data-x="${i}" title="Borrar">${ico.trash}</button>`}${r.move ? `<div class="xl-reas">Pasar ${r.move.n} elemento(s) a <select class="inp" data-m="${i}">${rows.filter((x, j) => j !== i && !x.del).map((x) => `<option value="${esc(x.k)}" ${r.move.to === x.k ? 'selected' : ''}>${esc(x.label)}</option>`).join('')}${kind === 'custom' ? `<option value="" ${r.move.to === '' ? 'selected' : ''}>— vacío —</option>` : ''}</select></div>` : ''}</div>${pick === i ? `<div class="xl-pal">${PALETTE.map((p) => `<button data-p="${p}" style="background:${p}" class="${p === r.color ? 'cur' : ''}"></button>`).join('')}</div>` : ''}`).join('') +
+      `<div class="xl-ledf"><button class="btn sm outline" data-add>${ico.plus}Nueva etiqueta</button><span class="right"></span><button class="btn sm outline" data-cancel>Cancelar</button><button class="btn sm primary" data-apply>Aplicar</button></div>`;
+    const q = (s) => box.querySelectorAll(s);
+    q('[data-l]').forEach((x) => (x.oninput = () => (rows[x.dataset.l].label = x.value)));
+    q('[data-b]').forEach((x) => (x.onchange = () => (rows[x.dataset.b].base = x.value)));
+    q('[data-d]').forEach((x) => (x.onchange = () => (rows[x.dataset.d].done = x.checked)));
+    q('[data-m]').forEach((x) => (x.onchange = () => (rows[x.dataset.m].move.to = x.value)));
+    q('[data-c]').forEach((x) => (x.onclick = () => { pick = pick === Number(x.dataset.c) ? -1 : Number(x.dataset.c); draw(); }));
+    q('[data-p]').forEach((x) => (x.onclick = () => { rows[pick].color = x.dataset.p; pick = -1; draw(); }));
+    q('[data-h]').forEach((x) => (x.onclick = () => { const r = rows[x.dataset.h]; r.hidden = !r.hidden; draw(); }));
+    q('[data-x]').forEach((x) => (x.onclick = () => { const i = Number(x.dataset.x); const r = rows[i]; const u = r.k.startsWith('new') ? 0 : usage(r.k); if (kind === 'stage' && rows.filter((z) => !z.del).length <= 1) return toast('El pipeline necesita al menos una etapa', 'err'); if (u && (kind === 'custom' || kind === 'stage') && !r.move) { const other = rows.find((z, j) => j !== i && !z.del); r.move = { n: u, to: kind === 'custom' ? '' : other?.k }; toast(`En uso en ${u} elemento(s): elige a qué etiqueta pasarlos y pulsa borrar otra vez`, 'err'); return draw(); } r.del = true; draw(); }));
+    q('[data-add]').forEach((x) => (x.onclick = () => { rows.push({ k: 'new' + n++, label: '', color: PALETTE[(rows.length * 3) % PALETTE.length], own: true, base: bases[0]?.[0] || null }); draw(); const ins = box.querySelectorAll('[data-l]'); ins[ins.length - 1]?.focus(); }));
+    q('[data-cancel]').forEach((x) => (x.onclick = () => closeDd()));
+    q('[data-apply]').forEach((x) => (x.onclick = () => apply()));
+    q('.xl-lrow').forEach((rw) => { rw.ondragstart = (e) => { if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return e.preventDefault(); dragI = Number(rw.dataset.i); e.dataTransfer.effectAllowed = 'move'; }; rw.ondragover = (e) => { e.preventDefault(); rw.classList.add('over'); }; rw.ondragleave = () => rw.classList.remove('over'); rw.ondrop = (e) => { e.preventDefault(); const to = Number(rw.dataset.i); if (dragI < 0 || dragI === to) return; const [m] = rows.splice(dragI, 1); rows.splice(to, 0, m); dragI = -1; draw(); }; });
+  };
+  const apply = () => {
+    const live = rows.filter((r) => !r.del);
+    if (live.some((r) => !r.label.trim())) return toast('Hay una etiqueta sin nombre', 'err');
+    const names = live.map((r) => norm(r.label.trim())); if (new Set(names).size !== names.length) return toast('Hay dos etiquetas con el mismo nombre', 'err');
+    if (kind === 'custom') {
+      let next = Math.max(0, ...cdef.options.map((o) => o.id)) + 1; const idOf = {};
+      live.forEach((r) => (idOf[r.k] = r.k.startsWith('new') ? next++ : Number(r.k)));
+      for (const r of rows.filter((x) => x.del && x.move)) { const to = r.move.to === '' ? null : idOf[r.move.to] ?? null; S[obj].forEach((it) => { if (String((it.custom || {})[cdef.key] ?? '') === r.k) it.custom[cdef.key] = to; }); }
+      cdef.options = live.map((r) => ({ id: idOf[r.k], label: r.label.trim(), color: r.color, done: !!r.done }));
+    } else if (kind === 'stage') {
+      for (const r of rows.filter((x) => x.del)) { if (r.move?.to) S.deals.filter((d) => d.stageId === r.k).forEach((d) => { d.stageId = r.move.to; d.stageAt = nowISO(); }); }
+      S.pipeline.stages = live.map((r) => { const st = stage(r.k); return st ? Object.assign(st, { name: r.label.trim(), color: r.color }) : { id: uid(), name: r.label.trim(), color: r.color, prob: 50, days: 14, required: [] }; });
+    } else {
+      const L = xlLab(obj, col.key); ensureOv(); S.labelOv[obj] = S.labelOv[obj] || {}; const ov = (S.labelOv[obj][col.key] = S.labelOv[obj][col.key] || {});
+      const keyOf = {}; live.forEach((r) => (keyOf[r.k] = r.k.startsWith('new') ? 'x' + uid() : r.k));
+      for (const r of live.filter((x) => !x.own)) { ov[r.k] = { label: r.label.trim(), color: r.color }; if (col.opt[r.k]) Object.assign(col.opt[r.k], ov[r.k]); }
+      L.subs = live.filter((r) => r.own).map((r) => ({ id: keyOf[r.k], label: r.label.trim(), color: r.color, base: r.base || bases[0]?.[0] }));
+      L.hidden = live.filter((r) => !r.own && r.hidden).map((r) => r.k);
+      L.order = live.map((r) => keyOf[r.k]);
+      const gone = new Set(rows.filter((r) => r.del && r.own).map((r) => r.k)); S[obj].forEach((it) => { if (it._sub && gone.has(it._sub[col.key])) delete it._sub[col.key]; });
+    }
+    audit(obj, null, 'labels', { columna: col.label }); closeDd(); toast('Etiquetas guardadas', 'ok'); refresh();
+  };
+  draw();
+}
+
+/* ---------------------------------------------------------------- tipos de celda */
+const xlNameKey = (obj, col) => (obj === 'contacts' ? null : col.key);
+function xlKind(col) {
+  if (!col) return 'ro';
+  if (col.readonly) return 'ro';
+  if (col.type === 'name') return 'name';
+  if (col.cdef?.type === 'longtext') return 'longtext';
+  if (['text', 'number', 'money', 'date', 'status', 'person', 'tags', 'bool'].includes(col.type)) return col.type;
+  if (col.type === 'rel') return col.key === 'company' ? 'rel' : 'ro';
+  if (col.type === 'calc' && col.cdef?.type === 'rating') return 'rating';
+  if (col.type === 'calc' && col.cdef?.type === 'timeline') return 'tl';
+  return 'ro';
+}
+function xlRaw(obj, col, it) {
+  const k = xlKind(col);
+  if (k === 'name') return obj === 'contacts' ? [it.firstName || '', it.lastName || ''] : it[col.key];
+  if (k === 'rel') return it.companyId || null;
+  if (col.cdef) { const v = (it.custom || {})[col.cdef.key]; return v === undefined ? null : v; }
+  if (k === 'status') return colVal(col, it) ?? null;
+  return it[col.key] === undefined ? null : it[col.key];
+}
+function xlSetRaw(obj, it, col, v, opts = {}) {
+  if (!can('edit')) { toast('Tu rol es de solo lectura', 'err'); return false; }
+  const k = xlKind(col); if (k === 'ro') return false;
+  if (k === 'name') {
+    if (obj === 'contacts') { const [f, l] = Array.isArray(v) ? v : (() => { const p = String(v || '').trim().split(/\s+/); return [p.shift() || '', p.join(' ')]; })(); if (!f) return false; setField(obj, it, 'firstName', f); setField(obj, it, 'lastName', l); return true; }
+    if (!String(v ?? '').trim()) return false; return setField(obj, it, col.key, String(v).trim()) !== false;
+  }
+  if (k === 'rel') return setField(obj, it, 'companyId', v || null) !== false;
+  if (k === 'status' && col.builtin && !col.stage) { if (v == null || v === '') return false; return xlPickStatus(obj, it, col, String(v), opts); }
+  if (k === 'status' && col.stage) { if (!v) return false; if (v === 'won' || v === 'lost') return false; return setField(obj, it, 'stageId', v) !== false; }
+  if (obj === 'deals' && col.key === 'status') return false;
+  setVal(obj, it, col, v); return true;
+}
+function xlText(obj, col, it) {
+  const k = xlKind(col); const v = colVal(col, it);
+  if (k === 'name') return obj === 'contacts' ? contactName(it) : String(it[col.key] ?? '');
+  if (col.type === 'status') return v == null || v === '' ? '' : col.opt?.[v]?.label ?? String(v);
+  if (col.type === 'person') return (Array.isArray(v) ? v : v ? [v] : []).map((x) => xlNameOf(user(x))).join(', ');
+  if (col.type === 'date') return v ? String(v).slice(0, 10).split('-').reverse().join('/') : '';
+  if (col.type === 'money' || col.type === 'number') return v == null || v === '' ? '' : String(v).replace('.', ',');
+  if (col.type === 'bool') return v ? 'Sí' : 'No';
+  if (col.type === 'tags') return (v || []).join(', ');
+  if (col.type === 'rel') return v?.label && v.label !== '—' ? v.label : '';
+  if (k === 'rating') return String((it.custom || {})[col.cdef.key] ?? '');
+  if (k === 'tl') { const t = (it.custom || {})[col.cdef.key]; return t ? `${xlText(obj, { type: 'date', get: () => t.from }, it)} – ${xlText(obj, { type: 'date', get: () => t.to }, it)}` : ''; }
+  if (v == null) return '';
+  if (typeof v === 'object') return v.label ?? '';
+  if (typeof v === 'number') return String(v).replace('.', ',');
+  const d = document.createElement('div'); d.innerHTML = String(v); return d.textContent.trim();
+}
+const xlNumParse = (s) => {
+  let t = String(s ?? '').trim().replace(/[€$£\s%]|uds?\.?|h$/gi, '').replace(/ /g, ''); if (!t) return null;
+  const neg = /^\(.*\)$/.test(t); t = t.replace(/[()]/g, '');
+  if (t.includes(',') && t.includes('.')) t = t.lastIndexOf(',') > t.lastIndexOf('.') ? t.replace(/\./g, '').replace(',', '.') : t.replace(/,/g, '');
+  else if (t.includes(',')) t = t.replace(',', '.');
+  else if (/^-?\d{1,3}(\.\d{3})+$/.test(t)) t = t.replace(/\./g, '');
+  const n = Number(t); return isNaN(n) ? undefined : neg ? -n : n;
+};
+const xlDateParse = (s) => {
+  const t = String(s ?? '').trim(); if (!t) return null; let m;
+  if (/^hoy$/i.test(t)) return dayISO(new Date(NOW_V()));
+  if (/^mañana$/i.test(t)) return dayISO(addDays(1, new Date(NOW_V())));
+  if ((m = t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/))) return `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}`;
+  if ((m = t.match(/^(\d{1,2})[/.-](\d{1,2})[/.-](\d{2,4})$/))) { const y = m[3].length === 2 ? '20' + m[3] : m[3]; const d = Number(m[1]), mo = Number(m[2]); if (mo < 1 || mo > 12 || d < 1 || d > 31) return undefined; return `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`; }
+  if (/^\d{5}$/.test(t)) { const d = new Date(Date.UTC(1899, 11, 30) + Number(t) * 864e5); return d.toISOString().slice(0, 10); }
+  return undefined;
+};
+const xlBool = (s) => { const t = norm(String(s ?? '').trim()); if (['si', 'sí', 'x', 'true', 'verdadero', '1', 'yes', '✓', 'ok', 's'].includes(t)) return true; if (['', 'no', 'false', 'falso', '0', 'n', '✗'].includes(t)) return false; return undefined; };
+const xlUser = (s) => { const t = norm(String(s).trim()); if (!t) return null; return S.users.find((u) => norm(u.name) === t || u.id === s || norm(u.name.split(' ')[0]) === t || norm(initials(u.name)) === t) || undefined; };
+/** texto → valor bruto de la columna; {v} o {err, unknown} */
+function xlParse(obj, col, text) {
+  const k = xlKind(col); const t = String(text ?? '').replace(/\r/g, '').trim();
+  switch (k) {
+    case 'ro': return { ro: true };
+    case 'name': return t ? { v: t } : { err: 'nombre vacío' };
+    case 'text': case 'longtext': return { v: t || null };
+    case 'number': case 'money': case 'rating': { const n = xlNumParse(t); return n === undefined ? { err: `«${t}» no es un número` } : { v: k === 'rating' && n != null ? Math.max(0, Math.min(col.cdef.max || 5, Math.round(n))) : n }; }
+    case 'date': { const d = xlDateParse(t); return d === undefined ? { err: `«${t}» no es una fecha` } : { v: d }; }
+    case 'bool': { const b = xlBool(t); return b === undefined ? { err: `«${t}» no es sí/no` } : { v: b }; }
+    case 'tags': return { v: t ? [...new Set(t.split(/[,;]/).map((x) => x.trim()).filter(Boolean))] : [] };
+    case 'person': { if (!t) return { v: null }; const parts = t.split(/[,;]/).map((x) => x.trim()).filter(Boolean); const us = parts.map(xlUser); if (us.some((u) => !u)) return { err: `persona «${t}» no encontrada` }; return { v: us[0].id, multi: us.map((u) => u.id) }; }
+    case 'status': { if (!t) return col.custom ? { v: null } : { err: 'el estado no puede quedar vacío' }; const hit = Object.entries(col.opt).find(([key, o]) => norm(o.label) === norm(t) || norm(key) === norm(t)); return hit ? { v: hit[0] } : { err: `etiqueta «${t}» no existe`, unknown: t }; }
+    case 'rel': { if (!t) return { v: null }; const co = S.companies.find((c) => norm(c.name) === norm(t)); return co ? { v: co.id } : { err: `empresa «${t}» no encontrada` }; }
+    case 'tl': { if (!t) return { v: null }; const [a, b] = t.split(/\s*[–—]\s*|\s+-\s+|\s+a\s+/); const f = xlDateParse(a), to = xlDateParse(b || a); return f && to && to >= f ? { v: { from: f, to } } : { err: `rango «${t}» no válido` }; }
+  }
+  return { ro: true };
+}
+const xlEmpty = (col) => { const k = xlKind(col); return k === 'tags' ? [] : k === 'bool' ? false : null; };
+
+/* ---------------------------------------------------------------- deshacer / rehacer */
+function xlPush(entry) { XL.undo.push(entry); if (XL.undo.length > 100) XL.undo.shift(); XL.redo = []; }
+function xlWrite(obj, it, col, v, label = 'Editar celda') { const from = xlRaw(obj, col, it); const ok = xlSetRaw(obj, it, col, v); const to = xlRaw(obj, col, it); if (JSON.stringify(from) !== JSON.stringify(to)) xlPush({ label, obj, ops: [{ id: it.id, key: col.key, from, to }] }); return ok; }
+function xlBatch(fn) { XL.batching = true; XL.dirty = false; try { return fn(); } finally { XL.batching = false; refresh(); } }
+function xlApply(obj, ops, label) {
+  const done = []; let err = 0;
+  xlBatch(() => { for (const op of ops) { const it = byId(obj, op.id), col = findCol(op.key); if (!it || !col) { err++; continue; } const from = xlRaw(obj, col, it); if (JSON.stringify(from) === JSON.stringify(op.v)) continue; const ok = xlSetRaw(obj, it, col, op.v, { batch: true }); const to = xlRaw(obj, col, it); if (JSON.stringify(from) !== JSON.stringify(to)) done.push({ id: it.id, key: col.key, from, to }); else if (ok === false) err++; } });
+  if (done.length) xlPush({ label, obj, ops: done });
+  return { n: done.length, err };
+}
+function xlUndoRedo(redo) {
+  const st = redo ? XL.redo : XL.undo; const e = st.pop(); if (!e) return toast(redo ? 'Nada que rehacer' : 'Nada que deshacer');
+  if (CURRENT.obj !== e.obj) { st.push(e); return toast(`Vuelve al tablero de ${OBJ_LABEL[e.obj] || e.obj}s para ${redo ? 'rehacer' : 'deshacer'} «${e.label}»`, 'err'); }
+  xlBatch(() => { const list = redo ? e.ops : [...e.ops].reverse(); for (const op of list) { const it = byId(e.obj, op.id), col = findCol(op.key); if (it && col) xlSetRaw(e.obj, it, col, redo ? op.to : op.from, { batch: true }); } });
+  (redo ? XL.undo : XL.redo).push(e); toast(`${redo ? 'Rehecho' : 'Deshecho'}: ${e.label}${e.ops.length > 1 ? ` (${e.ops.length} celdas)` : ''}`, 'ok');
+}
+ACT['xl-undo'] = () => xlUndoRedo(false);
+ACT['xl-redo'] = () => xlUndoRedo(true);
+const _renderX = render;
+render = function () { if (XL.batching) { XL.dirty = true; return; } _renderX(); try { xlDecorate(); } catch (e) { console.warn(e); } };
+
+/* ---------------------------------------------------------------- barra de herramientas */
+const _boardToolbarX = boardToolbar;
+boardToolbar = function (obj, cols, o) { return _boardToolbarX(obj, cols, o) + `<span class="xl-tb"><button class="btn" data-act="xl-undo" title="Deshacer (Ctrl+Z)" ${XL.undo.length ? '' : 'disabled'}>↶</button><button class="btn" data-act="xl-redo" title="Rehacer (Ctrl+Y)" ${XL.redo.length ? '' : 'disabled'}>↷</button><button class="btn ${(S.xl?.cf?.[obj] || []).some((r) => r.on) ? 'on' : ''}" data-act="xl-cf" data-arg="${obj}">🎨 Formato condicional</button><button class="btn" data-act="xl-help" title="Atajos de teclado">?</button></span>`; };
+ACT['xl-help'] = (_, el) => { dropdown(el, `<div class="xl-help"><b>Atajos tipo Excel</b>${[['Clic', 'Seleccionar celda'], ['Doble clic · Enter · F2', 'Editar'], ['Escribir', 'Editar reemplazando el contenido'], ['Flechas · Tab · Mayús+Tab', 'Moverse'], ['Enter / Mayús+Enter', 'Guardar y bajar / subir'], ['Esc', 'Cancelar'], ['Mayús+clic · Mayús+flechas · arrastrar', 'Seleccionar un rango'], ['Ctrl+C · Ctrl+X · Ctrl+V', 'Copiar, cortar y pegar (también desde Excel o Sheets)'], ['Supr · Retroceso', 'Vaciar el rango'], ['Ctrl+D', 'Rellenar hacia abajo'], ['Cuadradito azul', 'Arrastrar para rellenar o continuar una serie'], ['Ctrl+Z · Ctrl+Y', 'Deshacer · rehacer'], ['Espacio', 'Marcar casilla / abrir estado'], ['Ctrl+A', 'Seleccionar todo el tablero']].map(([k, d]) => `<div><kbd>${k}</kbd><span>${d}</span></div>`).join('')}</div>`, 'xl-hdd list'); };
+
+/* ---------------------------------------------------------------- decoración del tablero tras pintar */
+function xlTables() { return [...document.querySelectorAll('#content .tbl')].filter((t) => t.querySelector('.hdm')); }
+function xlKeysOf(tbl) { return [...tbl.querySelectorAll(':scope > .cell.hd .hdm')].map((b) => JSON.parse(b.dataset.arg).key); }
+function xlWidth(obj, key) { const col = findCol(key); const w = XL.liveW?.[key] ?? S.colOv?.[obj]?.[key]?.w; if (w) return w + 'px'; return col?.type === 'name' ? 'minmax(240px,2fr)' : (col?.w || 130) + 'px'; }
+function xlTemplate(obj, keys) { return `6px 36px ${keys.map((k) => xlWidth(obj, k)).join(' ')} 40px`; }
+function xlDecorate() {
+  ensureXl(); const obj = CURRENT.obj; const tbls = xlTables();
+  if (!tbls.length || !obj) { XL.a = XL.f = null; xlBar(); return; }
+  const fmt = S.xl.fmt[obj] || {}; const rules = (S.xl.cf[obj] || []).filter((r) => r.on && r.col);
+  for (const tbl of tbls) {
+    const keys = xlKeysOf(tbl); const tmpl = xlTemplate(obj, keys);
+    tbl.style.gridTemplateColumns = tmpl; const sum = tbl.parentElement.querySelector('.sumrow'); if (sum) sum.style.gridTemplateColumns = tmpl;
+    const hds = [...tbl.querySelectorAll(':scope > .cell.hd')].filter((h) => h.querySelector('.hdm'));
+    hds.forEach((h, i) => { const key = keys[i]; h.dataset.c = key; h.draggable = true; if (!h.querySelector('.xl-rz')) { const rz = document.createElement('i'); rz.className = 'xl-rz'; rz.title = 'Arrastra para cambiar el ancho'; h.appendChild(rz); } });
+    const rows = [...tbl.querySelectorAll(':scope > .r')];
+    for (const r of rows) {
+      const cb = r.querySelector('.cb input'); if (!cb) continue; const id = JSON.parse(cb.dataset.arg).id; const it = byId(obj, id); if (!it) continue;
+      const cells = [...r.children].slice(2, 2 + keys.length); let rowStyle = null;
+      cells.forEach((cell, i) => {
+        const key = keys[i]; const col = findCol(key); cell.dataset.r = id; cell.dataset.c = key; cell.classList.add('xc');
+        const k = xlKind(col);
+        if (k === 'ro') { cell.classList.add('xl-ro'); cell.title = 'Calculada o del sistema: solo lectura'; }
+        if (k === 'name' && !cell.querySelector('.xl-ren')) cell.insertAdjacentHTML('beforeend', `<button class="xl-ren" data-act="xl-rename" data-arg='${JSON.stringify({ id, key })}' title="Renombrar (F2)">✎</button>`);
+        if (k === 'rel' && !cell.querySelector('.xl-relb')) cell.insertAdjacentHTML('beforeend', `<button class="xl-relb" data-act="xl-rel" data-arg='${JSON.stringify({ id, key })}' title="Cambiar empresa">▾</button>`);
+        if (k === 'longtext') { cell.dataset.act = 'xl-long'; cell.dataset.arg = JSON.stringify({ id, key }); }
+        const f = fmt[key];
+        if (f) {
+          const v = colVal(col, it);
+          if (typeof v === 'number' && ['money', 'number', 'calc'].includes(col.type)) { cell.textContent = xlFmtNum(v, f, col); if (f.neg && v < 0) cell.style.color = 'var(--c-red)'; }
+          if (f.wrap) cell.classList.add('xl-wrap');
+          if (f.align) cell.style.justifyContent = { l: 'flex-start', c: 'center', r: 'flex-end' }[f.align];
+        }
+        for (const rule of rules.filter((x) => x.col === key)) if (xlRuleOk(obj, rule, col, it)) { if (rule.scope === 'row') rowStyle = rowStyle || rule; else { cell.style.background = rule.bg; cell.style.color = rule.fg; cell.classList.add('xl-cf'); } break; }
+      });
+      if (!rowStyle) for (const rule of rules.filter((x) => x.scope === 'row' && !keys.includes(x.col))) { const col = findCol(rule.col); if (col && xlRuleOk(obj, rule, col, it)) { rowStyle = rule; break; } }
+      if (rowStyle) cells.forEach((cell) => { if (!cell.classList.contains('xl-cf')) { if (!cell.classList.contains('status')) cell.style.background = rowStyle.bg; cell.style.color = rowStyle.fg; } });
+    }
+    if (sum) xlSummaries(obj, tbl, sum, keys, rows);
+    xlFreeze(obj, tbl, sum, keys);
+  }
+  xlPaint(); xlBar();
+}
+function xlFreeze(obj, tbl, sum, keys) {
+  const n = Math.max(0, Math.min(keys.length, S.xl.freeze[obj] ?? 1));
+  const hds = []; for (const ch of tbl.children) { if (ch.classList.contains('r')) break; hds.push(ch); } const widths = hds.map((h) => h.getBoundingClientRect().width); if (sum && widths.every((w) => w > 0)) sum.style.gridTemplateColumns = widths.map((w) => w + 'px').join(' ');
+  const lefts = []; let acc = 0; for (let i = 0; i < 2 + n; i++) { lefts.push(acc); acc += widths[i] || 0; }
+  const mark = (cells) => cells.slice(0, 2 + n).forEach((c, i) => { if (!c) return; c.classList.add('xl-fz'); c.style.left = lefts[i] + 'px'; if (i === 1 + n) c.classList.add('xl-fzl'); });
+  mark(hds); tbl.querySelectorAll(':scope > .r').forEach((r) => mark([...r.children]));
+  if (sum) mark([...sum.children]);
+}
+function xlFmtNum(v, f, col) { const dec = f.dec === '' || f.dec == null ? (col.type === 'money' ? 0 : undefined) : Number(f.dec); const s = new Intl.NumberFormat('es-ES', { minimumFractionDigits: dec, maximumFractionDigits: dec ?? 6, useGrouping: f.thou !== false }).format(v); const pre = f.pre ?? '', suf = f.suf ?? (col.type === 'money' ? ' €' : ''); return `${pre}${s}${suf}`; }
+
+/* resumen del pie por columna */
+const SUM_OPTS = { sum: 'Suma', avg: 'Media', median: 'Mediana', min: 'Mín', max: 'Máx', count: 'Recuento', empty: 'Vacíos', fill: '% lleno', dist: 'Distribución', counts: 'Recuento por etiqueta', checked: 'Marcadas', range: 'Rango de fechas', none: 'Ninguno' };
+function xlSumOptsFor(col) { const k = xlKind(col); if (['number', 'money', 'rating'].includes(k) || (col.type === 'calc' && col.align === 'r') || col.type === 'number') return ['sum', 'avg', 'median', 'min', 'max', 'count', 'empty', 'fill', 'none']; if (col.type === 'status') return ['dist', 'counts', 'count', 'empty', 'fill', 'none']; if (col.type === 'bool') return ['checked', 'fill', 'none']; if (col.type === 'date') return ['range', 'min', 'max', 'count', 'empty', 'fill', 'none']; return ['count', 'empty', 'fill', 'none']; }
+const xlNum = (obj, col, it) => { const v = col.cdef?.type === 'rating' ? (it.custom || {})[col.cdef.key] : colVal(col, it); if (typeof v === 'number') return v; if (v == null || v === '') return null; const n = xlNumParse(xlText(obj, col, it)); return typeof n === 'number' ? n : null; };
+function xlSummaries(obj, tbl, sum, keys, rows) {
+  const items = rows.map((r) => { const cb = r.querySelector('.cb input'); return cb ? byId(obj, JSON.parse(cb.dataset.arg).id) : null; }).filter(Boolean);
+  const cells = [...sum.children].slice(2, 2 + keys.length);
+  cells.forEach((cell, i) => {
+    const key = keys[i]; const col = findCol(key); if (!col) return; cell.dataset.xlsum = key; cell.classList.add('xl-sumc'); cell.title = 'Clic: elegir el resumen de la columna';
+    const mode = S.xl.sum[obj]?.[key]; if (!mode) { if (!cell.textContent.trim() && !cell.querySelector('.dist')) cell.innerHTML = '<span class="xl-sumph">∑</span>'; return; }
+    cell.innerHTML = xlSumHtml(obj, col, items, mode);
+  });
+}
+function xlSumHtml(obj, col, items, mode) {
+  const lab = (t) => `<span>${t}</span>`; const money_ = col.type === 'money';
+  const f = (n) => { const ff = xlFmt(obj, col.key); return ff ? xlFmtNum(n, ff, col) : money_ ? money(n) : new Intl.NumberFormat('es-ES', { maximumFractionDigits: 2 }).format(n); };
+  const nums = items.map((it) => xlNum(obj, col, it)).filter((x) => x != null).sort((a, b) => a - b);
+  const filled = items.filter((it) => { const t = xlText(obj, col, it); return col.type === 'bool' ? colVal(col, it) : t !== ''; }).length;
+  switch (mode) {
+    case 'none': return '';
+    case 'sum': return `<b>${f(nums.reduce((a, b) => a + b, 0))}</b>${lab('suma')}`;
+    case 'avg': return `<b>${nums.length ? f(nums.reduce((a, b) => a + b, 0) / nums.length) : '—'}</b>${lab('media')}`;
+    case 'median': return `<b>${nums.length ? f(nums.length % 2 ? nums[(nums.length - 1) / 2] : (nums[nums.length / 2 - 1] + nums[nums.length / 2]) / 2) : '—'}</b>${lab('mediana')}`;
+    case 'min': if (col.type === 'date') { const ds = items.map((it) => colVal(col, it)).filter(Boolean).sort(); return `<b>${ds.length ? fdate(ds[0]) : '—'}</b>${lab('mín')}`; } return `<b>${nums.length ? f(nums[0]) : '—'}</b>${lab('mín')}`;
+    case 'max': if (col.type === 'date') { const ds = items.map((it) => colVal(col, it)).filter(Boolean).sort(); return `<b>${ds.length ? fdate(ds[ds.length - 1]) : '—'}</b>${lab('máx')}`; } return `<b>${nums.length ? f(nums[nums.length - 1]) : '—'}</b>${lab('máx')}`;
+    case 'count': return `<b>${filled}</b>${lab('recuento')}`;
+    case 'empty': return `<b>${items.length - filled}</b>${lab('vacíos')}`;
+    case 'fill': return `<b>${items.length ? Math.round((100 * filled) / items.length) : 0} %</b>${lab('lleno')}`;
+    case 'checked': return `<b>${filled}/${items.length}</b>${lab('marcadas')}`;
+    case 'range': { const ds = items.map((it) => colVal(col, it)).filter(Boolean).sort(); return ds.length ? `<span class="xs">${fdate(ds[0])} – ${fdate(ds[ds.length - 1])}</span>` : ''; }
+    case 'dist': case 'counts': { const cnt = {}; items.forEach((it) => { const v = String(colVal(col, it) ?? ''); cnt[v] = (cnt[v] || 0) + 1; }); if (mode === 'dist') return `<div class="dist">${Object.entries(cnt).map(([k, n]) => `<i style="width:${(100 * n) / Math.max(1, items.length)}%;background:${col.opt?.[k]?.color || C.grey}" title="${esc(col.opt?.[k]?.label || 'vacío')}: ${n}"></i>`).join('')}</div>`; return `<span class="xl-cnts">${Object.entries(cnt).map(([k, n]) => `<i style="background:${col.opt?.[k]?.color || C.grey}" title="${esc(col.opt?.[k]?.label || 'vacío')}">${n}</i>`).join('')}</span>`; }
+  }
+  return '';
+}
+
+/* ---------------------------------------------------------------- selección */
+function xlGrid() {
+  const tbls = xlTables(); const rows = []; const seen = new Set(); let keys = [];
+  for (const t of tbls) { if (t.offsetParent === null) continue; if (!keys.length) keys = xlKeysOf(t); t.querySelectorAll(':scope > .r .cb input').forEach((cb) => { const id = JSON.parse(cb.dataset.arg).id; if (!seen.has(id)) { seen.add(id); rows.push(id); } }); }
+  return { rows, keys };
+}
+const xlCellEl = (r, c) => document.querySelector(`#content .tbl [data-r="${CSS.escape(r)}"][data-c="${CSS.escape(c)}"]`);
+function xlRect() { if (!XL.a || !XL.f) return null; const g = xlGrid(); const r1 = g.rows.indexOf(XL.a.r), r2 = g.rows.indexOf(XL.f.r), c1 = g.keys.indexOf(XL.a.c), c2 = g.keys.indexOf(XL.f.c); if (r1 < 0 || r2 < 0 || c1 < 0 || c2 < 0) return null; return { g, top: Math.min(r1, r2), bot: Math.max(r1, r2), left: Math.min(c1, c2), right: Math.max(c1, c2) }; }
+function xlPaint() {
+  document.querySelectorAll('.xl-act,.xl-in').forEach((x) => x.classList.remove('xl-act', 'xl-in', 'xl-t', 'xl-b', 'xl-l', 'xl-rr')); document.querySelectorAll('.xl-fh').forEach((x) => x.remove());
+  const R = xlRect(); if (!R) { if (XL.f && !xlCellEl(XL.f.r, XL.f.c)) XL.a = XL.f = null; return; }
+  for (let i = R.top; i <= R.bot; i++) for (let j = R.left; j <= R.right; j++) { const el = xlCellEl(R.g.rows[i], R.g.keys[j]); if (!el) continue; el.classList.add('xl-in'); if (i === R.top) el.classList.add('xl-t'); if (i === R.bot) el.classList.add('xl-b'); if (j === R.left) el.classList.add('xl-l'); if (j === R.right) el.classList.add('xl-rr'); }
+  const act = xlCellEl(XL.f.r, XL.f.c); act && act.classList.add('xl-act');
+  const br = xlCellEl(R.g.rows[R.bot], R.g.keys[R.right]); if (br && can('edit')) br.insertAdjacentHTML('beforeend', '<i class="xl-fh" title="Arrastra para rellenar"></i>');
+}
+function xlSelect(r, c, extend) { if (!extend || !XL.a) XL.a = { r, c }; XL.f = { r, c }; xlPaint(); xlBar(); const el = xlCellEl(r, c); el && el.scrollIntoView({ block: 'nearest', inline: 'nearest' }); }
+function xlBar() {
+  let bar = document.getElementById('xlbar'); if (!bar) { bar = document.createElement('div'); bar.id = 'xlbar'; document.body.appendChild(bar); }
+  const R = xlRect(); if (!R || (R.top === R.bot && R.left === R.right)) { bar.className = ''; bar.innerHTML = ''; return; }
+  const obj = CURRENT.obj; let cnt = 0; const nums = [];
+  for (let i = R.top; i <= R.bot; i++) { const it = byId(obj, R.g.rows[i]); if (!it) continue; for (let j = R.left; j <= R.right; j++) { const col = findCol(R.g.keys[j]); if (!col) continue; const t = xlText(obj, col, it); if (t !== '' && !(col.type === 'bool' && !colVal(col, it))) cnt++; const n = ['number', 'money', 'rating'].includes(xlKind(col)) || col.align === 'r' ? xlNum(obj, col, it) : null; if (n != null) nums.push(n); } }
+  const f = (n) => new Intl.NumberFormat('es-ES', { maximumFractionDigits: 2 }).format(n);
+  bar.className = 'on'; bar.innerHTML = `<span>${(R.bot - R.top + 1) * (R.right - R.left + 1)} celdas</span><span>Recuento: <b>${cnt}</b></span>${nums.length ? `<span>Suma: <b>${f(nums.reduce((a, b) => a + b, 0))}</b></span><span>Promedio: <b>${f(nums.reduce((a, b) => a + b, 0) / nums.length)}</b></span><span>Mín: <b>${f(Math.min(...nums))}</b></span><span>Máx: <b>${f(Math.max(...nums))}</b></span>` : ''}`;
+}
+function xlEach(fn) { const R = xlRect(); if (!R) return []; const out = []; for (let i = R.top; i <= R.bot; i++) for (let j = R.left; j <= R.right; j++) out.push(fn(R.g.rows[i], R.g.keys[j], i - R.top, j - R.left)); return out; }
+
+/* ratón: seleccionar, rango arrastrando, rellenar con el cuadradito */
+document.addEventListener('mousedown', (e) => {
+  if (e.button !== 0) return; XL.dragged = false;
+  if (e.target.classList?.contains('xl-fh')) { e.preventDefault(); e.stopPropagation(); const R = xlRect(); if (R) XL.fill = { R, to: R.bot, up: false }; document.body.classList.add('xl-dragging'); return; }
+  if (e.target.classList?.contains('xl-rz')) { e.preventDefault(); e.stopPropagation(); const h = e.target.closest('.cell.hd'); h.draggable = false; XL.resize = { key: h.dataset.c, x: e.clientX, w: h.offsetWidth }; XL.liveW = {}; document.body.classList.add('xl-dragging', 'xl-col'); return; }
+  const cell = e.target.closest?.('#content .tbl .xc'); if (!cell) return;
+  if (e.target.closest('input,button,a,select,textarea,.ce,.rate b')) { if (!e.shiftKey) { XL.wasActive = false; xlSelect(cell.dataset.r, cell.dataset.c); } return; }
+  XL.wasActive = !!(XL.f && XL.a && XL.f.r === cell.dataset.r && XL.f.c === cell.dataset.c && XL.a.r === XL.f.r && XL.a.c === XL.f.c);
+  if (e.shiftKey && XL.a) { e.preventDefault(); xlSelect(cell.dataset.r, cell.dataset.c, true); return; }
+  xlSelect(cell.dataset.r, cell.dataset.c); XL.drag = true; XL.dragged = false;
+}, true);
+document.addEventListener('mousemove', (e) => {
+  if (XL.resize) { const w = Math.max(60, XL.resize.w + e.clientX - XL.resize.x); XL.liveW = { [XL.resize.key]: w }; xlTables().forEach((t) => { const keys = xlKeysOf(t); const tm = xlTemplate(CURRENT.obj, keys); t.style.gridTemplateColumns = tm; const s = t.parentElement.querySelector('.sumrow'); if (s) s.style.gridTemplateColumns = tm; }); return; }
+  if (!(e.buttons & 1)) { XL.drag = false; return; }
+  const cell = e.target.closest?.('#content .tbl .xc'); if (!cell) return;
+  if (XL.fill) { const g = XL.fill.R.g; const i = g.rows.indexOf(cell.dataset.r); if (i < 0) return; XL.fill.to = i; document.querySelectorAll('.xl-fillp').forEach((x) => x.classList.remove('xl-fillp')); const a = Math.min(i, XL.fill.R.top), b = Math.max(i, XL.fill.R.bot); for (let r = a; r <= b; r++) for (let j = XL.fill.R.left; j <= XL.fill.R.right; j++) { const el = xlCellEl(g.rows[r], g.keys[j]); el && el.classList.add('xl-fillp'); } return; }
+  if (XL.drag && (cell.dataset.r !== XL.f?.r || cell.dataset.c !== XL.f?.c)) { XL.dragged = true; document.body.classList.add('xl-dragging'); XL.f = { r: cell.dataset.r, c: cell.dataset.c }; xlPaint(); xlBar(); }
+});
+document.addEventListener('mouseup', () => {
+  document.body.classList.remove('xl-dragging', 'xl-col'); XL.drag = false;
+  if (XL.resize) { const obj = CURRENT.obj; ensureOv(); S.colOv[obj] = S.colOv[obj] || {}; const w = XL.liveW[XL.resize.key]; if (w) S.colOv[obj][XL.resize.key] = { ...(S.colOv[obj][XL.resize.key] || {}), w }; XL.resize = null; XL.liveW = null; refresh(); return; }
+  if (XL.fill) { const f = XL.fill; XL.fill = null; document.querySelectorAll('.xl-fillp').forEach((x) => x.classList.remove('xl-fillp')); if (f.to > f.R.bot) xlFillRange(f.R, f.R.bot + 1, f.to, false); else if (f.to < f.R.top) xlFillRange(f.R, f.to, f.R.top - 1, true); }
+});
+document.addEventListener('click', (e) => {
+  const cell = e.target.closest?.('#content .tbl .xc'); if (!cell) return;
+  if (XL.dragged) { XL.dragged = false; e.stopPropagation(); e.preventDefault(); return; }
+  if (e.shiftKey) { e.stopPropagation(); e.preventDefault(); return; }
+  if (e.target.closest('input,button,a,select,.rate b,.tlb,.cbtn')) return;
+  const col = findCol(cell.dataset.c); const k = xlKind(col);
+  if (['text', 'number', 'money', 'date'].includes(k)) { e.stopPropagation(); if (XL.wasActive) xlEdit(cell); return; }
+  if (k === 'ro') { e.stopPropagation(); return; }
+  if (k === 'rel' && XL.wasActive) { e.stopPropagation(); return xlRelDd(cell); }
+}, true);
+document.addEventListener('dblclick', (e) => { const cell = e.target.closest?.('#content .tbl .xc'); if (!cell || e.target.closest('input,select,textarea')) return; const k = xlKind(findCol(cell.dataset.c)); if (['name', 'text', 'number', 'money', 'date'].includes(k)) { e.preventDefault(); closePanel(); xlEdit(cell); } });
+
+/* ---------------------------------------------------------------- edición en celda */
+function xlEdit(cell, initial) {
+  if (!cell || cell.querySelector('.ce')) return;
+  const obj = CURRENT.obj, it = byId(obj, cell.dataset.r), col = findCol(cell.dataset.c); if (!it || !col) return;
+  if (!can('edit')) return toast('Tu rol es de solo lectura', 'err');
+  const k = xlKind(col);
+  if (k === 'ro') return toast('Celda calculada o del sistema: solo lectura', 'err');
+  if (k === 'status') return xlStatusDd(obj, it, col, cell);
+  if (k === 'person') return ACT['cell-person']({ obj, id: it.id, key: col.key }, cell);
+  if (k === 'tags') return ACT['cell-tags']({ obj, id: it.id, key: col.key }, cell);
+  if (k === 'bool') return xlWrite(obj, it, col, !colVal(col, it), 'Marcar casilla');
+  if (k === 'rel') return xlRelDd(cell);
+  if (k === 'longtext') return ACT['xl-long']({ id: it.id, key: col.key }, cell);
+  if (k === 'rating') { const n = initial != null ? xlNumParse(initial) : null; if (n != null) return xlWrite(obj, it, col, Math.max(0, Math.min(col.cdef.max || 5, Math.round(n))), 'Valoración'); return; }
+  if (k === 'tl') return ACT['cell-tl']({ k: col.cdef.key, id: it.id });
+  const inp = document.createElement('input'); inp.className = 'ce xl-ce';
+  const cur = xlRaw(obj, col, it);
+  if (k === 'date' && initial == null) { inp.type = 'date'; inp.value = cur ? String(cur).slice(0, 10) : ''; }
+  else { inp.type = 'text'; inp.value = initial != null ? initial : k === 'name' ? xlText(obj, col, it) : k === 'date' ? xlText(obj, col, it) : cur == null ? '' : ['number', 'money'].includes(k) ? String(cur).replace('.', ',') : String(cur); if (k === 'date') inp.placeholder = 'dd/mm/aaaa'; }
+  if (['number', 'money'].includes(k)) inp.style.textAlign = 'right';
+  cell.appendChild(inp); inp.focus(); if (initial == null) inp.select && inp.select(); else inp.setSelectionRange?.(inp.value.length, inp.value.length);
+  let done = false;
+  const commit = (cancel, move) => {
+    if (done) return; done = true; inp.remove();
+    if (!cancel) { const p = xlParse(obj, col, inp.value); if (p.err) toast(p.err, 'err'); else if (JSON.stringify(p.v) !== JSON.stringify(k === 'name' ? xlText(obj, col, it) : cur)) xlWrite(obj, it, col, p.v, k === 'name' ? 'Renombrar' : 'Editar celda'); }
+    if (move) xlMove(move[0], move[1]); else xlPaint();
+  };
+  inp.onblur = () => commit(false);
+  inp.onkeydown = (e) => { e.stopPropagation(); if (e.key === 'Enter') { e.preventDefault(); commit(false, e.shiftKey ? [-1, 0] : [1, 0]); } else if (e.key === 'Tab') { e.preventDefault(); commit(false, e.shiftKey ? [0, -1] : [0, 1]); } else if (e.key === 'Escape') { e.preventDefault(); commit(true); } };
+}
+ACT['xl-rename'] = ({ id, key }, el, e) => { e?.stopPropagation(); const cell = el.closest('.xc'); if (cell) { XL.a = XL.f = { r: id, c: key }; xlPaint(); xlEdit(cell); } };
+ACT['xl-rel'] = ({ id, key }, el, e) => { e?.stopPropagation(); xlRelDd(el.closest('.xc')); };
+function xlRelDd(cell) {
+  const obj = CURRENT.obj, it = byId(obj, cell.dataset.r), col = findCol(cell.dataset.c); if (!it || !col) return; if (!can('edit')) return toast('Tu rol es de solo lectura', 'err');
+  const box = dropdown(cell, `<input class="inp" placeholder="Buscar empresa…"/><div class="xl-rl"></div>`, 'list');
+  const draw = (q) => { box.querySelector('.xl-rl').innerHTML = `<button data-k="">— Ninguna —</button>` + S.companies.filter((c) => !q || norm(c.name).includes(norm(q))).slice(0, 40).map((c) => `<button data-k="${c.id}">${esc(c.name)}${it.companyId === c.id ? ' ✓' : ''}</button>`).join(''); box.querySelectorAll('[data-k]').forEach((b) => (b.onclick = () => { closeDd(); xlWrite(obj, it, col, b.dataset.k || null, 'Cambiar empresa'); })); };
+  draw(''); const inp = box.querySelector('input'); inp.oninput = () => draw(inp.value); inp.focus();
+}
+ACT['cell-person'] = ({ obj, id, key }, el) => { const it = byId(obj, id), col = findCol(key); if (!it || !col) return; if (!can('edit')) return toast('Tu rol es de solo lectura', 'err'); const cur = colVal(col, it); const multi = Array.isArray(cur); const box = dropdown(el, `<input class="inp" placeholder="Buscar persona…"/><div class="xl-rl"></div>`, 'list'); const draw = (q) => { box.querySelector('.xl-rl').innerHTML = (multi ? '' : `<button data-k="">— Sin asignar —</button>`) + S.users.filter((x) => x.active && !x.isService && (!q || norm(x.name).includes(norm(q)))).map((p) => `<button data-k="${p.id}">${avatarOf(p.id, 'sm')}${esc(p.name)}${(multi ? cur.includes(p.id) : cur === p.id) ? ' ✓' : ''}</button>`).join(''); box.querySelectorAll('[data-k]').forEach((b) => (b.onclick = () => { closeDd(); const k = b.dataset.k; xlWrite(obj, it, col, multi ? (cur.includes(k) ? cur.filter((x) => x !== k) : [...cur, k]) : k || null, 'Asignar persona'); })); }; draw(''); const inp = box.querySelector('input'); inp.oninput = () => draw(inp.value); inp.focus(); };
+ACT['cell-bool'] = ({ obj, id, key }, el) => { const it = byId(obj, id), col = findCol(key); if (!it || !col) return; el.checked = !colVal(col, it); xlWrite(obj, it, col, !colVal(col, it), 'Marcar casilla'); };
+ACT['cell-tags'] = ({ obj, id, key }, el) => {
+  const it = byId(obj, id), col = findCol(key); if (!it || !col) return; if (!can('edit')) return toast('Tu rol es de solo lectura', 'err');
+  let tags = [...(colVal(col, it) || [])]; const all = [...new Set(S[obj].flatMap((x) => colVal(col, x) || []))];
+  const box = dropdown(el, '<div class="xl-chips"></div>', 'list xl-tagdd');
+  const draw = (q = '') => { const sug = all.filter((t) => !tags.includes(t) && (!q || norm(t).includes(norm(q)))).slice(0, 12); box.querySelector('.xl-chips').innerHTML = `<div class="xl-chipbox">${tags.map((t, i) => `<span class="xl-chip">${esc(t)}<b data-rm="${i}" title="Quitar">×</b></span>`).join('')}<input class="xl-chipin" placeholder="${tags.length ? '' : 'Escribe y pulsa Enter'}" value="${esc(q)}"/></div>${sug.length ? `<div class="xs muted" style="padding:6px 2px 2px">Sugerencias</div>${sug.map((t) => `<button data-s="${esc(t)}">${esc(t)}</button>`).join('')}` : ''}<div class="xl-ledf"><span class="right"></span><button class="btn sm primary" data-ok>Aplicar</button></div>`; const inp = box.querySelector('.xl-chipin'); inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); inp.onkeydown = (e) => { e.stopPropagation(); if ((e.key === 'Enter' || e.key === ',') && inp.value.trim()) { e.preventDefault(); if (!tags.includes(inp.value.trim())) tags.push(inp.value.trim()); draw(); } else if (e.key === 'Enter') { e.preventDefault(); finish(); } else if (e.key === 'Backspace' && !inp.value && tags.length) { tags.pop(); draw(); } else if (e.key === 'Escape') closeDd(); }; inp.oninput = () => draw(inp.value); box.querySelectorAll('[data-rm]').forEach((b) => (b.onclick = () => { tags.splice(Number(b.dataset.rm), 1); draw(); })); box.querySelectorAll('[data-s]').forEach((b) => (b.onclick = () => { tags.push(b.dataset.s); draw(); })); box.querySelector('[data-ok]').onclick = finish; };
+  const finish = () => { const pend = box.querySelector('.xl-chipin')?.value.trim(); if (pend && !tags.includes(pend)) tags.push(pend); closeDd(); xlWrite(obj, it, col, tags, 'Etiquetas'); };
+  draw();
+};
+ACT['xl-long'] = ({ id, key }, el) => { const obj = CURRENT.obj, it = byId(obj, id), col = findCol(key); if (!it || !col) return; if (!can('edit')) return toast('Tu rol es de solo lectura', 'err'); const box = dropdown(el, `<textarea class="inp xl-longta">${esc(xlRaw(obj, col, it) ?? '')}</textarea><div class="xl-ledf"><span class="xs muted">Ctrl+Enter para guardar</span><span class="right"></span><button class="btn sm primary" data-ok>Guardar</button></div>`, 'list xl-longdd'); const ta = box.querySelector('textarea'); ta.focus(); const ok = () => { const v = ta.value.trim() || null; closeDd(); xlWrite(obj, it, col, v, 'Texto largo'); }; box.querySelector('[data-ok]').onclick = ok; ta.onkeydown = (e) => { e.stopPropagation(); if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) ok(); if (e.key === 'Escape') closeDd(); }; };
+COLTYPES_V2.splice(2, 0, ['longtext', 'Texto largo', 'Varias líneas'], ['money', 'Importe', 'Moneda'], ['tags', 'Etiquetas libres', 'Varias por elemento']);
+
+/* ---------------------------------------------------------------- teclado */
+function xlMove(dr, dc, extend, jump) {
+  const g = xlGrid(); if (!XL.f || !g.rows.length) return; let r = g.rows.indexOf(XL.f.r), c = g.keys.indexOf(XL.f.c); if (r < 0 || c < 0) return;
+  if (jump) { if (dr) r = dr > 0 ? g.rows.length - 1 : 0; if (dc) c = dc > 0 ? g.keys.length - 1 : 0; } else { r = Math.max(0, Math.min(g.rows.length - 1, r + dr)); c = c + dc; if (c >= g.keys.length) { c = 0; r = Math.min(g.rows.length - 1, r + 1); } if (c < 0) { c = g.keys.length - 1; r = Math.max(0, r - 1); } }
+  xlSelect(g.rows[r], g.keys[c], extend);
+}
+const xlTyping = () => { const a = document.activeElement; return a && (['INPUT', 'TEXTAREA', 'SELECT'].includes(a.tagName) || a.isContentEditable); };
+document.addEventListener('keydown', (e) => {
+  if (xlTyping() || document.querySelector('.overlay') || ddEl) return;
+  const mod = e.ctrlKey || e.metaKey; const k = e.key;
+  if (mod && (k.toLowerCase() === 'z' || k.toLowerCase() === 'y') && CURRENT.obj && xlTables().length) { e.preventDefault(); return xlUndoRedo(k.toLowerCase() === 'y' || (k.toLowerCase() === 'z' && e.shiftKey)); }
+  if (!XL.f || !xlCellEl(XL.f.r, XL.f.c)) return;
+  const obj = CURRENT.obj;
+  const map = { ArrowUp: [-1, 0], ArrowDown: [1, 0], ArrowLeft: [0, -1], ArrowRight: [0, 1] };
+  if (map[k]) { e.preventDefault(); return xlMove(map[k][0], map[k][1], e.shiftKey, mod); }
+  if (k === 'Tab') { e.preventDefault(); return xlMove(0, e.shiftKey ? -1 : 1); }
+  if (k === 'Enter' || k === 'F2') { e.preventDefault(); const cell = xlCellEl(XL.f.r, XL.f.c); if (xlKind(findCol(XL.f.c)) === 'name' && k === 'Enter') return xlEdit(cell); return xlEdit(cell); }
+  if (k === 'Escape') { XL.a = { ...XL.f }; xlPaint(); xlBar(); return; }
+  if (k === 'Delete' || k === 'Backspace') { e.preventDefault(); return xlClear(); }
+  if (k === ' ') { e.preventDefault(); const col = findCol(XL.f.c); const kk = xlKind(col); if (kk === 'bool') { const R = xlRect(); const it0 = byId(obj, XL.f.r); const to = !colVal(col, it0); const ops = xlEach((r, c) => (xlKind(findCol(c)) === 'bool' ? { id: r, key: c, v: to } : null)).filter(Boolean); if (R && ops.length > 1) return xlApply(obj, ops, 'Marcar casillas'); return xlWrite(obj, it0, col, to, 'Marcar casilla'); } return xlEdit(xlCellEl(XL.f.r, XL.f.c)); }
+  if (mod && k.toLowerCase() === 'c') { xlCopy(false); return; }
+  if (mod && k.toLowerCase() === 'x') { xlCopy(true); return; }
+  if (mod && k.toLowerCase() === 'v') { XL.pasteWait = true; setTimeout(() => { if (!XL.pasteWait) return; XL.pasteWait = false; if (navigator.clipboard?.readText) navigator.clipboard.readText().then((t) => xlPaste(t || XL.clip)).catch(() => XL.clip && xlPaste(XL.clip)); else if (XL.clip) xlPaste(XL.clip); }, 120); return; }
+  if (mod && k.toLowerCase() === 'd') { e.preventDefault(); return xlFillDown(); }
+  if (mod && k.toLowerCase() === 'a') { e.preventDefault(); const g = xlGrid(); XL.a = { r: g.rows[0], c: g.keys[0] }; XL.f = { r: g.rows[g.rows.length - 1], c: g.keys[g.keys.length - 1] }; xlPaint(); xlBar(); return; }
+  if (k.length === 1 && !mod && !e.altKey) { const col = findCol(XL.f.c); const kk = xlKind(col); if (['text', 'number', 'money', 'date', 'name', 'rating'].includes(kk)) { e.preventDefault(); xlEdit(xlCellEl(XL.f.r, XL.f.c), k); } else if (kk === 'ro') toast('Celda calculada o del sistema: solo lectura', 'err'); }
+});
+
+/* ---------------------------------------------------------------- portapapeles */
+const xlQuote = (s) => (/[\t\n"]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s);
+function xlTsv() { const R = xlRect(); if (!R) return ''; const obj = CURRENT.obj; const lines = []; for (let i = R.top; i <= R.bot; i++) { const it = byId(obj, R.g.rows[i]); const row = []; for (let j = R.left; j <= R.right; j++) { const col = findCol(R.g.keys[j]); row.push(xlQuote(it && col ? xlText(obj, col, it) : '')); } lines.push(row.join('\t')); } return lines.join('\n'); }
+function xlCopy(cut) { const t = xlTsv(); XL.clip = t; XL.copyNow = t; try { navigator.clipboard?.writeText(t).catch(() => {}); } catch (_) { /* sin permiso */ } const R = xlRect(); toast(`${cut ? 'Cortadas' : 'Copiadas'} ${R ? (R.bot - R.top + 1) * (R.right - R.left + 1) : 0} celdas`, 'ok'); if (cut) setTimeout(() => xlClear('Cortar'), 0); }
+document.addEventListener('copy', (e) => { if (xlTyping() || !XL.f || !xlCellEl(XL.f.r, XL.f.c)) return; if (window.getSelection()?.toString()) return; const t = XL.copyNow ?? xlTsv(); XL.copyNow = null; e.clipboardData?.setData('text/plain', t); e.preventDefault(); });
+document.addEventListener('cut', (e) => { if (xlTyping() || !XL.f || !xlCellEl(XL.f.r, XL.f.c)) return; e.clipboardData?.setData('text/plain', XL.copyNow ?? xlTsv()); e.preventDefault(); });
+document.addEventListener('paste', (e) => { if (xlTyping() || document.querySelector('.overlay') || !XL.f || !xlCellEl(XL.f.r, XL.f.c)) return; XL.pasteWait = false; const t = e.clipboardData?.getData('text/plain'); if (t == null) return; e.preventDefault(); xlPaste(t); });
+function xlParseTsv(text) {
+  const rows = []; let row = [], cell = '', q = false; const s = String(text).replace(/\r\n?/g, '\n');
+  for (let i = 0; i < s.length; i++) { const ch = s[i]; if (q) { if (ch === '"' && s[i + 1] === '"') { cell += '"'; i++; } else if (ch === '"') q = false; else cell += ch; } else if (ch === '"' && cell === '') q = true; else if (ch === '\t') { row.push(cell); cell = ''; } else if (ch === '\n') { row.push(cell); rows.push(row); row = []; cell = ''; } else cell += ch; }
+  row.push(cell); rows.push(row); while (rows.length > 1 && rows[rows.length - 1].every((c) => c === '')) rows.pop(); return rows;
+}
+async function xlPaste(text) {
+  const obj = CURRENT.obj; const R = xlRect(); if (!R || text == null || text === '') return;
+  if (!can('edit')) return toast('Tu rol es de solo lectura', 'err');
+  let data = xlParseTsv(text); const g = R.g;
+  // un único valor sobre un rango: rellenar todo el rango (como Excel)
+  if (data.length === 1 && data[0].length === 1 && (R.bot > R.top || R.right > R.left)) data = Array.from({ length: R.bot - R.top + 1 }, () => Array.from({ length: R.right - R.left + 1 }, () => data[0][0]));
+  const rowIds = g.rows.slice(R.top, R.top + data.length); const width = Math.min(Math.max(...data.map((r) => r.length)), g.keys.length - R.left); const keys = g.keys.slice(R.left, R.left + width);
+  const extra = data.length - rowIds.length;
+  if (extra > 0) {
+    const addIn = [...document.querySelectorAll('#content [data-addrow]')].pop();
+    if (addIn && await ask(`¿Crear ${extra} elemento(s) nuevos?`, `Has pegado ${data.length} filas y solo quedan ${rowIds.length} por debajo. Se añadirán al final del último grupo.`, 'Crear y pegar')) {
+      const { act, group } = JSON.parse(addIn.dataset.addrow); const nameIdx = keys.findIndex((k) => findCol(k)?.type === 'name');
+      xlBatch(() => { for (let i = rowIds.length; i < data.length; i++) { const before = new Set(S[obj].map((x) => x.id)); ACT[act]({ group, name: (nameIdx >= 0 && data[i][nameIdx]?.trim()) || 'Nuevo elemento' }); const nw = S[obj].find((x) => !before.has(x.id)); if (nw) rowIds.push(nw.id); } });
+    } else data = data.slice(0, rowIds.length);
+  }
+  // etiquetas desconocidas → ofrecer crearlas
+  const unknown = {};
+  data.forEach((row, i) => keys.forEach((key, j) => { const col = findCol(key); const it = byId(obj, rowIds[i]); if (!col || !it || col.type !== 'status') return; const p = xlParse(obj, col, row[j] ?? ''); if (p.unknown) (unknown[key] = unknown[key] || new Set()).add(p.unknown.trim()); }));
+  for (const [key, set] of Object.entries(unknown)) {
+    const col = findCol(key); const list = [...set].slice(0, 12);
+    if (!(await ask(`¿Crear etiquetas nuevas en «${esc(col.label)}»?`, `No existen: ${list.map((x) => `«${esc(x)}»`).join(', ')}.${col.custom ? '' : ' Al ser una columna del sistema, se comportarán como la etiqueta actual del primer elemento.'}`, 'Crear etiquetas'))) continue;
+    if (col.custom) { const cdef = S.customCols[obj].find((c) => 'custom.' + c.key === key); let next = Math.max(0, ...cdef.options.map((o) => o.id)) + 1; list.forEach((l, i) => cdef.options.push({ id: next++, label: l, color: PALETTE[(cdef.options.length * 3 + i) % PALETTE.length], done: false })); }
+    else if (!col.stage) { const L = xlLab(obj, key); const first = byId(obj, rowIds[0]); const base = col.baseGet ? col.baseGet(first) : colVal(col, first); list.forEach((l, i) => L.subs.push({ id: 'x' + uid(), label: l, color: PALETTE[(L.subs.length * 3 + i + 5) % PALETTE.length], base: col.opt[base]?.base || base })); }
+    render();
+  }
+  const ops = []; let err = 0, ro = 0; const msgs = [];
+  data.forEach((row, i) => keys.forEach((key, j) => { const col = findCol(key); const id = rowIds[i]; if (!col || !id) return; if (row[j] === undefined) return; const p = xlParse(obj, col, row[j]); if (p.ro) { ro++; return; } if (p.err) { err++; if (msgs.length < 3) msgs.push(p.err); return; } const it = byId(obj, id); const cur = colVal(col, it); ops.push({ id, key, v: Array.isArray(cur) && col.type === 'person' ? p.multi : p.v }); }));
+  const r = xlApply(obj, ops, 'Pegar');
+  XL.a = { r: rowIds[0], c: keys[0] }; XL.f = { r: rowIds[rowIds.length - 1], c: keys[keys.length - 1] }; xlPaint(); xlBar();
+  toast(`Pegadas ${r.n} celdas${err + r.err ? ` · ${err + r.err} con error${msgs.length ? ` (${msgs.join('; ')})` : ''}` : ''}${ro ? ` · ${ro} de solo lectura` : ''}`, err + r.err ? 'err' : 'ok');
+}
+function xlClear(label = 'Vaciar celdas') { const obj = CURRENT.obj; let ro = 0; const ops = xlEach((r, c) => { const col = findCol(c); const k = xlKind(col); if (k === 'ro' || k === 'name' || (k === 'status' && !col.custom) || (obj === 'deals' && c === 'status')) { ro++; return null; } return { id: r, key: c, v: xlEmpty(col) }; }).filter(Boolean); const res = xlApply(obj, ops, label); if (ro) toast(`${res.n} celdas vaciadas · ${ro} no se pueden vaciar (nombre, estado del sistema o calculada)`); }
+function xlFillDown() { const R = xlRect(); if (!R) return; if (R.top === R.bot) { if (R.top === 0) return; return xlFillRange({ ...R, top: R.top - 1, bot: R.top - 1 }, R.top, R.top, false, true); } xlFillRange({ ...R, bot: R.top }, R.top + 1, R.bot, false, true); }
+/** rellena las filas from..to (índices de xlGrid) a partir del rango origen R; serie numérica/fechas si procede (salvo copyOnly) */
+function xlFillRange(R, from, to, up, copyOnly) {
+  const obj = CURRENT.obj; const g = R.g; const ops = [];
+  for (let j = R.left; j <= R.right; j++) {
+    const key = g.keys[j]; const col = findCol(key); const k = xlKind(col); if (k === 'ro' || k === 'name') continue;
+    const src = []; for (let i = R.top; i <= R.bot; i++) { const it = byId(obj, g.rows[i]); src.push(it ? xlRaw(obj, col, it) : null); }
+    const n = src.length;
+    const numeric = !copyOnly && ['number', 'money', 'rating'].includes(k) && n >= 2 && src.every((v) => typeof v === 'number');
+    const step = numeric ? (src[n - 1] - src[0]) / (n - 1) : 0;
+    const isDate = !copyOnly && k === 'date' && src.every((v) => v); const dstep = isDate ? (n >= 2 ? daysBetween(src[0], src[n - 1]) / (n - 1) : 1) : 0;
+    const dAdd = (d, k2) => dayISO(addDays(Math.round(k2), new Date(String(d).slice(0, 10) + 'T00:00:00')));
+    for (let i = from; i <= to; i++) {
+      let v;
+      if (!up) { const off = i - R.bot; v = numeric ? src[n - 1] + step * off : isDate ? dAdd(src[n - 1], dstep * off) : src[(off - 1) % n]; }
+      else { const off = R.top - i; v = numeric ? src[0] - step * off : isDate ? dAdd(src[0], -dstep * off) : src[(n - (off % n)) % n]; }
+      if (typeof v === 'number') v = Math.round(v * 1e6) / 1e6;
+      ops.push({ id: g.rows[i], key, v });
+    }
+  }
+  const res = xlApply(obj, ops, 'Rellenar');
+  XL.a = { r: g.rows[Math.min(R.top, from)], c: g.keys[R.left] }; XL.f = { r: g.rows[Math.max(R.bot, to)], c: g.keys[R.right] }; xlPaint(); xlBar();
+  toast(`Rellenadas ${res.n} celdas`, 'ok');
+}
+
+/* ---------------------------------------------------------------- columnas: arrastrar para ordenar, menú ampliado */
+document.addEventListener('dragstart', (e) => { const h = e.target.closest?.('#content .tbl > .cell.hd[data-c]'); if (!h) return; XL.dragCol = h.dataset.c; e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', h.dataset.c); h.classList.add('xl-dragc'); });
+document.addEventListener('dragover', (e) => { if (!XL.dragCol) return; const h = e.target.closest?.('#content .tbl > .cell.hd[data-c]'); if (!h) return; e.preventDefault(); document.querySelectorAll('.xl-dropc').forEach((x) => x.classList.remove('xl-dropc')); h.classList.add('xl-dropc'); });
+document.addEventListener('dragend', () => { XL.dragCol = null; document.querySelectorAll('.xl-dropc,.xl-dragc').forEach((x) => x.classList.remove('xl-dropc', 'xl-dragc')); });
+document.addEventListener('drop', (e) => { if (!XL.dragCol) return; const h = e.target.closest?.('#content .tbl > .cell.hd[data-c]'); if (!h) return; e.preventDefault(); xlMoveCol(XL.dragCol, h.dataset.c); XL.dragCol = null; });
+function xlMoveCol(key, beforeKey) { if (key === beforeKey) return; const obj = CURRENT.obj; ensureOv(); const order = CURRENT.cols.map((c) => c.key).filter((k) => k !== key); const i = order.indexOf(beforeKey); const from = CURRENT.cols.findIndex((c) => c.key === key), to = CURRENT.cols.findIndex((c) => c.key === beforeKey); order.splice(from < to ? i + 1 : i, 0, key); S.colOrder[obj] = order; audit(obj, null, 'column', { mover: key }); refresh(); }
+const _colMenuX = ACT['col-menu'];
+ACT['col-menu'] = (arg, el) => {
+  _colMenuX(arg, el); if (!ddEl) return; const { obj, key } = arg; const col = findCol(key); if (!col) return; ensureXl();
+  const idx = CURRENT.cols.filter((c) => !uiOf(obj).hide.includes(c.key)).findIndex((c) => c.key === key); const fz = S.xl.freeze[obj] ?? 1;
+  const add = (html, fn) => { const b = document.createElement('button'); b.innerHTML = html; b.onclick = () => { closeDd(); fn(); }; ddEl.appendChild(b); };
+  const sep = document.createElement('div'); sep.className = 'sep'; ddEl.appendChild(sep);
+  add('🔢 Formato…', () => xlFormatDialog(obj, col));
+  add(`📌 ${fz === idx + 1 ? 'Liberar columnas (solo el nombre fijo)' : 'Inmovilizar hasta aquí'}`, () => { S.xl.freeze[obj] = fz === idx + 1 ? 1 : idx + 1; refresh(); toast(fz === idx + 1 ? 'Solo el nombre queda fijo' : `Fijas ${idx + 1} columna(s) al desplazar`, 'ok'); });
+  add('∑ Resumen del pie…', () => { const cell = document.querySelector(`.sumrow [data-xlsum="${CSS.escape(key)}"]`); if (cell) xlSumMenu(obj, key, cell); });
+  if (col.custom && can('admin') && col.cdef && !['formula', 'mirror', 'autonumber', 'created', 'updated', 'button'].includes(col.cdef.type)) add('⇄ Cambiar tipo…', () => xlTypeDialog(obj, col));
+};
+document.addEventListener('click', (e) => { const c = e.target.closest?.('.sumrow .xl-sumc'); if (!c) return; xlSumMenu(CURRENT.obj, c.dataset.xlsum, c); });
+function xlSumMenu(obj, key, cell) { const col = findCol(key); if (!col) return; ensureXl(); const cur = S.xl.sum[obj]?.[key]; const box = dropdown(cell, `<div class="xs muted" style="padding:4px 8px">Resumen de «${esc(col.label)}»</div><button data-k="">Por defecto${!cur ? ' ✓' : ''}</button>` + xlSumOptsFor(col).map((k) => `<button data-k="${k}">${SUM_OPTS[k]}${cur === k ? ' ✓' : ''}</button>`).join(''), 'list'); box.querySelectorAll('[data-k]').forEach((b) => (b.onclick = () => { closeDd(); S.xl.sum[obj] = S.xl.sum[obj] || {}; if (b.dataset.k) S.xl.sum[obj][key] = b.dataset.k; else delete S.xl.sum[obj][key]; refresh(); })); }
+
+/* formato numérico / texto de una columna */
+function xlFormatDialog(obj, col) {
+  ensureXl(); const f = { ...(xlFmt(obj, col.key) || {}) }; const num = ['money', 'number'].includes(col.type) || (col.type === 'calc' && col.align === 'r');
+  const m = modal({ title: `Formato de «${esc(col.label)}»`, body: `${num ? `<div class="fgrid"><div class="fld"><label>Decimales</label><select class="inp" id="fd"><option value="">Automático</option>${[0, 1, 2, 3, 4].map((n) => `<option value="${n}" ${String(f.dec) === String(n) ? 'selected' : ''}>${n}</option>`).join('')}</select></div><div class="fld"><label>Separador de miles</label><select class="inp" id="ft"><option value="1">Sí (1.234)</option><option value="0" ${f.thou === false ? 'selected' : ''}>No (1234)</option></select></div><div class="fld"><label>Prefijo</label><input class="inp" id="fp" value="${esc(f.pre ?? '')}" placeholder="Ej. $"/></div><div class="fld"><label>Sufijo / unidad</label><input class="inp" id="fs" list="xlsuf" value="${esc(f.suf ?? (col.type === 'money' ? ' €' : ''))}" placeholder="€, %, h, uds"/><datalist id="xlsuf"><option value=" €"><option value=" %"><option value=" h"><option value=" uds"></datalist></div><label class="chk full"><input type="checkbox" id="fn" ${f.neg ? 'checked' : ''}/> Negativos en rojo</label></div><div class="mt8 small">Vista previa: <b id="fpv"></b></div><div class="sep" style="height:1px;background:var(--line2);margin:12px 0"></div>` : ''}<div class="fgrid"><div class="fld"><label>Alineación</label><select class="inp" id="fa"><option value="">Por defecto</option><option value="l" ${f.align === 'l' ? 'selected' : ''}>Izquierda</option><option value="c" ${f.align === 'c' ? 'selected' : ''}>Centro</option><option value="r" ${f.align === 'r' ? 'selected' : ''}>Derecha</option></select></div><label class="chk" style="align-self:end"><input type="checkbox" id="fw" ${f.wrap ? 'checked' : ''}/> Ajustar texto (varias líneas)</label></div>`, footer: `<button class="btn outline" id="fr">Quitar formato</button><button class="btn primary" id="fok">Aplicar</button>` });
+  const read = () => { const o = {}; if (num) { o.dec = m.querySelector('#fd').value; o.thou = m.querySelector('#ft').value === '1'; o.pre = m.querySelector('#fp').value; o.suf = m.querySelector('#fs').value; o.neg = m.querySelector('#fn').checked; } o.align = m.querySelector('#fa').value; o.wrap = m.querySelector('#fw').checked; return o; };
+  const pv = () => { if (num) m.querySelector('#fpv').textContent = `${xlFmtNum(-1234.567, read(), col)} · ${xlFmtNum(98765.4, read(), col)}`; };
+  m.querySelectorAll('input,select').forEach((x) => (x.oninput = x.onchange = pv)); pv();
+  m.querySelector('#fok').onclick = () => { S.xl.fmt[obj] = S.xl.fmt[obj] || {}; S.xl.fmt[obj][col.key] = read(); m.close(); refresh(); toast('Formato aplicado', 'ok'); };
+  m.querySelector('#fr').onclick = () => { if (S.xl.fmt[obj]) delete S.xl.fmt[obj][col.key]; m.close(); refresh(); };
+}
+
+/* cambiar el tipo de una columna personalizada con conversión */
+const XL_TYPES = [['text', 'Texto'], ['longtext', 'Texto largo'], ['number', 'Número'], ['money', 'Importe'], ['date', 'Fecha'], ['status', 'Estado (etiquetas)'], ['bool', 'Casilla'], ['tags', 'Etiquetas libres'], ['person', 'Persona'], ['rating', 'Valoración']];
+function xlTypeDialog(obj, col) {
+  const cdef = S.customCols[obj].find((c) => 'custom.' + c.key === col.key); if (!cdef) return;
+  const m = modal({ title: `Cambiar el tipo de «${esc(cdef.label)}»`, body: `<div class="fld"><label>Nuevo tipo (ahora: ${esc((XL_TYPES.find((t) => t[0] === cdef.type) || [, cdef.type])[1])})</label><select class="inp" id="nt">${XL_TYPES.filter(([k]) => k !== cdef.type).map(([k, l]) => `<option value="${k}">${l}</option>`).join('')}</select></div><div id="pv" class="mt12"></div>`, footer: `<button class="btn outline" data-no>Cancelar</button><button class="btn primary" id="ok">Convertir</button>` });
+  m.querySelector('[data-no]').onclick = m.close;
+  const plan = () => {
+    const to = m.querySelector('#nt').value; const texts = S[obj].map((it) => ({ it, t: xlText(obj, col, it) }));
+    let opts = null; if (to === 'status') { const distinct = [...new Set(texts.map((x) => x.t).filter(Boolean))].slice(0, 30); opts = distinct.map((l, i) => ({ id: i + 1, label: l, color: PALETTE[(i * 3) % PALETTE.length], done: /hech|done|complet|ok/i.test(l) })); }
+    const fake = { key: col.key, type: to === 'longtext' ? 'text' : to === 'rating' ? 'calc' : to, custom: true, cdef: { ...cdef, type: to, options: opts, max: 5 }, opt: opts ? Object.fromEntries(opts.map((o) => [String(o.id), o])) : undefined, get: () => null };
+    const res = texts.map(({ it, t }) => { if (!t) return { it, v: xlEmpty(fake), st: 'empty' }; const p = xlParse(obj, fake, t); if (p.err) return { it, v: xlEmpty(fake), st: 'lost', t }; return { it, v: to === 'status' ? Number(p.v) : p.v, st: 'ok' }; });
+    return { to, opts, res };
+  };
+  const draw = () => { const p = plan(); const ok = p.res.filter((r) => r.st === 'ok').length, lost = p.res.filter((r) => r.st === 'lost'); m.querySelector('#pv').innerHTML = `<div class="kpis" style="grid-template-columns:repeat(3,1fr)"><div class="kpi"><div class="l">Se convierten</div><div class="v num" style="color:var(--c-green)">${ok}</div></div><div class="kpi"><div class="l">Vacías</div><div class="v num">${p.res.filter((r) => r.st === 'empty').length}</div></div><div class="kpi"><div class="l">Se pierden</div><div class="v num" style="color:${lost.length ? 'var(--c-red)' : 'inherit'}">${lost.length}</div></div></div>${lost.length ? `<p class="xs muted mt8">Ejemplos que no encajan: ${lost.slice(0, 5).map((r) => `«${esc(r.t)}»`).join(', ')}</p>` : ''}${p.opts ? `<p class="xs muted mt8">Se crearán ${p.opts.length} etiquetas: ${p.opts.slice(0, 8).map((o) => esc(o.label)).join(', ')}</p>` : ''}`; };
+  m.querySelector('#nt').onchange = draw; draw();
+  m.querySelector('#ok').onclick = () => { const p = plan(); const before = S[obj].map((it) => [it.id, (it.custom || {})[cdef.key]]); const from = cdef.type; cdef.type = p.to; if (p.opts) cdef.options = p.opts; if (p.to === 'rating') cdef.max = cdef.max || 5; p.res.forEach(({ it, v }) => { it.custom = it.custom || {}; it.custom[cdef.key] = v; }); audit(obj, null, 'column', { columna: cdef.label, tipo: [from, p.to] }); XL.undo = XL.undo.filter((e) => !e.ops.some((o) => o.key === col.key)); m.close(); refresh(); toast(`Columna convertida a ${(XL_TYPES.find((t) => t[0] === p.to) || [])[1] || p.to}`, 'ok'); void before; };
+}
+
+/* ---------------------------------------------------------------- formato condicional */
+const CF_OPS = { eq: '=', ne: '≠', gt: '>', lt: '<', ge: '≥', le: '≤', contains: 'contiene', ncontains: 'no contiene', empty: 'está vacío', nempty: 'no está vacío', between: 'entre', overdue: 'fecha vencida', nextn: 'en los próximos N días', label: 'etiqueta es' };
+function xlRuleOk(obj, r, col, it) {
+  const raw = colVal(col, it); const t = xlText(obj, col, it); const isDate = col.type === 'date';
+  const num = (x) => (isDate ? (xlDateParse(x) || '') : xlNumParse(x)); const cur = isDate ? (raw ? String(raw).slice(0, 10) : null) : xlNum(obj, col, it);
+  const cmp = (a, b) => (a == null || b == null || b === '' || b === undefined ? null : a < b ? -1 : a > b ? 1 : 0);
+  switch (r.op) {
+    case 'eq': return norm(t) === norm(r.v) || String(raw) === String(r.v);
+    case 'ne': return !(norm(t) === norm(r.v) || String(raw) === String(r.v));
+    case 'gt': return cmp(cur, num(r.v)) === 1; case 'lt': return cmp(cur, num(r.v)) === -1;
+    case 'ge': { const c = cmp(cur, num(r.v)); return c === 1 || c === 0; } case 'le': { const c = cmp(cur, num(r.v)); return c === -1 || c === 0; }
+    case 'contains': return !!r.v && norm(t).includes(norm(r.v)); case 'ncontains': return !norm(t).includes(norm(r.v));
+    case 'empty': return t === '' || (col.type === 'bool' && !raw); case 'nempty': return !(t === '' || (col.type === 'bool' && !raw));
+    case 'between': { const a = num(r.v), b = num(r.v2); return cur != null && a != null && b != null && a !== '' && b !== '' && cur >= a && cur <= b; }
+    case 'overdue': return isDate && !!cur && cur < vDay();
+    case 'nextn': return isDate && !!cur && cur >= vDay() && daysBetween(vDay(), cur) <= (Number(r.v) || 7);
+    case 'label': return String(raw ?? '') === String(r.v);
+  }
+  return false;
+}
+ACT['xl-cf'] = (obj) => {
+  ensureXl(); const rules = (S.xl.cf[obj] = S.xl.cf[obj] || []);
+  const cols = CURRENT.cols.filter((c) => c.type !== 'timeline');
+  const m = modal({ title: 'Formato condicional', size: 'lg', body: `<p class="small muted mb12">Colorea celdas o filas enteras según su valor, como en Excel. Las reglas se evalúan en orden: gana la primera que se cumple. Los cambios se ven al momento.</p><div id="cfl"></div><button class="btn sm outline mt8" id="cfa">${ico.plus}Nueva regla</button>`, footer: `<button class="btn primary" data-ok>Listo</button>` });
+  const live = () => { save(); render(); };
+  const draw = () => {
+    m.querySelector('#cfl').innerHTML = rules.length ? rules.map((r, i) => { const col = cols.find((c) => c.key === r.col); const isStatus = col?.type === 'status'; const needV = !['empty', 'nempty', 'overdue'].includes(r.op); return `<div class="xl-cfr ${r.on ? '' : 'off'}"><input type="checkbox" data-on="${i}" ${r.on ? 'checked' : ''} title="Activa"/><select class="inp" data-col="${i}">${cols.map((c) => `<option value="${c.key}" ${c.key === r.col ? 'selected' : ''}>${esc(c.label)}</option>`).join('')}</select><select class="inp" data-op="${i}">${Object.entries(CF_OPS).filter(([k]) => (k === 'label' ? isStatus : !(['overdue', 'nextn'].includes(k) && col?.type !== 'date'))).map(([k, l]) => `<option value="${k}" ${k === r.op ? 'selected' : ''}>${l}</option>`).join('')}</select>${needV ? (r.op === 'label' ? `<select class="inp" data-v="${i}">${Object.entries(col.opt).map(([k, o]) => `<option value="${esc(k)}" ${String(r.v) === k ? 'selected' : ''}>${esc(o.label)}</option>`).join('')}</select>` : `<input class="inp" data-v="${i}" value="${esc(r.v ?? '')}" placeholder="${r.op === 'nextn' ? 'días' : 'valor'}"/>`) : '<span></span>'}${r.op === 'between' ? `<input class="inp" data-v2="${i}" value="${esc(r.v2 ?? '')}" placeholder="y"/>` : ''}<label class="xs" title="Fondo">Fondo <input type="color" data-bg="${i}" value="${r.bg}"/></label><label class="xs" title="Texto">Texto <input type="color" data-fg="${i}" value="${r.fg}"/></label><select class="inp" data-sc="${i}"><option value="cell">Celda</option><option value="row" ${r.scope === 'row' ? 'selected' : ''}>Fila entera</option></select><span class="xl-cfp" style="background:${r.bg};color:${r.fg}">Abc 123</span><button class="ibtn" data-up="${i}" title="Subir">↑</button><button class="ibtn" data-del="${i}" title="Borrar">${ico.trash}</button></div>`; }).join('') : '<p class="muted small">Aún no hay reglas. Ejemplo: «Importe &gt; 20000 → fondo verde» o «Cierre: fecha vencida → fila roja».</p>';
+    const on = (sel, f, ev = 'onchange') => m.querySelectorAll(sel).forEach((x) => (x[ev] = () => { f(rules[x.dataset[Object.keys(x.dataset)[0]]], x); live(); }));
+    on('[data-on]', (r, x) => { r.on = x.checked; draw(); });
+    on('[data-col]', (r, x) => { r.col = x.value; const c = cols.find((y) => y.key === r.col); if (r.op === 'label' && c?.type !== 'status') r.op = 'eq'; if (c?.type === 'status' && r.op === 'eq') { r.op = 'label'; r.v = Object.keys(c.opt)[0]; } draw(); });
+    on('[data-op]', (r, x) => { r.op = x.value; if (r.op === 'label') { const c = cols.find((y) => y.key === r.col); r.v = Object.keys(c.opt)[0]; } draw(); });
+    on('[data-v]', (r, x) => { r.v = x.value; }, 'oninput'); m.querySelectorAll('select[data-v]').forEach((x) => (x.onchange = () => { rules[x.dataset.v].v = x.value; live(); }));
+    on('[data-v2]', (r, x) => { r.v2 = x.value; }, 'oninput');
+    on('[data-bg]', (r, x) => { r.bg = x.value; draw(); }, 'oninput'); on('[data-fg]', (r, x) => { r.fg = x.value; draw(); }, 'oninput');
+    on('[data-sc]', (r, x) => { r.scope = x.value; });
+    m.querySelectorAll('[data-up]').forEach((b) => (b.onclick = () => { const i = Number(b.dataset.up); if (i > 0) { [rules[i - 1], rules[i]] = [rules[i], rules[i - 1]]; live(); draw(); } }));
+    m.querySelectorAll('[data-del]').forEach((b) => (b.onclick = () => { rules.splice(Number(b.dataset.del), 1); live(); draw(); }));
+  };
+  m.querySelector('#cfa').onclick = () => { const c = cols.find((x) => ['money', 'number'].includes(x.type)) || cols[1] || cols[0]; rules.push({ id: uid(), on: true, col: c.key, op: c.type === 'status' ? 'label' : 'gt', v: c.type === 'status' ? Object.keys(c.opt)[0] : '', bg: '#c3f1d8', fg: '#037f4c', scope: 'cell' }); live(); draw(); };
+  m.querySelector('[data-ok]').onclick = () => { m.close(); refresh(); };
+  draw();
+};
+
+/* ---------------------------------------------------------------- arranque */
+ensureXl(); if (xlTables().length) xlDecorate();
+</script>
+
+<script>
+/* ============================================================
    Tutorial guiado · pasos con resaltado en pantalla
    ============================================================ */
 'use strict';
@@ -2277,7 +2969,7 @@ const STEPS = [
   { id: 'persona', t: 'Personas, fechas, importes y texto', s: 'Edición', go: () => goView('contactos', 'table'), sel: '.cell.person', b: 'El avatar abre la lista del equipo para reasignar. Las fechas, números e importes se editan al hacer clic; el punto de color de las fechas avisa de vencimientos (rojo pasado, naranja próximo). El texto se edita en línea y Escape cancela.' },
   { id: 'columna', t: 'Añade columnas nuevas', s: 'Personalización', go: () => goView('contactos', 'table'), sel: '.cell.hd.last', b: 'El «+» de la cabecera crea una columna: Estado con etiquetas de color, Texto, Número, Fecha, Persona o Casilla. La columna aparece en todos los grupos, se edita en celda y se puede usar para agrupar o para reglas.', try: 'Crea una columna «Prioridad interna» de tipo Estado.' },
   { id: 'colmenu', t: 'Menú de cada columna', s: 'Personalización', go: () => goView('contactos', 'table'), sel: '.cell.hd:nth-child(4)', b: 'Pasa el ratón por una cabecera y pulsa ⌄: ordenar, renombrar, mover a izquierda o derecha, cambiar el ancho, ocultar, editar etiquetas o borrar la columna si la creaste tú. Pulsar el título ordena.' },
-  { id: 'etiquetas', t: 'Etiquetas y colores a tu gusto', s: 'Personalización', go: () => goView('contactos', 'table'), sel: '.cell.status', b: 'Abre cualquier estado y pulsa «Editar etiquetas»: cambia el texto y el color de cada opción. En las columnas que hayas creado también puedes añadir o quitar etiquetas; la tabla y el kanban se actualizan al momento.', try: 'Cambia el color de «Lead» a naranja.' },
+  { id: 'etiquetas', t: 'Etiquetas y colores a tu gusto', s: 'Personalización', go: () => goView('contactos', 'table'), sel: '.cell.status', b: 'Abre cualquier estado y pulsa «Editar etiquetas»: ahí mismo cambias el texto y el color, ordenas arrastrando, ocultas y añades etiquetas, también en las columnas del CRM (las nuevas «se comportan como» una del sistema). La tabla y el kanban se actualizan al momento.', try: 'Cambia el color de «Lead» a naranja.' },
   { id: 'agrupar', t: 'Agrupa por lo que quieras', s: 'Personalización', go: () => goView('contactos', 'table'), sel: '[data-act="b-group"]', b: 'Con «Agrupar» eliges la columna de estado que forma los grupos (ciclo de vida, estado del lead, origen o una columna tuya) o quitas la agrupación. La elección se recuerda por tablero.' },
   { id: 'grupo', t: 'Renombra y colorea los grupos', s: 'Personalización', go: () => goView('contactos', 'table'), sel: '.ghead', b: 'Haz clic en el nombre del grupo para renombrarlo y en el cuadrado de color para cambiarlo. El menú ⋯ del grupo permite subirlo, bajarlo, plegar o desplegar todos y ocultarlo.', try: 'Renombra «Lead» a «Leads nuevos».' },
   { id: 'fila', t: 'Añade elementos sin formularios', s: 'Filas', go: () => goView('contactos', 'table'), sel: '.addrow input', b: 'Escribe en «+ Añadir contacto» y pulsa Enter: el registro se crea ya dentro de ese grupo, con su estado. Para un alta completa usa el botón azul «Nuevo contacto».', try: 'Añade «Laura Vidal» en el grupo Lead.' },
@@ -2315,6 +3007,16 @@ const STEPS = [
   { id: 'v2-fechas', t: 'Disparadores de fecha y reloj', s: 'Celdas y automatizaciones', go: () => goView('automatizaciones', 'sched'), sel: '.card', b: 'El planificador calcula la hora exacta de cada disparador de fecha (con días laborables y zona horaria) en cuanto cambia la fecha, y lo reprograma si la mueves. Para probarlo sin esperar, adelanta el reloj de la demo: las automatizaciones vencidas se ejecutan y aparecen en el historial.', try: 'Pulsa «+7 días» y revisa el Historial.' },
   { id: 'v2-aprob', t: 'Aprobaciones en el flujo', s: 'Celdas y automatizaciones', go: () => goView('automatizaciones', 'approvals'), sel: '.card', b: 'La acción «Pedir aprobación» detiene la automatización y crea una solicitud para el aprobador. Al aprobar o rechazar, el flujo continúa por la rama correspondiente y ejecuta el resto de acciones.' },
   { id: 'v2-uso', t: 'Uso, presupuesto y bucles', s: 'Celdas y automatizaciones', go: () => goView('automatizaciones', 'usage'), sel: '.kpis', b: 'Cada acción ejecutada cuenta contra el presupuesto mensual, con avisos al 60, 80 y 100 %. Al agotarse puedes bloquear la edición o pausar todo. La protección de bucles corta cadenas más profundas que el límite (10 por defecto) o más de 5 ejecuciones por minuto sobre el mismo elemento, y pausa la regla responsable. En Gobierno ves quién ejecuta cada regla y reasignas las de usuarios desactivados.' },
+  { id: 'xl-etiquetas', t: 'Etiquetas editables dentro del desplegable', s: 'Libertad tipo Excel', go: () => goView('tickets', 'table'), sel: '.cell.status', b: 'Abre cualquier estado y pulsa «Editar etiquetas»: sin salir del desplegable cambias el texto y el color, las ordenas arrastrando, ocultas las que no uses y creas etiquetas nuevas. En las columnas del sistema (Estado del ticket, Prioridad, Etapa del contacto…) las etiquetas originales no se borran porque las usa la lógica del CRM; las nuevas eligen «se comporta como»: «Resuelto por proveedor ≈ Resuelto» cierra el SLA igual que Resuelto. En la etapa del pipeline editas directamente las etapas.', try: 'En «Estado» de un ticket crea «Resuelto por proveedor» que se comporte como Resuelto y aplícala.' },
+  { id: 'xl-celdas', t: 'Todas las celdas se editan', s: 'Libertad tipo Excel', go: () => goView('contactos', 'table'), sel: '.cell.name', b: 'El nombre se renombra con doble clic, F2 o el lápiz (un clic sigue abriendo la ficha). Las etiquetas libres se editan como chips, la empresa con un buscador (▾), las personas con buscador, las casillas con clic o Espacio, y los textos largos en una ventana. Las celdas calculadas muestran 🔒 y no se pueden editar.', try: 'Haz doble clic en un nombre, cámbialo y pulsa Enter.' },
+  { id: 'xl-teclado', t: 'Celda activa y teclado', s: 'Libertad tipo Excel', go: () => { goView('negocios', 'table'); setTimeout(() => { const c = document.querySelector('.xc[data-c="amount"]'); if (c) xlSelect(c.dataset.r, c.dataset.c); }, 150); }, sel: '.tbl .xc[data-c="amount"]', b: 'Un clic selecciona la celda (borde azul). Muévete con flechas, Tab y Mayús+Tab; Enter o F2 editan, y si empiezas a escribir se reemplaza el contenido. Al editar, Enter guarda y baja, Mayús+Enter sube, Tab va a la derecha y Esc cancela. Ctrl+A selecciona todo. El botón «?» de la barra resume los atajos.', try: 'Selecciona un importe, escribe 25000 y pulsa Enter.' },
+  { id: 'xl-rango', t: 'Rangos y barra de estado', s: 'Libertad tipo Excel', go: () => { goView('negocios', 'table'); setTimeout(() => { const cs = [...document.querySelectorAll('.xc[data-c="amount"]')]; if (cs.length > 2) { XL.a = { r: cs[0].dataset.r, c: 'amount' }; XL.f = { r: cs[3].dataset.r, c: 'prob' }; xlPaint(); xlBar(); } }, 150); }, sel: '.tbl .xc[data-c="amount"]', b: 'Mayús+clic, Mayús+flechas o arrastrar con el ratón seleccionan un rango. Abajo aparece la barra de estado como en Excel: celdas, recuento, suma, promedio, mínimo y máximo de los números seleccionados. Supr vacía el rango (salvo nombres, estados del sistema y calculadas).' },
+  { id: 'xl-pegar', t: 'Copiar y pegar desde Excel', s: 'Libertad tipo Excel', go: () => goView('negocios', 'table'), sel: '.tbl .xc[data-c="amount"]', b: 'Ctrl+C copia el rango como texto con tabuladores y Ctrl+V pega lo que copies de Excel o Google Sheets empezando en la celda activa. Se interpretan importes «1.234,56 €», porcentajes, fechas dd/mm/aaaa, sí/no, personas por nombre o iniciales y estados por su texto; si una etiqueta no existe te ofrece crearla. Si pegas más filas de las que hay, crea los elementos que falten. Un valor sobre un rango lo rellena entero.', try: 'Copia dos importes con Ctrl+C y pégalos dos filas más abajo con Ctrl+V.' },
+  { id: 'xl-rellenar', t: 'Rellenar, series y deshacer', s: 'Libertad tipo Excel', go: () => goView('tareas', 'table'), sel: '[data-act="xl-undo"]', b: 'El cuadradito azul de la esquina de la selección se arrastra hacia abajo o arriba para rellenar: copia valores y estados, continúa series numéricas si seleccionas dos o más números y suma días a las fechas. Ctrl+D rellena hacia abajo. Todo (pegar, rellenar, vaciar, cambiar estados) se deshace con Ctrl+Z o ↶ y se rehace con Ctrl+Y o ↷, en bloque.', try: 'Arrastra el cuadradito de una fecha de vencimiento hacia abajo y luego pulsa ↶.' },
+  { id: 'xl-pie', t: 'Resumen del pie por columna', s: 'Libertad tipo Excel', go: () => goView('negocios', 'table'), sel: '.sumrow .xl-sumc', b: 'Haz clic en el pie de cualquier columna para elegir su resumen: suma, media, mediana, mínimo, máximo, recuento, vacíos o % lleno en números; distribución o recuento por etiqueta en estados; marcadas en casillas y rango en fechas. Se guarda por tablero.', try: 'Cambia el pie de «Prob.» a Máx.' },
+  { id: 'xl-cf', t: 'Formato condicional', s: 'Libertad tipo Excel', go: () => goView('negocios', 'table'), sel: '[data-act="xl-cf"]', b: 'Reglas como en Excel: columna, condición (=, ≠, >, <, ≥, ≤, contiene, vacío, entre, fecha vencida, en los próximos N días, etiqueta es), colores de fondo y texto, y si pinta la celda o la fila entera. Se aplican en orden, se activan o desactivan y se ven al instante.', try: 'Crea «Importe > 20000 → fondo verde».' },
+  { id: 'xl-formato', t: 'Formato de número y cambio de tipo', s: 'Libertad tipo Excel', go: () => goView('negocios', 'table'), sel: '.cell.hd .hdm', b: 'En el menú ⌄ de cada columna: «Formato…» fija decimales, separador de miles, prefijo y unidad (€, %, h, uds), negativos en rojo, alineación y ajuste de texto. En las columnas que creaste, «Cambiar tipo» convierte los valores (texto ↔ número ↔ estado ↔ fecha ↔ casilla ↔ etiquetas…) y antes te enseña cuántos se convierten y cuántos se perderían.' },
+  { id: 'xl-columnas', t: 'Ancho, orden e inmovilizar columnas', s: 'Libertad tipo Excel', go: () => goView('negocios', 'table'), sel: '.cell.hd .xl-rz', b: 'Arrastra el borde derecho de una cabecera para cambiar el ancho y arrastra la cabecera para reordenar. La cabecera queda fija al desplazarte y el nombre también; con «Inmovilizar hasta aquí» en el menú de columna fijas más columnas a la izquierda. Todo se guarda en el tablero.', try: 'Arrastra la cabecera «Cierre» delante de «Importe».' },
   { id: 'fin', t: '¡Listo!', s: 'Fin', go: () => goView('inicio'), sel: '#tutBtn', b: 'Ya conoces el CRM. Vuelve a este tutorial cuando quieras desde el botón flotante; cada capítulo te lleva a la pantalla y la resalta. Todo lo que cambies se queda guardado en este navegador.' },
 ];
 let TUT = { idx: -1, done: [] };

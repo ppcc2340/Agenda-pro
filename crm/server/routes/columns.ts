@@ -9,8 +9,10 @@ import { audit } from "../services/audit.js";
 import { emit } from "../services/events.js";
 import { COLUMN_TYPES, FORMULA_FUNCTIONS, AGGREGATIONS, RELATIONS, EXTRA_TARGET_FIELDS, builtinColumns, fieldDefs, evalFormula, computeFields, cellsOf, enrichOne } from "../services/columns.js";
 import { normalizeLabels, fieldDependents } from "../services/columnAdmin.js";
-import { loadRecord, applyPatch, cellsToPatch, OBJECT_TABLE } from "../services/recordOps.js";
+import { loadRecord, applyPatch, cellsToPatch, validatedPatch, OBJECT_TABLE } from "../services/recordOps.js";
 import { OBJECT_FIELDS } from "../lib/filters.js";
+import { convertField } from "../services/convert.js";
+import { assert } from "../lib/permissions.js";
 
 const OBJ = z.enum(["contact", "company", "deal", "ticket", "contract"]);
 export function columnRoutes() {
@@ -36,6 +38,12 @@ export function columnRoutes() {
     const rels = Object.entries(RELATIONS[object] ?? {}).map(([k, v]) => ({ key: k, label: v.label, target: v.target, many: v.many, fields: [...(OBJECT_FIELDS[v.target] ? Object.keys(OBJECT_FIELDS[v.target]!) : []), ...(EXTRA_TARGET_FIELDS[v.target] ?? []), ...(OBJECT_FIELDS[v.target] ? fieldDefs(req.ctx, v.target).map((d) => `custom.${d.key}`) : [])] }));
     return { builtin: builtinColumns(object), custom: fieldDefs(req.ctx, object), relations: rels };
   }));
+  /** Vista previa de un cambio de tipo: cuántos valores se convierten, cuántos se pierden y ejemplos. */
+  r.post("/convert-preview", h(async (req) => {
+    const b = parse(z.object({ object: OBJ, key: z.string(), type: z.string(), settings: z.record(z.unknown()).optional() }), req.body);
+    if (!COLUMN_TYPES[b.type]) throw badRequest("Tipo no válido");
+    return convertField(req.ctx, b.object, b.key, b.type, b.settings ?? {}, false);
+  }));
   r.get("/dependents/:object/:key", h(async (req) => { const object = parse(OBJ, req.params.object); const d = fieldDefs(req.ctx, object).find((x) => x.key === param(req, "key")); return { items: fieldDependents(req.ctx, object, param(req, "key"), d?.label ?? param(req, "key")) }; }));
   r.post("/formula/preview", h(async (req) => {
     const b = parse(z.object({ object: OBJ, expression: z.string(), record_id: z.string().optional() }), req.body);
@@ -58,6 +66,29 @@ export function columnRoutes() {
 export function cellRoutes() {
   const r = Router();
   r.get("/:object/:id", h(async (req) => { const object = parse(OBJ, req.params.object); const rec = loadRecord(req.ctx, object, param(req, "id")) as Row | null; if (!rec) throw notFound(); return { id: rec.id, object, column_values: cellsOf(req.ctx, object, rec) }; }));
+  /**
+   * Edición en bloque (pegar desde Excel, rellenar, borrar rango, deshacer): { changes: [{ id, column_id, value }] }.
+   * Cada registro se actualiza por separado; los errores se devuelven por celda sin abortar el resto.
+   */
+  r.post("/:object/batch", h(async (req) => {
+    const object = parse(OBJ, req.params.object);
+    assert(req.ctx, object, "update");
+    const b = parse(z.object({ changes: z.array(z.object({ id: z.string(), column_id: z.string(), value: z.unknown().optional() })).min(1).max(5000) }), req.body);
+    const ro = new Set([...builtinColumns(object).filter((c) => ["creation_log", "last_updated"].includes(c.type)).map((c) => c.id), "id", "workspace_id", "created_at", "updated_at", "deleted_at"]);
+    const byRec = new Map<string, Record<string, unknown>>();
+    const errors: { id: string; column_id: string; error: string }[] = [];
+    for (const c of b.changes) { if (ro.has(c.column_id)) { errors.push({ id: c.id, column_id: c.column_id, error: "Solo lectura" }); continue; } byRec.set(c.id, { ...(byRec.get(c.id) ?? {}), [c.column_id]: c.value ?? null }); }
+    let ok = 0;
+    for (const [rid, values] of byRec) {
+      try { req.ctx.db.transaction(() => applyPatch(req.ctx, object, rid, validatedPatch(object, cellsToPatch(values)))); ok += Object.keys(values).length; }
+      catch (e) {
+        // reintenta celda a celda para aplicar las válidas y señalar la que falla
+        for (const [k, v] of Object.entries(values)) { try { req.ctx.db.transaction(() => applyPatch(req.ctx, object, rid, validatedPatch(object, cellsToPatch({ [k]: v })))); ok++; } catch (e2) { errors.push({ id: rid, column_id: k, error: (e2 as Error).message || String(e) }); } }
+      }
+    }
+    audit(req.ctx, object, "", "batch_edit", { cells: ok, errors: errors.length });
+    return { ok, errors };
+  }));
   /** change_column_value / change_multiple_column_values: { column_id, value } o { values: {col: valor} }. Borrar con null. */
   r.put("/:object/:id", h(async (req) => {
     const object = parse(OBJ, req.params.object);
@@ -66,7 +97,7 @@ export function cellRoutes() {
     if (!values || !Object.keys(values).length) throw badRequest("Indica column_id y value, o values");
     const ro = new Set([...builtinColumns(object).filter((c) => ["creation_log", "last_updated"].includes(c.type)).map((c) => c.id), "id", "workspace_id"]);
     for (const k of Object.keys(values)) if (ro.has(k)) throw badRequest(`La columna ${k} es de solo lectura`);
-    applyPatch(req.ctx, object, param(req, "id"), cellsToPatch(values));
+    applyPatch(req.ctx, object, param(req, "id"), validatedPatch(object, cellsToPatch(values)));
     const rec = loadRecord(req.ctx, object, param(req, "id")) as Row;
     return { id: rec.id, column_values: cellsOf(req.ctx, object, rec) };
   }));

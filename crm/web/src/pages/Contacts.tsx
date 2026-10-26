@@ -28,19 +28,19 @@ export function ContactsPage() {
   const patch = (c: C, body: Record<string, unknown>) => api.patch(`contacts/${c.id}`, body).then(() => undefined);
   const editable = can("contact", "update");
   const cols: Column<C>[] = [
-    { key: "name", label: "Contacto", type: "name", value: (c) => `${c.first_name} ${c.last_name}`, sub: (c) => c.job_title, render: (c) => <Link to={`/contactos/${c.id}`} onClick={(e) => e.stopPropagation()}>{c.first_name} {c.last_name}</Link> },
-    { key: "company_name", label: "Empresa", className: "l", render: (c) => c.company_id ? <Link to={`/empresas/${c.company_id}`} onClick={(e) => e.stopPropagation()}>{c.company_name}</Link> : <span className="muted">—</span> },
-    { key: "lifecycle_stage", label: "Etapa", sortable: true, type: "status", fixedOptions: true, options: LIFECYCLE_OPTS, onEdit: editable ? (c, v) => patch(c, { lifecycle_stage: v }) : undefined },
-    { key: "lead_status", label: "Estado lead", sortable: true, type: "status", fixedOptions: true, options: LEAD_STATUS_OPTS, onEdit: editable ? (c, v) => patch(c, { lead_status: v }) : undefined },
-    { key: "owner_name", label: "Propietario", type: "person", onEdit: editable ? (c, v) => patch(c, { owner_id: v }) : undefined },
-    { key: "email", label: "Email", sortable: true, className: "l", onEdit: editable ? (c, v) => patch(c, { email: v }) : undefined, render: (c) => c.email ? <a href={`mailto:${c.email}`} onClick={(e) => e.stopPropagation()}>{c.email}</a> : <span className="muted">—</span> },
-    { key: "phone", label: "Teléfono", className: "l", onEdit: editable ? (c, v) => patch(c, { phone: v }) : undefined },
-    { key: "job_title", label: "Cargo", className: "l", default: false, onEdit: editable ? (c, v) => patch(c, { job_title: v }) : undefined },
-    { key: "score", label: "Score", sortable: true, type: "number", agg: "avg", width: 120, render: (c) => <ScoreBar value={c.score} /> },
+    { key: "name", label: "Contacto", type: "name", value: (c) => `${c.first_name} ${c.last_name}`, onEdit: editable ? (c, v) => { const [first, ...rest] = String(v).trim().split(/\s+/); return patch(c, { first_name: first, last_name: rest.join(" ") }); } : undefined, sub: (c) => c.job_title, render: (c) => <Link to={`/contactos/${c.id}`} onClick={(e) => e.stopPropagation()}>{c.first_name} {c.last_name}</Link> },
+    { key: "company_name", label: "Empresa", type: "relation", field: editable ? "company_id" : undefined, relation: { endpoint: "companies", labelOf: (r) => String(r.name ?? "") }, className: "l", render: (c) => c.company_id ? <Link to={`/empresas/${c.company_id}`} onClick={(e) => e.stopPropagation()}>{c.company_name}</Link> : <span className="muted">—</span> },
+    { key: "lifecycle_stage", label: "Etapa", sortable: true, type: "status", fixedOptions: true, field: "lifecycle_stage", options: LIFECYCLE_OPTS, onEdit: editable ? (c, v) => patch(c, { lifecycle_stage: v }) : undefined },
+    { key: "lead_status", label: "Estado lead", sortable: true, type: "status", fixedOptions: true, field: "lead_status", options: LEAD_STATUS_OPTS, onEdit: editable ? (c, v) => patch(c, { lead_status: v }) : undefined },
+    { key: "owner_name", label: "Propietario", type: "person", field: "owner_id", onEdit: editable ? (c, v) => patch(c, { owner_id: v }) : undefined },
+    { key: "email", label: "Email", sortable: true, className: "l", field: "email", onEdit: editable ? (c, v) => patch(c, { email: v }) : undefined, render: (c) => c.email ? <a href={`mailto:${c.email}`} onClick={(e) => e.stopPropagation()}>{c.email}</a> : <span className="muted">—</span> },
+    { key: "phone", label: "Teléfono", className: "l", field: "phone", onEdit: editable ? (c, v) => patch(c, { phone: v }) : undefined },
+    { key: "job_title", label: "Cargo", className: "l", default: false, field: "job_title", onEdit: editable ? (c, v) => patch(c, { job_title: v }) : undefined },
+    { key: "score", label: "Score", readOnlyReason: "Se calcula con las reglas de puntuación", sortable: true, type: "number", agg: "avg", width: 120, render: (c) => <ScoreBar value={c.score} /> },
     { key: "source", label: "Origen", sortable: true, className: "c", render: (c) => SOURCES[c.source ?? ""] ?? c.source ?? "", default: false },
     { key: "open_deals", label: "Negocios", type: "number", default: false },
-    { key: "tags", label: "Etiquetas", type: "tags", default: false },
-    { key: "city", label: "Ciudad", sortable: true, className: "l", default: false, onEdit: editable ? (c, v) => patch(c, { city: v }) : undefined },
+    { key: "tags", label: "Etiquetas", type: "tags", default: false, field: editable ? "tags" : undefined },
+    { key: "city", label: "Ciudad", sortable: true, className: "l", default: false, field: "city", onEdit: editable ? (c, v) => patch(c, { city: v }) : undefined },
     { key: "last_activity_at", label: "Última actividad", sortable: true, className: "c", render: (c) => <span className="muted" title={fmtDate(c.last_activity_at)}>{relTime(c.last_activity_at) || "nunca"}</span> },
     { key: "created_at", label: "Creado", sortable: true, type: "date", render: (c) => fmtDate(c.created_at), default: false },
     ...customColumns<C>(customFields, "contact", board, editable ? (c, k, v) => patch(c, { custom: { [k]: v } }) : undefined, userName),
@@ -52,7 +52,7 @@ export function ContactsPage() {
     { key: "owner_id", label: "Propietario", get: (c) => c.owner_id ?? "", groups: ownerGroups, other: "Sin propietario", setValue: (c, g) => patch(c, { owner_id: g }), createValue: (g) => ({ owner_id: g }) },
     ...customFields.filter((f) => f.object === "contact" && f.type === "select").map<GroupOption<C>>((f) => ({ key: `custom.${f.key}`, label: f.label, get: (c) => String(c.custom?.[f.key] ?? ""), groups: (cols.find((c) => c.key === `custom.${f.key}`)?.options ? Object.entries(cols.find((c) => c.key === `custom.${f.key}`)!.options!).map(([key, o]) => ({ key, label: o.label, color: o.color })) : []), other: "Sin valor", setValue: (c, g) => patch(c, { custom: { [f.key]: g } }), createValue: (g) => ({ custom: { [f.key]: g } }) })),
   ];
-  const create = async (name: string, extra: Record<string, unknown>) => { const [first, ...rest] = name.split(/\s+/); await api.post("contacts", { first_name: first, last_name: rest.join(" "), force: true, ...extra }); };
+  const create = async (name: string, extra: Record<string, unknown>) => { const [first, ...rest] = name.split(/\s+/); return api.post("contacts", { first_name: first, last_name: rest.join(" "), force: true, ...extra }); };
   const duplicate = async (c: C) => { await api.post("contacts", { first_name: c.first_name, last_name: `${c.last_name} (copia)`.trim(), phone: c.phone, job_title: c.job_title, company_id: c.company_id, lifecycle_stage: c.lifecycle_stage, lead_status: c.lead_status, source: c.source, owner_id: c.owner_id, tags: c.tags, city: c.city, custom: c.custom, force: true }); };
   const runBulk = async (body: Record<string, unknown>) => { if (!bulk) return; const r = await api.post<{ affected: number }>("contacts/bulk", { ids: bulk.ids, ...body }); toast(`${r.affected} contactos actualizados`, "ok"); bulk.clear(); setBulk(null); };
   return (

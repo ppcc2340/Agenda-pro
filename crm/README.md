@@ -121,6 +121,48 @@ Sigue el manual de automatizaciones y valores:
 
 La demo HTML incluye todo lo anterior (columnas de ejemplo, inspector de celdas, editor con ramas, recetas, reloj virtual para probar disparadores de fecha, aprobaciones, uso y gobierno) y un capítulo «Celdas y automatizaciones» de diez pasos en el tutorial.
 
+## Libertad tipo Excel en los tableros
+
+Todas las tablas (contactos, empresas, negocios, tickets, contratos) funcionan como una hoja de cálculo sin perder el aspecto de monday.
+
+- **Etiquetas y estados editables desde la celda**: en el desplegable de cualquier columna de estado, «Editar etiquetas» permite renombrar, cambiar el color, arrastrar para ordenar, añadir y quitar etiquetas allí mismo.
+  - **Etiquetas del sistema** (etapa del contacto, estado del lead, tipo de empresa, estado y prioridad del ticket, urgencia…): se pueden renombrar, recolorear, ordenar u ocultar, pero no borrar. Las etiquetas nuevas «se comportan como» una etiqueta base. Por ejemplo, «Cliente VIP ≈ Cliente» o «Esperando proveedor ≈ Pendiente». El registro guarda el estado base, así que informes, SLA y automatizaciones siguen funcionando, y la etiqueta nueva se guarda aparte (`custom._lbl_<campo>`).
+  - **Etapas de negocio**: se editan las etapas del pipeline directamente (también se ven en el kanban).
+  - **Columnas propias**: las etiquetas tienen ID estable y marca de «hecho».
+- **Todas las celdas se editan**:
+  - el nombre (F2, doble clic o el lápiz);
+  - etiquetas múltiples con sugerencias;
+  - empresa relacionada con buscador;
+  - texto largo, rango de fechas, fechas y horas, personas, números, casillas.
+
+  Las columnas calculadas muestran un candado y el motivo.
+- **Teclado y selección**:
+  - flechas, Tab, Enter y F2; escribir sustituye el contenido; Espacio marca casillas o abre etiquetas;
+  - rangos con Mayús + clic, Mayús + flechas o arrastrando;
+  - barra de estado con recuento, suma, promedio, mínimo y máximo.
+- **Copiar, pegar y rellenar**:
+  - Ctrl+C, Ctrl+X y Ctrl+V con Excel o Google Sheets (texto tabulado). Se reconocen «1.234,56 €», «31/12/2026», «sí/x», personas por nombre o iniciales y etiquetas por su texto.
+  - Si una etiqueta no existe en una columna propia, ofrece crearla. Si se pegan más filas de las que hay, ofrece crear elementos.
+  - Pegar una lista en «+ Añadir elemento» crea un elemento por línea.
+  - Supr vacía el rango, Ctrl+D rellena hacia abajo, y el cuadradito de la esquina arrastra el relleno y continúa series de números y fechas.
+- **Deshacer y rehacer** (Ctrl+Z, Ctrl+Y y botones) de cualquier edición, incluido un pegado o relleno completo como un solo paso. Al guardar, las filas no cambian de sitio.
+- **Columnas**:
+  - ancho arrastrando el borde de la cabecera y orden arrastrando la cabecera;
+  - «Inmovilizar hasta aquí» fija columnas a la izquierda;
+  - **Formato…** por columna: decimales, separador de miles, prefijo y sufijo, negativos en rojo, alineación y ajuste de texto;
+  - **Cambiar tipo…** convierte los valores (texto ↔ número ↔ estado ↔ fecha ↔ casilla ↔ etiquetas…) con una vista previa de cuántos se convierten y cuántos se pierden. En fórmulas y reflejos, «Convertir en valores» los congela.
+- **Pie de cada grupo**: clic para elegir suma, media, mediana, mínimo, máximo, recuento, vacíos, % lleno, valores únicos, distribución o recuento por etiqueta, casillas marcadas o rango de fechas.
+- **Formato condicional** (botón «Formato»):
+  - Operadores: =, ≠, >, <, ≥, ≤, entre, contiene, vacío, fecha vencida, próximos N días, casilla marcada.
+  - Cada regla colorea la celda o la fila entera; las reglas se ordenan y se activan o desactivan.
+
+Todo se guarda por tablero en `board_configs` y es compartido por el equipo. API:
+
+- `POST /api/cells/:objeto/batch` con `{ changes: [{ id, column_id, value }] }` aplica la edición en bloque, valida con el mismo esquema que la ficha y devuelve los errores por celda.
+- `POST /api/columns/convert-preview` da la vista previa de un cambio de tipo; `PUT /api/admin/custom-fields/:id` con `type` ejecuta la conversión.
+
+La demo HTML incluye lo mismo y un capítulo del tutorial «Libertad tipo Excel» con diez pasos.
+
 ## Integraciones externas (puntos de extensión)
 
 El manual contempla sincronización de Gmail/Microsoft 365, telefonía, WhatsApp, etc. El CRM está preparado para ello sin cambiar el modelo:

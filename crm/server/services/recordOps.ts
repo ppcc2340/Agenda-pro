@@ -2,12 +2,13 @@
 import type { Ctx } from "../context.js";
 import { parseJson, type Row } from "../db.js";
 import { badRequest } from "../lib/errors.js";
-import { updateContact, getContact, deleteContact } from "./contacts.js";
-import { updateCompany, deleteCompany } from "./companies.js";
-import { updateDeal, getDeal, deleteDeal } from "./deals.js";
-import { updateTicket } from "./tickets.js";
-import { updateTask, getTask } from "./tasks.js";
-import { getContract, updateContract, deleteContract } from "./clm.js";
+import type { ZodTypeAny } from "zod";
+import { updateContact, getContact, deleteContact, contactSchema } from "./contacts.js";
+import { updateCompany, deleteCompany, companySchema } from "./companies.js";
+import { updateDeal, getDeal, deleteDeal, dealSchema } from "./deals.js";
+import { updateTicket, ticketSchema } from "./tickets.js";
+import { updateTask, getTask, taskSchema } from "./tasks.js";
+import { getContract, updateContract, deleteContract, contractSchema } from "./clm.js";
 
 export const OBJECT_TABLE: Record<string, string> = { contact: "contacts", company: "companies", deal: "deals", ticket: "tickets", task: "tasks", contract: "contracts", quote: "quotes" };
 export const OBJECT_PATH: Record<string, string> = { contact: "/contactos", company: "/empresas", deal: "/negocios", ticket: "/tickets", task: "/tareas", contract: "/contratos" };
@@ -37,6 +38,14 @@ export function applyPatch(ctx: Ctx, object: string, rid: string, patch: Record<
     case "contract": return updateContract(ctx, rid, patch as never);
     default: throw badRequest(`No se puede actualizar ${object}`);
   }
+}
+const PATCH_SCHEMAS: Record<string, ZodTypeAny> = { contact: contactSchema.partial().strict(), company: companySchema.partial().strict(), deal: dealSchema.partial().strict(), ticket: ticketSchema.partial().strict(), task: taskSchema.partial().strict(), contract: contractSchema.partial().strict() };
+/** Valida un parche que no llega por las rutas tipadas (API de celdas, pegado en bloque) con el mismo esquema que la ficha. */
+export function validatedPatch(object: string, patch: Record<string, unknown>): Record<string, unknown> {
+  const s = PATCH_SCHEMAS[object]; if (!s) return patch;
+  const r = s.safeParse(patch);
+  if (!r.success) throw badRequest(r.error.issues.map((i) => (i.code === "unrecognized_keys" ? `Columna no editable: ${i.keys.join(", ")}` : `${i.path.join(".") || "valor"}: ${i.message}`)).join(". "));
+  return r.data as Record<string, unknown>;
 }
 /** Convierte {"custom.x": v, campo: v} en un parche del servicio. */
 export function cellsToPatch(values: Record<string, unknown>): Record<string, unknown> {

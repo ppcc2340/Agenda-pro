@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode, useLayoutEffect } from "react";
 import { X, ChevronLeft, ChevronRight, Check, Search } from "lucide-react";
 import { initials } from "../lib/format";
 import { api } from "../api";
@@ -116,16 +116,23 @@ export function Pager({ page, pageSize, total, onPage }: { page: number; pageSiz
 export function Field({ label, children, hint, error, full }: { label?: string; children: ReactNode; hint?: string; error?: string; full?: boolean }) {
   return <div className={`field ${full ? "full" : ""}`}>{label && <label>{label}</label>}{children}{hint && !error && <span className="hint">{hint}</span>}{error && <span className="error">{error}</span>}</div>;
 }
-export function Menu({ trigger, children }: { trigger: ReactNode; children: ReactNode }) {
+export function Menu({ trigger, children, fixed }: { trigger: ReactNode; children: ReactNode; /** posición fija: no lo recorta un contenedor con scroll (tablas) */ fixed?: boolean }) {
   const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState<React.CSSProperties | undefined>(undefined);
   const ref = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    if (!open || !fixed || !ref.current) { setPos(undefined); return; }
+    const r = ref.current.getBoundingClientRect();
+    const below = window.innerHeight - r.bottom > 280;
+    setPos({ position: "fixed", left: Math.max(8, Math.min(r.left, window.innerWidth - 240)), right: "auto", ...(below ? { top: r.bottom + 4 } : { top: "auto", bottom: window.innerHeight - r.top + 4 }), maxHeight: "60vh", overflowY: "auto", zIndex: 140 });
+  }, [open, fixed]);
   useEffect(() => {
     if (!open) return;
     const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
     document.addEventListener("mousedown", h);
     return () => document.removeEventListener("mousedown", h);
   }, [open]);
-  return <div ref={ref} style={{ position: "relative", display: "inline-block" }}><span onClick={() => setOpen((o) => !o)}>{trigger}</span>{open && <div className="menu" onClick={() => setOpen(false)}>{children}</div>}</div>;
+  return <div ref={ref} style={{ position: "relative", display: "inline-block" }}><span onClick={() => setOpen((o) => !o)}>{trigger}</span>{open && <div className="menu" style={pos} onClick={() => setOpen(false)}>{children}</div>}</div>;
 }
 export function TagInput({ value, onChange, placeholder }: { value: string[]; onChange: (v: string[]) => void; placeholder?: string }) {
   const [text, setText] = useState("");

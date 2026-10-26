@@ -29,17 +29,17 @@ export function CompaniesPage() {
   const patch = (c: Co, body: Record<string, unknown>) => api.patch(`companies/${c.id}`, body).then(() => undefined);
   const editable = can("company", "update");
   const cols: Column<Co>[] = [
-    { key: "name", label: "Empresa", type: "name", sub: (c) => c.domain, render: (c) => <Link to={`/empresas/${c.id}`} onClick={(e) => e.stopPropagation()}>{c.name}</Link> },
-    { key: "type", label: "Tipo", sortable: true, type: "status", fixedOptions: true, options: COMPANY_TYPE_OPTS, onEdit: editable ? (c, v) => patch(c, { type: v }) : undefined },
-    { key: "owner_name", label: "Propietario", type: "person", onEdit: editable ? (c, v) => patch(c, { owner_id: v }) : undefined },
-    { key: "sector", label: "Sector", sortable: true, className: "l", onEdit: editable ? (c, v) => patch(c, { sector: v }) : undefined },
-    { key: "size", label: "Empleados", sortable: true, type: "number", onEdit: editable ? (c, v) => patch(c, { size: v }) : undefined },
-    { key: "revenue", label: "Facturación", sortable: true, type: "money", default: false, onEdit: editable ? (c, v) => patch(c, { revenue: v }) : undefined },
-    { key: "city", label: "Ciudad", sortable: true, className: "l", onEdit: editable ? (c, v) => patch(c, { city: v }) : undefined },
-    { key: "country", label: "País", sortable: true, className: "l", default: false },
+    { key: "name", label: "Empresa", type: "name", field: editable ? "name" : undefined, sub: (c) => c.domain, render: (c) => <Link to={`/empresas/${c.id}`} onClick={(e) => e.stopPropagation()}>{c.name}</Link> },
+    { key: "type", label: "Tipo", sortable: true, type: "status", fixedOptions: true, field: "type", options: COMPANY_TYPE_OPTS, onEdit: editable ? (c, v) => patch(c, { type: v }) : undefined },
+    { key: "owner_name", label: "Propietario", type: "person", field: "owner_id", onEdit: editable ? (c, v) => patch(c, { owner_id: v }) : undefined },
+    { key: "sector", label: "Sector", sortable: true, className: "l", field: "sector", onEdit: editable ? (c, v) => patch(c, { sector: v }) : undefined },
+    { key: "size", label: "Empleados", sortable: true, type: "number", field: "size", onEdit: editable ? (c, v) => patch(c, { size: v }) : undefined },
+    { key: "revenue", label: "Facturación", sortable: true, type: "money", default: false, field: "revenue", onEdit: editable ? (c, v) => patch(c, { revenue: v }) : undefined },
+    { key: "city", label: "Ciudad", sortable: true, className: "l", field: "city", onEdit: editable ? (c, v) => patch(c, { city: v }) : undefined },
+    { key: "country", label: "País", sortable: true, className: "l", default: false, field: editable ? "country" : undefined },
     { key: "contacts_count", label: "Contactos", type: "number" },
     { key: "open_deals", label: "Negocios abiertos", type: "number" },
-    { key: "tags", label: "Etiquetas", type: "tags", default: false },
+    { key: "tags", label: "Etiquetas", type: "tags", default: false, field: editable ? "tags" : undefined },
     { key: "last_activity_at", label: "Última actividad", sortable: true, className: "c", render: (c) => <span className="muted">{relTime(c.last_activity_at) || "nunca"}</span> },
     { key: "created_at", label: "Creada", sortable: true, type: "date", default: false, render: (c) => fmtDate(c.created_at) },
     ...customColumns<Co>(customFields, "company", board, editable ? (c, k, v) => patch(c, { custom: { [k]: v } }) : undefined, userName),
@@ -49,7 +49,7 @@ export function CompaniesPage() {
     { key: "owner_id", label: "Propietario", get: (c) => c.owner_id ?? "", groups: users.filter((u) => u.active).map((u) => ({ key: u.id, label: u.name, color: "var(--c-purple)" })), other: "Sin propietario", setValue: (c, g) => patch(c, { owner_id: g }), createValue: (g) => ({ owner_id: g }) },
     ...customFields.filter((f) => f.object === "company" && f.type === "select").map<GroupOption<Co>>((f) => ({ key: `custom.${f.key}`, label: f.label, get: (c) => String(c.custom?.[f.key] ?? ""), groups: Object.entries(cols.find((c) => c.key === `custom.${f.key}`)?.options ?? {}).map(([key, o]) => ({ key, label: o.label, color: o.color })), other: "Sin valor", setValue: (c, g) => patch(c, { custom: { [f.key]: g } }), createValue: (g) => ({ custom: { [f.key]: g } }) })),
   ];
-  const create = async (name: string, extra: Record<string, unknown>) => { await api.post("companies", { name, force: true, ...extra }); };
+  const create = async (name: string, extra: Record<string, unknown>) => { return api.post("companies", { name, force: true, ...extra }); };
   const duplicate = async (c: Co) => { await api.post("companies", { name: `${c.name} (copia)`, sector: c.sector, size: c.size, city: c.city, country: c.country, type: c.type, owner_id: c.owner_id, tags: c.tags, custom: c.custom, revenue: c.revenue, force: true }); };
   return (
     <div>

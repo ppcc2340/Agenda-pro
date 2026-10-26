@@ -35,22 +35,22 @@ export function ContractsPage() {
   const patch = (c: ContractRow, body: Record<string, unknown>) => api.patch(`clm/contracts/${c.id}`, body).then(() => undefined);
   const typeOpts = Object.fromEntries((meta?.types ?? []).map((t) => [t.id, { label: t.name, color: t.color }]));
   const cols: Column<ContractRow>[] = [
-    { key: "title", label: "Contrato", type: "name", sub: (c) => `${c.number}${c.kind !== "master" ? ` · ${KIND[c.kind]}` : ""}${c.legal_hold ? " · 🔒 bloqueo legal" : ""}`, render: (c) => <Link to={`/contratos/${c.id}`} onClick={(e) => e.stopPropagation()}>{c.title}</Link> },
-    { key: "status", label: "Estado", sortable: true, type: "status", fixedOptions: true, options: CSTATUS },
+    { key: "title", label: "Contrato", type: "name", field: editable ? "title" : undefined, sub: (c) => `${c.number}${c.kind !== "master" ? ` · ${KIND[c.kind]}` : ""}${c.legal_hold ? " · 🔒 bloqueo legal" : ""}`, render: (c) => <Link to={`/contratos/${c.id}`} onClick={(e) => e.stopPropagation()}>{c.title}</Link> },
+    { key: "status", label: "Estado", sortable: true, type: "status", fixedOptions: true, options: CSTATUS, readOnlyReason: "El estado avanza con el ciclo de vida (revisión, aprobación, firma…)" },
     { key: "type_id", label: "Tipo", sortable: true, type: "status", fixedOptions: true, options: typeOpts, value: (c) => c.type_id },
     { key: "counterparty_company_id", label: "Contraparte", className: "l", render: (c) => c.counterparty_company_id ? <Link to={`/empresas/${c.counterparty_company_id}`} onClick={(e) => e.stopPropagation()}>{c.counterparty_name}</Link> : <span className="muted">—</span> },
-    { key: "owner_name", label: "Propietario", type: "person", onEdit: editable ? (c, v) => patch(c, { owner_id: v }) : undefined },
-    { key: "legal_owner_name", label: "Legal", type: "person", onEdit: editable ? (c, v) => patch(c, { legal_owner_id: v }) : undefined },
+    { key: "owner_name", label: "Propietario", type: "person", field: "owner_id", onEdit: editable ? (c, v) => patch(c, { owner_id: v }) : undefined },
+    { key: "legal_owner_name", label: "Legal", type: "person", field: "legal_owner_id", onEdit: editable ? (c, v) => patch(c, { legal_owner_id: v }) : undefined },
     { key: "risk_level", label: "Riesgo", sortable: true, type: "status", fixedOptions: true, options: RISK },
     { key: "annual_value", label: "Valor anual", sortable: true, type: "money", render: (c) => <span className="num">{fmtMoney(c.annual_value, c.currency)}</span> },
     { key: "total_value", label: "Valor total", sortable: true, type: "money", default: false, render: (c) => <span className="num">{fmtMoney(c.total_value, c.currency)}</span> },
-    { key: "end_date", label: "Fin", sortable: true, type: "date" },
+    { key: "end_date", label: "Fin", sortable: true, type: "date", field: editable ? "end_date" : undefined },
     { key: "notice_deadline", label: "Preaviso", sortable: true, type: "date", render: (c) => c.notice_deadline ? <><i className={`ddot ${(daysUntil(c.notice_deadline) ?? 99) < 0 ? "late" : (daysUntil(c.notice_deadline) ?? 99) <= 30 ? "soon" : ""}`} />{fmtDate(c.notice_deadline, { day: "2-digit", month: "short" })}<span className="xs muted"> ({daysUntil(c.notice_deadline)} d)</span></> : <span className="muted">—</span> },
     { key: "renewal_type", label: "Renovación", sortable: true, type: "status", fixedOptions: true, options: RENEWAL, default: false },
     { key: "deviations", label: "Desviaciones", type: "number", agg: "sum", render: (c) => c.deviations ? <span className="badge warn">{c.deviations}</span> : <span className="muted">0</span> },
     { key: "open_obligations", label: "Obligaciones", type: "number", agg: "sum", render: (c) => <span className={c.breached_obligations ? "badge risk" : ""}>{c.breached_obligations ? `${c.breached_obligations} incumplidas` : c.open_obligations}</span> },
     { key: "paper_origin", label: "Papel", type: "status", fixedOptions: true, options: PAPER, default: false },
-    { key: "urgency", label: "Urgencia", type: "status", fixedOptions: true, options: URGENCY, default: false, onEdit: editable ? (c, v) => patch(c, { urgency: v }) : undefined },
+    { key: "urgency", label: "Urgencia", type: "status", fixedOptions: true, field: "urgency", options: URGENCY, default: false, onEdit: editable ? (c, v) => patch(c, { urgency: v }) : undefined },
     { key: "sla_hours_left", label: "SLA legal", className: "c", default: false, render: (c) => c.sla_hours_left == null ? <span className="muted">—</span> : <span style={{ color: c.sla_hours_left < 0 ? "var(--risk)" : c.sla_hours_left < 24 ? "var(--warn)" : "var(--ink2)" }}>{c.sla_hours_left < 0 ? `vencido ${-c.sla_hours_left} h` : `${c.sla_hours_left} h`}</span> },
     { key: "version_label", label: "Versión", className: "c", default: false },
     { key: "signed_at", label: "Firmado", sortable: true, type: "date", default: false },
@@ -67,7 +67,7 @@ export function ContractsPage() {
     ...customFields.filter((f) => f.object === "contract" && f.type === "select").map<GroupOption<ContractRow>>((f) => ({ key: `custom.${f.key}`, label: f.label, get: (c) => String(c.custom?.[f.key] ?? ""), groups: Object.entries(cols.find((c) => c.key === `custom.${f.key}`)?.options ?? {}).map(([key, o]) => ({ key, label: o.label, color: o.color })), other: "Sin valor", setValue: (c, g) => patch(c, { custom: { [f.key]: g } }), createValue: (g) => ({ custom: { [f.key]: g } }) })),
   ];
   const defaultType = meta?.types.find((t) => t.code === "MSA")?.id ?? meta?.types[0]?.id;
-  const create = async (title: string, extra: Record<string, unknown>) => { await api.post("clm/contracts", { title, type_id: defaultType, term_months: 12, ...extra }); };
+  const create = async (title: string, extra: Record<string, unknown>) => { return api.post("clm/contracts", { title, type_id: defaultType, term_months: 12, ...extra }); };
   return (
     <div>
       <div className="page-head">

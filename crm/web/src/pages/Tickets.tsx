@@ -22,13 +22,13 @@ export function TicketsPage() {
   const patch = (t: T, body: Record<string, unknown>) => api.put(`tickets/${t.id}`, body).then(() => undefined);
   const editable = can("ticket", "update");
   const cols: Column<T>[] = [
-    { key: "subject", label: "Ticket", type: "name", sub: (t) => <span className="num">#{t.number}{t.contact_name ? ` · ${t.contact_name}` : ""}</span>, render: (t) => <Link to={`/tickets/${t.id}`} onClick={(e) => e.stopPropagation()}>{t.subject}</Link> },
-    { key: "status", label: "Estado", sortable: true, type: "status", fixedOptions: true, options: TICKET_STATUS_OPTS, onEdit: editable ? (t, v) => patch(t, { status: v }) : undefined },
-    { key: "priority", label: "Prioridad", sortable: true, type: "status", fixedOptions: true, options: PRIORITY_OPTS, onEdit: editable ? (t, v) => patch(t, { priority: v }) : undefined },
-    { key: "assignee_name", label: "Asignado", type: "person", onEdit: editable ? (t, v) => patch(t, { assignee_id: v }) : undefined },
+    { key: "subject", label: "Ticket", type: "name", field: editable ? "subject" : undefined, sub: (t) => <span className="num">#{t.number}{t.contact_name ? ` · ${t.contact_name}` : ""}</span>, render: (t) => <Link to={`/tickets/${t.id}`} onClick={(e) => e.stopPropagation()}>{t.subject}</Link> },
+    { key: "status", label: "Estado", sortable: true, type: "status", fixedOptions: true, field: "status", options: TICKET_STATUS_OPTS, onEdit: editable ? (t, v) => patch(t, { status: v }) : undefined },
+    { key: "priority", label: "Prioridad", sortable: true, type: "status", fixedOptions: true, field: "priority", options: PRIORITY_OPTS, onEdit: editable ? (t, v) => patch(t, { priority: v }) : undefined },
+    { key: "assignee_name", label: "Asignado", type: "person", field: "assignee_id", onEdit: editable ? (t, v) => patch(t, { assignee_id: v }) : undefined },
     { key: "sla_due_at", label: "SLA", sortable: true, className: "c", render: (t) => (["resolved", "closed"].includes(t.status) || t.first_response_at ? <span className="muted">{t.first_response_at ? "respondido" : "—"}</span> : <span><i className={`ddot ${isOverdue(t.sla_due_at) ? "late" : "soon"}`} />{relTime(t.sla_due_at)}</span>) },
-    { key: "company_name", label: "Empresa", className: "l", default: false },
-    { key: "category", label: "Categoría", sortable: true, className: "l", onEdit: editable ? (t, v) => patch(t, { category: v }) : undefined },
+    { key: "company_name", label: "Empresa", className: "l", default: false, type: "relation", field: editable ? "company_id" : undefined, relation: { endpoint: "companies", labelOf: (r) => String(r.name ?? "") } },
+    { key: "category", label: "Categoría", sortable: true, className: "l", field: "category", onEdit: editable ? (t, v) => patch(t, { category: v }) : undefined },
     { key: "channel", label: "Canal", className: "c", default: false },
     { key: "created_at", label: "Creado", sortable: true, type: "date", render: (t) => fmtDate(t.created_at) },
     ...customColumns<T & { custom?: Record<string, unknown> }>(customFields, "ticket", board, editable ? (t, k, v) => patch(t, { custom: { [k]: v } }) : undefined, userName),
@@ -39,7 +39,7 @@ export function TicketsPage() {
     { key: "assignee_id", label: "Asignado", get: (t) => t.assignee_id ?? "", groups: users.filter((u) => u.active).map((u) => ({ key: u.id, label: u.name, color: "var(--c-red)" })), other: "Sin asignar", setValue: (t, g) => patch(t, { assignee_id: g }), createValue: (g) => ({ assignee_id: g }) },
     ...customFields.filter((f) => f.object === "ticket" && f.type === "select").map<GroupOption<T>>((f) => ({ key: `custom.${f.key}`, label: f.label, get: (t) => String(t.custom?.[f.key] ?? ""), groups: Object.entries(cols.find((c) => c.key === `custom.${f.key}`)?.options ?? {}).map(([key, o]) => ({ key, label: o.label, color: o.color })), other: "Sin valor", setValue: (t, g) => patch(t, { custom: { [f.key]: g } }), createValue: (g) => ({ custom: { [f.key]: g } }) })),
   ];
-  const create = async (subject: string, extra: Record<string, unknown>) => { await api.post("tickets", { subject, ...extra }); };
+  const create = async (subject: string, extra: Record<string, unknown>) => { return api.post("tickets", { subject, ...extra }); };
   const duplicate = async (t: T) => { await api.post("tickets", { subject: `${t.subject} (copia)`, priority: t.priority, category: t.category, channel: t.channel, assignee_id: t.assignee_id, custom: t.custom }); };
   return (
     <div>
