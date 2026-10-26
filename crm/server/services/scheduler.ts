@@ -11,6 +11,7 @@ import { retryDueDeliveries } from "./webhooks.js";
 import { withRelated as dealWithRelated } from "./deals.js";
 import { anonymizeContact } from "./contacts.js";
 import { dailyContractChecks } from "./clm.js";
+import { runAnalyticsJobs } from "./analytics.js";
 
 let timer: NodeJS.Timeout | null = null;
 let lastDaily = "";
@@ -43,6 +44,8 @@ export async function tick(db: Db, opts: { forceDaily?: boolean } = {}) {
       }
       // 1b. automatizaciones de fecha (planificador al minuto) y periódicas
       try { runDueSchedules(ctx); } catch (e) { console.error("[automation schedule]", e); }
+      // 1c. informes programados y alertas de métricas
+      try { await runAnalyticsJobs(db, w.id, ctx.settings.timezone); } catch (e) { console.error("[analytics]", e); }
       // 2. task reminders (due within 60 min) and overdue tasks
       for (const t of db.all<Row>("SELECT * FROM tasks WHERE workspace_id=? AND completed_at IS NULL AND reminded_at IS NULL AND due_at IS NOT NULL AND due_at <= datetime('now', '+60 minutes') AND due_at > datetime('now', '-1 day')", w.id)) {
         notify(db, w.id, t.assignee_id as string | null, { type: "task_due", title: `Tarea próxima: ${t.title}`, body: `Vence ${new Date(t.due_at as string).toLocaleString("es-ES")}`, link: `/tareas?task=${t.id}` });

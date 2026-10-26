@@ -43,7 +43,7 @@ const OBJECTS: Record<string, { schema: z.AnyZodObject; name: string; label: str
   "/tasks": { schema: taskSchema, name: "Task", label: "Tareas" },
   "/clm": { schema: contractSchema, name: "Contract", label: "Contratos (CLM)" },
 };
-const TAGS: Record<string, string> = { "/pipelines": "Pipelines", "/activities": "Actividades", "/products": "Productos", "/quotes": "Presupuestos", "/admin": "Administración", "/workflows": "Automatizaciones", "/forms": "Formularios", "/reports": "Informes", "/columns": "Columnas", "/cells": "Celdas", "": "General" };
+const TAGS: Record<string, string> = { "/analytics": "Analítica", "/pipelines": "Pipelines", "/activities": "Actividades", "/products": "Productos", "/quotes": "Presupuestos", "/admin": "Administración", "/workflows": "Automatizaciones", "/forms": "Formularios", "/reports": "Informes", "/columns": "Columnas", "/cells": "Celdas", "": "General" };
 const VERB: Record<string, string> = { get: "Leer", post: "Crear / ejecutar", put: "Actualizar", patch: "Actualizar parcialmente", delete: "Borrar" };
 
 export function buildOpenApi(mounts: [string, Router][], version: string): Json {

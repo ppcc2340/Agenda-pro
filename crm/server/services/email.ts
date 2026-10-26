@@ -2,7 +2,7 @@ import nodemailer from "nodemailer";
 import type { Db } from "../db.js";
 import { id, now } from "../lib/util.js";
 
-export interface MailInput { to: string; subject: string; html: string; text?: string; contactId?: string | null; userId?: string | null; activityId?: string | null; track?: boolean; fromName?: string }
+export interface MailInput { to: string; subject: string; html: string; text?: string; contactId?: string | null; userId?: string | null; activityId?: string | null; track?: boolean; fromName?: string; attachments?: { filename: string; content: string; contentType?: string }[] }
 
 let transporter: nodemailer.Transporter | null = null;
 export function emailMode(): "fake" | "smtp" {
@@ -34,7 +34,7 @@ export async function sendMail(db: Db, ws: string, m: MailInput): Promise<string
   db.insert("emails", { id: emailId, workspace_id: ws, activity_id: m.activityId ?? null, contact_id: m.contactId ?? null, user_id: m.userId ?? null, to_email: m.to, subject: m.subject, body: html, status: "queued", created_at: now() });
   try {
     if (emailMode() === "smtp") {
-      await getTransporter().sendMail({ from: m.fromName ? `"${m.fromName}" <${process.env.SMTP_FROM}>` : process.env.SMTP_FROM, to: m.to, subject: m.subject, html, text: m.text });
+      await getTransporter().sendMail({ from: m.fromName ? `"${m.fromName}" <${process.env.SMTP_FROM}>` : process.env.SMTP_FROM, to: m.to, subject: m.subject, html, text: m.text, attachments: m.attachments });
       db.update("emails", emailId, { status: "sent", sent_at: now() });
     } else {
       sentLog.push(m);
