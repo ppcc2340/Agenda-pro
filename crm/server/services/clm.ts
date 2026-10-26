@@ -11,7 +11,7 @@ import { parseJson as parseJsonRaw, type Row } from "../db.js";
 const parseJson = (row: Row | undefined, cols: string[]): Row => (parseJsonRaw(row ?? {}, cols) ?? {}) as Row;
 import { id, now, addDays, sha256, token, renderTemplate } from "../lib/util.js";
 import { badRequest, notFound, conflict, forbidden } from "../lib/errors.js";
-import { assert, canSeeRecord, ownerScope, isAdmin } from "../lib/permissions.js";
+import { assert, canSeeRecord, ownerScope, isAdmin, assertCanEdit } from "../lib/permissions.js";
 import { audit, diff } from "./audit.js";
 import { emit } from "./events.js";
 import { notify } from "./notifications.js";
@@ -79,7 +79,7 @@ export function getContract(ctx: Ctx, cid: string): Row {
     FROM contracts c JOIN contract_types t ON t.id=c.type_id LEFT JOIN companies co ON co.id=c.counterparty_company_id LEFT JOIN users u ON u.id=c.owner_id LEFT JOIN users lu ON lu.id=c.legal_owner_id LEFT JOIN deals d ON d.id=c.deal_id LEFT JOIN contracts p ON p.id=c.parent_id
     WHERE c.id=? AND c.workspace_id=? AND c.deleted_at IS NULL`, cid, ctx.ws);
   if (!c) throw notFound("Contrato");
-  if (!canSeeRecord(ctx, c.owner_id as string | null) && c.legal_owner_id !== ctx.user.id) throw forbidden("Este contrato es de otro equipo");
+  if (!canSeeRecord(ctx, c.owner_id as string | null, { object: "contract", id: cid }) && c.legal_owner_id !== ctx.user.id) throw forbidden("Este contrato es de otro equipo");
   return parseJson(c as Row, JC);
 }
 function nextNumber(ctx: Ctx, prefix: string): string {
@@ -527,6 +527,7 @@ const c_hasVersion = (ctx: Ctx, cid: string) => !!ctx.db.get("SELECT id FROM con
 export function updateContract(ctx: Ctx, cid: string, patch: Partial<ContractInput>): Row {
   assert(ctx, "contract", "update");
   const prev = getContract(ctx, cid);
+  if (prev.legal_owner_id !== ctx.user.id) assertCanEdit(ctx, prev.owner_id as string | null, "contract", cid);
   const locked = ["OUT_FOR_SIGNATURE", "PARTIALLY_SIGNED", "ARCHIVED"].includes(String(prev.status));
   const data: Record<string, unknown> = { ...patch };
   delete data.body; delete data.file_name; delete data.template_id; delete data.counterparty_name; delete data.justification;
@@ -549,6 +550,7 @@ export function updateContract(ctx: Ctx, cid: string, patch: Partial<ContractInp
 export function deleteContract(ctx: Ctx, cid: string) {
   assert(ctx, "contract", "delete");
   const c = getContract(ctx, cid);
+  if (c.legal_owner_id !== ctx.user.id) assertCanEdit(ctx, c.owner_id as string | null, "contract", cid);
   if (c.signed_version_id) throw conflict("Un contrato firmado no se borra: se termina y se conserva según la política de retención");
   if (c.legal_hold) throw conflict("Contrato bajo bloqueo legal");
   ctx.db.update("contracts", cid, { deleted_at: now(), updated_at: now() });

@@ -889,3 +889,39 @@ CREATE TABLE IF NOT EXISTS custom_links (
   UNIQUE(record_id, relation_key, target_id)
 );
 CREATE INDEX IF NOT EXISTS idx_custom_links_target ON custom_links(target_object, target_id);
+-- Diseño de fichas por objeto (y opcionalmente por rol)
+CREATE TABLE IF NOT EXISTS layouts (
+  id TEXT PRIMARY KEY,
+  workspace_id TEXT NOT NULL,
+  object TEXT NOT NULL,
+  role_id TEXT,
+  config TEXT NOT NULL DEFAULT '{}',
+  updated_by TEXT,
+  updated_at TEXT NOT NULL
+);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_layouts ON layouts(workspace_id, object, COALESCE(role_id, ''));
+
+-- Seguridad por campo y rol: read = solo lectura, hidden = oculto (sin fila = editable)
+CREATE TABLE IF NOT EXISTS field_permissions (
+  workspace_id TEXT NOT NULL,
+  role_id TEXT NOT NULL,
+  object TEXT NOT NULL,
+  field TEXT NOT NULL,
+  access TEXT NOT NULL CHECK (access IN ('read','hidden')),
+  PRIMARY KEY (workspace_id, role_id, object, field)
+);
+
+-- Registros compartidos con un usuario o un equipo más allá de la visibilidad del rol
+CREATE TABLE IF NOT EXISTS record_shares (
+  id TEXT PRIMARY KEY,
+  workspace_id TEXT NOT NULL,
+  object TEXT NOT NULL,
+  record_id TEXT NOT NULL,
+  user_id TEXT,
+  team_id TEXT,
+  access TEXT NOT NULL DEFAULT 'read' CHECK (access IN ('read','edit')),
+  created_by TEXT,
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_record_shares ON record_shares(workspace_id, object, record_id);
+CREATE INDEX IF NOT EXISTS idx_record_shares_user ON record_shares(workspace_id, user_id);

@@ -1,0 +1,42 @@
+/* Diseño de fichas, seguridad por campo y registros compartidos */
+.lay-panel { display: flex; flex-direction: column; gap: 4px; }
+.lay-sec + .lay-sec { border-top: 1px solid var(--rule2); padding-top: 4px; }
+.lay-sec-h { display: flex; align-items: center; gap: 6px; width: 100%; border: 0; background: transparent; padding: 6px 0; font-weight: 600; font-size: 12.5px; color: var(--ink2); text-transform: uppercase; letter-spacing: .03em; cursor: pointer; text-align: left; }
+.lay-sec-h .muted { margin-left: auto; font-weight: 400; text-transform: none; }
+.lay-sec-h:hover { color: var(--ink); }
+.lay-kv { margin-bottom: 8px; }
+.lay-kv.two { grid-template-columns: 110px 1fr 110px 1fr; }
+@media (max-width: 760px) { .lay-kv.two { grid-template-columns: 110px 1fr; } }
+.lay-kv dt { display: flex; align-items: center; gap: 4px; }
+.lay-help { display: inline-flex; color: var(--ink3, #8a8f9c); cursor: help; }
+.lay-val { display: inline-flex; align-items: center; gap: 6px; min-height: 22px; max-width: 100%; }
+.lay-val.edit { border: 0; background: transparent; padding: 1px 4px; margin: -1px -4px; border-radius: 4px; font: inherit; color: inherit; text-align: left; cursor: text; }
+.lay-val.edit:hover, .lay-val.edit:focus-visible { background: var(--panel); }
+.lay-pen { opacity: 0; color: var(--ink3, #8a8f9c); flex: none; }
+.lay-val.edit:hover .lay-pen, .lay-val.edit:focus-visible .lay-pen { opacity: 1; }
+.lay-edit { display: flex; align-items: center; gap: 4px; min-width: 0; }
+.lay-edit > .input, .lay-edit > textarea, .lay-edit > div { flex: 1; min-width: 0; }
+fieldset.lay-ro { border: 0; padding: 0; margin: 0; min-width: 0; opacity: .7; }
+fieldset.lay-ro .input { cursor: not-allowed; }
+.share-chip { gap: 6px; max-width: 100%; }
+.share-chip .small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Editor de diseño */
+.lay-admin { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 12px; align-items: start; }
+@media (max-width: 980px) { .lay-admin { grid-template-columns: 1fr; } }
+.lay-ed-sec { padding: 10px 12px; display: flex; flex-direction: column; gap: 4px; }
+.lay-ed-sec-h { padding-bottom: 6px; border-bottom: 1px solid var(--rule2); margin-bottom: 4px; flex-wrap: nowrap; align-items: center; }
+.lay-ed-sec-h > input.input { flex: 1 1 140px; width: auto; min-width: 0; font-weight: 600; }
+.lay-ed-sec-h > select.input { flex: 0 0 auto; width: auto; }
+.lay-ed-sec-h > .checkbox { white-space: nowrap; }
+@media (max-width: 560px) { .lay-ed-sec-h { flex-wrap: wrap; } }
+.lay-ed-f { padding: 5px 6px; border: 1px solid var(--rule2); border-radius: 6px; background: var(--card, #fff); cursor: grab; }
+.lay-ed-f.dragging { opacity: .45; }
+.lay-ed-f:hover { border-color: var(--sea); }
+.lay-grip { cursor: grab; flex: none; }
+.lay-ed-cfg { margin-top: 6px; padding: 8px; background: var(--panel); border-radius: 6px; cursor: default; }
+.lay-drop { padding: 12px; border: 1px dashed var(--rule2); border-radius: 6px; text-align: center; }
+.lay-palette { position: sticky; top: 8px; }
+.lay-chip { display: inline-flex; align-items: center; gap: 2px; cursor: grab; }
+.lay-fsm td:not(:first-child), .lay-fsm th:not(:first-child) { text-align: center; width: 80px; }
+.lay-fsm tr.changed td { background: color-mix(in srgb, var(--sea) 8%, transparent); }

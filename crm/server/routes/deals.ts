@@ -11,6 +11,7 @@ import { audit } from "../services/audit.js";
 import { badRequest, notFound } from "../lib/errors.js";
 import type { Row } from "../db.js";
 import { parseJson } from "../db.js";
+import { visibleColumns, redactAll, assertWritable } from "../services/fieldSecurity.js";
 
 export function dealRoutes() {
   const r = Router();
@@ -26,7 +27,7 @@ export function dealRoutes() {
     audit(req.ctx, "deal", null, "export", { count: all.length });
     res.setHeader("content-type", "text/csv; charset=utf-8");
     res.setHeader("content-disposition", `attachment; filename="negocios-${new Date().toISOString().slice(0, 10)}.csv"`);
-    res.send("﻿" + toCsv(all, ["id", "name", "company_name", "pipeline_name", "stage_name", "status", "amount", "currency", "probability", "weighted_amount", "expected_close_date", "closed_at", "loss_reason", "owner_name", "source", "created_at", "last_activity_at"]));
+    res.send("﻿" + toCsv(all, visibleColumns(req.ctx, "deal", ["id", "name", "company_name", "pipeline_name", "stage_name", "status", "amount", "currency", "probability", "weighted_amount", "expected_close_date", "closed_at", "loss_reason", "owner_name", "source", "created_at", "last_activity_at"])));
   }));
   r.post("/", h(async (req) => createDeal(req.ctx, parse(dealSchema, req.body))));
   r.get("/:id", h(async (req) => {

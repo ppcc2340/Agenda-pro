@@ -5,7 +5,7 @@ import type { Row } from "../db.js";
 import { id, now, token } from "../lib/util.js";
 import { sendMail } from "./email.js";
 import { notFound, forbidden, badRequest } from "../lib/errors.js";
-import { assert, canSeeRecord } from "../lib/permissions.js";
+import { assert, canSeeRecord, assertCanEdit } from "../lib/permissions.js";
 import { audit, diff } from "./audit.js";
 import { emit } from "./events.js";
 import { notify } from "./notifications.js";
@@ -37,7 +37,7 @@ const SELECT = `t.*, (SELECT name FROM users WHERE id=t.assignee_id) assignee_na
 export function getTicket(ctx: Ctx, tid: string): Row {
   const t = parseJson(ctx.db.get<Row>(`SELECT ${SELECT} FROM tickets t WHERE t.id=? AND t.workspace_id=?`, tid, ctx.ws), ["tags", "custom"]);
   if (!t) throw notFound("Ticket");
-  if (!canSeeRecord(ctx, t.assignee_id as string | null)) throw forbidden("Este ticket es de otro equipo");
+  if (!canSeeRecord(ctx, t.assignee_id as string | null, { object: "ticket", id: String(t.id) })) throw forbidden("Este ticket es de otro equipo");
   try { t.tags = JSON.parse(t.tags as string); } catch { t.tags = []; }
   return t;
 }
@@ -68,6 +68,7 @@ export function createTicket(ctx: Ctx, input: TicketInput, opts: { depth?: numbe
 export function updateTicket(ctx: Ctx, tid: string, patch: Partial<TicketInput>, opts: { depth?: number } = {}): Row {
   assert(ctx, "ticket", "update");
   const prev = getTicket(ctx, tid);
+  assertCanEdit(ctx, prev.assignee_id as string | null, "ticket", tid);
   const data: Record<string, unknown> = { ...patch };
   if (patch.priority && patch.priority !== prev.priority) data.sla_due_at = slaDue(ctx, patch.priority, prev.created_at as string);
   if (patch.custom) data.custom = validateCustom(ctx, "ticket", patch.custom, (prev.custom as Record<string, unknown>) ?? {}, true);

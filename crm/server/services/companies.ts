@@ -4,7 +4,7 @@ import type { Ctx } from "../context.js";
 import { parseJson, type Row } from "../db.js";
 import { id, now, normalizeDomain, normalizePhone, capitalizeName } from "../lib/util.js";
 import { badRequest, conflict, notFound, forbidden } from "../lib/errors.js";
-import { assert, canSeeRecord } from "../lib/permissions.js";
+import { assert, canSeeRecord, assertCanEdit } from "../lib/permissions.js";
 import { audit, diff } from "./audit.js";
 import { emit } from "./events.js";
 import { tagsSchema, validateCustom, nullableStr, listRecords, type ListQuery } from "./records.js";
@@ -37,7 +37,7 @@ const JSON_COLS = ["tags", "custom"];
 export function getCompany(ctx: Ctx, cid: string): Row {
   const c = parseJson(ctx.db.get<Row>("SELECT c.*, u.name AS owner_name, p.name AS parent_name FROM companies c LEFT JOIN users u ON u.id=c.owner_id LEFT JOIN companies p ON p.id=c.parent_id WHERE c.id=? AND c.workspace_id=?", cid, ctx.ws), JSON_COLS);
   if (!c || c.deleted_at) throw notFound("Empresa");
-  if (!canSeeRecord(ctx, c.owner_id as string | null)) throw forbidden("Esta empresa pertenece a otro equipo");
+  if (!canSeeRecord(ctx, c.owner_id as string | null, { object: "company", id: cid })) throw forbidden("Esta empresa pertenece a otro equipo");
   return c;
 }
 
@@ -85,6 +85,7 @@ export function createCompany(ctx: Ctx, input: CompanyInput, opts: { force?: boo
 export function updateCompany(ctx: Ctx, cid: string, patch: Partial<CompanyInput>, opts: { depth?: number } = {}): Row {
   assert(ctx, "company", "update");
   const prev = getCompany(ctx, cid);
+  assertCanEdit(ctx, prev.owner_id as string | null, "company", cid);
   const data = normalize(patch, ctx);
   if (patch.parent_id && patch.parent_id === cid) throw badRequest("Una empresa no puede ser su propia matriz");
   if (patch.custom) data.custom = validateCustom(ctx, "company", patch.custom, prev.custom as Record<string, unknown>, true);
@@ -101,6 +102,7 @@ export function updateCompany(ctx: Ctx, cid: string, patch: Partial<CompanyInput
 export function deleteCompany(ctx: Ctx, cid: string) {
   assert(ctx, "company", "delete");
   const c = getCompany(ctx, cid);
+  assertCanEdit(ctx, c.owner_id as string | null, "company", cid);
   ctx.db.update("companies", cid, { deleted_at: now() });
   audit(ctx, "company", cid, "delete", { name: c.name });
   emit(ctx, { type: "company.deleted", object: "company", record: c });

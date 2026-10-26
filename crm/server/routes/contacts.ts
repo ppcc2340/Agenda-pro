@@ -10,6 +10,7 @@ import { assert } from "../lib/permissions.js";
 import { toCsv } from "../lib/util.js";
 import { audit } from "../services/audit.js";
 import type { Row } from "../db.js";
+import { visibleColumns, redactAll, assertWritable } from "../services/fieldSecurity.js";
 
 export function contactRoutes() {
   const r = Router();
@@ -27,7 +28,7 @@ export function contactRoutes() {
     const cols = ["id", "first_name", "last_name", "email", "phone", "job_title", "company_name", "lifecycle_stage", "lead_status", "source", "owner_name", "score", "city", "country", "tags", "consent_marketing", "created_at", "last_activity_at"];
     res.setHeader("content-type", "text/csv; charset=utf-8");
     res.setHeader("content-disposition", `attachment; filename="contactos-${new Date().toISOString().slice(0, 10)}.csv"`);
-    res.send("﻿" + toCsv(all, cols));
+    res.send("﻿" + toCsv(all, visibleColumns(req.ctx, "contact", cols)));
   }));
   r.get("/duplicates", h(async (req) => ({ groups: duplicateGroups(req.ctx) })));
   r.post("/check-duplicates", h(async (req) => ({ duplicates: findDuplicateCandidates(req.ctx, req.body ?? {}, typeof req.body?.exclude_id === "string" ? req.body.exclude_id : undefined) })));

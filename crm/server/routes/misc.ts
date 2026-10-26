@@ -16,6 +16,7 @@ import { createDeal } from "../services/deals.js";
 import { normalizeEmail, normalizeDomain, domainFromEmail, FREE_EMAIL_DOMAINS } from "../lib/util.js";
 import { audit } from "../services/audit.js";
 import { HttpError } from "../lib/errors.js";
+import { visibleColumns, redactAll, assertWritable, accessMap } from "../services/fieldSecurity.js";
 
 export function miscRoutes() {
   const r = Router();
@@ -27,7 +28,7 @@ export function miscRoutes() {
     const like = `%${q}%`;
     const db = req.ctx.db, ws = req.ctx.ws;
     const cs = ownerScope(req.ctx, "owner_id"), ds = ownerScope(req.ctx, "owner_id");
-    return {
+    const out = {
       contacts: db.all(`SELECT id, first_name, last_name, email, phone, (SELECT name FROM companies WHERE id=contacts.company_id) company_name FROM contacts WHERE workspace_id=? AND deleted_at IS NULL AND ${cs.sql} AND (first_name||' '||last_name LIKE ? OR email LIKE ? OR phone LIKE ?) LIMIT 8`, ws, ...cs.params, like, like, like),
       companies: db.all(`SELECT id, name, domain, city FROM companies WHERE workspace_id=? AND deleted_at IS NULL AND ${cs.sql} AND (name LIKE ? OR domain LIKE ? OR tax_id LIKE ?) LIMIT 6`, ws, ...cs.params, like, like, like),
       deals: db.all(`SELECT d.id, d.name, d.amount, d.currency, d.status, (SELECT name FROM companies WHERE id=d.company_id) company_name, (SELECT name FROM stages WHERE id=d.stage_id) stage_name FROM deals d WHERE workspace_id=? AND deleted_at IS NULL AND ${ds.sql} AND name LIKE ? LIMIT 6`, ws, ...ds.params, like),
@@ -35,6 +36,9 @@ export function miscRoutes() {
       contracts: db.all(`SELECT id, number, title, status FROM contracts WHERE workspace_id=? AND deleted_at IS NULL AND ${ds.sql} AND (title LIKE ? OR number LIKE ?) LIMIT 6`, ws, ...ds.params, like, like),
       quotes: db.all(`SELECT id, number, status, total, deal_id FROM quotes WHERE workspace_id=? AND number LIKE ? LIMIT 5`, ws, like),
     };
+    // los campos ocultos para el rol tampoco aparecen en la búsqueda
+    redactAll(req.ctx, "contact", out.contacts as Row[]); redactAll(req.ctx, "company", out.companies as Row[]); redactAll(req.ctx, "deal", out.deals as Row[]); redactAll(req.ctx, "ticket", out.tickets as Row[]); redactAll(req.ctx, "contract", out.contracts as Row[]);
+    return out;
   }));
 
   // ---------- notifications (13.8) ----------
@@ -57,7 +61,15 @@ export function miscRoutes() {
     req.ctx.db.run("INSERT INTO board_configs (workspace_id, object, config, updated_by, updated_at) VALUES (?,?,?,?,?) ON CONFLICT(workspace_id, object) DO UPDATE SET config=excluded.config, updated_by=excluded.updated_by, updated_at=excluded.updated_at", req.ctx.ws, o, JSON.stringify(cfg), req.ctx.user.id, now());
     return { object: o, config: cfg };
   }));
-  r.get("/filter-meta", h(async (req) => ({ fields: OBJECT_FIELDS, ops: OPS, custom: { contact: customFieldDefs(req.ctx, "contact"), company: customFieldDefs(req.ctx, "company"), deal: customFieldDefs(req.ctx, "deal"), ticket: customFieldDefs(req.ctx, "ticket"), contract: customFieldDefs(req.ctx, "contract"), ...Object.fromEntries(listDefs(req.ctx).map((d) => [d.key, customFieldDefs(req.ctx, d.key)])) }, ...{ objects: Object.fromEntries(listDefs(req.ctx).map((d) => [d.key, { label: d.plural, fields: CUSTOM_RECORD_FIELDS, statuses: d.statuses, relations: d.relations }])) } })));
+  r.get("/filter-meta", h(async (req) => {
+    // no se puede filtrar por un campo oculto para el rol
+    const hidden = (o: string) => { const m = accessMap(req.ctx, o); return (k: string) => m.get(k) === "hidden"; };
+    const fields = Object.fromEntries(Object.entries(OBJECT_FIELDS).map(([o, f]) => { const hd = hidden(o); return [o, Object.fromEntries(Object.entries(f).filter(([k]) => !hd(k)))]; }));
+    const custom = Object.fromEntries((["contact", "company", "deal", "ticket", "contract"] as const).map((o) => { const hd = hidden(o); return [o, customFieldDefs(req.ctx, o).filter((d) => !hd(`custom.${d.key}`))]; }));
+    for (const d of listDefs(req.ctx)) custom[d.key] = customFieldDefs(req.ctx, d.key);
+    const objects = Object.fromEntries(listDefs(req.ctx).map((d) => [d.key, { label: d.plural, fields: CUSTOM_RECORD_FIELDS, statuses: d.statuses, relations: d.relations }]));
+    return { fields, ops: OPS, custom, objects };
+  }));
 
   // ---------- lists / segments (2.2, 2.3) ----------
   r.get("/lists", h(async (req) => ({ items: req.ctx.db.all<Row>("SELECT l.*, (SELECT COUNT(*) FROM list_members m WHERE m.list_id=l.id) members FROM lists l WHERE workspace_id=? ORDER BY name", req.ctx.ws).map((l) => parseJson(l, ["filters"])) })));

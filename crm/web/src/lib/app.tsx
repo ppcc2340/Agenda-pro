@@ -14,9 +14,10 @@ export interface StatusLabel { id: number; label: string; color: string; done?: 
 export interface ObjStatus { id: number; label: string; color: string; done?: boolean }
 export interface ObjRelation { key: string; label: string; target: string; many: boolean; inverse_label?: string }
 export interface ObjectDef { id: string; key: string; name: string; plural: string; icon: string; color: string; primary_label: string; number_prefix: string | null; number_pad: number; has_owner: boolean; statuses: ObjStatus[]; relations: ObjRelation[]; description: string | null; position: number; records?: number; permissions?: { create: boolean; update: boolean; delete: boolean; export: boolean } }
+export type FieldAccessMap = Record<string, Record<string, "read" | "hidden">>;
 export interface LabelSet { id: string; name: string; labels: StatusLabel[]; used_by?: number }
 
-interface AppData { me: Me; settings: Settings; users: UserLite[]; pipelines: Pipeline[]; customFields: CustomField[]; labelSets: LabelSet[]; teams: { id: string; name: string; manager_id: string | null }[]; objects: ObjectDef[]; refresh: () => Promise<void>; can: (object: string, action: string) => boolean; isAdmin: boolean; userName: (id: string | null | undefined) => string }
+interface AppData { fieldAccess: FieldAccessMap; access: (object: string, field: string) => "edit" | "read" | "hidden"; me: Me; settings: Settings; users: UserLite[]; pipelines: Pipeline[]; customFields: CustomField[]; labelSets: LabelSet[]; teams: { id: string; name: string; manager_id: string | null }[]; objects: ObjectDef[]; refresh: () => Promise<void>; can: (object: string, action: string) => boolean; isAdmin: boolean; userName: (id: string | null | undefined) => string }
 const Ctx = createContext<AppData | null>(null);
 export const useApp = () => { const v = useContext(Ctx); if (!v) throw new Error("AppProvider missing"); return v; };
 
@@ -28,6 +29,7 @@ export function AppProvider({ me, settings, onLogout, children }: { me: Me; sett
   const [labelSets, setLabelSets] = useState<LabelSet[]>([]);
   const [objects, setObjects] = useState<ObjectDef[]>([]);
   const [st, setSt] = useState(settings);
+  const [fieldAccess, setFieldAccess] = useState<FieldAccessMap>({});
   const refresh = useCallback(async () => {
     void loadPicklists();
     const [u, p, c, t, s, ls, ob] = await Promise.all([
@@ -37,8 +39,11 @@ export function AppProvider({ me, settings, onLogout, children }: { me: Me; sett
     setUsers(u.items.filter((x) => !(x as unknown as { is_service?: number }).is_service)); setPipelines(p.items); setCustomFields(c.items.map((f) => { const set = f.settings?.label_set_id ? ls.items.find((x) => x.id === f.settings!.label_set_id) : null; return set ? { ...f, settings: { ...f.settings, labels: set.labels } } : f; })); setTeams(t.items); setSt(s.settings); setLabelSets(ls.items);
   }, []);
   useEffect(() => { refresh().catch(() => undefined); }, [refresh]);
+  // seguridad por campo del rol (oculto / solo lectura); se recarga con refresh()
+  useEffect(() => { api.get<FieldAccessMap>("field-permissions/me").then(setFieldAccess).catch(() => undefined); }, [refresh, customFields]);
+  const access = (object: string, field: string) => fieldAccess[object]?.[field] ?? "edit";
   useEffect(() => { const h = () => onLogout(); window.addEventListener("crm:unauthorized", h); return () => window.removeEventListener("crm:unauthorized", h); }, [onLogout]);
   const can = (object: string, action: string) => !!me.role.permissions.admin || (Array.isArray(me.role.permissions[object]) && (me.role.permissions[object] as string[]).includes(action));
   const userName = (id: string | null | undefined) => users.find((u) => u.id === id)?.name ?? "";
-  return <Ctx.Provider value={{ me, settings: st, users, pipelines, customFields, labelSets, teams, objects, refresh, can, isAdmin: !!me.role.permissions.admin, userName }}>{children}</Ctx.Provider>;
+  return <Ctx.Provider value={{ fieldAccess, access, me, settings: st, users, pipelines, customFields, labelSets, teams, objects, refresh, can, isAdmin: !!me.role.permissions.admin, userName }}>{children}</Ctx.Provider>;
 }

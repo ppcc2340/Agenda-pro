@@ -10,6 +10,7 @@ import { FormsAdmin, TemplatesAdmin, ScoringAdmin } from "./SettingsAutomation";
 import { AutomationCenter } from "./AutomationCenter";
 import { CustomFieldsAdmin, LabelSetsAdmin, BoardRulesAdmin } from "./SettingsColumns";
 import { ApiKeysAdmin, WebhooksAdmin, OutboxAdmin, AuditAdmin, UsageAdmin, RecycleBin, QualityGdpr, ImportPage } from "./SettingsIntegrations";
+import { LayoutsAdmin, FieldSecurityMatrix } from "./SettingsLayouts";
 import { fmtDateTime } from "../lib/format";
 import { ObjectsAdmin } from "./CustomObjects";
 
@@ -21,7 +22,7 @@ export function SettingsPage() {
       <nav className="settings-nav">
         <div className="section">Mi cuenta</div><S to="perfil" label="Perfil y seguridad" />
         {isAdmin && <><div className="section">Empresa</div><S to="general" label="General" /><S to="usuarios" label="Usuarios" /><S to="roles" label="Roles y permisos" /><S to="equipos" label="Equipos" />
-          <div className="section">Datos</div><S to="objetos" label="Objetos personalizados" /><S to="pipelines" label="Pipelines y etapas" /><S to="campos" label="Columnas personalizadas" /><S to="listas" label="Listas y etiquetas" /><S to="etiquetas" label="Etiquetas compartidas" /><S to="reglas-tablero" label="Por defecto y obligatorias" /><S to="productos" label="Productos" /><S to="importar" label="Importar CSV" /><S to="papelera" label="Papelera" /><S to="calidad" label="Calidad y RGPD" />
+          <div className="section">Datos</div><S to="objetos" label="Objetos personalizados" /><S to="pipelines" label="Pipelines y etapas" /><S to="campos" label="Columnas personalizadas" /><S to="listas" label="Listas y etiquetas" /><S to="fichas" label="Diseño de fichas" /><S to="etiquetas" label="Etiquetas compartidas" /><S to="reglas-tablero" label="Por defecto y obligatorias" /><S to="productos" label="Productos" /><S to="importar" label="Importar CSV" /><S to="papelera" label="Papelera" /><S to="calidad" label="Calidad y RGPD" />
           <div className="section">Automatización</div><S to="automatizaciones" label="Centro de automatizaciones" /><S to="formularios" label="Formularios web" /><S to="plantillas" label="Plantillas de email" /><S to="scoring" label="Lead scoring" />
           <div className="section">Plataforma</div><S to="api" label="API keys" /><S to="webhooks" label="Webhooks" /><S to="emails" label="Emails enviados" /><S to="auditoria" label="Auditoría" /><S to="uso" label="Uso del sistema" /></>}
         {!isAdmin && <><div className="section">Automatización</div><S to="automatizaciones" label="Mis aprobaciones" /><div className="section">Datos</div><S to="importar" label="Importar CSV" /><S to="plantillas" label="Plantillas de email" /></>}
@@ -37,6 +38,7 @@ export function SettingsPage() {
           <Route path="objetos" element={<ObjectsAdmin />} />
           <Route path="pipelines" element={<PipelinesAdmin />} />
           <Route path="campos" element={<CustomFieldsAdmin />} />
+          <Route path="fichas" element={<LayoutsAdmin />} />
           <Route path="productos" element={<Navigate to="/productos" replace />} />
           <Route path="importar" element={<ImportPage />} />
           <Route path="papelera" element={<RecycleBin />} />
@@ -186,6 +188,7 @@ function RolesAdmin() {
         {data.items.map((r) => <tr key={r.id}><td className="bold">{r.name} {r.is_system ? <span className="badge">sistema</span> : null}</td><td>{({ own: "Solo míos", team: "Mi equipo", all: "Todos" } as Record<string, string>)[r.visibility]}</td><td className="small muted">{r.permissions.admin ? "Administración total" : data.objects.filter((o) => Array.isArray(r.permissions[o]) && (r.permissions[o] as string[]).length).map((o) => `${OBJ[o]}: ${(r.permissions[o] as string[]).map((a) => ACT[a]?.toLowerCase()).join("/")}`).join(" · ")}</td><td className="r num">{r.users_count}</td><td className="r row" style={{ justifyContent: "flex-end" }}><button className="iconbtn" onClick={() => open(r)} aria-label="Editar"><Pencil size={15} /></button>{!r.is_system && <button className="iconbtn" onClick={() => del(r)} aria-label="Borrar"><Trash2 size={15} /></button>}</td></tr>)}
       </tbody></table>
       <MfaRoles roles={data.items} />
+      <FieldSecurityMatrix roles={data.items} />
       {editing && <Modal title={editing === "new" ? "Nuevo rol" : `Rol: ${f.name}`} size="lg" onClose={() => setEditing(null)} footer={<><button className="btn" onClick={() => setEditing(null)}>Cancelar</button><button className="btn primary" onClick={save}>Guardar</button></>}>
         <div className="form-grid mb12"><Field label="Nombre"><input className="input" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} /></Field>{editing === "new" && <Field label="Clave" hint="minúsculas, sin espacios"><input className="input" value={f.key} onChange={(e) => setF({ ...f, key: e.target.value })} /></Field>}<Field label="Visibilidad de registros"><select className="input" value={f.visibility} onChange={(e) => setF({ ...f, visibility: e.target.value })}><option value="own">Solo los míos</option><option value="team">Mi equipo</option><option value="all">Todos</option></select></Field><label className="checkbox"><input type="checkbox" checked={!!f.permissions.admin} disabled={editing !== "new" && (editing as R).key === "admin"} onChange={(e) => setF({ ...f, permissions: { ...f.permissions, admin: e.target.checked } })} />Administrador (ajustes, usuarios, workflows)</label></div>
         <table className="table"><thead><tr><th>Objeto</th>{data.actions.map((a) => <th key={a}>{ACT[a]}</th>)}</tr></thead><tbody>{data.objects.map((o) => <tr key={o}><td>{OBJ[o]}</td>{data.actions.map((a) => <td key={a}><input type="checkbox" checked={Array.isArray(f.permissions[o]) && (f.permissions[o] as string[]).includes(a)} onChange={() => toggle(o, a)} /></td>)}</tr>)}</tbody></table>

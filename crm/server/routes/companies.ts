@@ -9,6 +9,7 @@ import { assert } from "../lib/permissions.js";
 import { toCsv } from "../lib/util.js";
 import { audit } from "../services/audit.js";
 import type { Row } from "../db.js";
+import { visibleColumns, redactAll, assertWritable } from "../services/fieldSecurity.js";
 
 export function companyRoutes() {
   const r = Router();
@@ -21,7 +22,7 @@ export function companyRoutes() {
     audit(req.ctx, "company", null, "export", { count: all.length });
     res.setHeader("content-type", "text/csv; charset=utf-8");
     res.setHeader("content-disposition", `attachment; filename="empresas-${new Date().toISOString().slice(0, 10)}.csv"`);
-    res.send("﻿" + toCsv(all, ["id", "name", "domain", "sector", "size", "revenue", "tax_id", "city", "country", "phone", "type", "owner_name", "tags", "contacts_count", "open_deals", "created_at"]));
+    res.send("﻿" + toCsv(all, visibleColumns(req.ctx, "company", ["id", "name", "domain", "sector", "size", "revenue", "tax_id", "city", "country", "phone", "type", "owner_name", "tags", "contacts_count", "open_deals", "created_at"])));
   }));
   r.post("/", h(async (req) => createCompany(req.ctx, parse(companySchema, req.body), { force: req.query.force === "1" || req.body?.force === true })));
   r.get("/:id", h(async (req) => {

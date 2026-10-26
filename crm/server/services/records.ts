@@ -1,4 +1,5 @@
 import { fieldDefs, coerceCustom, COMPUTED_TYPES, enrichList } from "./columns.js";
+import { redactAll } from "./fieldSecurity.js";
 /** Shared helpers: listing with filters/sort/pagination, custom field validation, JSON parsing. */
 import { z } from "zod";
 import { createHash } from "node:crypto";
@@ -67,7 +68,7 @@ export function listRecords<T extends Row>(ctx: Ctx, object: string, q: ListQuer
   const params: unknown[] = [ctx.ws];
   if (object !== "task" && object !== "ticket") where.push("t.deleted_at IS NULL");
   if (isCustomObjectKey(object)) { where.push("t.object_key = ?"); params.push(object); }
-  const scope = ownerScope(ctx, `t.${extra?.ownerCol ?? (object === "task" ? "assignee_id" : object === "ticket" ? "assignee_id" : "owner_id")}`);
+  const scope = ownerScope(ctx, `t.${extra?.ownerCol ?? (object === "task" ? "assignee_id" : object === "ticket" ? "assignee_id" : "owner_id")}`, { object, idCol: "t.id" });
   where.push(scope.sql); params.push(...scope.params);
   const f = buildWhere(object, parseFilters(q.filters), "t");
   where.push(f.sql); params.push(...f.params);
@@ -91,6 +92,7 @@ export function listRecords<T extends Row>(ctx: Ctx, object: string, q: ListQuer
   const items = ctx.db.all<T>(`SELECT t.*${extra?.select ? ", " + extra.select : ""} FROM ${table} t ${extra?.joins ?? ""} WHERE ${w} ORDER BY ${sort} ${dir} NULLS LAST, t.id LIMIT ? OFFSET ?`, ...params, size, offset);
   for (const it of items) parseJson(it, JSON_COLS[object] ?? []);
   enrichList(ctx, object, items as unknown as Row[]);
+  redactAll(ctx, object, items as unknown as Row[]);
   const next = offset + items.length < total ? Buffer.from(`${qsig(object, q)}|${offset + items.length}`).toString("base64url") : null;
   return { items, total, page: q.page, page_size: size, next_cursor: next };
 }

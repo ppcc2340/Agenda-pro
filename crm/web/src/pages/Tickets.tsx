@@ -12,6 +12,8 @@ import { TaskRow, TaskForm, type Task } from "../components/Tasks";
 import { Modal, Field, Picker, Spinner, useToast, errorMessage, Tabs } from "../components/ui";
 import { TICKET_STATUS, PRIORITY, fmtDateTime, relTime, isOverdue, fmtDate } from "../lib/format";
 import { TICKET_STATUS_OPTS, PRIORITY_OPTS } from "../lib/colors";
+import { LayoutPanel } from "../components/LayoutPanel";
+import { ShareButton } from "../components/ShareButton";
 
 interface T { id: string; number: number; subject: string; status: string; priority: string; category: string | null; channel: string; assignee_id: string | null; assignee_name: string | null; custom?: Record<string, unknown>; tags?: string[]; contact_name: string | null; company_name: string | null; sla_due_at: string | null; first_response_at: string | null; created_at: string; csat: number | null }
 
@@ -79,7 +81,7 @@ interface TicketFull extends T { description: string | null; contact_id: string 
 export function TicketDetailPage() {
   const { id } = useParams();
   const nav = useNavigate();
-  const { users } = useApp();
+  const { users, can } = useApp();
   const toast = useToast();
   const [t, setT] = useState<TicketFull | null>(null);
   const [reply, setReply] = useState("");
@@ -100,7 +102,7 @@ export function TicketDetailPage() {
       <div className="record" style={{ gridTemplateColumns: "minmax(0,1fr) 320px" }}>
         <section>
           <div className="card mb16">
-            <div className="row wrap"><h1>#{t.number} {t.subject}</h1><span className={`badge ${t.priority === "urgent" ? "risk" : t.priority === "high" ? "warn" : ""}`}>{PRIORITY[t.priority]}</span>{slaBreached && <span className="badge risk">SLA incumplido</span>}</div>
+            <div className="row wrap"><h1>#{t.number} {t.subject}</h1><ShareButton object="ticket" id={t.id} /><span className={`badge ${t.priority === "urgent" ? "risk" : t.priority === "high" ? "warn" : ""}`}>{PRIORITY[t.priority]}</span>{slaBreached && <span className="badge risk">SLA incumplido</span>}</div>
             {t.description && <p className="sub mt8" style={{ whiteSpace: "pre-wrap" }}>{t.description}</p>}
             <div className="composer mt16">
               <div className="ctabs"><button className={!internal ? "active" : ""} onClick={() => setInternal(false)}>Responder al cliente</button><button className={internal ? "active" : ""} onClick={() => setInternal(true)}>Nota interna</button></div>
@@ -113,19 +115,7 @@ export function TicketDetailPage() {
         </section>
         <aside className="side r">
           <RelatedCustomRecords object="ticket" id={id!} />
-          <div className="card"><dl className="kv">
-            <dt>Estado</dt><dd><PicklistSelect pkey="ticket.status" label="Estado" value={t.status} custom={(t as unknown as { custom?: Record<string, unknown> }).custom} onChange={(role, lbl) => patch(picklistPatch("status", role, lbl))} /></dd>
-            <dt>Prioridad</dt><dd><PicklistSelect pkey="ticket.priority" label="Prioridad" value={t.priority} custom={(t as unknown as { custom?: Record<string, unknown> }).custom} onChange={(role, lbl) => patch(picklistPatch("priority", role, lbl))} /></dd>
-            <dt>Asignado</dt><dd><select aria-label="Asignado" className="input sm" value={t.assignee_id ?? ""} onChange={(e) => patch({ assignee_id: e.target.value || null })}><option value="">Sin asignar</option>{users.filter((u) => u.active).map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}</select></dd>
-            <dt>Categoría</dt><dd><input aria-label="Categoría" className="input sm" defaultValue={t.category ?? ""} key={t.category} onBlur={(e) => e.target.value !== (t.category ?? "") && patch({ category: e.target.value })} /></dd>
-            <dt>Contacto</dt><dd>{t.contact_id ? <Link to={`/contactos/${t.contact_id}`}>{t.contact_name}</Link> : "—"}</dd>
-            <dt>Empresa</dt><dd>{t.company_id ? <Link to={`/empresas/${t.company_id}`}>{t.company_name}</Link> : "—"}</dd>
-            <dt>Canal</dt><dd>{t.channel}</dd>
-            <dt>Creado</dt><dd className="small">{fmtDateTime(t.created_at)}</dd>
-            <dt>SLA 1ª resp.</dt><dd className="small" style={slaBreached ? { color: "var(--risk-ink)" } : undefined}>{t.first_response_at ? `respondido ${relTime(t.first_response_at)}` : fmtDateTime(t.sla_due_at)}</dd>
-            {t.resolved_at && <><dt>Resuelto</dt><dd className="small">{fmtDateTime(t.resolved_at)}</dd></>}
-            <dt>CSAT</dt><dd><select aria-label="CSAT" className="input sm" value={t.csat ?? ""} onChange={(e) => patch({ csat: e.target.value ? Number(e.target.value) : null })}><option value="">—</option>{[1, 2, 3, 4, 5].map((n) => <option key={n} value={n}>{"★".repeat(n)}</option>)}</select></dd>
-          </dl></div>
+          <div className="card"><LayoutPanel object="ticket" record={t as unknown as Record<string, unknown>} onPatch={patch} editable={can("ticket", "update")} extra={{ contact_id: t.contact_id ? <Link to={`/contactos/${t.contact_id}`}>{t.contact_name}</Link> : undefined, company_id: t.company_id ? <Link to={`/empresas/${t.company_id}`}>{t.company_name}</Link> : undefined }} /></div>
         </aside>
       </div>
       {taskForm && <TaskForm task={taskForm === "new" ? null : taskForm} defaults={{ ticket_id: t.id, contact_id: t.contact_id, company_id: t.company_id }} onClose={() => setTaskForm(null)} onSaved={refreshAll} />}
