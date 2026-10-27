@@ -141,3 +141,39 @@ Tres pruebas antiguas se adaptaron porque el comportamiento cambió a propósito
 - Auditoría inalterable.
 
 Todo eso corresponde a la versión con servidor, que es el CRM de `crm/`. El formato JSON del espacio se mantiene estable para que esa versión pueda importarlo.
+
+---
+
+# Segunda revisión (`diagnostico_10_v2_crm_clm.txt`, nota de partida 8,9)
+
+El trabajo se hizo en tres paquetes:
+- **R**: datos, rescate y solo lectura (prefijo `rz`).
+- **F**: permisos, línea temporal y textos (prefijo `fz`).
+- **V**: acabado visual (prefijo `vz`).
+
+Al fusionarlos, los bloques se renumeraron en el orden del documento para que el cargador los ejecute en orden estrictamente creciente.
+
+| Id | Estado | Notas |
+|---|---|---|
+| P0-1 Datos dañados o de una versión más nueva | ✅ | El arranque detecta los datos dañados, los de una versión más nueva y los de formato no reconocible. Guarda una «Copia de rescate» y pone el escritor en pausa: no se escribe nada, tampoco en el diario. Solo se ejecuta el bloque de rescate. La pantalla `#/rescate` ofrece «Restaurar la última copia buena», «Descargar los datos tal como están», «Importar una copia…», «Abrir otro espacio» y «Empezar de cero…». Solo «Ejemplo» se regenera solo, y siempre con aviso. Prueba 9.1 hecha en «Mi empresa» y en el espacio principal, con JSON roto y con `version = 99`: el registro de IndexedDB no cambia ni un byte y CLIENTE_REAL SL se recupera. |
+| P0-2 Campo oculto | ✅ | `canSee()` se aplica en la cabecera de la ficha, la paleta, la búsqueda global, Relacionados, Duplicados, Listas, el «Para» del email y «exportar lista». Esta última era una fuga nueva: sacaba siempre el email y el teléfono. |
+| P0-3 Línea temporal | ✅ | Primero las fijadas y después por fecha descendente. Sin asuntos repetidos en 85 fichas. Las entradas automáticas las firma «Automático». |
+| P0-4 Pestaña en solo lectura | ✅ | La clase `dx-ro` bloquea `setField`, `xlSetRaw`, `moveStage`, crear, borrar y editar celdas sin tocar `S`. «Nuevo…» queda deshabilitado con un aviso. El banner muestra el nombre del espacio y la hora del último cambio recibido. |
+| P1-1 Barra de herramientas | ✅ | Nuevo · Buscar · Persona · Filtro · Ordenar · Agrupar · Mi vista … Más. Deshacer y rehacer van junto al título. |
+| P1-2 Columna de nombre | ✅ | 320 px; 360 px en Negocios y Contratos. El ancho que arrastra cada usuario es solo suyo (antes se aplicaba a todos). |
+| P1-3 Botón del tutorial | ✅ | Solo aparece mientras el tutorial está en curso. «Tutorial guiado» está en el menú «?» y en el del avatar. |
+| P1-4 y P1-5 Ficha y pestañas del contrato | ✅ | Transiciones con verbos, paso a paso sin truncar (en móvil, «Paso 3 de 7 · …»), hallazgos con «Ver más», resumen de cláusulas, «Riesgo medio · 34/100», y pestañas con degradado y flechas. |
+| P1-6 Móvil | ✅ | La marca muestra solo el icono, la insignia «Ejemplo» es un punto con descripción emergente, y las tarjetas ya no se cortan. |
+| P1-7 Inicio del espacio real | ✅ | «Restablecer datos de ejemplo» solo aparece en «Ejemplo». Los gráficos vacíos tienen su propia acción y un «0 €» se muestra en gris. |
+| P1-8 Barra lateral | ✅ | No se muestran contadores a 0. La carpeta se llama «Objetos». |
+| P1-9 Números | ✅ | Agrupación siempre («2.400 €») y espacio antes del % («10 %»). |
+| P1-10 Contraste | ✅ | Se amplió el auditor para que mire también lo que está fuera de pantalla, las filas resaltadas y las estrellas. Resultado: 0 fallos en 13 vistas, en claro y en oscuro. |
+| P1-11 Textos | ✅ | Inventario automático: 101 pantallas y 0 cadenas problemáticas. |
+| P1-12 Datos deterministas | ✅ | La siembra usa mulberry32 con semilla fija. Dos instalaciones limpias dan los mismos recuentos. |
+| P1-13 Tamaño | 🟡 | 1,53 MB, por encima del presupuesto de 1,2 MB. Carga hasta la aplicación lista: 0,3-0,4 s. Para llegar a 1,2 MB habría que minificar la versión publicada. |
+| P2 | ✅ | El asistente pide el nombre de pila, la paleta vacía muestra «Favoritos y recientes», y el banner de solo lectura lleva el nombre y la hora. El historial muestra el tamaño con un decimal y permite «Comparar con ahora». Se han quitado las notificaciones duplicadas de la siembra. «Bloquear ahora» y el tiempo de bloqueo se han verificado. El pie de grupo muestra la fecha más próxima, con el rango en la descripción emergente. |
+| Pruebas manuales (5 personas; NVDA y VoiceOver) | ⏳ | Necesitan personas. |
+
+Pruebas antiguas adaptadas en esta revisión:
+- xlwalk, v2walk y demo-clm abren ahora «Formato condicional», «Reglas» y «Automatizaciones» desde «Más».
+- La prueba E del botón flotante del tutorial lo abre antes, porque ese botón solo existe mientras el tutorial está en curso.

@@ -786,7 +786,7 @@ input[type=checkbox]:not(.switch),input[type=radio]{min-width:18px;min-height:18
 .dx-saved{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--ink2);padding:0 8px;white-space:nowrap;min-height:32px}
 .dx-saved i{width:8px;height:8px;border-radius:50%;background:#0a7b47;flex:none}
 .dx-saved[data-st="saving"] i{background:var(--c-orange)}.dx-saved[data-st="error"]{color:#c1213d;font-weight:600}.dx-saved[data-st="error"] i{background:#c1213d}.dx-saved[data-st="ro"] i{background:var(--ink3)}
-.dx-ro{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:251;background:var(--ink);color:#fff;border-radius:8px;padding:10px 14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;max-width:min(760px,calc(100vw - 32px));box-shadow:var(--shadow);font-size:13px}
+#dxRoBanner{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:251;background:var(--ink);color:#fff;border-radius:8px;padding:10px 14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;max-width:min(760px,calc(100vw - 32px));box-shadow:var(--shadow);font-size:13px}
 .dx-toast{position:fixed;left:50%;bottom:72px;transform:translateX(-50%);z-index:252;background:var(--ink);color:#fff;border-radius:8px;padding:8px 8px 8px 14px;display:none;gap:10px;align-items:center;max-width:min(640px,calc(100vw - 32px));box-shadow:var(--shadow);font-size:13px}
 .dx-toast.show{display:flex}.dx-toast.err{background:#a3172f}.dx-toast .btn{background:#fff;color:#1f2133;border-color:#fff}.dx-toast .ibtn{color:#fff;font-size:18px;line-height:1;min-width:32px;min-height:32px}
 .dx-link{background:none;border:0;padding:0;color:var(--primary);text-decoration:underline;font-size:12.5px}
@@ -805,9 +805,160 @@ input[type=checkbox]:not(.switch),input[type=radio]{min-width:18px;min-height:18
 [data-theme="dark"] .dx-warnbox{background:#3d2b12;color:#ffd9a8;border-color:#7a5320}
 [data-theme="dark"] .dx-pw-err,[data-theme="dark"] .dx-warn,[data-theme="dark"] .dx-err-msg,[data-theme="dark"] .dx-saved[data-st="error"]{color:#ff8a9b}
 [data-theme="dark"] .dx-saved i{background:#3ad08a}
-[data-theme="dark"] .dx-ro,[data-theme="dark"] .dx-toast{background:#0f1124;border:1px solid var(--line)}
-@media (max-width:700px){.dx-saved span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}.dx-saved{padding:0 4px}.dx-kv>span{min-width:0;width:100%}.dx-ro{bottom:12px}}
+[data-theme="dark"] #dxRoBanner,[data-theme="dark"] .dx-toast{background:#0f1124;border:1px solid var(--line)}
+@media (max-width:700px){.dx-saved span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}.dx-saved{padding:0 4px}.dx-kv>span{min-width:0;width:100%}#dxRoBanner{bottom:12px}}
 @media (prefers-reduced-motion:reduce){.dx-boot-bar i{animation:none;width:100%;opacity:.5}#dxBoot{transition:none}}
+</style>
+<style data-pkg="v2-R">
+/* v2-R · rescate, solo lectura e historial (prefijo rz) */
+html.rz-rescue-on .app,html.rz-rescue-on #tutBtn,html.rz-rescue-on #tut,html.rz-rescue-on #tutTip,html.rz-rescue-on .pro-skip,html.rz-rescue-on #panel{display:none!important}
+.rz-rescue{position:fixed;inset:0;z-index:10001;overflow:auto;background:var(--bg);color:var(--ink);display:flex;align-items:flex-start;justify-content:center;padding:56px 16px 32px}
+.rz-card{width:min(560px,100%);background:var(--surface,#fff);border:1px solid var(--line2);border-radius:12px;padding:28px;box-shadow:var(--shadow)}
+.rz-brand{display:flex;align-items:center;gap:10px;font-size:15px;margin-bottom:18px;color:var(--ink2)}
+.rz-ico{width:44px;height:44px;border-radius:10px;display:grid;place-items:center;background:#fff4e5;color:#8a4b00;margin-bottom:12px}.rz-ico svg{width:24px;height:24px}
+.rz-card h1{font-size:21px;font-weight:600;line-height:1.3;margin:0 0 8px;overflow-wrap:anywhere}.rz-card h1:focus{outline:0}.rz-card h1:focus-visible{outline:2px solid var(--primary);outline-offset:3px;border-radius:4px}
+.rz-why{font-size:15px;margin:0 0 6px;line-height:1.5}
+.rz-safe{font-size:13px;color:var(--ink2);margin:0;line-height:1.5}
+.rz-acts{display:flex;flex-direction:column;gap:12px;margin-top:20px}
+.rz-a{display:flex;flex-direction:column;gap:4px}
+.rz-acts .btn{justify-content:center;width:100%;min-height:44px;font-size:14px}
+.rz-acts .btn:disabled{opacity:.55;cursor:not-allowed}
+.rz-hint{margin:0;font-size:12.5px;color:var(--ink2);line-height:1.45}
+.rz-others{display:flex;flex-direction:column;gap:6px;margin-top:4px;padding-left:12px;border-left:2px solid var(--line2)}
+.rz-others .btn{justify-content:flex-start;min-height:40px}
+.rz-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px}.rz-row .inp{flex:1 1 180px;min-height:40px;background:var(--surface,#fff);color:var(--ink)}
+.rz-pw{margin-top:16px;padding:12px;border:1px solid var(--line2);border-radius:8px}.rz-pw label{font-size:13px}
+.rz-msg{min-height:20px;margin:14px 0 0;font-size:13px;color:#b3122e}.rz-msg.ok{color:var(--ink2)}
+.rz-zero{margin-top:18px;padding-top:14px;border-top:1px solid var(--line2)}
+.rz-zero-box{margin-top:10px;font-size:13px}.rz-zero-box p{margin:0 0 8px;color:var(--ink2)}
+.rz-card button:focus-visible,.rz-card input:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+[data-theme="dark"] .rz-ico{background:#3d2b12;color:#ffd9a8}
+[data-theme="dark"] .rz-msg{color:#ff8a9b}[data-theme="dark"] .rz-msg.ok{color:var(--ink2)}
+@media (max-width:480px){.rz-rescue{padding:16px 12px}.rz-card{padding:18px}.rz-card h1{font-size:19px}}
+/* pestaña en solo lectura: la clase dx-ro va en <body>; el aviso usa #dxRoBanner */
+body.dx-ro{position:static!important;left:auto!important;bottom:auto!important;transform:none!important;max-width:none!important;padding:0!important;border:0!important;border-radius:0!important;box-shadow:none!important;display:block!important;background:var(--bg)!important;color:var(--ink)!important;font-size:14px!important}
+body.dx-ro #content .tbl .xc,body.dx-ro #content .tbl .cell,body.dx-ro .kcard{cursor:default}
+body.dx-ro [data-rz-ro]{opacity:.5;cursor:not-allowed}
+body.dx-ro [data-rz-ro]:hover{background:inherit}
+#dxRoBanner .rz-rx{opacity:.85;font-size:12px;white-space:nowrap}
+/* historial */
+.dx-snaps .rz-why-snap{max-width:280px;margin-top:2px;line-height:1.35}
+.rz-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.rz-cmp th[scope="row"]{font-weight:500;text-align:left}.rz-df.up{color:#0a7b47}.rz-df.down{color:#b3122e}
+[data-theme="dark"] .rz-df.up{color:#3ad08a}[data-theme="dark"] .rz-df.down{color:#ff8a9b}
+@media (prefers-reduced-motion:reduce){.rz-rescue,.rz-card{transition:none;animation:none}}
+@media (max-width:600px){.dx-snaps,.dx-snaps tbody,.dx-snaps tr,.dx-snaps td{display:block;width:auto}.dx-snaps thead{display:none}.dx-snaps tr{border-bottom:1px solid var(--line2);padding:8px 0}.dx-snaps td{border:0;padding:2px 0;text-align:left;white-space:normal}.dx-snaps td .row{justify-content:flex-start!important}.dx-snaps .rz-why-snap{max-width:none}}
+
+</style>
+<style data-pkg="v2-F">
+/* v2-F · Inicio vacío, ayuda de Listas y nombre en la bienvenida */
+.kpi .v.fz-zero{color:var(--ink2)!important}
+.chart .fz-empty{min-height:150px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;color:var(--ink2);border:1px dashed var(--line);border-radius:8px;padding:18px 14px;box-sizing:border-box;max-width:100%}
+.chart .fz-empty p{margin:0;font-size:13.5px}
+.fz-link{background:none;border:0;padding:0;font:inherit;color:var(--primary);text-decoration:underline;text-underline-offset:2px;cursor:pointer}
+.fz-link:hover{color:var(--primary-h)}
+.fz-link:focus-visible{outline:2px solid var(--primary);outline-offset:2px;border-radius:2px}
+.fz-help p{margin:0 0 10px;line-height:1.5}
+.fz-name{margin:0 0 14px;max-width:360px}
+.fz-name .inp{width:100%;box-sizing:border-box}
+.fz-name small{font-size:12px;line-height:1.4}
+[data-theme="dark"] .chart .fz-empty{border-color:var(--line)}
+[data-theme="dark"] .fz-link{color:#7cb6ff}[data-theme="dark"] .fz-link:hover{color:#a9cfff}
+@media (max-width:480px){.chart .fz-empty{min-height:110px}.fz-name{max-width:none}}
+@media (prefers-reduced-motion:reduce){.chart .fz-empty,.fz-link{transition:none}}
+</style>
+<style data-pkg="v2-V">
+/* ===== V2-V · acabado visual (segunda revisión) ===== */
+:root{--vz-link-hl:#005bb5;--vz-star-line:#8a8ea3;--vz-fade:var(--bg,#f6f7fb)}
+[data-theme="dark"]{--vz-link-hl:#9ccbff}
+/* P1-1 · barra: «Más» al final; deshacer y rehacer junto al título */
+.toolbar.vz-tb{gap:4px}
+.toolbar.vz-tb>.ux-more{margin-left:auto}
+.toolbar .ux-ovf.vz-pin{display:inline-flex!important;outline:2px dashed var(--primary);outline-offset:2px}
+.ux-more.vz-dot{position:relative}
+.ux-more.vz-dot::after{content:"";position:absolute;top:6px;right:4px;width:7px;height:7px;border-radius:50%;background:var(--primary)}
+.dd.ux-moremenu button>svg,.dd .vz-mi>svg{width:16px;height:16px;flex:none;color:var(--ink2)}
+.dd.ux-moremenu .vz-msep{height:1px;background:var(--line2);margin:4px 0}
+.dd .vz-mh{font-size:11.5px;color:var(--ux-ink-muted,#676879);padding:6px 8px 2px;text-transform:uppercase;letter-spacing:.04em}
+.dd.ux-moremenu button.on{color:var(--ux-ink-primary,#0060b9);font-weight:600}
+#head h1 .vz-hist{display:inline-flex;align-items:center;gap:2px;margin-left:10px;vertical-align:middle}
+#head h1 .vz-hist .btn{min-height:30px;min-width:30px;padding:0 6px;font-size:14px;font-weight:400;background:transparent;border:0;color:var(--ink2)}
+#head h1 .vz-hist .btn:not([disabled]):hover{background:var(--hover);color:var(--ink)}
+#head h1 .vz-hist .btn[disabled]{opacity:.45;cursor:default}
+#head h1 .vz-hist svg{width:17px;height:17px}
+/* P1-2 · columna de nombre: el texto se corta con puntos suspensivos, sin saltos */
+.tbl .cell.name,.tbl .cell[data-c="name"],.tbl .cell[data-c="title"]{min-width:0}
+/* P1-3 · tutorial: el flotante solo mientras el tutorial está en curso */
+body:not(.vz-tut-on) #tutBtn,body:not(.vz-tut-on) #uxTutFold{display:none!important}
+#vzHelp{font-weight:700;font-size:15px}
+#vzHelp[aria-expanded="true"]{background:var(--hover)}
+.dd.vz-helpmenu{width:270px}
+.dd .vz-mi{display:flex;align-items:center;gap:8px}
+.dd .vz-mi small{display:block;color:var(--ux-ink-muted,#676879);font-size:11.5px;font-weight:400}
+/* P1-4 · ficha de contrato */
+.ux-sr,.vz-sr{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.vz-stepm{display:none;margin:10px 0 0;font-size:13.5px;font-weight:600;color:var(--ink);align-items:center;gap:8px}
+.vz-stepm i{width:10px;height:10px;border-radius:50%;background:var(--sc,var(--primary));flex:none}
+.vz-stepm .vz-bar{flex:1;height:6px;border-radius:3px;background:var(--line2);overflow:hidden;max-width:160px}
+.vz-stepm .vz-bar b{display:block;height:100%;background:var(--sc,var(--primary))}
+.steps button{text-overflow:clip}
+.vz-find{display:flex;align-items:flex-start;gap:8px}
+.vz-find .pill{flex:none;margin-top:1px}
+.vz-find .vz-ft{flex:1;min-width:0}
+.vz-clamp{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.vz-find.vz-open .vz-clamp{display:block;-webkit-line-clamp:unset}
+.vz-more{border:0;background:none;padding:2px 0;min-height:24px;color:var(--ux-ink-primary,#0060b9);font:inherit;font-size:12px;font-weight:600;cursor:pointer}
+.vz-more:hover{text-decoration:underline}
+.kv dd.vz-who{display:flex;align-items:center;gap:8px;min-width:0}
+.kv dd.vz-who .avatar{flex:none}
+.kv dd.vz-who .vz-whon{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pill.vz-risk{white-space:nowrap}
+/* P1-5 · pestañas de la ficha de contrato: degradado y flechas */
+.vz-tabsx{position:relative;display:flex;align-items:center;max-width:100%;min-width:0}
+.vz-tabsx>.stabs{flex:1;min-width:0;scroll-behavior:smooth;scrollbar-width:none}
+.vz-tabsx>.stabs::-webkit-scrollbar{display:none}
+.vz-tabsx::before,.vz-tabsx::after{content:"";position:absolute;top:0;bottom:14px;width:48px;pointer-events:none;opacity:0;transition:opacity .15s;z-index:1}
+.vz-tabsx::before{left:0;background:linear-gradient(90deg,var(--vz-fade) 30%,transparent)}
+.vz-tabsx::after{right:0;background:linear-gradient(270deg,var(--vz-fade) 30%,transparent)}
+.vz-tabsx.vz-l::before,.vz-tabsx.vz-r::after{opacity:1}
+.vz-tabsx .vz-arr{position:absolute;top:calc(50% - 7px);transform:translateY(-50%);z-index:2;width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:var(--surface,#fff);color:var(--ink);display:none;align-items:center;justify-content:center;padding:0;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.12)}
+.vz-tabsx .vz-arr svg{width:16px;height:16px}
+.vz-tabsx .vz-arr:hover{background:var(--hover)}
+.vz-tabsx .vz-arr.vz-al{left:2px}.vz-tabsx .vz-arr.vz-ar{right:2px}
+.vz-tabsx.vz-l .vz-arr.vz-al,.vz-tabsx.vz-r .vz-arr.vz-ar{display:inline-flex}
+/* P1-6 · móvil: tarjetas sin cortes */
+.charts{grid-template-columns:repeat(2,minmax(0,1fr))}
+.charts>*,.charts .col,.chart,.card{min-width:0;max-width:100%;box-sizing:border-box}
+.chart .kv dd,.card .kv dd{overflow-wrap:anywhere}
+@media (max-width:960px){.charts{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:720px){
+  .steps.vz-steps{display:none}
+  .vz-stepm{display:flex}
+  #head h1 .vz-sub{display:block;font-size:16px!important;margin-top:2px}
+  #head h1 .vz-sub .vz-sep{display:none}
+  #head h1 .vz-hist{margin-left:4px}
+  #head h1 .vz-hist .btn{min-height:44px;min-width:44px}
+  .vz-tabsx .vz-arr{width:36px;height:36px}
+}
+@media (max-width:479px){
+  .logo #brand{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  .ux-sample{background:transparent!important;border-color:transparent!important;padding:0!important;min-width:44px;min-height:44px;width:44px;justify-content:center;position:relative}
+  .ux-sample>svg,.ux-sample .ux-sl{display:none!important}
+  .ux-sample::after{content:"";width:12px;height:12px;border-radius:50%;background:#c2410c;box-shadow:0 0 0 3px #ffe2c2}
+  [data-theme="dark"] .ux-sample::after{background:#ffb066;box-shadow:0 0 0 3px #4a3410}
+}
+/* P1-10 · contraste */
+.rate b:not(.on){-webkit-text-stroke:1px var(--vz-star-line);color:#eef0f6}
+.rate b.on{-webkit-text-stroke:1px #a37800}
+[data-theme="dark"] .rate b:not(.on){color:#3c3f5c;-webkit-text-stroke:1px #a5a9bd}
+.tbl .r .chat.has{color:var(--ux-ink-muted,#676879)}
+.tbl .r.sel .cell a,.tbl .r:hover .cell a,.tbl .cell.xl-in a,.tbl .cell.xl-cf a,.tbl .r.sel .cell .lnk,.tbl .r:hover .cell .lnk{color:var(--vz-link-hl)}
+/* P2 · pie de grupo: solo la fecha más próxima si la columna es estrecha */
+.sumrow .vz-rng{display:inline-flex;flex-direction:column;align-items:center;line-height:1.15;white-space:nowrap}
+.sumrow .vz-rng small{font-size:10.5px;color:var(--ux-ink-muted,#676879)}
+@media (prefers-reduced-motion:reduce){.vz-tabsx>.stabs{scroll-behavior:auto}.vz-tabsx::before,.vz-tabsx::after{transition:none}}
+@media (forced-colors:active){.vz-tabsx::before,.vz-tabsx::after{display:none}.vz-tabsx .vz-arr{border:1px solid CanvasText}.ux-sample::after{background:Highlight;box-shadow:none}}
+.dd.ux-moremenu button+.ux-legend{border-top:1px solid var(--line2);margin-top:4px;padding-top:8px}
 </style>
 </head>
 <body>
@@ -978,14 +1129,15 @@ input[type=checkbox]:not(.switch),input[type=radio]{min-width:18px;min-height:18
   const setStatus = (s) => { E.status = s; if (E.hooks.status) try { E.hooks.status(s, E.lastErr); } catch (_) { /* nada */ } };
   E.serialize = () => JSON.stringify(S); // eslint-disable-line no-undef
   E.schedule = (ms = 300) => {
-    if (!E.on) return; const now = Date.now(); if (!E.sFirst) E.sFirst = now;
+    if (!E.on || E.paused) return; const now = Date.now(); if (!E.sFirst) E.sFirst = now;
     clearTimeout(E.t); E.t = setTimeout(E.flush, now - E.sFirst > 2000 ? 0 : ms);
   };
-  E.touch = () => { if (!E.on || E.ro) return; E.sRaw = null; E.sDirty = true; E.changedSinceSnap = true; E.schedule(); };
+  E.touch = () => { if (!E.on || E.ro || E.paused) return; E.sRaw = null; E.sDirty = true; E.changedSinceSnap = true; E.schedule(); };
   E.pendingWork = () => E.sDirty || E.dirty.size > 0 || E.del.size > 0;
   E.flush = async function () {
     clearTimeout(E.t); E.t = null;
     if (!E.on) return true;
+    if (E.paused) return false; // rz: escritor en pausa (pantalla de rescate)
     if (E.writing) { E.t = setTimeout(E.flush, 100); return false; }
     if (!E.pendingWork()) return true;
     if (E.ro && !E.dirty.size && !E.del.size) return false;
@@ -1031,6 +1183,7 @@ input[type=checkbox]:not(.switch),input[type=radio]{min-width:18px;min-height:18
   E.flushNow = async () => { let n = 0; while (E.writing && n++ < 200) await new Promise((r) => setTimeout(r, 25)); return E.flush(); };
   /* al cerrar: escritura síncrona de lo pendiente (sin cifrado no hace falta esperar) */
   E.flushSync = () => {
+    if (E.paused) return; // rz: en rescate no se escribe nada, tampoco el diario
     // una escritura asíncrona en curso puede no llegar a confirmarse al descargar la página: su contenido va al diario
     if (E.on && !E.ro && E.writing && E.inflight && !E.sDirty) { try { if (LS) LS.setItem('dx:journal', JSON.stringify({ key: E.key, rev: E.base + 1, at: Date.now(), json: E.inflight, meta: {} })); } catch (_) { /* sin sitio */ } }
     if (!E.on || E.ro || !E.db || !E.pendingWork()) return;
@@ -1058,7 +1211,7 @@ input[type=checkbox]:not(.switch),input[type=radio]{min-width:18px;min-height:18
     return { rec, json: rec.json };
   };
   E.refresh = async (force) => {
-    if (!E.on) return false;
+    if (!E.on || E.paused) return false;
     const r = await E.readSpace(E.key); if (!r || r.json == null) return false;
     if (!force && (r.rec.rev || 0) <= E.base && !E.ro) return false;
     E.base = r.rec.rev || 0; E.M.set(E.key, r.json);
@@ -1245,6 +1398,7 @@ input[type=checkbox]:not(.switch),input[type=radio]{min-width:18px;min-height:18
     const go = () => {
       const list = [...document.querySelectorAll('script[type="text/x-app"]')].sort((a, b) => (+a.dataset.order || 0) - (+b.dataset.order || 0));
       for (const old of list) {
+        if (E.rescue && !old.hasAttribute('data-rescue')) continue; // rz: en rescate solo la pantalla de rescate
         const s = document.createElement('script');
         for (const at of old.attributes) if (at.name !== 'type' && at.name !== 'data-order') s.setAttribute(at.name, at.value);
         s.setAttribute('data-dx-ran', old.dataset.order || '');
@@ -1258,6 +1412,33 @@ input[type=checkbox]:not(.switch),input[type=radio]{min-width:18px;min-height:18
     };
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', go, { once: true }); else go();
   }
+
+  /* ---------------------------------------------------------------- rz · datos dañados o de otra versión (P0-1) */
+  E.schema = 1; // debe coincidir con SCHEMA del núcleo
+  E.check = (raw) => {
+    if (raw == null) return null;
+    let d; try { d = JSON.parse(raw); } catch (_) { return 'damaged'; }
+    if (!d || typeof d !== 'object' || Array.isArray(d) || typeof d.version !== 'number' || !isFinite(d.version)) return 'invalid';
+    if (d.version > E.schema) return 'newer';
+    if (d.version < 1) return 'invalid';
+    return null; // versiones anteriores: las migra load() del núcleo
+  };
+  E.rzMark = async (reason) => {
+    const raw = E.M.get(E.key); let w = null;
+    try { const ix = JSON.parse(E.M.get(IDX) || 'null'); w = ix && Array.isArray(ix.list) ? ix.list.find((x) => x.key === E.key) || null : null; } catch (_) { w = null; }
+    const sample = !!w && !!(w.uxSample || w.template === 'demo');
+    let snapId = null;
+    if (E.on && !E.ro) {
+      try {
+        const last = (await E.snapList(E.key))[0];
+        let same = false; if (last && last.kind === 'rescue' && last.size === raw.length) { try { same = (await E.snapJson(last.id)) === raw; } catch (_) { same = false; } }
+        if (same) snapId = last.id; else { const r = await E.snapCreate('rescue', raw); snapId = r && r.id; }
+      } catch (_) { snapId = null; }
+    }
+    if (sample) { E.M.delete(E.key); E.reseeded = { key: E.key, reason, snapId, at: Date.now() }; return; }
+    E.rescue = { key: E.key, reason, snapId, at: Date.now(), name: (w && w.name) || E.spaceName(E.key), raw };
+    E.paused = true; E.M.delete(E.key);
+  };
 
   async function main() {
     overlay();
@@ -1278,7 +1459,8 @@ input[type=checkbox]:not(.switch),input[type=radio]{min-width:18px;min-height:18
         const r = await askPassword(active, why); E.enc = r.enc; E.M.set(E.key, r.json);
       } else E.M.set(E.key, active.json);
     }
-    try {
+    const rzBad = E.check(E.M.get(E.key));
+    if (!rzBad) try {
       const j = LS && JSON.parse(LS.getItem('dx:journal') || 'null');
       if (j && j.key === E.key && typeof j.json === 'string' && !(active && active.enc) && (j.rev || 0) > ((active && active.rev) || 0)) {
         E.M.set(E.key, j.json); for (const [k, v] of Object.entries(j.meta || {})) { E.M.set(k, v); E.dirty.add(k); }
@@ -1297,7 +1479,7 @@ input[type=checkbox]:not(.switch),input[type=radio]{min-width:18px;min-height:18
     E.on = true; E.engine = 'indexeddb';
     if (E.journalRecovered && !E.ro) { E.sDirty = true; E.schedule(0); }
     const raw = E.M.get(E.key);
-    if (raw != null && !E.ro) { let okj = false; try { const d = JSON.parse(raw); okj = !!d && d.version === 1; } catch (_) { okj = false; } if (!okj) await E.snapCreate('rescue', raw).catch(() => {}); }
+    if (raw != null && rzBad) await E.rzMark(rzBad).catch((e) => { D.push(e, 'boot'); E.rescue = { key: E.key, reason: rzBad, snapId: null, at: Date.now(), name: E.spaceName(E.key), raw }; E.paused = true; E.M.delete(E.key); });
     runBlocks();
   }
   main().catch((e) => { D.push(e, 'boot'); runBlocks(); });
@@ -1362,8 +1544,8 @@ const daysBetween = (a, b) => Math.round((new Date(b) - new Date(a)) / 864e5);
 /** Solo enlaces seguros: http(s) con dominio válido, mailto con email y tel con números; si no, «#». */
 const safeHref = (u) => { const s = String(u ?? '').trim(); if (/^https?:\/\/[a-z0-9.-]+\.[a-z]{2,}(?::\d+)?(\/[^\s"'<>]*)?$/i.test(s)) return s; if (/^mailto:[^@\s"'<>]+@[^@\s"'<>]+\.[a-z]{2,}$/i.test(s)) return s; if (/^tel:\+?[0-9 ()-]{3,20}$/.test(s)) return s.replace(/\s/g, ''); return '#'; };
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const money = (n, cur) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: cur || S.settings.currency || 'EUR', maximumFractionDigits: 0 }).format(Number(n) || 0);
-const money2 = (n) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: S.settings.currency || 'EUR' }).format(Number(n) || 0);
+const money = (n, cur) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: cur || S.settings.currency || 'EUR', maximumFractionDigits: 0, useGrouping: 'always' }).format(Number(n) || 0);
+const money2 = (n) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: S.settings.currency || 'EUR', useGrouping: 'always' }).format(Number(n) || 0);
 const fdate = (s, o = { day: 'numeric', month: 'short' }) => (s ? new Date(s.length === 10 ? s + 'T00:00:00' : s).toLocaleDateString('es-ES', o) : '');
 const fdt = (s) => (s ? new Date(s).toLocaleString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '');
 const rel = (s) => { if (!s) return ''; const m = Math.round((Date.now() - new Date(s)) / 6e4); if (m < 1) return 'ahora'; if (m < 60) return `hace ${m} min`; const h = Math.round(m / 60); if (h < 24) return `hace ${h} h`; const d = Math.round(h / 24); if (d < 30) return `hace ${d} d`; const mo = Math.round(d / 30); return mo < 12 ? `hace ${mo} ${mo === 1 ? 'mes' : 'meses'}` : `hace ${Math.round(d / 365)} años`; };
@@ -1375,7 +1557,35 @@ const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-
 /* ---------- estado ---------- */
 let S = null;
 function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* sin espacio */ } }
-function load() { try { const j = localStorage.getItem(KEY); if (j) { S = JSON.parse(j); if (S.version === 1) return true; } } catch (e) { /* ignore */ } return false; }
+/* rz · versión del esquema y migraciones (P0-1). MIGRATIONS[n](datos en versión n) devuelve los datos en la versión n + 1. */
+const SCHEMA = 1;
+const MIGRATIONS = {};
+/* true: datos cargados · false: no hay datos (se siembra) · 'stop': datos dañados o de otra versión (pantalla de rescate) */
+function load() {
+  const X = window.dxStore;
+  if (X && X.rescue && X.rescue.key === KEY) return 'stop';
+  let j = null; try { j = localStorage.getItem(KEY); } catch (_) { return false; }
+  if (!j) return false;
+  const stop = (reason) => {
+    let w = null; try { const ix = JSON.parse(localStorage.getItem('crm-workspaces') || 'null'); w = ix && Array.isArray(ix.list) ? ix.list.find((x) => x.key === KEY) : null; } catch (_) { w = null; }
+    if (w && (w.uxSample || w.template === 'demo')) { if (X) X.reseeded = { key: KEY, reason, snapId: null, at: Date.now() }; return false; }
+    if (X) { X.rescue = X.rescue || { key: KEY, reason, snapId: null, at: Date.now(), name: (w && w.name) || 'este espacio', raw: j }; X.paused = true; }
+    return 'stop';
+  };
+  let d; try { d = JSON.parse(j); } catch (_) { return stop('damaged'); }
+  if (!d || typeof d !== 'object' || Array.isArray(d) || typeof d.version !== 'number') return stop('invalid');
+  if (d.version > SCHEMA) return stop('newer');
+  try { while (d.version < SCHEMA) { const m = MIGRATIONS[d.version]; if (!m) return stop('invalid'); d = m(d); } } catch (_) { return stop('invalid'); }
+  S = d; return true;
+}
+/* rz · datos de ejemplo deterministas (P1-12): mientras se siembra, Math.random es un mulberry32 con semilla fija */
+function rzSeedRandom() {
+  if (Math.random.rz) return;
+  const R0 = Math.random; let a = 20261027 >>> 0;
+  const r = function () { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  r.rz = R0; Math.random = r; window.rzSeeding = true;
+  setTimeout(() => { if (Math.random === r) Math.random = R0; window.rzSeeding = false; }, 0);
+}
 const T = { contacts: 'contacts', companies: 'companies', deals: 'deals', tasks: 'tasks', tickets: 'tickets', products: 'products', quotes: 'quotes' };
 let byId = (coll, id) => (S[coll] || []).find((x) => x.id === id);
 const user = (id) => S.users.find((u) => u.id === id);
@@ -1392,6 +1602,8 @@ function visible(item) {
   return false;
 }
 const vis = (coll) => S[coll].filter(visible);
+/** v2-F · Permiso de campo de «Personalización total»: false si el campo está oculto para el rol actual (cusPerm). */
+function canSee(obj, key) { try { const p = typeof cusPerm === 'function' ? cusPerm(obj, key) : ((S && S.cus && S.cus.perms && S.cus.perms[obj] && S.cus.perms[obj][me() && me().role]) || {})[key] || 'edit'; return p !== 'hidden'; } catch (_) { return true; } }
 
 /* ---------- auditoría, notificaciones, actividad ---------- */
 function audit(obj, id, action, changes = {}) { S.audit.unshift({ id: uid(), at: nowISO(), user: S.me, obj, rid: id, action, changes }); if (S.audit.length > 1000) S.audit.pop(); }
@@ -1746,7 +1958,7 @@ function renderPanel() {
   if (obj === 'deals') tabs.splice(2, 0, ['products', `Productos · ${it.products.length}`], ['quotes', `Presupuestos · ${S.quotes.filter((q) => q.dealId === it.id).length}`]);
   const body = tab === 'updates' ? panelUpdates(obj, it, acts) : tab === 'details' ? panelDetails(obj, it) : tab === 'related' ? panelRelated(obj, it) : tab === 'products' ? panelProducts(it) : tab === 'quotes' ? panelQuotes(it) : panelHistory(obj, it);
   const stageSteps = obj === 'deals' ? `<div class="steps">${S.pipeline.stages.map((s, i) => { const ci = S.pipeline.stages.findIndex((x) => x.id === it.stageId); return `<button style="--sc:${s.color}" class="${it.status === 'open' ? (i < ci ? 'done' : i === ci ? 'cur' : '') : it.status === 'won' ? 'done' : ''}" data-act="deal-stage" data-arg='${JSON.stringify({ id: it.id, stage: s.id })}' title="${esc(s.name)} · ${s.prob}% · ${s.days} días esperados">${esc(s.name)}</button>`; }).join('')}</div>` : '';
-  const sub = obj === 'deals' ? `<div class="row wrap small muted">${it.companyId ? `<a href="#/empresas/${it.companyId}">${esc(byId('companies', it.companyId)?.name)}</a>` : ''}<b class="num" style="color:var(--ink);font-size:15px">${money2(it.amount)}</b><span>${it.prob}% · pond. ${money(it.amount * it.prob / 100)}</span><span>cierre ${fdate(it.close)}</span>${it.status !== 'open' ? `<span class="pill" style="display:inline-flex;width:auto;min-height:22px;padding:0 8px;border-radius:4px;font-size:12px;background:${DEAL_STATUS[it.status].color}">${DEAL_STATUS[it.status].label}${it.lossReason ? ' · ' + LOSS[it.lossReason] : ''}</span>` : ''}${(() => { const st = stage(it.stageId); const d = daysBetween(it.stageAt, nowISO()); return it.status === 'open' && st && d > st.days ? `<span class="pill" style="display:inline-flex;width:auto;min-height:22px;padding:0 8px;border-radius:4px;font-size:12px;background:${C.orange}">${d} d en etapa (esperado ${st.days})</span>` : ''; })()}</div>` : obj === 'contacts' ? `<div class="row wrap small muted">${it.jobTitle ? esc(it.jobTitle) + ' · ' : ''}${it.companyId ? `<a href="#/empresas/${it.companyId}">${esc(byId('companies', it.companyId)?.name)}</a>` : ''}${it.email ? `<a href="${esc(safeHref('mailto:' + it.email))}">${esc(it.email)}</a>` : ''}${it.phone ? `<a href="${esc(safeHref('tel:' + it.phone))}">${esc(it.phone)}</a>` : ''}${it.dnc ? '<span class="pill" style="display:inline-flex;width:auto;min-height:22px;padding:0 8px;border-radius:4px;font-size:12px;background:var(--c-red)">No contactar</span>' : ''}</div>` : obj === 'tickets' ? `<div class="row wrap small muted"><span>#${it.number}</span>${it.contactId ? `<a href="#/contactos/${it.contactId}">${esc(byId('contacts', it.contactId)?.firstName)} ${esc(byId('contacts', it.contactId)?.lastName)}</a>` : ''}<span>SLA ${it.firstResponse ? 'respondido' : fdt(it.slaDue)}</span></div>` : obj === 'companies' ? `<div class="row wrap small muted">${esc(it.sector || '')}${it.domain ? ` · <a href="${esc(safeHref('https://' + it.domain))}" target="_blank">${esc(it.domain)}</a>` : ''}${it.city ? ' · ' + esc(it.city) : ''}</div>` : '';
+  const sub = obj === 'deals' ? `<div class="row wrap small muted">${it.companyId ? `<a href="#/empresas/${it.companyId}">${esc(byId('companies', it.companyId)?.name)}</a>` : ''}${canSee('deals', 'amount') ? `<b class="num" style="color:var(--ink);font-size:15px">${money2(it.amount)}</b>` : ''}${canSee('deals', 'prob') ? `<span>${it.prob}%${canSee('deals', 'amount') ? ` · ponderado ${money(it.amount * it.prob / 100)}` : ''}</span>` : ''}${canSee('deals', 'close') ? `<span>cierre ${fdate(it.close)}</span>` : ''}${it.status !== 'open' ? `<span class="pill" style="display:inline-flex;width:auto;min-height:22px;padding:0 8px;border-radius:4px;font-size:12px;background:${DEAL_STATUS[it.status].color}">${DEAL_STATUS[it.status].label}${it.lossReason ? ' · ' + LOSS[it.lossReason] : ''}</span>` : ''}${(() => { const st = stage(it.stageId); const d = daysBetween(it.stageAt, nowISO()); return it.status === 'open' && st && d > st.days ? `<span class="pill" style="display:inline-flex;width:auto;min-height:22px;padding:0 8px;border-radius:4px;font-size:12px;background:${C.orange}">${d} d en etapa (esperado ${st.days})</span>` : ''; })()}</div>` : obj === 'contacts' ? `<div class="row wrap small muted">${it.jobTitle && canSee('contacts', 'jobTitle') ? esc(it.jobTitle) + ' · ' : ''}${it.companyId ? `<a href="#/empresas/${it.companyId}">${esc(byId('companies', it.companyId)?.name)}</a>` : ''}${it.email && canSee('contacts', 'email') ? `<a href="${esc(safeHref('mailto:' + it.email))}">${esc(it.email)}</a>` : ''}${it.phone && canSee('contacts', 'phone') ? `<a href="${esc(safeHref('tel:' + it.phone))}">${esc(it.phone)}</a>` : ''}${it.dnc ? '<span class="pill" style="display:inline-flex;width:auto;min-height:22px;padding:0 8px;border-radius:4px;font-size:12px;background:var(--c-red)">No contactar</span>' : ''}</div>` : obj === 'tickets' ? `<div class="row wrap small muted"><span>#${it.number}</span>${it.contactId ? `<a href="#/contactos/${it.contactId}">${esc(byId('contacts', it.contactId)?.firstName)} ${esc(byId('contacts', it.contactId)?.lastName)}</a>` : ''}<span>SLA ${it.firstResponse ? 'respondido' : fdt(it.slaDue)}</span></div>` : obj === 'companies' ? `<div class="row wrap small muted">${[it.sector && canSee('companies', 'sector') ? esc(it.sector) : '', it.domain && canSee('companies', 'domain') ? `<a href="${esc(safeHref('https://' + it.domain))}" target="_blank">${esc(it.domain)}</a>` : '', it.city && canSee('companies', 'city') ? esc(it.city) : ''].filter(Boolean).join(' · ')}</div>` : '';
   const qa = (k, label, icon) => `<button class="btn outline sm" data-act="${k}" data-arg='${JSON.stringify({ obj, id })}'>${ico[icon]}${label}</button>`;
   const quick = [obj !== 'tasks' && obj !== 'products' ? qa('q-note', 'Nota', 'note') : '', (obj === 'contacts' || obj === 'deals' || obj === 'tickets') ? qa('q-call', 'Llamada', 'phone') : '', (obj === 'contacts' || obj === 'deals' || obj === 'tickets') ? qa('q-email', 'Email', 'mail') : '', obj !== 'tasks' ? qa('q-task', 'Tarea', 'check') : '', obj === 'contacts' && it.lifecycle !== 'customer' && it.lifecycle !== 'opportunity' ? qa('q-convert', 'Convertir en oportunidad', 'hand') : '', obj === 'contacts' ? qa('q-deal', 'Negocio', 'plus') : '', obj === 'companies' ? qa('q-contact', 'Contacto', 'users') + qa('q-deal', 'Negocio', 'plus') : '', obj === 'deals' && it.status === 'open' ? `<button class="btn outline sm" style="color:var(--c-green)" data-act="deal-close" data-arg='${JSON.stringify({ id, status: 'won' })}'>🏆 Ganado</button><button class="btn outline sm" style="color:var(--c-red)" data-act="deal-close" data-arg='${JSON.stringify({ id, status: 'lost' })}'>✕ Perdido</button>` : '', obj === 'deals' && it.status !== 'open' ? qa('deal-reopen', 'Reabrir', 'refresh') : '', obj === 'deals' ? qa('q-quote', 'Presupuesto', 'doc') : '', obj === 'contacts' ? qa('q-gdpr', 'RGPD', 'shield') : '', qa('q-delete', 'Borrar', 'trash')].join('');
   p.innerHTML = `<div class="ph"><h2><button class="ibtn" data-act="close-panel">${ico.x}</button><span class="ttl" contenteditable="${can('edit') && titleKey ? 'true' : 'false'}" data-title='${JSON.stringify({ obj, id, key: titleKey })}'>${esc(title)}</span></h2>${sub}${stageSteps}<div class="ptabs">${tabs.map(([k, l]) => `<button class="${tab === k ? 'active' : ''}" data-act="ptab" data-arg="${k}">${l}</button>`).join('')}</div></div><div class="pb">${body}</div><div class="pacts">${quick}</div>`;
@@ -1755,8 +1967,8 @@ function renderPanel() {
 }
 function panelUpdates(obj, it, acts) {
   const icon = { email: 'mail', call: 'phone', meeting: 'cal', note: 'note', task: 'check', system: 'bolt' };
-  return `<div class="upd"><textarea id="updText" placeholder="Escribe una nota… (se registra en la línea temporal)"></textarea><div class="ub"><select class="inp" id="updType" style="width:auto;min-height:30px;padding:3px 8px"><option value="note">Nota</option><option value="call">Llamada</option><option value="meeting">Reunión</option></select><button class="btn primary sm" data-act="q-post" data-arg='${JSON.stringify({ obj, id: it.id })}'>Registrar</button></div></div>
-  ${acts.length ? acts.map((a) => { const e = a.meta?.emailId ? S.emails.find((x) => x.id === a.meta.emailId) : null; return `<div class="post ${a.type === 'system' ? 'sys' : ''}">${a.user ? avatarOf(a.user) : `<span class="ic">${ico[icon[a.type]] || ico.bolt}</span>`}<div class="grow"><span class="who">${a.user ? esc(user(a.user)?.name) : a.type === 'system' ? 'Sistema' : 'Automatización'}</span><span class="when">${rel(a.at)} · ${({ email: 'Email', call: 'Llamada', meeting: 'Reunión', note: 'Nota', task: 'Tarea', system: '' })[a.type] || a.type}${a.direction ? (a.direction === 'inbound' ? ' entrante' : ' saliente') : ''}${a.outcome ? ' · ' + esc(a.outcome) : ''}${e ? (e.opens ? ' · <b style="color:var(--c-green)">abierto</b>' : ' · enviado') : ''}${a.meta?.auto ? ' · <span style="color:var(--c-orange)">automático</span>' : ''}</span><p><b>${esc(a.subject)}</b>${a.body ? '<br>' + esc(a.body) : ''}</p></div></div>`; }).join('') : '<div class="empty">Sin actividad todavía. Registra una nota, llamada o email.</div>'}`;
+  return `<div class="upd"><textarea id="updText" placeholder="Escribe una nota…"></textarea><div class="ub"><select class="inp" id="updType" style="width:auto;min-height:30px;padding:3px 8px"><option value="note">Nota</option><option value="call">Llamada</option><option value="meeting">Reunión</option></select><button class="btn primary sm" data-act="q-post" data-arg='${JSON.stringify({ obj, id: it.id })}'>Registrar</button></div></div>
+  ${acts.length ? acts.map((a) => { const e = a.meta?.emailId ? S.emails.find((x) => x.id === a.meta.emailId) : null; return `<div class="post ${a.type === 'system' ? 'sys' : ''}">${a.user ? avatarOf(a.user) : `<span class="ic">${ico[icon[a.type]] || ico.bolt}</span>`}<div class="grow"><span class="who">${a.user ? esc(user(a.user)?.name) : a.type === 'system' ? 'Automático' : 'Automatización'}</span><span class="when">${a.at > nowISO() ? 'programada para el ' + fdt(a.at) : rel(a.at)}${a.type === 'system' ? '' : ' · ' + (({ email: 'Email', call: 'Llamada', meeting: 'Reunión', note: 'Nota', task: 'Tarea' })[a.type] || 'Actividad')}${a.direction ? (a.direction === 'inbound' ? ' entrante' : ' saliente') : ''}${a.outcome ? ' · ' + esc(a.outcome) : ''}${e ? (e.opens ? ' · <b style="color:var(--c-green)">abierto</b>' : ' · enviado') : ''}${a.meta?.auto ? ' · <span style="color:var(--c-orange)">automático</span>' : ''}</span><p><b>${esc(a.subject)}</b>${a.body ? '<br>' + esc(a.body) : ''}</p></div></div>`; }).join('') : '<div class="empty">Sin actividad todavía. Registra una nota, llamada o email.</div>'}`;
 }
 const kvEdit = (obj, it, key, label, val, kind = 'text') => `<dt>${label}</dt><dd><span class="edit" data-act="kv-edit" data-arg='${JSON.stringify({ obj, id: it.id, key, kind })}'>${val === '' || val == null ? '<span class="muted">—</span>' : esc(val)}</span></dd>`;
 const kvStatus = (obj, it, key, label, def) => `<dt>${label}</dt><dd><span data-act="kv-status" data-arg='${JSON.stringify({ obj, id: it.id, key })}'>${pill(def, it[key])}</span></dd>`;
@@ -1773,7 +1985,7 @@ function panelDetails(obj, it) {
 }
 function panelRelated(obj, it) {
   const r = relatedOf(obj, it); const sec = (title, arr, f) => arr.length ? `<h3 class="mt12 mb8" style="font-size:14px">${title} <span class="muted">${arr.length}</span></h3>${arr.map(f).join('')}` : '';
-  return sec('Empresa', r.companies, (c) => `<div class="rel">${ico.building}<a href="#/empresas/${c.id}">${esc(c.name)}</a><span class="muted small">${esc(c.sector || '')}</span></div>`) + sec('Contactos', r.contacts, (c) => `<div class="rel">${avatarOf(null, 'sm').replace('?', initials(c.firstName + ' ' + c.lastName))}<a href="#/contactos/${c.id}">${esc(c.firstName)} ${esc(c.lastName)}</a><span class="muted small">${esc(c.jobTitle || c.email || '')}</span>${pill(LIFECYCLE, c.lifecycle)}</div>`) + sec('Negocios', r.deals, (d) => `<div class="rel"><a href="#/negocios/${d.id}">${esc(d.name)}</a><span class="muted small num">${money(d.amount)}</span>${d.status === 'open' ? pill({ x: { label: stage(d.stageId)?.name || '', color: stage(d.stageId)?.color } }, 'x') : pill(DEAL_STATUS, d.status)}</div>`) + sec('Tareas', r.tasks, (t) => `<div class="rel"><label class="chk"><input type="checkbox" ${t.status === 'done' ? 'checked' : ''} data-act="task-toggle" data-arg="${t.id}"/></label><span class="grow ${t.status === 'done' ? 'muted' : ''}" style="${t.status === 'done' ? 'text-decoration:line-through' : ''}">${esc(t.title)}</span><span class="small muted">${fdate(t.due)}</span>${avatarOf(t.assignee, 'sm')}</div>`) + sec('Tickets', r.tickets, (t) => `<div class="rel"><a href="#/tickets/${t.id}">#${t.number} ${esc(t.subject)}</a>${pill(TICKET_STATUS, t.status)}</div>`) + (obj === 'contacts' ? `<h3 class="mt12 mb8" style="font-size:14px">Emails enviados <span class="muted">${S.emails.filter((e) => e.contactId === it.id).length}</span></h3>${S.emails.filter((e) => e.contactId === it.id).map((e) => `<div class="rel"><span class="grow">${esc(e.subject)}</span><span class="small muted">${rel(e.at)}</span><span class="pill" style="background:${e.opens ? C.green : C.grey}">${e.opens ? 'abierto' : 'enviado'}</span></div>`).join('') || '<p class="muted small">Ninguno.</p>'}` : '') || '<div class="empty">Sin elementos relacionados.</div>';
+  return sec('Empresa', r.companies, (c) => `<div class="rel">${ico.building}<a href="#/empresas/${c.id}">${esc(c.name)}</a><span class="muted small">${esc(c.sector || '')}</span></div>`) + sec('Contactos', r.contacts, (c) => `<div class="rel">${avatarOf(null, 'sm').replace('?', initials(c.firstName + ' ' + c.lastName))}<a href="#/contactos/${c.id}">${esc(c.firstName)} ${esc(c.lastName)}</a><span class="muted small">${esc((canSee('contacts', 'jobTitle') && c.jobTitle) || (canSee('contacts', 'email') && c.email) || '')}</span>${pill(LIFECYCLE, c.lifecycle)}</div>`) + sec('Negocios', r.deals, (d) => `<div class="rel"><a href="#/negocios/${d.id}">${esc(d.name)}</a><span class="muted small num">${canSee('deals', 'amount') ? money(d.amount) : ''}</span>${d.status === 'open' ? pill({ x: { label: stage(d.stageId)?.name || '', color: stage(d.stageId)?.color } }, 'x') : pill(DEAL_STATUS, d.status)}</div>`) + sec('Tareas', r.tasks, (t) => `<div class="rel"><label class="chk"><input type="checkbox" ${t.status === 'done' ? 'checked' : ''} data-act="task-toggle" data-arg="${t.id}"/></label><span class="grow ${t.status === 'done' ? 'muted' : ''}" style="${t.status === 'done' ? 'text-decoration:line-through' : ''}">${esc(t.title)}</span><span class="small muted">${fdate(t.due)}</span>${avatarOf(t.assignee, 'sm')}</div>`) + sec('Tickets', r.tickets, (t) => `<div class="rel"><a href="#/tickets/${t.id}">#${t.number} ${esc(t.subject)}</a>${pill(TICKET_STATUS, t.status)}</div>`) + (obj === 'contacts' ? `<h3 class="mt12 mb8" style="font-size:14px">Emails enviados <span class="muted">${S.emails.filter((e) => e.contactId === it.id).length}</span></h3>${S.emails.filter((e) => e.contactId === it.id).map((e) => `<div class="rel"><span class="grow">${esc(e.subject)}</span><span class="small muted">${rel(e.at)}</span><span class="pill" style="background:${e.opens ? C.green : C.grey}">${e.opens ? 'abierto' : 'enviado'}</span></div>`).join('') || '<p class="muted small">Ninguno.</p>'}` : '') || '<div class="empty">Sin elementos relacionados.</div>';
 }
 function panelHistory(obj, it) { const rows = S.audit.filter((a) => a.obj === obj && a.rid === it.id); const L = { create: 'Creado', update: 'Actualizado', delete: 'Borrado', restore: 'Restaurado', stage: 'Cambio de etapa', convert: 'Convertido', anonymize: 'Anonimizado', export: 'Exportado', merge: 'Fusionado' }; return rows.length ? rows.map((a) => `<div class="post sys"><span class="ic">${ico.bolt}</span><div><span class="who">${L[a.action] || a.action}</span><span class="when">${esc(user(a.user)?.name || 'sistema')} · ${fdt(a.at)}</span><p class="small">${Object.entries(a.changes || {}).map(([k, v]) => `<span class="muted">${esc(k)}:</span> ${Array.isArray(v) ? `<s class="muted">${esc(fmtv(v[0]))}</s> → <b>${esc(fmtv(v[1]))}</b>` : esc(fmtv(v))}`).join(' · ')}</p></div></div>`).join('') : '<div class="empty">Sin cambios registrados.</div>'; }
 const fmtv = (v) => (v == null || v === '' ? 'vacío' : typeof v === 'object' ? JSON.stringify(v) : String(v));
@@ -1792,7 +2004,7 @@ ACT['task-toggle'] = (id, el) => { const t = byId('tasks', id); if (el.checked) 
 ACT['q-post'] = ({ obj, id }) => { const it = byId(obj, id); const txt = document.getElementById('updText').value.trim(); if (!txt) return; const type = document.getElementById('updType').value; logActivity({ type, subject: type === 'note' ? 'Nota' : type === 'call' ? 'Llamada' : 'Reunión', body: txt, direction: type === 'call' ? 'outbound' : null, ...linksFor(obj, it) }); toast('Registrado', 'ok'); refresh(); renderPanel(); };
 ACT['q-note'] = ({ obj, id }) => { openPanel(obj, id, 'updates'); setTimeout(() => document.getElementById('updText')?.focus(), 50); };
 ACT['q-call'] = ({ obj, id }) => { const it = byId(obj, id); const m = modal({ title: 'Registrar llamada', body: `<div class="fgrid"><div class="fld"><label>Resultado</label><select class="inp" id="o">${['Contactado', 'Sin respuesta', 'Buzón de voz', 'Reunión agendada', 'No interesado'].map((o) => `<option>${o}</option>`).join('')}</select></div><div class="fld"><label>Duración (min)</label><input class="inp" id="d" type="number" value="10"/></div><div class="fld full"><label>Resumen</label><textarea class="inp" id="b"></textarea></div><div class="fld full"><label class="chk"><input type="checkbox" id="fu" checked/>Crear tarea de seguimiento en 3 días</label></div></div>`, footer: `<button class="btn primary" id="ok">Registrar</button>` }); m.querySelector('#ok').onclick = () => { logActivity({ type: 'call', subject: 'Llamada', body: m.querySelector('#b').value, outcome: m.querySelector('#o').value, direction: 'outbound', ...linksFor(obj, it) }); if (m.querySelector('#fu').checked) createTask({ title: `Seguimiento tras llamada`, type: 'followup', due: dayISO(addDays(3)), ...linksFor(obj, it) }); m.close(); toast('Llamada registrada', 'ok'); refresh(); renderPanel(); }; };
-ACT['q-email'] = ({ obj, id }) => { const it = byId(obj, id); const c = obj === 'contacts' ? it : byId('contacts', it.contactId || it.contactIds?.[0]); if (!c?.email) return toast('El contacto no tiene email', 'err'); if (c.dnc) return toast('El contacto ha pedido no ser contactado', 'err'); const m = modal({ title: `Email a ${esc(c.firstName)} ${esc(c.lastName)}`, body: `<div class="col"><div class="fld"><label>Plantilla</label><select class="inp" id="t"><option value="">— Sin plantilla —</option>${S.templates.map((t) => `<option value="${t.id}">${esc(t.name)}</option>`).join('')}</select></div><div class="fld"><label>Para</label><input class="inp" value="${esc(c.email)}" disabled/></div><div class="fld"><label>Asunto</label><input class="inp" id="s"/></div><div class="fld"><label>Mensaje <span class="muted xs">variables: {{nombre}} {{empresa}} {{propietario}}</span></label><textarea class="inp" id="b" style="min-height:140px"></textarea></div></div>`, footer: `<button class="btn primary" id="ok">${ico.mail}Enviar</button>` }); m.querySelector('#t').onchange = (e) => { const t = S.templates.find((x) => x.id === e.target.value); if (t) { m.querySelector('#s').value = t.subject; m.querySelector('#b').value = t.body; } }; m.querySelector('#ok').onclick = () => { const s = m.querySelector('#s').value.trim(), b = m.querySelector('#b').value.trim(); if (!s || !b) return toast('Indica asunto y mensaje', 'err'); sendEmail({ to: c, subject: tpl(s, 'contacts', c), body: tpl(b, 'contacts', c), dealId: obj === 'deals' ? it.id : null, ticketId: obj === 'tickets' ? it.id : null }); m.close(); toast('Email registrado (sin envío real: se simula la apertura)', 'ok'); refresh(); renderPanel(); }; };
+ACT['q-email'] = ({ obj, id }) => { const it = byId(obj, id); const c = obj === 'contacts' ? it : byId('contacts', it.contactId || it.contactIds?.[0]); if (!c?.email) return toast('El contacto no tiene email', 'err'); if (c.dnc) return toast('El contacto ha pedido no ser contactado', 'err'); const m = modal({ title: `Email a ${esc(c.firstName)} ${esc(c.lastName)}`, body: `<div class="col"><div class="fld"><label>Plantilla</label><select class="inp" id="t"><option value="">— Sin plantilla —</option>${S.templates.map((t) => `<option value="${t.id}">${esc(t.name)}</option>`).join('')}</select></div><div class="fld"><label>Para</label><input class="inp" value="${canSee('contacts', 'email') ? esc(c.email) : esc(`${c.firstName || ''} ${c.lastName || ''}`.trim() + ' · email oculto para tu rol')}" disabled/></div><div class="fld"><label>Asunto</label><input class="inp" id="s"/></div><div class="fld"><label>Mensaje <span class="muted xs">variables: {{nombre}} {{empresa}} {{propietario}}</span></label><textarea class="inp" id="b" style="min-height:140px"></textarea></div></div>`, footer: `<button class="btn primary" id="ok">${ico.mail}Enviar</button>` }); m.querySelector('#t').onchange = (e) => { const t = S.templates.find((x) => x.id === e.target.value); if (t) { m.querySelector('#s').value = t.subject; m.querySelector('#b').value = t.body; } }; m.querySelector('#ok').onclick = () => { const s = m.querySelector('#s').value.trim(), b = m.querySelector('#b').value.trim(); if (!s || !b) return toast('Indica asunto y mensaje', 'err'); sendEmail({ to: c, subject: tpl(s, 'contacts', c), body: tpl(b, 'contacts', c), dealId: obj === 'deals' ? it.id : null, ticketId: obj === 'tickets' ? it.id : null }); m.close(); toast('Email registrado (sin envío real: se simula la apertura)', 'ok'); refresh(); renderPanel(); }; };
 ACT['q-task'] = ({ obj, id }) => { const it = byId(obj, id); taskForm({ ...linksFor(obj, it), title: '' }); };
 ACT['q-convert'] = ({ id }) => { const c = byId('contacts', id); const m = modal({ title: 'Convertir en oportunidad', body: `<p class="muted small mb12">El contacto pasa a «Oportunidad», se mantiene todo su historial y se crea un negocio en el pipeline.</p><div class="fgrid"><div class="fld full"><label>Nombre del negocio</label><input class="inp" id="n" value="${esc((byId('companies', c.companyId)?.name || c.firstName + ' ' + c.lastName) + ' · Nuevo negocio')}"/></div><div class="fld"><label>Importe</label><input class="inp" id="a" type="number" value="0"/></div><div class="fld"><label>Cierre previsto</label><input class="inp" id="d" type="date" value="${dayISO(addDays(30))}"/></div></div>`, footer: `<button class="btn primary" id="ok">Convertir</button>` }); m.querySelector('#ok').onclick = () => { const d = convertContact(c, { name: m.querySelector('#n').value, amount: Number(m.querySelector('#a').value), close: m.querySelector('#d').value }); m.close(); toast('Convertido en oportunidad', 'ok'); go(`#/negocios/${d.id}`); }; };
 ACT['q-deal'] = ({ obj, id }) => { const it = byId(obj, id); dealForm(obj === 'contacts' ? { companyId: it.companyId, contactIds: [it.id], name: (byId('companies', it.companyId)?.name || it.firstName) + ' · ' } : { companyId: it.id, name: it.name + ' · ' }); };
@@ -1816,7 +2028,7 @@ const ownerName = (id) => user(id)?.name || '';
 const contactName = (c) => (c ? `${c.firstName} ${c.lastName}`.trim() : '');
 const relCompany = (it) => { const c = byId('companies', it.companyId); return c ? { label: c.name, href: `#/empresas/${c.id}` } : { label: '—' }; };
 const COLS = {
-  contacts: () => [{ key: 'name', label: 'Contacto', type: 'name', get: (c) => contactName(c) }, { key: 'company', label: 'Empresa', type: 'rel', w: 150, get: relCompany }, { key: 'email', label: 'Email', type: 'text', w: 190 }, { key: 'phone', label: 'Teléfono', type: 'text', w: 125 }, { key: 'jobTitle', label: 'Cargo', type: 'text', w: 140 }, { key: 'lifecycle', label: 'Ciclo de vida', type: 'status', opt: LIFECYCLE, w: 120 }, { key: 'leadStatus', label: 'Estado lead', type: 'status', opt: LEAD_STATUS, w: 120 }, personCol('owner', 'Propietario'), { key: 'score', label: 'Puntuación', type: 'progress', w: 110 }, { key: 'source', label: 'Origen', type: 'status', opt: SOURCES, w: 100 }, { key: 'lastActivity', label: 'Últ. actividad', type: 'calc', w: 110, get: (c) => (c.lastActivity ? rel(c.lastActivity) : '<span class="muted">nunca</span>') }, { key: 'tags', label: 'Etiquetas', type: 'tags', w: 150 }, { key: 'createdAt', label: 'Creado', type: 'date', w: 100, noDot: true }],
+  contacts: () => [{ key: 'name', label: 'Contacto', type: 'name', get: (c) => contactName(c) }, { key: 'company', label: 'Empresa', type: 'rel', w: 150, get: relCompany }, { key: 'email', label: 'Email', type: 'text', w: 190 }, { key: 'phone', label: 'Teléfono', type: 'text', w: 125 }, { key: 'jobTitle', label: 'Cargo', type: 'text', w: 140 }, { key: 'lifecycle', label: 'Ciclo de vida', type: 'status', opt: LIFECYCLE, w: 120 }, { key: 'leadStatus', label: 'Estado del lead', type: 'status', opt: LEAD_STATUS, w: 120 }, personCol('owner', 'Propietario'), { key: 'score', label: 'Puntuación', type: 'progress', w: 110 }, { key: 'source', label: 'Origen', type: 'status', opt: SOURCES, w: 100 }, { key: 'lastActivity', label: 'Últ. actividad', type: 'calc', w: 110, get: (c) => (c.lastActivity ? rel(c.lastActivity) : '<span class="muted">nunca</span>') }, { key: 'tags', label: 'Etiquetas', type: 'tags', w: 150 }, { key: 'createdAt', label: 'Creado', type: 'date', w: 100, noDot: true }],
   companies: () => [{ key: 'name', label: 'Empresa', type: 'name' }, { key: 'type', label: 'Tipo', type: 'status', opt: COMPANY_TYPE, w: 115 }, { key: 'sector', label: 'Sector', type: 'text', w: 120 }, { key: 'size', label: 'Empleados', type: 'number', w: 100 }, { key: 'city', label: 'Ciudad', type: 'text', w: 110 }, personCol('owner', 'Propietario'), { key: 'ncontacts', label: 'Contactos', type: 'calc', align: 'r', w: 90, get: (c) => S.contacts.filter((x) => x.companyId === c.id).length }, { key: 'open', label: 'Pipeline abierto', type: 'calc', align: 'r', w: 130, get: (c) => money(sumBy(S.deals.filter((d) => d.companyId === c.id && d.status === 'open'), (d) => d.amount)) }, { key: 'won', label: 'Ganado', type: 'calc', align: 'r', w: 110, get: (c) => money(sumBy(S.deals.filter((d) => d.companyId === c.id && d.status === 'won'), (d) => d.amount)) }, { key: 'domain', label: 'Dominio', type: 'text', w: 140 }, { key: 'tags', label: 'Etiquetas', type: 'tags', w: 140 }, { key: 'lastActivity', label: 'Últ. actividad', type: 'calc', w: 110, get: (c) => (c.lastActivity ? rel(c.lastActivity) : '<span class="muted">nunca</span>') }],
   deals: () => [{ key: 'name', label: 'Negocio', type: 'name' }, { key: 'company', label: 'Empresa', type: 'rel', w: 150, get: relCompany }, personCol('owner', 'Propietario'), { key: 'stageId', label: 'Etapa', type: 'status', opt: stageDef(), w: 130 }, { key: 'amount', label: 'Importe', type: 'money', w: 110 }, { key: 'prob', label: 'Prob.', type: 'number', w: 70, suffix: '%' }, { key: 'weighted', label: 'Ponderado', type: 'calc', align: 'r', w: 105, get: (d) => money(d.amount * d.prob / 100) }, { key: 'close', label: 'Cierre', type: 'date', w: 105 }, { key: 'priority', label: 'Prioridad', type: 'status', opt: PRIORITY, w: 100 }, { key: 'timeline', label: 'Línea de tiempo', type: 'timeline', w: 180 }, { key: 'next', label: 'Próx. actividad', type: 'calc', w: 120, get: (d) => { const t = S.tasks.filter((x) => x.dealId === d.id && x.status !== 'done').sort((a, b) => a.due.localeCompare(b.due))[0]; return t ? `<span class="row" style="gap:5px"><span class="dot" style="width:7px;height:7px;border-radius:50%;background:${t.due < dayISO() ? C.red : C.green}"></span>${fdate(t.due)}</span>` : `<span class="row" style="gap:5px"><span style="width:7px;height:7px;border-radius:50%;background:${C.orange}"></span><span class="muted">sin actividad</span></span>`; } }, { key: 'tags', label: 'Etiquetas', type: 'tags', w: 140 }],
   tasks: () => [{ key: 'title', label: 'Tarea', type: 'name' }, { key: 'status', label: 'Estado', type: 'status', opt: TASK_STATUS, w: 110 }, { key: 'type', label: 'Tipo', type: 'status', opt: TASK_TYPE, w: 110 }, { key: 'priority', label: 'Prioridad', type: 'status', opt: PRIORITY, w: 100 }, { key: 'due', label: 'Vence', type: 'date', w: 110 }, personCol('assignee', 'Asignada a'), { key: 'rel', label: 'Relacionado con', type: 'rel', w: 180, get: (t) => { const d = byId('deals', t.dealId), c = byId('contacts', t.contactId), co = byId('companies', t.companyId), tk = byId('tickets', t.ticketId); return d ? { label: d.name, href: `#/negocios/${d.id}` } : c ? { label: contactName(c), href: `#/contactos/${c.id}` } : co ? { label: co.name, href: `#/empresas/${co.id}` } : tk ? { label: '#' + tk.number + ' ' + tk.subject, href: `#/tickets/${tk.id}` } : { label: '—' }; } }, { key: 'outcome', label: 'Resultado', type: 'text', w: 120 }],
@@ -1875,7 +2087,7 @@ ACT['add-contact-row'] = ({ group, name }) => { const [firstName, ...rest] = nam
 function dupsHtml() {
   const groups = []; const seen = new Set(); const by = (f, reason) => { const m = {}; S.contacts.forEach((c) => { for (const k of [].concat(f(c) || [])) if (k && !(m[k] || []).includes(c)) (m[k] = m[k] || []).push(c); }); Object.entries(m).filter(([, v]) => v.length > 1).forEach(([k, v]) => { const sig = v.map((c) => c.id).sort().join(','); if (seen.has(sig)) return; seen.add(sig); groups.push({ k, reason, v }); }); };
   by((c) => (typeof proEmails === 'function' ? proEmails(c) : c.email), 'mismo email'); by((c) => (typeof proPhones === 'function' ? proPhones(c) : c.phone), 'mismo teléfono'); by((c) => (c.companyId ? norm(contactName(c)) + '|' + c.companyId : null), 'mismo nombre y empresa');
-  return `<div class="mt12">${groups.length ? groups.map((g) => `<div class="card mb12"><div class="small muted mb8">Coinciden por <b>${g.reason}</b></div><table class="t"><tbody>${g.v.map((c, i) => `<tr><td><a href="#/contactos/${c.id}">${esc(contactName(c))}</a></td><td>${esc(c.email || '')}</td><td>${esc(c.phone || '')}</td><td>${esc(byId('companies', c.companyId)?.name || '')}</td><td class="r">${i === 0 ? '<span class="tag">se conserva</span>' : `<button class="btn sm outline" data-act="merge" data-arg='${JSON.stringify({ keep: g.v[0].id, drop: c.id })}'>${ico.merge}Fusionar en el primero</button>`}</td></tr>`).join('')}</tbody></table></div>`).join('') : '<div class="card"><p class="muted">No se han detectado duplicados por email, teléfono ni nombre + empresa. 🎉</p></div>'}${S.merges.length ? `<div class="card"><h3>Fusiones recientes (reversibles)</h3>${S.merges.map((m) => `<div class="rel"><span class="grow">${esc(m.keepName)} ← ${esc(m.dropName)}</span><span class="small muted">${rel(m.at)}</span><button class="btn sm outline" data-act="unmerge" data-arg="${m.id}">Deshacer</button></div>`).join('')}</div>` : ''}</div>`;
+  return `<div class="mt12">${groups.length ? groups.map((g) => `<div class="card mb12"><div class="small muted mb8">Coinciden por <b>${g.reason}</b></div><table class="t"><tbody>${g.v.map((c, i) => `<tr><td><a href="#/contactos/${c.id}">${esc(contactName(c))}</a></td><td>${canSee('contacts', 'email') ? esc(c.email || '') : ''}</td><td>${canSee('contacts', 'phone') ? esc(c.phone || '') : ''}</td><td>${esc(byId('companies', c.companyId)?.name || '')}</td><td class="r">${i === 0 ? '<span class="tag">se conserva</span>' : `<button class="btn sm outline" data-act="merge" data-arg='${JSON.stringify({ keep: g.v[0].id, drop: c.id })}'>${ico.merge}Fusionar en el primero</button>`}</td></tr>`).join('')}</tbody></table></div>`).join('') : '<div class="card"><p class="muted">No se han detectado duplicados por email, teléfono ni nombre + empresa. 🎉</p></div>'}${S.merges.length ? `<div class="card"><h3>Fusiones recientes (reversibles)</h3>${S.merges.map((m) => `<div class="rel"><span class="grow">${esc(m.keepName)} ← ${esc(m.dropName)}</span><span class="small muted">${rel(m.at)}</span><button class="btn sm outline" data-act="unmerge" data-arg="${m.id}">Deshacer</button></div>`).join('')}</div>` : ''}</div>`;
 }
 ACT.merge = async ({ keep, drop }) => { const a = byId('contacts', keep), b = byId('contacts', drop); if (!(await ask('¿Fusionar contactos?', 'Las actividades, negocios y tareas pasan al contacto conservado. Se puede deshacer.', 'Fusionar'))) return; const snap = JSON.parse(JSON.stringify({ a, b })); for (const k of ['email', 'phone', 'jobTitle', 'companyId', 'city', 'linkedin', 'birthday']) if (!a[k] && b[k]) a[k] = b[k]; a.tags = [...new Set([...(a.tags || []), ...(b.tags || [])])]; S.activities.forEach((x) => { if (x.contactId === b.id) x.contactId = a.id; }); S.tasks.forEach((x) => { if (x.contactId === b.id) x.contactId = a.id; }); S.tickets.forEach((x) => { if (x.contactId === b.id) x.contactId = a.id; }); S.deals.forEach((d) => { if (d.contactIds.includes(b.id)) d.contactIds = [...new Set(d.contactIds.map((x) => (x === b.id ? a.id : x)))]; }); S.emails.forEach((x) => { if (x.contactId === b.id) x.contactId = a.id; }); S.contacts = S.contacts.filter((c) => c.id !== b.id); S.merges.unshift({ id: uid(), at: nowISO(), snap, keepName: contactName(a), dropName: contactName(b) }); audit('contacts', a.id, 'merge', { fusionado: contactName(b) }); sysNote(`Fusionado con ${contactName(b)}`, { contactId: a.id }); toast('Contactos fusionados', 'ok'); refresh(); };
 ACT.unmerge = (id) => { const m = S.merges.find((x) => x.id === id); if (!m) return; const { a, b } = m.snap; Object.assign(byId('contacts', a.id) || {}, a); S.contacts.unshift(b); S.merges = S.merges.filter((x) => x !== m); toast('Fusión deshecha', 'ok'); refresh(); };
@@ -1926,12 +2138,12 @@ ACT['quote-view'] = (id) => { const q = byId('quotes', id); if (!q) return; cons
 /* ---------- Listas y segmentos ---------- */
 PAGES.listas = () => {
   setHead({ title: 'Listas y segmentos', desc: 'Listas dinámicas (se actualizan solas según reglas) y estáticas (manuales). Alimentan campañas y automatizaciones.', toolbar: `<button class="btn primary" data-act="new-list">${ico.plus}Nueva lista</button>` });
-  document.getElementById('content').innerHTML = `<div class="charts">${S.lists.map((l) => { const items = listMembers(l); return `<div class="chart"><div class="row"><h3 class="grow" style="margin:0">${esc(l.name)}</h3><span class="tag">${l.kind === 'dynamic' ? 'dinámica' : 'estática'}</span><button class="ibtn" data-act="list-del" data-arg="${l.id}">${ico.trash}</button></div><p class="small muted mt8">${l.kind === 'dynamic' ? `Regla: ${esc(l.rule.field)} ${esc(l.rule.op)} ${esc(l.rule.value ?? '')}` : 'Miembros añadidos a mano'} · <b>${items.length}</b> ${OBJ_LABEL[l.obj]}s</p><div class="mt8">${items.slice(0, 6).map((c) => `<div class="rel"><a href="${linkOf(l.obj, c.id)}">${esc(c.name || contactName(c))}</a><span class="muted small">${esc(c.email || byId('companies', c.companyId)?.name || '')}</span></div>`).join('')}${items.length > 6 ? `<p class="xs muted mt8">y ${items.length - 6} más…</p>` : ''}</div><button class="btn sm outline mt12" data-act="list-export" data-arg="${l.id}">${ico.down}Exportar CSV</button></div>`; }).join('') || '<div class="empty">Sin listas. Crea un segmento dinámico (ej. leads MQL de Madrid).</div>'}</div>`;
+  document.getElementById('content').innerHTML = `<div class="charts">${S.lists.map((l) => { const items = listMembers(l); return `<div class="chart"><div class="row"><h3 class="grow" style="margin:0">${esc(l.name)}</h3><span class="tag">${l.kind === 'dynamic' ? 'dinámica' : 'estática'}</span><button class="ibtn" data-act="list-del" data-arg="${l.id}">${ico.trash}</button></div><p class="small muted mt8">${l.kind === 'dynamic' ? `Regla: ${esc(l.rule.field)} ${esc(l.rule.op)} ${esc(l.rule.value ?? '')}` : 'Miembros añadidos a mano'} · <b>${items.length}</b> ${OBJ_LABEL[l.obj]}s</p><div class="mt8">${items.slice(0, 6).map((c) => `<div class="rel"><a href="${linkOf(l.obj, c.id)}">${esc(c.name || contactName(c))}</a><span class="muted small">${esc((canSee('contacts', 'email') && c.email) || byId('companies', c.companyId)?.name || '')}</span></div>`).join('')}${items.length > 6 ? `<p class="xs muted mt8">y ${items.length - 6} más…</p>` : ''}</div><button class="btn sm outline mt12" data-act="list-export" data-arg="${l.id}">${ico.down}Exportar CSV</button></div>`; }).join('') || '<div class="empty">Sin listas. Crea un segmento dinámico (ej. leads MQL de Madrid).</div>'}</div>`;
 };
 function listMembers(l) { const src = S[l.obj] || []; if (l.kind === 'static') return src.filter((x) => l.ids.includes(x.id)); return src.filter((x) => condOk(l.rule.field.startsWith('company.') ? byId('companies', x.companyId)?.[l.rule.field.slice(8)] : x[l.rule.field], l.rule.op, l.rule.value)); }
 ACT['new-list'] = () => { const m = modal({ title: 'Nueva lista', body: `<div class="fgrid"><div class="fld full"><label>Nombre</label><input class="inp" id="n" placeholder="Ej. Leads calientes"/></div><div class="fld"><label>Objeto</label><select class="inp" id="o"><option value="contacts">Contactos</option><option value="companies">Empresas</option><option value="deals">Negocios</option></select></div><div class="fld"><label>Tipo</label><select class="inp" id="k"><option value="dynamic">Dinámica (regla)</option><option value="static">Estática</option></select></div><div class="fld"><label>Campo</label><input class="inp" id="f" value="lifecycle" placeholder="lifecycle, source, city, company.sector…"/></div><div class="fld"><label>Operador</label><select class="inp" id="op"><option value="eq">es</option><option value="neq">no es</option><option value="contains">contiene</option><option value="gt">mayor que</option><option value="lt">menor que</option><option value="empty">vacío</option><option value="not_empty">no vacío</option></select></div><div class="fld full"><label>Valor</label><input class="inp" id="v" value="mql"/></div></div>`, footer: `<button class="btn primary" id="ok">Crear</button>` }); m.querySelector('#ok').onclick = () => { const n = m.querySelector('#n').value.trim(); if (!n) return; S.lists.unshift({ id: uid(), name: n, obj: m.querySelector('#o').value, kind: m.querySelector('#k').value, rule: { field: m.querySelector('#f').value.trim(), op: m.querySelector('#op').value, value: m.querySelector('#v').value }, ids: [], createdAt: nowISO() }); m.close(); refresh(); }; };
 ACT['list-del'] = async (id) => { if (await ask('¿Borrar la lista?', '', 'Borrar', true)) { S.lists = S.lists.filter((l) => l.id !== id); refresh(); } };
-ACT['list-export'] = (id) => { const l = S.lists.find((x) => x.id === id); const rows = listMembers(l).map((c) => `"${c.name || contactName(c)}";"${c.email || ''}";"${c.phone || ''}"`); download(`${l.name}.csv`, '﻿nombre;email;telefono\n' + rows.join('\n'), 'text/csv'); toast('Exportado', 'ok'); };
+ACT['list-export'] = (id) => { const l = S.lists.find((x) => x.id === id); const rows = listMembers(l).map((c) => `"${c.name || contactName(c)}";"${canSee(l.obj, 'email') ? c.email || '' : ''}";"${canSee(l.obj, 'phone') ? c.phone || '' : ''}"`); download(`${l.name}.csv`, '﻿nombre;email;telefono\n' + rows.join('\n'), 'text/csv'); toast('Exportado', 'ok'); };
 /* ---------- Informes ---------- */
 PAGES.informes = () => {
   const tab = route.id || 'ventas'; const deals = vis('deals'), contacts = vis('contacts'); const won = deals.filter((d) => d.status === 'won'), lost = deals.filter((d) => d.status === 'lost');
@@ -2227,12 +2439,15 @@ function recipeBuilder(obj, onSaved) {
 }
 
 /* ---------- inicio ---------- */
-if (!load()) seed();
+const rzLoad = load();
+if (rzLoad !== 'stop') { // con 'stop' no se siembra ni se guarda: el cargador pinta la pantalla de rescate
+if (!rzLoad) { rzSeedRandom(); seed(); }
 S.ui = S.ui || { view: {}, b: {} }; S.ui.b = S.ui.b || {}; S.ui.view = S.ui.view || {};
 ensureOv(); applyLabelOv();
 dailyChecks(); setInterval(dailyChecks, 60000);
 if (!location.hash) location.hash = '#/inicio';
 render();
+}
 </script>
 
 <script type="text/x-app" data-order="5">
@@ -3715,7 +3930,7 @@ function xlFreeze(obj, tbl, sum, keys) {
   mark(hds); tbl.querySelectorAll(':scope > .r').forEach((r) => mark([...r.children]));
   if (sum) mark([...sum.children]);
 }
-function xlFmtNum(v, f, col) { const dec = f.dec === '' || f.dec == null ? (col.type === 'money' ? 0 : undefined) : Number(f.dec); const s = new Intl.NumberFormat('es-ES', { minimumFractionDigits: dec, maximumFractionDigits: dec ?? 6, useGrouping: f.thou !== false }).format(v); const pre = f.pre ?? '', suf = f.suf ?? (col.type === 'money' ? ' €' : ''); return `${pre}${s}${suf}`; }
+function xlFmtNum(v, f, col) { const dec = f.dec === '' || f.dec == null ? (col.type === 'money' ? 0 : undefined) : Number(f.dec); const s = new Intl.NumberFormat('es-ES', { minimumFractionDigits: dec, maximumFractionDigits: dec ?? 6, useGrouping: f.thou !== false ? 'always' : false }).format(v); const pre = f.pre ?? '', suf = f.suf ?? (col.type === 'money' ? ' €' : ''); return `${pre}${s}${suf}`; }
 
 /* resumen del pie por columna */
 const SUM_OPTS = { sum: 'Suma', avg: 'Media', median: 'Mediana', min: 'Mín', max: 'Máx', count: 'Recuento', empty: 'Vacíos', fill: '% lleno', dist: 'Distribución', counts: 'Recuento por etiqueta', checked: 'Marcadas', range: 'Rango de fechas', none: 'Ninguno' };
@@ -3732,7 +3947,7 @@ function xlSummaries(obj, tbl, sum, keys, rows) {
 }
 function xlSumHtml(obj, col, items, mode) {
   const lab = (t) => `<span>${t}</span>`; const money_ = col.type === 'money';
-  const f = (n) => { const ff = xlFmt(obj, col.key); return ff ? xlFmtNum(n, ff, col) : money_ ? money(n) : new Intl.NumberFormat('es-ES', { maximumFractionDigits: 2 }).format(n); };
+  const f = (n) => { const ff = xlFmt(obj, col.key); return ff ? xlFmtNum(n, ff, col) : money_ ? money(n) : new Intl.NumberFormat('es-ES', { maximumFractionDigits: 2, useGrouping: 'always' }).format(n); };
   const nums = items.map((it) => xlNum(obj, col, it)).filter((x) => x != null).sort((a, b) => a - b);
   const filled = items.filter((it) => { const t = xlText(obj, col, it); return col.type === 'bool' ? colVal(col, it) : t !== ''; }).length;
   switch (mode) {
@@ -3773,7 +3988,7 @@ function xlBar() {
   const R = xlRect(); if (!R || (R.top === R.bot && R.left === R.right)) { bar.className = ''; bar.innerHTML = ''; return; }
   const obj = CURRENT.obj; let cnt = 0; const nums = [];
   for (let i = R.top; i <= R.bot; i++) { const it = byId(obj, R.g.rows[i]); if (!it) continue; for (let j = R.left; j <= R.right; j++) { const col = findCol(R.g.keys[j]); if (!col) continue; const t = xlText(obj, col, it); if (t !== '' && !(col.type === 'bool' && !colVal(col, it))) cnt++; const n = ['number', 'money', 'rating'].includes(xlKind(col)) || col.align === 'r' ? xlNum(obj, col, it) : null; if (n != null) nums.push(n); } }
-  const f = (n) => new Intl.NumberFormat('es-ES', { maximumFractionDigits: 2 }).format(n);
+  const f = (n) => new Intl.NumberFormat('es-ES', { maximumFractionDigits: 2, useGrouping: 'always' }).format(n);
   bar.className = 'on'; bar.innerHTML = `<span>${(R.bot - R.top + 1) * (R.right - R.left + 1)} celdas</span><span>Recuento: <b>${cnt}</b></span>${nums.length ? `<span>Suma: <b>${f(nums.reduce((a, b) => a + b, 0))}</b></span><span>Promedio: <b>${f(nums.reduce((a, b) => a + b, 0) / nums.length)}</b></span><span>Mín: <b>${f(Math.min(...nums))}</b></span><span>Máx: <b>${f(Math.max(...nums))}</b></span>` : ''}`;
 }
 function xlEach(fn) { const R = xlRect(); if (!R) return []; const out = []; for (let i = R.top; i <= R.bot; i++) for (let j = R.left; j <= R.right; j++) out.push(fn(R.g.rows[i], R.g.keys[j], i - R.top, j - R.left)); return out; }
@@ -5976,7 +6191,7 @@ const fxClone = (o) => (o == null ? o : JSON.parse(JSON.stringify(o)));
 const fxName = (obj, it) => (!it ? '' : obj === 'contacts' || (it.firstName != null && !it.name && !it.title) ? `${it.firstName || ''} ${it.lastName || ''}`.trim() : obj === 'contracts' ? `${it.number || ''} · ${it.title || ''}` : String(it.name || it.title || it.subject || it.number || ''));
 const fxTodayISO = () => dayISO();
 const fxYears = (n) => { const d = new Date(); d.setFullYear(d.getFullYear() + n); return dayISO(d); };
-const fxNumFmt = (n) => new Intl.NumberFormat('es-ES').format(Number(n));
+const fxNumFmt = (n) => new Intl.NumberFormat('es-ES', { useGrouping: 'always' }).format(Number(n));
 
 /* ================================================================ F-01 · validadores */
 const fxEmailOk = (s) => { s = String(s ?? '').trim(); if (!s || s.length > 254) return false; if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s)) return false; const [l, d] = s.split('@'); if (!l || l.length > 64 || /^\.|\.$|\.\./.test(l) || /[\s"(),:;<>[\]\\]/.test(l)) return false; return /^(?=.{3,253}$)([\p{L}\p{N}](?:[\p{L}\p{N}-]*[\p{L}\p{N}])?\.)+\p{L}{2,24}$/u.test(d); };
@@ -7204,9 +7419,9 @@ function nvRecords(q) {
     hits.slice(0, lim).forEach((h) => out.push({ g, l: nvLabel(obj, h.it), s: h.snip || sub(h.it), i: NV_ICO[obj] || 'list', run: () => nvOpenRec(obj, h.it.id), more: n > lim ? n - lim : 0 }));
   };
   const coName = (id) => (id ? byId('companies', id)?.name || '' : '');
-  push(term('contact', { plural: true, cap: true }), 'contacts', vis('contacts'), (c) => [contactName(c), (typeof proContactSearch === 'function' ? proContactSearch(c) : `${c.email || ''} ${c.phone || ''}`), coName(c.companyId)], 6, (c) => coName(c.companyId) || c.email || '');
-  push(term('company', { plural: true, cap: true }), 'companies', vis('companies'), (c) => [c.name, `${c.domain || ''} ${c.taxId || ''} ${c.city || ''}`], 5, (c) => c.sector || '');
-  push(term('deal', { plural: true, cap: true }), 'deals', vis('deals'), (d) => [d.name, coName(d.companyId)], 5, (d) => `${stage(d.stageId)?.name || ''} · ${money(d.amount)}`);
+  push(term('contact', { plural: true, cap: true }), 'contacts', vis('contacts'), (c) => [contactName(c), (typeof fzContactText === 'function' ? fzContactText(c) : typeof proContactSearch === 'function' ? proContactSearch(c) : `${c.email || ''} ${c.phone || ''}`), coName(c.companyId)], 6, (c) => coName(c.companyId) || (canSee('contacts', 'email') && c.email) || '');
+  push(term('company', { plural: true, cap: true }), 'companies', vis('companies'), (c) => [c.name, ['domain', 'taxId', 'city'].filter((k) => canSee('companies', k)).map((k) => c[k] || '').join(' ')], 5, (c) => (canSee('companies', 'sector') && c.sector) || '');
+  push(term('deal', { plural: true, cap: true }), 'deals', vis('deals'), (d) => [d.name, coName(d.companyId)], 5, (d) => `${stage(d.stageId)?.name || ''}${canSee('deals', 'amount') ? ' · ' + money(d.amount) : ''}`);
   if (Array.isArray(S.contracts)) { const cv = typeof clmVisible === 'function' ? clmVisible() : vis('contracts'); push(term('contract', { plural: true, cap: true }), 'contracts', cv, (c) => { let txt = ''; try { txt = typeof cver === 'function' ? (cver(c)?.text || '') : ''; } catch (_) { txt = ''; } return [c.number || '', c.title || '', coName(c.companyId), txt]; }, 6, (c) => `${(typeof CST !== 'undefined' && CST[c.status]?.label) || ''}${c.companyId ? ' · ' + coName(c.companyId) : ''}`); }
   push('Presupuestos', 'quotes', S.quotes.filter((x) => nvCanSee('quotes', x)), (x) => [x.number || ''], 4, (x) => money(x.total));
   push(term('ticket', { plural: true, cap: true }), 'tickets', vis('tickets'), (t) => ['#' + t.number + ' ' + t.subject, String(t.number)], 5, (t) => TICKET_STATUS[t.status]?.label || '');
@@ -7225,7 +7440,7 @@ ACT.palette = (initial) => {
   const draw = () => {
     const q = norm(inp.value.trim()); items = [];
     if (!q) {
-      const P = nvP(); P.recent.map((r) => ({ r, it: nvGet(r.o, r.i) })).filter((x) => x.it && nvCanSee(x.r.o, x.it)).slice(0, 6).forEach(({ r, it }) => items.push({ g: 'Recientes', l: nvLabel(r.o, it), s: NV_PAGE_TITLES[nvPageOf(r.o)] || '', i: NV_ICO[r.o] || 'list', run: () => nvOpenRec(r.o, r.i) }));
+      if (typeof fzPalStart === 'function') fzPalStart().forEach((x) => items.push(x)); else { const P = nvP(); P.recent.map((r) => ({ r, it: nvGet(r.o, r.i) })).filter((x) => x.it && nvCanSee(x.r.o, x.it)).slice(0, 6).forEach(({ r, it }) => items.push({ g: 'Recientes', l: nvLabel(r.o, it), s: NV_PAGE_TITLES[nvPageOf(r.o)] || '', i: NV_ICO[r.o] || 'list', run: () => nvOpenRec(r.o, r.i) })); }
       cmds.filter((c) => c.g === 'Este registro').forEach((c) => items.push(c));
       cmds.filter((c) => c.g === 'Crear').slice(0, 5).forEach((c) => items.push(c));
       cmds.filter((c) => c.g === 'Ir a').slice(0, 6).forEach((c) => items.push(c));
@@ -7960,7 +8175,7 @@ xlBar = function () {
   const R = xlRect(); if (!R || (R.top === R.bot && R.left === R.right)) { bar.className = ''; bar.innerHTML = ''; return; }
   const obj = CURRENT.obj; let cnt = 0, sum = 0, nn = 0, mn = Infinity, mx = -Infinity;
   for (let i = R.top; i <= R.bot; i++) { const it = byId(obj, R.g.rows[i]); if (!it) continue; for (let j = R.left; j <= R.right; j++) { const col = findCol(R.g.keys[j]); if (!col) continue; const t = xlText(obj, col, it); if (t !== '' && !(col.type === 'bool' && !colVal(col, it))) cnt++; const n = ['number', 'money', 'rating'].includes(xlKind(col)) || col.align === 'r' ? xlNum(obj, col, it) : null; if (n != null) { nn++; sum += n; if (n < mn) mn = n; if (n > mx) mx = n; } } }
-  const f = (n) => new Intl.NumberFormat('es-ES', { maximumFractionDigits: 2 }).format(n);
+  const f = (n) => new Intl.NumberFormat('es-ES', { maximumFractionDigits: 2, useGrouping: 'always' }).format(n);
   bar.className = 'on'; bar.innerHTML = `<span>${(R.bot - R.top + 1) * (R.right - R.left + 1)} celdas</span><span>Recuento: <b>${cnt}</b></span>${nn ? `<span>Suma: <b>${f(sum)}</b></span><span>Promedio: <b>${f(sum / nn)}</b></span><span>Mín: <b>${f(mn)}</b></span><span>Máx: <b>${f(mx)}</b></span>` : ''}`;
 };
 /* «seleccionar todo el grupo» sin poner miles de ids en el HTML */
@@ -9505,7 +9720,942 @@ function dxReady() {
 }
 if (window.dxStore && dxStore.bootMs === 0 && !document.documentElement.classList.contains('dx-ready')) dxS.hooks.ready = dxReady; else setTimeout(dxReady, 0);
 </script>
-<script type="text/x-app" data-order="18">
+<script type="text/x-app" data-order="18" data-rescue="1" data-pkg="v2-R">
+/* ============================================================
+   v2-R · Datos, rescate y solo lectura (prefijo rz)
+   - P0-1  Pantalla de rescate (#/rescate) cuando los datos del espacio
+           están dañados o vienen de una versión más nueva. El arranque
+           marca dxStore.rescue, pausa el escritor y el cargador solo
+           ejecuta este bloque (data-rescue): nada siembra ni guarda.
+           Solo «Ejemplo» se regenera solo, y siempre con aviso.
+   - P0-4  Pestaña en solo lectura: clase dx-ro en <body>, funciones de
+           edición que devuelven false sin tocar la memoria, «Nuevo…» y
+           acciones de edición deshabilitadas con explicación; el aviso
+           muestra el espacio y la hora del último cambio recibido.
+   - P1-12 Datos de ejemplo deterministas (semilla fija; ver rzSeedRandom
+           en el núcleo) y notificaciones sin repetir al sembrar.
+   - P2    Historial: «Copia de rescate», tamaños con un decimal y
+           «Comparar con ahora».
+   ============================================================ */
+'use strict';
+const rzX = window.dxStore || { on: false, hooks: {}, schema: 1 };
+const RZ = { roToastAt: 0, rxAt: 0, obs: null, raf: 0, busy: false };
+const RZ_WHY = {
+  damaged: 'Los datos guardados están dañados.',
+  newer: 'Estos datos se guardaron con una versión más nueva de la aplicación. Abre esa versión o importa una copia.',
+  invalid: 'Los datos no tienen un formato reconocible.',
+};
+const RZ_RO_TIP = 'Este espacio está abierto en otra pestaña';
+const RZ_RO_MSG = 'Este espacio está abierto en otra pestaña. Pulsa «Usar aquí» para editar en esta.';
+const rzEsc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const rzValid = (d) => !!d && typeof d === 'object' && !Array.isArray(d) && typeof d.version === 'number' && d.version >= 1 && d.version <= (rzX.schema || 1) && Array.isArray(d.contacts);
+const rzWhen = (t) => new Date(t).toLocaleString('es-ES', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+const rzNum = (n) => Number(n || 0).toLocaleString('es-ES');
+const rzPl = (n, s, p) => `${rzNum(n)} ${n === 1 ? s : p}`;
+const rzSize = (b) => { b = Number(b) || 0; const f = (n) => n.toLocaleString('es-ES', { minimumFractionDigits: 1, maximumFractionDigits: 1 }); return b < 1e6 ? `${f(Math.max(0.1, b / 1e3))} KB` : `${f(b / 1e6)} MB`; };
+const rzSlug = (s) => String(s || 'espacio').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'espacio';
+const rzDay = () => new Date().toISOString().slice(0, 10);
+const RZ_COUNT = [['contacts', 'contacto', 'contactos'], ['companies', 'empresa', 'empresas'], ['deals', 'negocio', 'negocios'], ['contracts', 'contrato', 'contratos'], ['tasks', 'tarea', 'tareas'], ['tickets', 'ticket', 'tickets'], ['quotes', 'presupuesto', 'presupuestos'], ['products', 'producto', 'productos']];
+const rzCounts = (d) => { const o = {}; for (const [k] of RZ_COUNT) o[k] = Array.isArray(d && d[k]) ? d[k].length : 0; return o; };
+const rzCountsTxt = (d) => RZ_COUNT.slice(0, 4).map(([k, s, p]) => rzPl(Array.isArray(d[k]) ? d[k].length : 0, s, p)).join(' · ');
+function rzSaveFile(name, text) {
+  const u = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+  const a = document.createElement('a'); a.href = u; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(u), 5000);
+}
+const rzIdx = () => { try { const ix = JSON.parse(localStorage.getItem('crm-workspaces') || 'null'); return ix && Array.isArray(ix.list) ? ix : null; } catch (_) { return null; } };
+const rzTxDone = (t) => new Promise((res, rej) => { t.oncomplete = () => res(); t.onerror = () => rej(t.error || new Error('tx')); t.onabort = () => rej(t.error || new Error('abort')); });
+
+/* =====================================================================
+   1 · Pantalla de rescate (P0-1)
+   ===================================================================== */
+function rzRescue() {
+  const R = rzX.rescue; const name = R.name || 'este espacio';
+  document.documentElement.classList.add('rz-rescue-on');
+  try { history.replaceState(null, '', location.pathname + location.search + '#/rescate'); } catch (_) { /* nada */ }
+  document.title = `No se ha podido abrir «${name}» · CRM · CLM`;
+  const ix = rzIdx(); const others = ix ? ix.list.filter((w) => w && w.key !== R.key) : [];
+  const el = document.createElement('div'); el.id = 'rzRescue'; el.className = 'rz-rescue'; el.setAttribute('role', 'main'); el.setAttribute('aria-labelledby', 'rzTitle'); el.dataset.reason = R.reason;
+  el.innerHTML = `<div class="rz-card">
+    <div class="rz-brand"><span class="dx-boot-dots"><i></i><i></i><i></i></span><b>CRM · CLM</b></div>
+    <span class="rz-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg></span>
+    <h1 id="rzTitle" tabindex="-1">No hemos podido abrir «${rzEsc(name)}»</h1>
+    <p class="rz-why" id="rzWhy">${rzEsc(RZ_WHY[R.reason] || RZ_WHY.invalid)}</p>
+    <p class="rz-safe">No hemos cambiado nada: los datos siguen guardados tal como estaban y hay una copia de rescate en el historial. Elige cómo seguir.</p>
+    <div class="rz-acts" role="group" aria-label="Cómo seguir">
+      <div class="rz-a"><button type="button" class="btn primary" id="rzRestore" disabled>Restaurar la última copia buena</button><p class="rz-hint" id="rzRestoreHint">Buscando copias en el historial…</p></div>
+      <div class="rz-a"><button type="button" class="btn outline" id="rzDownload">Descargar los datos tal como están</button><p class="rz-hint">Un archivo con los datos que no se han podido abrir, para revisarlos o enviarlos a soporte.</p></div>
+      <div class="rz-a"><button type="button" class="btn outline" id="rzImport">Importar una copia…</button><p class="rz-hint">Un archivo guardado antes con «Exportar copia», también si está cifrado.</p></div>
+      <div class="rz-a"><button type="button" class="btn outline" id="rzOther" aria-expanded="false" aria-controls="rzOthers" ${others.length ? '' : 'disabled'}>Abrir otro espacio</button>
+        ${others.length ? `<div class="rz-others" id="rzOthers" hidden>${others.map((w) => `<button type="button" class="btn outline sm" data-rz-ws="${rzEsc(w.id)}">Abrir «${rzEsc(w.name)}»</button>`).join('')}</div>` : '<p class="rz-hint">No hay otros espacios en este navegador.</p>'}</div>
+    </div>
+    <form class="rz-pw" id="rzPw" hidden><label for="rzPwIn">Esta copia está cifrada. Escribe la contraseña con la que se creó.</label><div class="rz-row"><input class="inp" id="rzPwIn" type="password" autocomplete="current-password"/><button class="btn primary" type="submit">Continuar</button><button class="btn outline" type="button" id="rzPwNo">Cancelar</button></div></form>
+    <p class="rz-msg" id="rzMsg" role="alert" aria-live="assertive"></p>
+    <div class="rz-zero"><button type="button" class="dx-link" id="rzZeroOpen" aria-expanded="false" aria-controls="rzZero">Empezar de cero en este espacio…</button>
+      <div id="rzZero" class="rz-zero-box" hidden><p>Se vacía «${rzEsc(name)}»: sin contactos, empresas, negocios ni contratos. Antes guardaremos otra copia de los datos actuales en el historial.</p>
+        <label for="rzZeroName">Para confirmar, escribe el nombre del espacio: <b>${rzEsc(name)}</b></label>
+        <div class="rz-row"><input class="inp" id="rzZeroName" autocomplete="off"/><button type="button" class="btn danger" id="rzZeroGo" disabled>Empezar de cero</button></div></div></div>
+  </div>`;
+  document.body.appendChild(el);
+  const $ = (s) => el.querySelector(s); const msg = (t, ok) => { const m = $('#rzMsg'); m.textContent = t || ''; m.classList.toggle('ok', !!ok); };
+  const lock = (on) => { RZ.busy = on; el.querySelectorAll('button').forEach((b) => { if (on) { b.dataset.rzWas = b.disabled ? '1' : ''; b.disabled = true; } else if ('rzWas' in b.dataset) { b.disabled = b.dataset.rzWas === '1'; delete b.dataset.rzWas; } }); };
+  setTimeout(() => { try { $('#rzTitle').focus(); } catch (_) { /* nada */ } }, 30);
+
+  /* escribir unos datos válidos en el espacio y abrirlo */
+  async function write(json, kind) {
+    if (rzX.on) {
+      if (rzX.ro) throw Object.assign(new Error('ro'), { rz: 'Este espacio está abierto en otra pestaña. Ciérrala y vuelve a intentarlo.' });
+      const keep = rzX.rescue; rzX.rescue = null; rzX.paused = false;
+      rzX.M.set(rzX.key, json); rzX.sRaw = json; rzX.sDirty = true;
+      let ok = false; try { ok = await rzX.flushNow(); } catch (_) { ok = false; }
+      if (!ok) { rzX.paused = true; rzX.rescue = keep; rzX.sDirty = false; rzX.sRaw = null; rzX.M.delete(rzX.key); throw rzX.lastErr || new Error('No se pudo guardar'); }
+    } else localStorage.setItem(R.key, json);
+    try { sessionStorage.setItem('dx-after', JSON.stringify({ kind })); } catch (_) { /* nada */ }
+    location.hash = '#/inicio'; location.reload();
+  }
+  const fail = (e) => { lock(false); msg((e && e.rz) || 'No se ha podido guardar. Inténtalo de nuevo; los datos dañados siguen guardados tal como estaban.'); };
+
+  /* 1 · última copia buena del historial */
+  let good = null;
+  (async () => {
+    try {
+      if (rzX.on) {
+        const list = (await rzX.snapList(R.key)).filter((s) => s.kind !== 'rescue');
+        for (const s of list) { try { const j = await rzX.snapJson(s.id); const d = JSON.parse(j); if (rzValid(d)) { good = { s, json: j, d }; break; } } catch (_) { /* siguiente */ } }
+      }
+    } catch (_) { good = null; }
+    const h = $('#rzRestoreHint'); const b = $('#rzRestore');
+    if (good) { b.disabled = RZ.busy; h.textContent = `Copia del ${rzWhen(good.s.at)} · ${rzCountsTxt(good.d)}.`; }
+    else h.textContent = rzX.on ? 'No hay ninguna copia anterior válida en el historial de este espacio.' : 'Este navegador no guarda historial: importa una copia.';
+  })();
+  $('#rzRestore').onclick = async () => { if (!good) return; lock(true); msg('Restaurando la copia…', true); try { await write(good.json, 'pre-restore'); } catch (e) { fail(e); } };
+
+  /* 2 · descargar tal cual */
+  $('#rzDownload').onclick = async () => {
+    let text = R.raw; if (text == null && R.snapId && rzX.on) { try { text = await rzX.snapJson(R.snapId); } catch (_) { text = null; } }
+    if (text == null) { msg('No se han podido leer los datos guardados.'); return; }
+    rzSaveFile(`${rzSlug(name)}-datos-sin-abrir-${rzDay()}.json`, text); msg('Archivo descargado. Contiene datos personales: guárdalo en un lugar seguro.', true);
+  };
+
+  /* 3 · importar una copia */
+  const askPw = () => new Promise((res) => {
+    const f = $('#rzPw'); const inp = $('#rzPwIn'); f.hidden = false; inp.value = ''; setTimeout(() => inp.focus(), 20);
+    f.onsubmit = (ev) => { ev.preventDefault(); if (!inp.value) return; f.hidden = true; res(inp.value); };
+    $('#rzPwNo').onclick = () => { f.hidden = true; res(null); };
+  });
+  async function importText(text) {
+    let j; try { j = JSON.parse(text); } catch (_) { msg('El archivo no es una copia válida: no se puede leer.'); return; }
+    if (j && j.format === 'crm-clm-encrypted') {
+      const pw = await askPw(); if (pw == null) return;
+      try { j = JSON.parse(await rzX.decryptString(j, pw)); } catch (_) { msg('La contraseña no es correcta o la copia está dañada. Inténtalo de nuevo.'); return; }
+    }
+    let d = j;
+    if (j && j.format === 'crm-clm-workspace') d = j.data;
+    else if (j && j.format === 'crm-clm-backup') {
+      const list = Array.isArray(j.workspaces) ? j.workspaces : [];
+      const hit = list.find((x) => x && x.workspace && x.workspace.name === name) || (list.length === 1 ? list[0] : null);
+      if (!hit) { msg(`La copia tiene varios espacios y ninguno se llama «${name}». Ábrela desde otro espacio con «Importar».`); return; }
+      d = hit.data;
+    }
+    if (!rzValid(d)) { msg(d && typeof d.version === 'number' && d.version > (rzX.schema || 1) ? 'Esta copia es de una versión más nueva de la aplicación: ábrela con esa versión.' : 'El archivo no es una copia de este programa. Elige un archivo exportado con «Exportar copia».'); return; }
+    lock(true); msg('Importando la copia…', true);
+    try { await write(JSON.stringify(d), 'pre-file'); } catch (e) { fail(e); }
+  }
+  $('#rzImport').onclick = () => {
+    const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.json,application/json';
+    inp.onchange = () => { const f = inp.files && inp.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => importText(String(r.result)); r.onerror = () => msg('No se ha podido leer el archivo.'); r.readAsText(f); };
+    inp.click();
+  };
+
+  /* 4 · abrir otro espacio */
+  const ob = $('#rzOther'); const ol = $('#rzOthers');
+  if (ol) ob.onclick = () => { const on = ol.hidden; ol.hidden = !on; ob.setAttribute('aria-expanded', String(on)); if (on) { const f = ol.querySelector('button'); if (f) f.focus(); } };
+  el.querySelectorAll('[data-rz-ws]').forEach((b) => (b.onclick = async () => {
+    const x = rzIdx(); if (!x) return; x.active = b.dataset.rzWs; const v = JSON.stringify(x); lock(true);
+    try {
+      if (rzX.on && rzX.db) { const t = rzX.tx(['meta'], 'readwrite'); t.objectStore('meta').put({ k: 'crm-workspaces', v }); await rzTxDone(t); rzX.M.set('crm-workspaces', v); }
+      else localStorage.setItem('crm-workspaces', v);
+    } catch (e) { fail(e); return; }
+    location.hash = '#/inicio'; location.reload();
+  }));
+
+  /* 5 · empezar de cero (con confirmación y otra copia antes) */
+  const zo = $('#rzZeroOpen'); const zb = $('#rzZero'); const zi = $('#rzZeroName'); const zg = $('#rzZeroGo');
+  zo.onclick = () => { const on = zb.hidden; zb.hidden = !on; zo.setAttribute('aria-expanded', String(on)); if (on) zi.focus(); };
+  zi.oninput = () => { zg.disabled = zi.value.trim() !== name; };
+  zg.onclick = async () => {
+    if (zi.value.trim() !== name) return; lock(true); msg('Guardando una copia y vaciando el espacio…', true);
+    try {
+      if (rzX.on) {
+        if (rzX.ro) throw Object.assign(new Error('ro'), { rz: 'Este espacio está abierto en otra pestaña. Ciérrala y vuelve a intentarlo.' });
+        if (R.raw != null) await rzX.snapCreate('pre-reset', R.raw, R.key);
+        const t = rzX.tx(['spaces', 'meta'], 'readwrite'); t.objectStore('spaces').delete(R.key); t.objectStore('meta').put({ k: 'dx:rzblank', v: R.key }); await rzTxDone(t);
+      } else { localStorage.removeItem(R.key); localStorage.setItem('rz-blank', R.key); }
+    } catch (e) { fail(e); return; }
+    try { sessionStorage.setItem('rz-after', 'blank'); } catch (_) { /* nada */ }
+    location.hash = '#/inicio'; location.reload();
+  };
+}
+
+/* =====================================================================
+   2 · Con la aplicación en marcha
+   ===================================================================== */
+function rzNormal() {
+  /* ---------------- P1-12 · fin de la siembra: se restaura Math.random y se quitan avisos repetidos */
+  const seeded = !!window.rzSeeding;
+  if (Math.random.rz) { Math.random = Math.random.rz; }
+  if (seeded && S && Array.isArray(S.notifs)) {
+    const seen = new Set(); const n0 = S.notifs.length;
+    S.notifs = S.notifs.filter((n) => { if (!n) return false; const k = [n.to, n.title, n.body, n.link].join('\u0001'); if (seen.has(k)) return false; seen.add(k); return true; });
+    if (S.notifs.length !== n0) { save(); try { updateBell(); } catch (_) { /* nada */ } }
+  }
+
+  /* ---------------- P0-1 · «Empezar de cero» desde la pantalla de rescate */
+  let blank = null;
+  try { blank = rzX.on ? rzX.metaGet('dx:rzblank') : window.localStorage.getItem('rz-blank'); } catch (_) { blank = null; }
+  if (blank && blank === KEY && typeof wsBlankData === 'function') {
+    try { const w = wsActive(); S = wsBlankData(w.name); S._wsNamed = w.id; save(); render(); } catch (e) { dxDiag.push(e, 'rz-blank'); }
+    if (rzX.on) rzX.metaDel('dx:rzblank').catch(() => {}); else try { window.localStorage.removeItem('rz-blank'); } catch (_) { /* nada */ }
+  }
+  let after = null; try { after = sessionStorage.getItem('rz-after'); sessionStorage.removeItem('rz-after'); } catch (_) { after = null; }
+  if (after === 'blank') setTimeout(() => toast('El espacio empieza de cero. Los datos anteriores están en Ajustes › Datos y copia › Historial.', 'ok'), 500);
+
+  /* ---------------- P0-1 · «Ejemplo» regenerado: siempre con aviso */
+  if (rzX.reseeded && rzX.reseeded.key === KEY) {
+    const t = 'Los datos de ejemplo se han regenerado porque los anteriores no se podían leer.';
+    try { notify(S.me, 'Datos de ejemplo regenerados', `${t} La copia está en Ajustes › Datos y copia › Historial.`, '#/ajustes/datos', 'warn'); save(); } catch (_) { /* nada */ }
+    setTimeout(() => { if (typeof dxActionToast === 'function') dxActionToast(t, 'Ver historial', () => go('#/ajustes/datos'), 'warn'); else toast(t, 'err'); }, 900);
+  }
+  if (/^#\/rescate/.test(location.hash)) location.hash = '#/inicio';
+
+  /* ---------------- P0-4 · pestaña en solo lectura */
+  const ro = () => !!(rzX.on && rzX.ro);
+  const roMsg = () => { if (Date.now() - RZ.roToastAt > 2500) { RZ.roToastAt = Date.now(); toast(RZ_RO_MSG, 'err'); } };
+  const guard = (name, val) => {
+    const f = window[name]; if (typeof f !== 'function') return;
+    window[name] = function () { if (ro()) { roMsg(); return val; } return f.apply(this, arguments); };
+  };
+  ['setField', 'xlSetRaw', 'moveStage', 'deleteItem', 'restoreItem', 'createContact', 'createCompany', 'createDeal', 'createTask', 'createTicket', 'closeDeal', 'completeTask'].forEach((n) => guard(n, false));
+  guard('xlEdit', undefined);
+  const RZ_EDIT = /^(new-|add-|cell-|kv-|bulk-|q-(?!note$)|deal-|stage-(add|del|move|rename)$|task-toggle$|line-|score-(add|del|toggle|recalc)$|col-del$|edit-col$|group-(color|rename)$|form-new$|tpl-(new|del)$|auto-(new|toggle)$|user-(new|toggle)$|ap-decide$|import-(run|revert|sample)$|fx-imp-undo$|fx-bulk$|xl-(undo|redo|rename)$|recipe-install$|list-del$|budget-save$|reassign-service$|dx-snap-restore$|dx-restore-file$|dx-reset-demo$|pro-ci-(add|del|primary)$|cus-o-(new|addrow|new-rel)$|clm-(new|add-row|from-deal|edit|edit-doc|amend|approve|accept|decision|delegate|gen|ms-add|ms-done|note|obl-add|obl-done|obl-waive|offline|pay-next|pay-regen|reanalyze|receive|reject|remind|renew|restore|risk|send|signer-add|signer-del|terminate|trans|env-cancel|fix|auth-add|auth-del|signpage)$)/;
+  const RZ_NEW = /^\s*(\+\s*)?(Nuev[oa]s?|Añadir|Crear)(\s|…|$)/;
+  for (const k of Object.keys(ACT)) if (RZ_EDIT.test(k) && typeof ACT[k] === 'function') { const f = ACT[k]; ACT[k] = function () { if (ro()) { roMsg(); return false; } return f.apply(this, arguments); }; }
+  window.addEventListener('click', (e) => {
+    if (!ro()) return; const a = e.target.closest && e.target.closest('[data-act]');
+    if (a && !a.closest('#dxRoBanner') && RZ_EDIT.test(a.dataset.act || '')) { e.preventDefault(); e.stopImmediatePropagation(); roMsg(); }
+  }, true);
+  window.addEventListener('dblclick', (e) => { if (ro() && e.target.closest && e.target.closest('#content .tbl .xc, #content .cell')) { e.preventDefault(); e.stopImmediatePropagation(); roMsg(); } }, true);
+  window.addEventListener('dragstart', (e) => { if (ro() && e.target.closest && e.target.closest('#content')) { e.preventDefault(); roMsg(); } }, true);
+  function mark() {
+    RZ.raf = 0; const on = ro();
+    if (on) {
+      document.querySelectorAll('button, [role="button"]').forEach((b) => {
+        if (b.dataset.rzRo || b.closest('#dxRoBanner, #rzRescue')) return;
+        const act = b.dataset.act || '';
+        if (!(RZ_EDIT.test(act) || RZ_NEW.test(b.textContent || ''))) return;
+        b.dataset.rzRo = b.disabled ? 'was' : '1'; b.dataset.rzTitle = b.getAttribute('title') || '';
+        if ('disabled' in b) b.disabled = true; b.setAttribute('aria-disabled', 'true'); b.title = RZ_RO_TIP;
+      });
+    } else {
+      document.querySelectorAll('[data-rz-ro]').forEach((b) => {
+        if (b.dataset.rzRo === '1' && 'disabled' in b) b.disabled = false;
+        b.removeAttribute('aria-disabled'); if (b.dataset.rzTitle) b.title = b.dataset.rzTitle; else b.removeAttribute('title');
+        delete b.dataset.rzRo; delete b.dataset.rzTitle;
+      });
+    }
+  }
+  const queue = () => { if (!RZ.raf) RZ.raf = requestAnimationFrame(mark); };
+  function sync() {
+    const on = ro(); document.body.classList.toggle('dx-ro', on);
+    if (on && !RZ.obs) { RZ.obs = new MutationObserver(queue); RZ.obs.observe(document.body, { childList: true, subtree: true }); }
+    if (!on && RZ.obs) { RZ.obs.disconnect(); RZ.obs = null; }
+    mark();
+  }
+  window.rzRoSync = sync;
+  if (typeof dxRoBanner === 'function') {
+    const banner0 = dxRoBanner;
+    dxRoBanner = function () {
+      const r = banner0.apply(this, arguments); sync();
+      const b = document.getElementById('dxRoBanner'); const sp = b && b.querySelector('span');
+      if (sp) {
+        let name = ''; try { name = dxSpaceName(); } catch (_) { name = ''; }
+        const at = RZ.rxAt ? `Último cambio recibido a las ${new Date(RZ.rxAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}.` : 'Todavía no ha llegado ningún cambio de la otra pestaña.';
+        const key = name + '|' + at;
+        if (sp.dataset.rz !== key) { sp.dataset.rz = key; sp.innerHTML = `<b>${name ? `«${esc(name)}»` : 'Este espacio'} está abierto en otra pestaña.</b> Aquí solo puedes consultarlo; se actualiza solo. <span class="rz-rx">${esc(at)}</span>`; }
+      }
+      return r;
+    };
+  }
+  const H = rzX.hooks || {};
+  const ext0 = H.external; H.external = function () { RZ.rxAt = Date.now(); const r = ext0 ? ext0.apply(this, arguments) : undefined; if (ro()) try { dxRoBanner(); } catch (_) { /* nada */ } return r; };
+  const role0 = H.role; H.role = function () { const r = role0 ? role0.apply(this, arguments) : undefined; sync(); return r; };
+  const st0 = H.status; H.status = function () { const r = st0 ? st0.apply(this, arguments) : undefined; sync(); return r; };
+  sync(); if (ro() && typeof dxRoBanner === 'function') dxRoBanner();
+
+  /* ---------------- P2 · historial de instantáneas */
+  if (typeof DX_KIND === 'object' && DX_KIND) DX_KIND.rescue = 'Copia de rescate';
+  if (typeof dxFillSnaps === 'function') {
+    dxFillSnaps = async function () {
+      const el = document.getElementById('dxSnaps'); if (!el) return;
+      if (!dxS.on) { el.innerHTML = '<p class="small muted">El historial necesita IndexedDB, que este navegador no permite ahora mismo. Exporta copias con regularidad.</p>'; return; }
+      const list = await dxS.snapList(); if (!document.contains(el)) return;
+      const adm = can('admin');
+      const row = (s) => {
+        const resc = s.kind === 'rescue';
+        const kind = `${esc(DX_KIND[s.kind] || 'Automática')}${s.enc ? ' <span class="tag">cifrada</span>' : ''}${resc ? '<div class="xs muted rz-why-snap">Los datos tal como estaban cuando no se pudieron abrir. Descárgalos para revisarlos o enviarlos a soporte.</div>' : ''}`;
+        const cnt = s.counts ? `${dxPlural(s.counts.contacts, 'contacto', 'contactos')} · ${dxPlural(s.counts.deals, 'negocio', 'negocios')} · ${dxPlural(s.counts.contracts, 'contrato', 'contratos')}` : '—';
+        const acts = `${adm && !resc ? `<button class="btn sm outline" data-act="dx-snap-restore" data-arg="${esc(s.id)}">Restaurar</button>` : ''}${!resc ? `<button class="btn sm outline" data-act="rz-snap-cmp" data-arg="${esc(s.id)}">Comparar con ahora</button>` : ''}<button class="btn sm outline" data-act="${resc ? 'rz-snap-raw' : 'dx-snap-dl'}" data-arg="${esc(s.id)}">Descargar</button>`;
+        return `<tr class="${resc ? 'rz-snap-rescue' : ''}"><td>${esc(fdt(new Date(s.at).toISOString()))}</td><td>${kind}</td><td class="small">${resc && s.counts && !s.counts.contacts && !s.counts.deals && !s.counts.contracts ? 'Datos ilegibles' : cnt}</td><td class="r num">${rzSize(s.bytes || s.size || 0)}</td><td class="r"><div class="row wrap" style="gap:6px;justify-content:flex-end">${acts}</div></td></tr>`;
+      };
+      el.innerHTML = list.length ? `<div class="tscroll"><table class="t dx-snaps"><thead><tr><th>Fecha</th><th>Tipo</th><th>Contenido</th><th class="r">Tamaño</th><th><span class="rz-sr">Acciones</span></th></tr></thead><tbody>${list.map(row).join('')}</tbody></table></div>` : '<p class="small muted">Todavía no hay instantáneas. Se crean solas mientras trabajas.</p>';
+    };
+  }
+  ACT['rz-snap-raw'] = async (id) => {
+    const list = await dxS.snapList(); const s = list.find((x) => x.id === id); if (!s) return;
+    try { const j = await dxS.snapJson(id); download(`${rzSlug(dxSpaceName())}-copia-de-rescate-${new Date(s.at).toISOString().slice(0, 16).replace(/[T:]/g, '-')}.json`, j); toast('Copia de rescate descargada', 'ok'); }
+    catch (_) { toast('No se ha podido leer esta copia.', 'err'); }
+  };
+  ACT['rz-snap-cmp'] = async (id) => {
+    const list = await dxS.snapList(); const s = list.find((x) => x.id === id); if (!s) return;
+    let d = null; try { d = JSON.parse(await dxS.snapJson(id)); } catch (_) { d = null; }
+    if (!d || typeof d !== 'object') return toast('No se ha podido leer esta instantánea. Prueba con otra del historial.', 'err');
+    const a = rzCounts(d), b = rzCounts(S);
+    const rows = RZ_COUNT.filter(([k]) => a[k] || b[k]).map(([k, , p]) => { const df = b[k] - a[k]; return `<tr data-k="${k}"><th scope="row">${p[0].toUpperCase() + p.slice(1)}</th><td class="r num">${rzNum(a[k])}</td><td class="r num">${rzNum(b[k])}</td><td class="r num rz-df ${df > 0 ? 'up' : df < 0 ? 'down' : ''}">${df ? (df > 0 ? '+' : '−') + rzNum(Math.abs(df)) : 'igual'}</td></tr>`; }).join('');
+    const same = RZ_COUNT.every(([k]) => a[k] === b[k]);
+    const m = modal({ title: 'Comparar con ahora', body: `<p class="small muted">Recuentos de la instantánea del ${esc(fdt(new Date(s.at).toISOString()))} frente a los datos actuales de «${esc(dxSpaceName())}».</p><div class="tscroll"><table class="t rz-cmp"><thead><tr><th>Registros</th><th class="r">Instantánea</th><th class="r">Ahora</th><th class="r">Diferencia</th></tr></thead><tbody>${rows}</tbody></table></div><p class="small mt12">${same ? 'Los recuentos coinciden; puede haber cambios dentro de los registros.' : 'Si restauras esta instantánea, los datos volverán a estos recuentos. Antes guardaremos una copia del estado actual.'}</p>`, footer: '<button class="btn outline" data-rz-close>Cerrar</button>' });
+    m.classList.add('rz-cmp-modal'); m.querySelector('[data-rz-close]').onclick = m.close;
+  };
+}
+
+/* =====================================================================
+   3 · Arranque del bloque
+   ===================================================================== */
+if (rzX.rescue) { if (Math.random.rz) Math.random = Math.random.rz; rzRescue(); }
+else if (typeof S !== 'undefined' && S) rzNormal();
+
+</script>
+<script type="text/x-app" data-order="19">
+/* ============================================================
+   v2-F · permisos por campo, línea temporal, textos y contenido (prefijo fz)
+   - P0-2  canSee() (definido en el núcleo) aplicado a búsquedas, ficha y listas
+   - P0-3  línea temporal ordenada, sin asuntos repetidos en el ejemplo y sin «system»
+   - P1-7  Inicio del espacio real: sin «restablecer», gráficos vacíos con acción, 0 € en gris
+   - P1-8  barra lateral: sin contadores a 0 y carpeta «Objetos»
+   - P1-9  porcentajes «10 %» (la agrupación de miles va en money, money2 y tablas)
+   - P1-11 textos de Listas y etiquetas y otros restos técnicos
+   - P2    nombre de pila en la bienvenida y saludo sin «Admin»; paleta vacía con favoritos y recientes
+   ============================================================ */
+'use strict';
+const FZ = { busy: false };
+const fzSample = () => { try { return typeof uxIsSample === 'function' && typeof wsActive === 'function' && !!uxIsSample(wsActive()); } catch (_) { return false; } };
+const fzSee = (obj, key) => (typeof canSee === 'function' ? canSee(obj, key) : true);
+
+/* ---------------------------------------------------------------- P0-2 · campos ocultos fuera de la ficha */
+/** Texto de búsqueda de un contacto (emails y teléfonos, también los secundarios) sin los campos ocultos para el rol. */
+function fzContactText(c) {
+  if (!c) return '';
+  const em = fzSee('contacts', 'email') ? (typeof proEmails === 'function' ? proEmails(c) : [c.email].filter(Boolean)) : [];
+  const ph = fzSee('contacts', 'phone') ? (typeof proPhones === 'function' ? proPhones(c) : [c.phone].filter(Boolean)) : [];
+  return [...em, ...ph, ...ph.map((p) => String(p).replace(/^\+\d{2}/, ''))].join(' ');
+}
+/* búsqueda global reutilizable (pxSearch): sin campos ocultos */
+if (typeof pxGlobalRaw === 'function' && typeof PX_GFIELDS !== 'undefined') {
+  pxGlobalRaw = function (obj, it) {
+    let raw = ''; const sep = typeof PX_SEP !== 'undefined' ? PX_SEP : '\u0001';
+    for (const k of PX_GFIELDS) { const v = it[k]; if (v != null && typeof v !== 'object' && fzSee(obj, k)) raw += sep + v; }
+    if (Array.isArray(it.tags) && fzSee(obj, 'tags')) raw += sep + it.tags.join(sep);
+    if (Array.isArray(it.emails) && fzSee(obj, 'email')) raw += sep + it.emails.map((e) => (e && e.value) || '').join(sep);
+    if (it.custom && typeof it.custom === 'object') for (const [k, v] of Object.entries(it.custom)) if (v != null && typeof v !== 'object' && fzSee(obj, 'custom.' + k)) raw += sep + v;
+    if (it.companyId && obj !== 'companies' && fzSee(obj, 'companyId')) { const co = byId('companies', it.companyId); if (co) raw += sep + co.name; }
+    return raw;
+  };
+}
+/* buscador del tablero de contactos: el texto extra (emails y teléfonos) respeta los permisos */
+const _fzApplyFilters = applyFilters;
+applyFilters = function (obj, cols, items) {
+  const u = obj === 'contacts' ? uiOf(obj) : null;
+  if (!u || !u.q || (fzSee('contacts', 'email') && fzSee('contacts', 'phone'))) return _fzApplyFilters.apply(this, arguments);
+  const q0 = u.q; u.q = ''; let out; try { out = _fzApplyFilters.apply(this, arguments); } finally { u.q = q0; }
+  const q = norm(q0);
+  return out.filter((it) => norm(fzContactText(it)).includes(q) || cols.some((c) => { const v = colVal(c, it); const s = typeof v === 'object' && v ? v.label || JSON.stringify(v) : v; return norm(s).includes(q); }));
+};
+/* ficha › Detalles: los bloques «Emails» y «Teléfonos» (varios por contacto) siguen el permiso de Email y Teléfono */
+const _fzPanelDetails = panelDetails;
+panelDetails = function (obj, it) {
+  const html = _fzPanelDetails.apply(this, arguments);
+  if (obj !== 'contacts' || (fzSee('contacts', 'email') && fzSee('contacts', 'phone'))) return html;
+  const t = document.createElement('template'); t.innerHTML = html;
+  for (const [kind, key] of [['email', 'email'], ['phone', 'phone']]) {
+    if (fzSee('contacts', key)) continue;
+    t.content.querySelectorAll(`.pro-ci-wrap[data-kind="${kind}"]`).forEach((w) => { const dd = w.closest('dd'); const dt = dd && dd.previousElementSibling; if (dt && dt.tagName === 'DT') dt.remove(); if (dd) dd.remove(); });
+  }
+  return t.innerHTML;
+};
+
+/* ---------------------------------------------------------------- P0-3 · línea temporal */
+/** Fijadas primero y después de la más reciente a la más antigua (orden estable). */
+function fzSortActs(list) {
+  return list.map((a, i) => ({ a, i })).sort((x, y) => (!!y.a.pinned - !!x.a.pinned) || (String(y.a.at || '') < String(x.a.at || '') ? -1 : String(y.a.at || '') > String(x.a.at || '') ? 1 : x.i - y.i)).map((x) => x.a);
+}
+const _fzActsOf = actsOf;
+actsOf = function () { return fzSortActs(_fzActsOf.apply(this, arguments) || []); };
+/* asuntos alternativos para los datos de ejemplo: así cada ficha cuenta una historia sin repetirse */
+const FZ_ALT = {
+  call: ['Llamada de cualificación', 'Seguimiento de propuesta', 'Llamada de presentación', 'Llamada de seguimiento', 'Llamada para resolver dudas', 'Llamada sobre el presupuesto', 'Llamada sobre plazos', 'Llamada con el equipo técnico', 'Llamada de cierre', 'Llamada de revisión trimestral'],
+  email: ['Envío de información', 'Propuesta comercial', 'Resumen de la reunión', 'Envío de referencias', 'Respuesta a sus dudas', 'Presupuesto revisado', 'Recordatorio de próximos pasos', 'Documentación técnica', 'Confirmación de la reunión', 'Caso de éxito del sector'],
+  meeting: ['Demo del producto', 'Reunión de arranque', 'Visita a cliente', 'Reunión de seguimiento', 'Revisión de la propuesta', 'Reunión con dirección', 'Taller de requisitos', 'Presentación al equipo', 'Revisión del contrato', 'Comida de trabajo'],
+  note: ['Interesados en integración con su ERP', 'Decisión prevista para el próximo trimestre', 'Pidieron referencias de clientes del sector', 'Comparan con otro proveedor', 'Necesitan la aprobación de dirección', 'Presupuesto ajustado este año', 'Quieren empezar con un piloto', 'Valoran el soporte en español', 'Piden formación para el equipo', 'Revisarán la propuesta con compras'],
+};
+/** Quita los asuntos repetidos dentro de cada contacto, empresa, negocio y ticket. Devuelve cuántas actividades ha cambiado o quitado. */
+function fzDedupActs() {
+  const seen = new Map(); const keysOf = (a) => [a.contactId && 'c:' + a.contactId, a.companyId && 'o:' + a.companyId, a.dealId && 'd:' + a.dealId, a.ticketId && 't:' + a.ticketId].filter(Boolean);
+  const clash = (ks, s) => { const n = norm(s).trim(); return ks.some((k) => seen.get(k)?.has(n)); };
+  const mark = (ks, s) => { const n = norm(s).trim(); for (const k of ks) { if (!seen.has(k)) seen.set(k, new Set()); seen.get(k).add(n); } };
+  const drop = new Set(); let changed = 0;
+  const list = S.activities || [];
+  for (let i = list.length - 1; i >= 0; i--) { // de la más antigua a la más reciente: se conserva la primera
+    const a = list[i]; if (!a) continue; const ks = keysOf(a); if (!ks.length || !a.subject) continue;
+    if (clash(ks, a.subject)) {
+      let alt = (FZ_ALT[a.type] || []).find((s) => !clash(ks, s));
+      if (!alt) { const d = a.dealId && byId('deals', a.dealId); const ctx = d ? String(d.name).split(' · ')[0] : a.contactId ? (byId('contacts', a.contactId)?.firstName || '') : ''; if (ctx && !clash(ks, `${a.subject} (${ctx})`)) alt = `${a.subject} (${ctx})`; }
+      if (alt) { a.subject = alt; changed++; } else { drop.add(a); changed++; continue; }
+    }
+    mark(ks, a.subject);
+  }
+  if (drop.size) S.activities = list.filter((a) => !drop.has(a));
+  return changed;
+}
+/* una sola vez por siembra del espacio «Ejemplo» (una siembra nueva no lleva la marca) */
+function fzBootTimeline() {
+  try { if (!S || S.fzTl || !fzSample()) return; fzDedupActs(); S.fzTl = 1; save(); } catch (e) { console.warn(e); }
+}
+
+/* ---------------------------------------------------------------- P1-8 · barra lateral */
+const _fzNavItemCount = navItemCount;
+navItemCount = function () { const n = _fzNavItemCount.apply(this, arguments); return n === 0 ? null : n; };
+const FZ_OBJ_OLD = 'Objetos personalizados';
+function fzObjFolder() {
+  try {
+    const nav = typeof navEnsure === 'function' ? navEnsure() : null; if (!nav || !Array.isArray(nav.folders)) return;
+    for (const f of nav.folders) if (f.cus && !f.fzRen) { f.fzRen = 1; if (f.name === FZ_OBJ_OLD) { f.name = 'Objetos'; if (/Objetos personalizados$/.test(f.desc || '')) f.desc = 'Tableros que creas en Ajustes › Objetos personalizados'; } }
+  } catch (e) { console.warn(e); }
+}
+if (typeof wsCusSync === 'function') { const _fzWsCusSync = wsCusSync; wsCusSync = function () { const r = _fzWsCusSync.apply(this, arguments); fzObjFolder(); return r; }; }
+
+/* ---------------------------------------------------------------- P1-9 y P1-11 · textos */
+if (typeof NV_PHRASES !== 'undefined' && Array.isArray(NV_PHRASES)) {
+  NV_PHRASES.push(
+    [/(\d) ?%/g, '$1 %'],
+    [/ · rol (?=[A-ZÁÉÍÓÚ])/g, ' · '],
+    [/^Riesgo y sus motivos$/g, 'Riesgo'], [/Riesgo y sus motivos/g, 'Riesgo'],
+    [/^Fase \(comportamiento\)$/g, 'Fase (uso en el sistema)'],
+    [/\bSi un comportamiento del sistema se queda sin ninguna etiqueta\b/g, 'Si un uso del sistema se queda sin ninguna etiqueta'],
+    [/(\d+) comportamientos\b/g, '$1 usos en el sistema'],
+    [/^Escribe una nota… \(se registra en la línea temporal\)$/g, 'Escribe una nota…'],
+  );
+}
+/* Listas y etiquetas: dos frases y «Cómo funciona»; cada lista cuenta sus etiquetas */
+if (typeof cusListsPage === 'function') {
+  const _fzLists = cusListsPage;
+  cusListsPage = function () {
+    let h = _fzLists.apply(this, arguments);
+    h = h.replace(/(<div class="cus-lists"><div class="card"><h3>Listas y etiquetas<\/h3>)<p class="small muted" style="margin:0">[\s\S]*?<\/p>/, '$1<p class="small muted" style="margin:0">Aquí están todas las listas desplegables del CRM y del CLM. Puedes renombrar, recolorear, ordenar, ocultar o borrar cualquier etiqueta, también las del sistema. <button type="button" class="fz-link" data-act="fz-lists-help">Cómo funciona</button></p>');
+    return h.split('<tr>').map((row) => (/\d+ comportamientos/.test(row) ? row.replace(/(\d+) comportamientos/, () => { const n = (row.match(/class="cus-pi"/g) || []).length; return plural(n, 'etiqueta', 'etiquetas'); }) : row)).join('<tr>');
+  };
+}
+ACT['fz-lists-help'] = () => { const m = modal({ title: 'Cómo funcionan las listas y etiquetas', body: `<div class="fz-help"><p>Cada etiqueta tiene un <b>uso en el sistema</b>: el valor que entiende la lógica de la aplicación (plazos de respuesta, automatizaciones e informes). Por ejemplo, una etiqueta propia «Resuelto por proveedor» puede usarse como «Resuelto».</p><p>Si borras una etiqueta que está en uso, eliges a cuál pasan sus elementos. Si un uso del sistema se queda sin ninguna etiqueta, te avisamos de qué deja de funcionar.</p><p>También puedes editar las etiquetas desde el desplegable de cada celda, con «Editar etiquetas».</p></div>`, footer: '<button class="btn primary" id="fzHelpOk">Entendido</button>' }); const b = m.querySelector('#fzHelpOk'); if (b) b.onclick = () => m.close(); };
+
+/* ---------------------------------------------------------------- P2 · nombre de pila */
+const FZ_GENERIC = /^(admin|administrador|administradora|administrator|usuario|usuaria|user|direcci[oó]n|equipo|cuenta|test|prueba)$/i;
+/** Nombre de pila del usuario o '' si no lo tiene (vacío o genérico, como «Admin»). */
+function fzFirstName(u) { const n = String((u && u.name) || '').trim(); if (!n || FZ_GENERIC.test(n)) return ''; const f = n.split(/\s+/)[0]; return FZ_GENERIC.test(f) ? '' : f; }
+const FZ_NAME_KEY = 'fz-my-name';
+function fzSetMyName(v) {
+  v = String(v || '').replace(/\s+/g, ' ').trim().slice(0, 60); const u = me(); if (!v || !u || v === u.name) return false;
+  const from = u.name; u.name = v; audit('users', u.id, 'update', { nombre: [from, v] });
+  try { localStorage.setItem(FZ_NAME_KEY, JSON.stringify({ id: u.id, name: v })); } catch (_) { /* nada */ }
+  save(); try { render(); } catch (_) { /* nada */ } return true;
+}
+/* el nombre que diste en otro espacio sirve también aquí (mismo navegador, mismo usuario) */
+function fzBootName() {
+  try { const u = me(); if (!u || fzFirstName(u)) return; const j = JSON.parse(localStorage.getItem(FZ_NAME_KEY) || 'null'); if (j && j.id === u.id && j.name) { u.name = j.name; save(); } } catch (_) { /* nada */ }
+}
+const _fzModal = modal;
+modal = function (o) {
+  const m = _fzModal.apply(this, arguments);
+  try {
+    if (o && /^Bienvenido a tu CRM/.test(o.title || '') && m && !fzFirstName(me())) {
+      const first = m.querySelector('#uxWFirst'); const host = m.querySelector('.ux-welcome > div') || m.querySelector('.welcome') || m.querySelector('.mb');
+      if (host && !m.querySelector('#fzName')) {
+        const html = '<div class="fld fz-name"><label for="fzName">¿Cómo te llamas?</label><input class="inp" id="fzName" autocomplete="given-name" maxlength="60" placeholder="Tu nombre"/><small class="muted">Lo usamos para saludarte y en tus notas. Puedes cambiarlo en Ajustes › Usuarios y equipos.</small></div>';
+        if (first && host.contains(first)) first.insertAdjacentHTML('beforebegin', html); else host.insertAdjacentHTML('afterbegin', html);
+        const inp = m.querySelector('#fzName'); const keep = () => fzSetMyName(inp.value);
+        inp.addEventListener('change', keep);
+        inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); keep(); } });
+        m.addEventListener('click', (e) => { if (e.target.closest('button')) keep(); }, true);
+      }
+    }
+  } catch (e) { console.warn(e); }
+  return m;
+};
+
+/* ---------------------------------------------------------------- P1-7 · Inicio */
+function fzInicio() {
+  const sample = fzSample();
+  /* saludo sin «Admin» */
+  const h1 = document.querySelector('#head h1');
+  if (h1 && !fzFirstName(me())) for (const tn of [...h1.childNodes]) if (tn.nodeType === 3 && /^(Buenos días|Buenas tardes|Buenas noches), /.test(tn.nodeValue)) tn.nodeValue = tn.nodeValue.replace(/, .*$/, '');
+  /* «restablecer datos de ejemplo» solo en «Ejemplo» (en los demás, en Ajustes › Datos y copia) */
+  if (!sample) document.querySelectorAll('#toolbar a[data-act="reset-demo"]').forEach((a) => { const sp = a.parentElement; a.remove(); if (sp) for (const tn of [...sp.childNodes]) if (tn.nodeType === 3) tn.nodeValue = tn.nodeValue.replace(/\s*·\s*$/, ''); });
+  const deals = vis('deals'); const open = deals.filter((d) => d.status === 'open');
+  /* «Ganado este mes» a 0: en gris */
+  document.querySelectorAll('#content .kpi').forEach((k) => { const l = k.querySelector('.l'); const v = k.querySelector('.v'); if (l && v && /^Ganad[oa] este mes$/.test(l.textContent.trim())) { const zero = !/[1-9]/.test(v.textContent); v.classList.toggle('fz-zero', zero); if (zero) v.style.color = ''; } });
+  /* gráficos vacíos: estado vacío con acción */
+  const empty = (txt, btn) => `<div class="fz-empty"><p>${txt}</p>${btn}</div>`;
+  const canNew = can('edit');
+  document.querySelectorAll('#content .chart').forEach((ch) => {
+    const h3 = ch.querySelector('h3'); const t = h3 ? h3.textContent.trim() : ''; const bars = ch.querySelector('.bars'); if (!bars) return;
+    if (/^Pipeline por etapa$/.test(t) && !open.some((d) => Number(d.amount) > 0)) bars.outerHTML = empty(open.length ? 'Tus negocios abiertos aún no tienen importe.' : 'Aún no hay negocios abiertos.', open.length ? '<button class="btn outline sm" data-go="#/negocios">Ver el pipeline</button>' : canNew ? `<button class="btn outline sm" data-act="new-deal">${ico.plus}Crear negocio</button>` : '');
+    else if (/^Ganado por mes$/.test(t) && ![...bars.querySelectorAll('.bar b')].some((b) => /[1-9]/.test(b.textContent))) bars.outerHTML = empty(deals.length ? 'Aún no has ganado negocios en los últimos seis meses.' : 'Aún no hay negocios.', deals.length ? '<button class="btn outline sm" data-go="#/negocios">Ver el pipeline</button>' : canNew ? `<button class="btn outline sm" data-act="new-deal">${ico.plus}Crear negocio</button>` : '');
+  });
+}
+const _fzRender = render;
+render = function () {
+  const r = _fzRender.apply(this, arguments);
+  try { if (route.page === 'inicio' || !PAGES[route.page]) fzInicio(); } catch (e) { console.warn(e); }
+  return r;
+};
+
+/* ---------------------------------------------------------------- P2 · paleta vacía: favoritos y recientes juntos */
+/** Primeros elementos de la paleta vacía: favoritos (★) y después recientes, sin repetir y respetando permisos. */
+function fzPalStart() {
+  const P = nvP(); const out = []; const seen = new Set();
+  const add = (r, fav) => { const k = r.o + ':' + r.i; if (seen.has(k)) return; const it = nvGet(r.o, r.i); if (!it || !nvCanSee(r.o, it)) return; seen.add(k); out.push({ g: 'Favoritos y recientes', l: nvLabel(r.o, it), s: (fav ? 'Favorito · ' : '') + (NV_PAGE_TITLES[nvPageOf(r.o)] || ''), i: fav ? 'star' : NV_ICO[r.o] || 'list', run: () => nvOpenRec(r.o, r.i) }); };
+  (P.favs || []).slice(0, 20).forEach((f) => { if (out.length < 5) add(f, true); });
+  (P.recent || []).forEach((r) => { if (out.length < 8) add(r, false); });
+  return out;
+}
+
+/* ---------------------------------------------------------------- arranque */
+(function fzBoot() {
+  try { fzBootTimeline(); fzBootName(); fzObjFolder(); render(); if (typeof PANEL !== 'undefined' && PANEL) renderPanel(); } catch (e) { console.warn(e); }
+})();
+</script>
+<script type="text/x-app" data-order="20">
+/* ============================================================
+   V2-V · Acabado visual (segunda revisión · prefijo vz)
+   - P1-1 barra de herramientas por prioridad: [Nuevo] [Buscar]
+     [Persona] [Filtro] [Ordenar] [Agrupar] [Mi vista] … [Más];
+     lo demás va siempre a «Más»; deshacer/rehacer junto al título
+   - P1-2 columna de nombre 320 px (360 en Contratos y Negocios);
+     el ancho arrastrado es preferencia del usuario (S.prefs)
+   - P1-3 tutorial: «?» en la barra superior y en el menú del
+     avatar; el flotante solo mientras el tutorial está en curso
+   - P1-4/P1-5 ficha de contrato: verbos, paso a paso, hallazgos,
+     cláusulas, avatares, ley, riesgo; pestañas con flechas
+   - P1-6 móvil, P1-10 contraste, P2 pie de grupo
+   Envuelve: render, uxToolbarFit, ACT['ux-more'], xlWidth,
+   clmTabSummary, tutPlace, tutHide, btnUser.onclick
+   ============================================================ */
+const VZ = { pinSel: null, raf: 0 };
+const VZ_SVG = (d) => `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+const VZ_I = {
+  undo: '<path d="M9 7 4 12l5 5"/><path d="M4 12h11a5 5 0 0 1 0 10h-3"/>',
+  redo: '<path d="m15 7 5 5-5 5"/><path d="M20 12H9a5 5 0 0 0 0 10h3"/>',
+  help: '<circle cx="12" cy="12" r="9"/><path d="M9.6 9.2a2.5 2.5 0 0 1 4.8 1c0 1.7-2.4 2.1-2.4 3.6"/><path d="M12 17.2v.3"/>',
+  book: '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>',
+  key: '<rect x="2.5" y="6" width="19" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/>',
+  search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
+  left: '<path d="m15 6-6 6 6 6"/>',
+  right: '<path d="m9 6 6 6-6 6"/>',
+};
+const vzEsc = (s) => (typeof esc === 'function' ? esc(s) : String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]));
+
+/* =====================================================================
+   P1-1 · Barra de herramientas con prioridades
+   ===================================================================== */
+const VZ_PRI = ['b-person', 'b-filter', 'b-sort', 'b-group', 'nv-myview'];
+const VZ_SEC = ['b-hide', 'b-rules', 'b-boardrules', 'xl-cf', '*', 'b-export', 'import', 'xl-help'];
+const VZ_LAB = { 'b-hide': 'Ocultar columnas', 'xl-help': 'Ayuda: atajos de teclado', 'xl-cf': 'Formato condicional' };
+const vzAct = (x) => (x && x.dataset ? x.dataset.act || '' : '');
+const vzIsBoardTb = (tb) => !!tb && !tb.querySelector('.stabs') && !!tb.querySelector('[data-act="b-sort"], [data-act="b-person"], [data-act="nv-myview"]');
+/** Aplana envoltorios (span.xl-tb, div.row…) y lleva deshacer/rehacer a la cabecera. */
+function vzTbFlatten(tb) {
+  for (let pass = 0; pass < 3; pass++) {
+    let changed = false;
+    for (const ch of [...tb.children]) {
+      if (ch.id === 'uxMore' || !ch.matches('span, div') || ch.matches('.tsearch, .pill, .stabs') || !ch.children.length) continue;
+      const own = [...ch.childNodes].some((k) => k.nodeType === 3 && k.nodeValue.trim());
+      const ok = !own && [...ch.children].every((k) => k.matches('button, a, [data-act], [data-go], label, select, input, span, div'));
+      if (!ok || ch.matches('.muted, .xs, .hide-mobile')) continue;
+      ch.replaceWith(...ch.childNodes); changed = true;
+    }
+    if (!changed) break;
+  }
+  const h1 = document.querySelector('#head > h1');
+  const hist = [...tb.querySelectorAll('[data-act="xl-undo"], [data-act="xl-redo"]')];
+  if (h1 && hist.length) {
+    let box = h1.querySelector(':scope > .vz-hist');
+    if (!box) { box = document.createElement('span'); box.className = 'vz-hist'; box.setAttribute('role', 'group'); box.setAttribute('aria-label', 'Deshacer y rehacer'); h1.append(box); }
+    box.textContent = '';
+    for (const b of hist) {
+      b.classList.remove('ux-ovf'); const undo = vzAct(b) === 'xl-undo';
+      b.innerHTML = VZ_SVG(undo ? VZ_I.undo : VZ_I.redo); b.setAttribute('aria-label', undo ? 'Deshacer' : 'Rehacer'); if (!b.title) b.title = undo ? 'Deshacer (Ctrl+Z)' : 'Rehacer (Ctrl+Y)';
+      box.append(b);
+    }
+  }
+}
+/** Ordena y decide qué se ve: devuelve false si no es una barra de tablero. */
+function vzToolbar() {
+  const tb = document.getElementById('toolbar'); if (!vzIsBoardTb(tb)) { tb && tb.classList.remove('vz-tb'); return false; }
+  tb.classList.add('ux-tb', 'vz-tb');
+  vzTbFlatten(tb);
+  let more = tb.querySelector('#uxMore');
+  if (!more) { more = document.createElement('button'); more.type = 'button'; more.id = 'uxMore'; more.className = 'btn ux-more'; more.dataset.act = 'ux-more'; more.setAttribute('aria-haspopup', 'menu'); more.setAttribute('aria-expanded', 'false'); more.innerHTML = (typeof UX_I !== 'undefined' ? UX_I.more : '') + 'Más'; }
+  more.hidden = false;
+  // un repintado en segundo plano (p. ej. refreshSoft) con el menú abierto: el botón nuevo sigue marcado como abierto
+  if (document.querySelector('body > .dd.ux-moremenu')) { more.setAttribute('aria-expanded', 'true'); try { if (typeof UX !== 'undefined' && UX.ddFrom && UX.ddFrom.el && !document.contains(UX.ddFrom.el)) UX.ddFrom.el = more; } catch (_) { /* nada */ } }
+  const kids = [...tb.children].filter((x) => x !== more);
+  const prim = kids.filter((x) => x.matches('.btn.primary'));
+  const search = kids.filter((x) => x.matches('.tsearch'));
+  const pri = VZ_PRI.map((a) => kids.find((x) => vzAct(x) === a)).filter(Boolean);
+  const keep = kids.filter((x) => !prim.includes(x) && !search.includes(x) && !pri.includes(x) && (x.matches('select, input, .ux-keep') || !!x.querySelector('select, input:not([type=checkbox])')));
+  const rest = kids.filter((x) => !prim.includes(x) && !search.includes(x) && !pri.includes(x) && !keep.includes(x));
+  const legend = rest.filter((x) => !x.matches('button, a, [data-act], [data-go]'));
+  const acts = rest.filter((x) => !legend.includes(x));
+  const sec = [];
+  for (const k of VZ_SEC) { if (k === '*') { acts.forEach((x) => { if (!VZ_SEC.includes(vzAct(x))) sec.push(x); }); continue; } acts.filter((x) => vzAct(x) === k).forEach((x) => sec.push(x)); }
+  const order = [...prim, ...search, ...pri, ...keep, ...sec, ...legend, more];
+  // solo se mueve lo que no está en su sitio (evita repintados y pérdida de foco)
+  order.forEach((x, i) => { if (tb.children[i] !== x) tb.insertBefore(x, tb.children[i] || null); });
+  tb.querySelectorAll('.ux-compact').forEach((e) => e.classList.remove('ux-compact'));
+  [...prim, ...search, ...pri, ...keep].forEach((x) => x.classList.remove('ux-ovf'));
+  [...sec, ...legend].forEach((x) => { x.classList.add('ux-ovf'); x.dataset.vzSec = '1'; });
+  pri.forEach((x) => delete x.dataset.vzSec);
+  if (VZ.pinSel) { try { tb.querySelectorAll(VZ.pinSel).forEach((x) => x.closest('#toolbar > *')?.classList.add('vz-pin')); } catch (_) { /* selector raro */ } }
+  // si no cabe (móvil o columnas estrechas): fuera, de menos a más usado
+  const sw = () => (search[0] ? search[0].getBoundingClientRect().width : 999);
+  const fits = () => tb.scrollWidth <= tb.clientWidth + 1 && sw() >= Math.min(110, tb.clientWidth * 0.3);
+  const drop = [...pri].reverse();
+  let i = 0; while (!fits() && i < drop.length) drop[i++].classList.add('ux-ovf');
+  if (!fits()) { const pr = prim[0]; if (pr) { pr.classList.add('ux-compact'); if (!pr.getAttribute('aria-label')) pr.setAttribute('aria-label', pr.textContent.trim()); if (!pr.title) pr.title = pr.textContent.trim(); } }
+  const any = !!tb.querySelector('.ux-ovf');
+  more.hidden = !any;
+  more.classList.toggle('vz-dot', [...tb.querySelectorAll('.ux-ovf')].some((x) => x.classList.contains('on')));
+  more.title = more.classList.contains('vz-dot') ? 'Más acciones (hay un filtro u orden activo aquí dentro)' : 'Más acciones';
+  return true;
+}
+if (typeof uxToolbarFit === 'function') {
+  const _uxToolbarFitVz = uxToolbarFit;
+  uxToolbarFit = function () { try { if (vzToolbar()) return; } catch (e) { console.warn(e); } return _uxToolbarFitVz.apply(this, arguments); };
+}
+const _vzMoreE = ACT['ux-more'];
+ACT['ux-more'] = (arg, el) => {
+  const tb = document.getElementById('toolbar');
+  if (!vzIsBoardTb(tb)) return _vzMoreE && _vzMoreE(arg, el);
+  const hid = [...tb.querySelectorAll(':scope > .ux-ovf')];
+  const row = (x, i) => {
+    if (!x.matches('button, a, [data-act], [data-go]')) return x.textContent.trim() ? `<div class="ux-legend">${x.innerHTML}</div>` : '';
+    const a = vzAct(x); let lab = (x.textContent.trim() || x.getAttribute('aria-label') || x.title || '').replace(/\s+/g, ' ');
+    if (VZ_LAB[a]) { const m = /\(\d+\)\s*$/.exec(lab); lab = VZ_LAB[a] + (m ? ' ' + m[0] : ''); }
+    const icon = x.querySelector('svg') ? x.querySelector('svg').outerHTML : a === 'xl-help' ? VZ_SVG(VZ_I.key) : '';
+    return `<button type="button" role="menuitem" data-uxi="${i}" class="${x.classList.contains('on') ? 'on' : ''}" ${x.disabled ? 'disabled' : ''}>${icon}${vzEsc(lab)}</button>`;
+  };
+  const front = hid.filter((x) => !x.dataset.vzSec), back = hid.filter((x) => x.dataset.vzSec);
+  let html = front.map((x) => row(x, hid.indexOf(x))).join('');
+  if (front.length && back.length) html += '<div class="vz-msep" role="separator"></div>';
+  html += back.map((x) => row(x, hid.indexOf(x))).join('');
+  const box = dropdown(el, html || '<div class="ux-legend">No hay más acciones</div>', 'list ux-moremenu'); box.setAttribute('role', 'menu'); box.setAttribute('aria-label', 'Más acciones');
+  box.querySelectorAll('[data-uxi]').forEach((b) => (b.onclick = () => { const x = hid[Number(b.dataset.uxi)]; closeDd(); if (typeof UX !== 'undefined') { UX.trig = el; UX.trigAt = Date.now(); } x.click(); }));
+  box.querySelector('button:not([disabled])')?.focus();
+};
+
+/* =====================================================================
+   P1-2 · Columna de nombre: 320 px (360 en Contratos y Negocios)
+   El ancho arrastrado se guarda por usuario (S.prefs[usuario].colW,
+   lo apunta nvMoveWidths) y se usa antes que el del espacio.
+   ===================================================================== */
+const VZ_NAMEW = { contracts: 360, deals: 360 };
+const vzNameW = (obj) => VZ_NAMEW[obj] || 320;
+function vzUserW(obj, key) { try { const w = S.prefs && S.prefs[S.me] && S.prefs[S.me].colW && S.prefs[S.me].colW[obj] && S.prefs[S.me].colW[obj][key]; return typeof w === 'number' && w > 0 ? w : 0; } catch (_) { return 0; } }
+if (typeof xlWidth === 'function') {
+  const _xlWidthVz = xlWidth;
+  xlWidth = function (obj, key) {
+    try {
+      const live = typeof XL !== 'undefined' && XL.liveW && XL.liveW[key]; if (live) return live + 'px';
+      const uw = vzUserW(obj, key); if (uw) return uw + 'px';
+      const col = typeof findCol === 'function' ? findCol(key) : null; const k = obj + '|' + key; const B = S.nvColBase || {};
+      // otro usuario cambió el ancho: este ve el del espacio (el anterior al cambio)
+      const spaceW = k in B ? B[k] : (S.colOv && S.colOv[obj] && S.colOv[obj][key] && S.colOv[obj][key].w) || null;
+      if (col && col.type === 'name') return (spaceW || vzNameW(obj)) + 'px';
+      if (k in B) return (spaceW || (col && col.w) || 130) + 'px';
+    } catch (e) { console.warn(e); }
+    return _xlWidthVz.apply(this, arguments);
+  };
+}
+
+/* =====================================================================
+   P1-3 · Tutorial: menú de ayuda «?» y menú del avatar
+   ===================================================================== */
+function vzTutActive() { const t = document.getElementById('tut'), tip = document.getElementById('tutTip'); return !!((t && t.classList.contains('open')) || (tip && tip.classList.contains('on'))); }
+function vzTutSync() { const on = vzTutActive(); const was = document.body.classList.contains('vz-tut-on'); document.body.classList.toggle('vz-tut-on', on); if (on && !was && typeof uxTutPlace === 'function') { try { uxTutPlace(); requestAnimationFrame(() => { try { uxTutState(); uxTutPlace(); } catch (_) { /* nada */ } }); } catch (_) { /* nada */ } } }
+function vzTutOpen() {
+  closeDd(); const t = document.getElementById('tut'); if (!t) return;
+  t.classList.add('open'); if (typeof tutDrawPanel === 'function') tutDrawPanel(); vzTutSync();
+  setTimeout(() => t.querySelector('#tutStart, [data-step], button')?.focus(), 30);
+}
+function vzTutLabel() { try { const done = (TUT.done || []).length; return done ? `Seguir el tutorial · ${Math.round((100 * done) / STEPS.length)} %` : 'Tutorial guiado'; } catch (_) { return 'Tutorial guiado'; } }
+function vzHelpMenu(anchor) {
+  const box = dropdown(anchor, `<div class="vz-mh">Ayuda</div>
+    <button type="button" role="menuitem" class="vz-mi" data-vzh="tut">${VZ_SVG(VZ_I.book)}<span>${vzEsc(vzTutLabel())}<small>Capítulos con la pantalla resaltada</small></span></button>
+    <button type="button" role="menuitem" class="vz-mi" data-vzh="pal">${VZ_SVG(VZ_I.search)}<span>Buscar una acción<small>Ctrl K: ir a cualquier sitio o crear</small></span></button>
+    <button type="button" role="menuitem" class="vz-mi" data-vzh="keys">${VZ_SVG(VZ_I.key)}<span>Atajos de teclado<small>Moverse y editar como en una hoja</small></span></button>`, 'list vz-helpmenu');
+  box.setAttribute('role', 'menu'); box.setAttribute('aria-label', 'Ayuda'); anchor.setAttribute('aria-expanded', 'true');
+  box.querySelector('[data-vzh="tut"]').onclick = vzTutOpen;
+  box.querySelector('[data-vzh="pal"]').onclick = () => { closeDd(); if (ACT.palette) ACT.palette(); };
+  box.querySelector('[data-vzh="keys"]').onclick = () => { closeDd(); if (ACT['xl-help']) ACT['xl-help'](null, anchor); };
+  box.querySelector('button')?.focus();
+}
+function vzHelpInit() {
+  const icons = document.querySelector('.topbar .tb-icons'); if (!icons || document.getElementById('vzHelp')) return;
+  const b = document.createElement('button'); b.type = 'button'; b.className = 'ibtn'; b.id = 'vzHelp'; b.title = 'Ayuda y tutorial'; b.setAttribute('aria-label', 'Ayuda y tutorial'); b.setAttribute('aria-haspopup', 'menu'); b.setAttribute('aria-expanded', 'false');
+  b.innerHTML = VZ_SVG(VZ_I.help);
+  const before = document.getElementById('btnNotif') || icons.firstChild; icons.insertBefore(b, before);
+  b.onclick = () => vzHelpMenu(b);
+  // menú del avatar: añade «Tutorial guiado» al final
+  const u = document.getElementById('btnUser');
+  if (u && typeof u.onclick === 'function') {
+    const _o = u.onclick;
+    u.onclick = function (e) {
+      const r = _o.apply(this, arguments);
+      const box = document.querySelector('body > .dd:last-of-type');
+      if (box && !box.querySelector('[data-vzh]')) {
+        box.insertAdjacentHTML('beforeend', `<div class="vz-msep" role="separator" style="height:1px;background:var(--line2);margin:4px 0"></div><button type="button" class="vz-mi" data-vzh="tut">${VZ_SVG(VZ_I.book)}<span>${vzEsc(vzTutLabel())}</span></button><button type="button" class="vz-mi" data-vzh="help">${VZ_SVG(VZ_I.help)}<span>Ayuda y atajos</span></button>`);
+        box.querySelector('[data-vzh="tut"]').onclick = vzTutOpen;
+        box.querySelector('[data-vzh="help"]').onclick = () => { closeDd(); vzHelpMenu(document.getElementById('vzHelp')); };
+      }
+      return r;
+    };
+  }
+  // el flotante solo mientras el tutorial está en curso
+  const mo = new MutationObserver(vzTutSync);
+  ['tut', 'tutTip'].forEach((id) => { const el = document.getElementById(id); if (el) mo.observe(el, { attributes: true, attributeFilter: ['class'] }); });
+  vzTutSync();
+}
+if (typeof closeDd === 'function') { const _closeDdVz = closeDd; closeDd = function () { const r = _closeDdVz.apply(this, arguments); document.getElementById('vzHelp')?.setAttribute('aria-expanded', 'false'); return r; }; }
+/* enganches al tutorial (su bloque se ejecuta después de este) */
+function vzTutHooks() {
+  if (typeof tutPlace === 'function' && !tutPlace.vz) {
+    const _tp = tutPlace;
+    tutPlace = function (i) {
+      try { const st = STEPS[i]; VZ.pinSel = null; document.querySelectorAll('.vz-pin').forEach((x) => x.classList.remove('vz-pin')); const el = st && document.querySelector(st.sel); const ovf = el && el.closest('#toolbar > .ux-ovf'); if (ovf) { VZ.pinSel = st.sel; ovf.classList.add('vz-pin'); } } catch (e) { console.warn(e); }
+      return _tp.apply(this, arguments);
+    };
+    tutPlace.vz = true;
+  }
+  if (typeof tutHide === 'function' && !tutHide.vz) {
+    const _th = tutHide;
+    tutHide = function () { VZ.pinSel = null; document.querySelectorAll('.vz-pin').forEach((x) => x.classList.remove('vz-pin')); return _th.apply(this, arguments); };
+    tutHide.vz = true;
+  }
+  try {
+    const fin = (typeof STEPS !== 'undefined' ? STEPS : []).find((s) => s.id === 'fin');
+    if (fin && fin.sel === '#tutBtn') { fin.sel = '#vzHelp'; fin.b = 'Ya conoces el CRM. Vuelve a este tutorial cuando quieras desde el botón de ayuda («?») de la barra superior o desde el menú de tu avatar; cada capítulo te lleva a la pantalla y la resalta. Todo lo que cambies se queda guardado en este navegador.'; }
+  } catch (e) { console.warn(e); }
+  vzTutSync();
+}
+
+/* =====================================================================
+   P1-4 · Ficha de contrato
+   ===================================================================== */
+const VZ_VERB = {
+  review: (f) => (f === 'negotiation' || f === 'approval' ? 'Volver a revisión' : 'Enviar a revisión'),
+  negotiation: (f) => (f === 'review' ? 'Pasar a negociación' : 'Volver a negociación'),
+  approval: () => 'Pedir aprobación', approved: () => 'Aprobar', signing: () => 'Enviar a firma',
+  draft: (f) => (f === 'review' ? 'Volver a borrador' : 'Reabrir como borrador'), hold: () => 'Pausar', cancelled: () => 'Cancelar contrato',
+  active: () => 'Activar', expired: () => 'Marcar como vencido', terminated: () => 'Terminar', archived: () => 'Archivar', renewed: () => 'Marcar como renovado',
+};
+const VZ_STEP = { draft: 'Borrador', review: 'Revisión', negotiation: 'Negociación', approval: 'Aprobación', approved: 'Aprobado', signing: 'Firma', active: 'Activo' };
+function vzContractId() { const m = /^#\/contratos\/([^/]+)/.exec(location.hash || ''); return m && m[1] !== 'configuracion' && typeof contract === 'function' && contract(m[1]) ? m[1] : null; }
+function vzContractPage() {
+  const id = vzContractId(); if (!id || !document.getElementById('ctabs')) return;
+  const c = contract(id);
+  // transiciones con verbos (el estado de destino queda en el título y para lectores de pantalla)
+  document.querySelectorAll('#toolbar [data-act="clm-trans"]:not([data-vz])').forEach((b) => {
+    let a; try { a = JSON.parse(b.dataset.arg); } catch (_) { return; }
+    const verb = VZ_VERB[a.to] && VZ_VERB[a.to](c.status); if (!verb) return;
+    const dest = (CST[a.to] && CST[a.to].label) || a.to; const dot = b.querySelector('.gdot');
+    b.textContent = ''; if (dot) b.append(dot);
+    b.insertAdjacentHTML('beforeend', `${vzEsc(verb)}<span class="vz-sr"> (pasa a ${vzEsc(dest)})</span>`);
+    b.title = `Cambia el estado a «${dest}»`; b.dataset.vz = '1';
+  });
+  // paso a paso: etiquetas cortas; en móvil «Paso 3 de 7 · Negociación»
+  const steps = document.querySelector('#content > .steps');
+  if (steps && !steps.classList.contains('vz-steps')) {
+    steps.classList.add('vz-steps'); steps.setAttribute('aria-label', 'Fases del contrato');
+    const bs = [...steps.children];
+    bs.forEach((b, i) => { const k = CFLOW[i]; if (!k) return; b.title = CST[k].label; b.setAttribute('aria-label', CST[k].label + (b.classList.contains('cur') ? ' (fase actual)' : b.classList.contains('done') ? ' (hecha)' : '')); b.textContent = VZ_STEP[k] || CST[k].label; });
+    const ci = CFLOW.indexOf(c.status); const doneAll = ['active', 'renewed', 'expired', 'terminated', 'archived'].includes(c.status);
+    const n = CFLOW.length; const cur = ci >= 0 ? ci + 1 : doneAll ? n : 0; const lab = (CST[c.status] && CST[c.status].label) || c.status;
+    const txt = ci >= 0 ? `Paso ${cur} de ${n} · ${lab}` : doneAll ? `Ciclo completado · ${lab}` : `Fuera del flujo · ${lab}`;
+    steps.insertAdjacentHTML('afterend', `<div class="vz-stepm" style="--sc:${(CST[c.status] && CST[c.status].color) || 'var(--primary)'}"><i aria-hidden="true"></i><span>${vzEsc(txt)}</span><span class="vz-bar" aria-hidden="true"><b style="width:${Math.round((100 * cur) / n)}%"></b></span></div>`);
+  }
+  // cabecera: «Riesgo medio · 34/100» en una sola etiqueta; subtítulo sin «· » al empezar línea
+  const head = document.getElementById('head');
+  const sc = head && [...head.querySelectorAll('span.xs.muted')].find((s) => /^riesgo\s+\d+\s*\/\s*100$/i.test(s.textContent.trim()));
+  if (sc && CRISK[c.risk]) {
+    const lab = CRISK[c.risk].label; const pill = [...head.querySelectorAll('.pill')].find((p) => p.textContent.trim() === lab);
+    if (pill) { pill.textContent = `Riesgo ${lab.toLowerCase()} · ${c.riskScore}/100`; pill.classList.add('vz-risk'); pill.title = 'Nivel de riesgo y puntuación sobre 100'; sc.remove(); }
+  }
+  const sub = head && head.querySelector(':scope > h1 > span.muted');
+  if (sub && !sub.classList.contains('vz-sub')) { const t = sub.firstChild; if (t && t.nodeType === 3 && /^\s*·\s/.test(t.nodeValue)) { t.nodeValue = t.nodeValue.replace(/^\s*·\s+/, ''); sub.insertAdjacentHTML('afterbegin', '<span class="vz-sep" aria-hidden="true">· </span>'); } sub.classList.add('vz-sub'); }
+  // resumen: avatares en una línea y hallazgos en dos líneas con «Ver más»
+  document.querySelectorAll('#content .kv dd').forEach((dd) => {
+    const av = dd.firstElementChild; if (!av || !av.classList.contains('avatar') || dd.classList.contains('vz-who')) return;
+    const rest = [...dd.childNodes].filter((n) => n !== av); const s = document.createElement('span'); s.className = 'vz-whon'; s.textContent = rest.map((n) => n.textContent).join('').trim(); rest.forEach((n) => n.remove()); dd.append(s); dd.classList.add('vz-who');
+  });
+  document.querySelectorAll('#content .chart .row.small > .pill + .grow.ell').forEach((t) => {
+    const row = t.parentElement; row.classList.add('vz-find'); t.classList.remove('ell', 'grow'); t.classList.add('vz-ft');
+    t.innerHTML = `<span class="vz-clamp">${t.innerHTML}</span>`;
+  });
+  vzTabs();
+}
+/* Línea de cláusulas resumida y «Española» (sobre el HTML del resumen) */
+if (typeof clmTabSummary === 'function') {
+  const _clmTabSummaryVz = clmTabSummary;
+  clmTabSummary = function (c) {
+    let h = _clmTabSummaryVz.apply(this, arguments);
+    try {
+      const n = (c.clauses || []).length; const tpl = typeof ctpl === 'function' ? ctpl(c.templateId) : null; const pb = typeof cplaybook === 'function' ? cplaybook(c.playbookId) : null;
+      const tplName = tpl ? (tpl.code || String(tpl.name || '').split(' · ')[0] || tpl.name) : '';
+      let pbName = pb ? String(pb.name || '').replace(/^playbook\s+/i, '').replace(/\s*\/\s*/g, ', ') : '';
+      pbName = pbName ? pbName.charAt(0).toUpperCase() + pbName.slice(1) : '';
+      const line = [typeof plural === 'function' ? plural(n, 'cláusula', 'cláusulas') : n + ' cláusulas', tplName ? 'Plantilla: ' + vzEsc(tplName) : '', pbName ? 'Playbook: ' + vzEsc(pbName) : ''].filter(Boolean).join(' · ');
+      h = h.replace(/(<p class="xs muted mt8">)\d+ cláusulas? detectadas?[^<]*(<\/p>)/, `$1${line}$2`);
+      h = h.replace(/(<dt>Ley aplicable<\/dt><dd>)([^<])/, (m, a, ch) => a + ch.toLocaleUpperCase('es'));
+    } catch (e) { console.warn(e); }
+    return h;
+  };
+}
+
+/* =====================================================================
+   P1-5 · Pestañas de la ficha de contrato: degradado y flechas
+   ===================================================================== */
+function vzTabs() {
+  const st = document.getElementById('ctabs'); if (!st) return;
+  let wrap = st.parentElement.classList.contains('vz-tabsx') ? st.parentElement : null;
+  if (!wrap) {
+    wrap = document.createElement('div'); wrap.className = 'vz-tabsx'; st.before(wrap); wrap.append(st);
+    wrap.insertAdjacentHTML('beforeend', `<button type="button" class="vz-arr vz-al" aria-label="Ver pestañas anteriores" title="Pestañas anteriores" tabindex="-1">${VZ_SVG(VZ_I.left)}</button><button type="button" class="vz-arr vz-ar" aria-label="Ver más pestañas" title="Más pestañas" tabindex="-1">${VZ_SVG(VZ_I.right)}</button>`);
+    const step = () => Math.max(120, st.clientWidth * 0.7);
+    wrap.querySelector('.vz-al').onclick = () => st.scrollBy({ left: -step() });
+    wrap.querySelector('.vz-ar').onclick = () => st.scrollBy({ left: step() });
+    st.addEventListener('scroll', () => vzTabsEdge(wrap, st), { passive: true });
+  }
+  vzTabsEdge(wrap, st);
+}
+function vzTabsEdge(wrap, st) {
+  const max = st.scrollWidth - st.clientWidth;
+  wrap.classList.toggle('vz-l', max > 1 && st.scrollLeft > 2);
+  wrap.classList.toggle('vz-r', max > 1 && st.scrollLeft < max - 2);
+}
+
+/* =====================================================================
+   P1-10 · Contraste: texto de la barra de cronograma con inkOn
+   ===================================================================== */
+const vzRgbOf = (s) => (typeof uxRgb === 'function' ? uxRgb(s) : null);
+function vzInkOn(bg) {
+  const c = vzRgbOf(bg); if (!c || typeof uxCr !== 'function') return '#ffffff';
+  return uxCr({ r: 255, g: 255, b: 255, a: 1 }, c) >= uxCr({ r: 31, g: 32, b: 51, a: 1 }, c) ? '#ffffff' : '#1f2033';
+}
+window.vzInkOn = vzInkOn;
+/** Texto sobre la barra de cronograma: blanco u oscuro (inkOn) y, si ninguno llega a 4,5:1, el tono de la barra se ajusta lo mínimo. */
+function vzTimelineInk(root) {
+  if (typeof uxCr !== 'function') return;
+  (root || document).querySelectorAll('.tlbar > span:not(.short)').forEach((s) => {
+    const cur = getComputedStyle(s).backgroundColor; if (s.dataset.vzSet === cur) return;
+    const c0 = vzRgbOf(cur); if (!c0 || c0.a === 0) return;
+    const W = { r: 255, g: 255, b: 255, a: 1 }, D = { r: 31, g: 32, b: 51, a: 1 };
+    const white = uxCr(W, c0) >= uxCr(D, c0); const fg = white ? W : D; let bg = { ...c0, a: 1 }; let i = 0;
+    while (uxCr(fg, bg) < 4.6 && i++ < 30) bg = white ? { r: bg.r * 0.94, g: bg.g * 0.94, b: bg.b * 0.94, a: 1 } : { r: bg.r + (255 - bg.r) * 0.12, g: bg.g + (255 - bg.g) * 0.12, b: bg.b + (255 - bg.b) * 0.12, a: 1 };
+    s.style.color = white ? '#ffffff' : '#1f2033'; if (i) s.style.backgroundColor = uxCss(bg);
+    s.dataset.vzSet = getComputedStyle(s).backgroundColor;
+  });
+}
+
+/* =====================================================================
+   P2 · Pie de grupo: rango de fechas → fecha más próxima si no cabe
+   ===================================================================== */
+const VZ_RNG = /^(\d{1,2} [a-zñé]{3,4}\.?(?: \d{4})?) – (\d{1,2} [a-zñé]{3,4}\.?(?: \d{4})?)$/i;
+function vzRangeItems(sum) {
+  const tbl = sum.parentElement && sum.parentElement.querySelector(':scope > .tbl'); if (!tbl) return null;
+  try { if (tbl.dataset.pxv && typeof PX !== 'undefined' && PX.vt && PX.vt.get(tbl.dataset.pxv)) return PX.vt.get(tbl.dataset.pxv).items; } catch (_) { /* nada */ }
+  const obj = typeof CURRENT !== 'undefined' && CURRENT ? CURRENT.obj : null; if (!obj) return null;
+  return [...tbl.querySelectorAll(':scope > .r .cb input[data-arg]')].map((i) => { try { return byId(obj, JSON.parse(i.dataset.arg).id); } catch (_) { return null; } }).filter(Boolean);
+}
+function vzFooterDates() {
+  document.querySelectorAll('#content .sumrow > .cell').forEach((cell) => {
+    if (cell.querySelector('.vz-rng')) { // ya resuelto: vuelve al rango si ahora cabe
+      if (cell.dataset.vzFull && cell.clientWidth >= Number(cell.dataset.vzNeed || 0)) { cell.innerHTML = cell.dataset.vzFull; delete cell.dataset.vzFull; }
+      return;
+    }
+    const host = cell.querySelector(':scope > span.xs') || cell; if (host.children.length && host === cell) return;
+    const txt = host.textContent.trim(); const m = VZ_RNG.exec(txt); if (!m) return;
+    cell.title = `Fechas del grupo: del ${m[1]} al ${m[2]}`;
+    cell.style.whiteSpace = 'nowrap';
+    if (cell.scrollWidth <= cell.clientWidth + 1) return;
+    // fecha más próxima a hoy dentro del grupo
+    let near = null;
+    try {
+      const key = cell.dataset.xlsum; const col = key && typeof findCol === 'function' ? findCol(key) : null; const items = col ? vzRangeItems(cell.parentElement) : null;
+      if (col && items && items.length) {
+        const today = typeof dayISO === 'function' ? dayISO() : new Date().toISOString().slice(0, 10); const t0 = Date.parse(today);
+        let best = null, bd = Infinity;
+        for (const it of items) { const v = colVal(col, it); if (!v) continue; const d = Date.parse(String(v).slice(0, 10)); if (isNaN(d)) continue; const dist = d >= t0 ? d - t0 : (t0 - d) * 1.0001; if (dist < bd) { bd = dist; best = v; } }
+        if (best) near = { t: fdate(best), fut: Date.parse(String(best).slice(0, 10)) >= t0 };
+      }
+    } catch (e) { console.warn(e); }
+    if (!near) near = { t: m[1], fut: true };
+    cell.dataset.vzFull = cell.innerHTML; cell.dataset.vzNeed = String(cell.scrollWidth);
+    cell.innerHTML = `<span class="vz-rng"><b>${vzEsc(near.t)}</b><small>${near.fut ? 'la más próxima' : 'la más reciente'}</small></span><span class="vz-sr">Rango del grupo: del ${vzEsc(m[1])} al ${vzEsc(m[2])}</span>`;
+  });
+}
+
+/* =====================================================================
+   Enganches: después de pintar
+   ===================================================================== */
+function vzLate() {
+  VZ.raf = 0;
+  try { vzToolbar(); } catch (e) { console.warn(e); }
+  try { const st = document.getElementById('ctabs'); if (st && st.parentElement.classList.contains('vz-tabsx')) vzTabsEdge(st.parentElement, st); } catch (e) { console.warn(e); }
+  try { vzTimelineInk(document.getElementById('content')); vzFooterDates(); vzFindMore(); } catch (e) { console.warn(e); }
+}
+function vzFindMore() {
+  document.querySelectorAll('#content .vz-find:not(.vz-open)').forEach((row) => {
+    const cl = row.querySelector('.vz-clamp'); if (!cl) return; const over = cl.scrollHeight > cl.clientHeight + 1; let b = row.querySelector('.vz-more');
+    if (over && !b) {
+      row.querySelector('.vz-ft').insertAdjacentHTML('beforeend', '<button type="button" class="vz-more" aria-expanded="false">Ver más</button>'); b = row.querySelector('.vz-more');
+      b.onclick = () => { const open = row.classList.toggle('vz-open'); b.textContent = open ? 'Ver menos' : 'Ver más'; b.setAttribute('aria-expanded', String(open)); };
+    } else if (!over && b && !row.classList.contains('vz-open')) b.remove();
+  });
+}
+const vzSchedule = () => { if (!VZ.raf) VZ.raf = requestAnimationFrame(vzLate); };
+function vzAfterRender() {
+  try { vzToolbar(); } catch (e) { console.warn(e); }
+  try { vzContractPage(); } catch (e) { console.warn(e); }
+  try { vzTimelineInk(document.getElementById('content')); } catch (e) { console.warn(e); }
+  vzSchedule();
+}
+const _renderVz = render;
+render = function () { const r = _renderVz.apply(this, arguments); vzAfterRender(); return r; };
+new MutationObserver((ms) => { if (ms.some((m) => m.addedNodes.length)) vzSchedule(); }).observe(document.getElementById('content'), { childList: true, subtree: true });
+addEventListener('resize', vzSchedule);
+(function vzInit() {
+  try { vzHelpInit(); } catch (e) { console.warn(e); }
+  setTimeout(() => { try { vzTutHooks(); } catch (e) { console.warn(e); } }, 0);
+})();
+</script>
+<script type="text/x-app" data-order="21">
 /* ============================================================
    Tutorial guiado · pasos con resaltado en pantalla
    ============================================================ */
