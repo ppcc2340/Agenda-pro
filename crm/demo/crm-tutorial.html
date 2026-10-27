@@ -995,7 +995,7 @@ input[type=checkbox]:not(.switch),input[type=radio]{min-width:18px;min-height:18
     let conflict = false;
     try {
       let json = null, payload = null;
-      if (sD) { json = raw != null ? raw : await E.serialize(); payload = E.enc ? { enc: await encBytes(enc8.encode(json), E.enc) } : { json }; }
+      if (sD) { json = raw != null ? raw : await E.serialize(); E.inflight = E.enc ? null : json; payload = E.enc ? { enc: await encBytes(enc8.encode(json), E.enc) } : { json }; }
       const t = E.tx(['spaces', 'meta'], 'readwrite'); const sp = t.objectStore('spaces'); const mt = t.objectStore('meta'); const p = done(t);
       let newRev = E.base;
       const g = sp.get(E.key);
@@ -1010,6 +1010,7 @@ input[type=checkbox]:not(.switch),input[type=radio]{min-width:18px;min-height:18
       try { await p; } catch (e3) { throw cbErr || e3; }
       if (sD) { E.base = newRev; if (json != null) E.M.set(E.key, json); }
       E.savedAt = Date.now(); E.lastErr = null; E.backoff = 0; setStatus('ok');
+      try { if (LS && LS.getItem('dx:journal')) { const j = JSON.parse(LS.getItem('dx:journal')); if (!j || j.key !== E.key || (j.rev || 0) <= E.base) LS.removeItem('dx:journal'); } } catch (_) { /* nada */ }
       if (E.bc) try { E.bc.postMessage({ t: 'rev', key: E.key, rev: E.base, keys: keys.concat(dels), from: tabId }); } catch (_) { /* nada */ }
       if (E.hooks.saved) try { E.hooks.saved(); } catch (_) { /* nada */ }
       return true;
@@ -1025,15 +1026,22 @@ input[type=checkbox]:not(.switch),input[type=radio]{min-width:18px;min-height:18
       const wait = [1000, 5000, 30000][Math.min(E.backoff, 2)]; E.backoff++;
       clearTimeout(E.t); E.t = setTimeout(E.flush, wait);
       return false;
-    } finally { E.writing = false; }
+    } finally { E.writing = false; E.inflight = null; }
   };
   E.flushNow = async () => { let n = 0; while (E.writing && n++ < 200) await new Promise((r) => setTimeout(r, 25)); return E.flush(); };
   /* al cerrar: escritura síncrona de lo pendiente (sin cifrado no hace falta esperar) */
   E.flushSync = () => {
+    // una escritura asíncrona en curso puede no llegar a confirmarse al descargar la página: su contenido va al diario
+    if (E.on && !E.ro && E.writing && E.inflight && !E.sDirty) { try { if (LS) LS.setItem('dx:journal', JSON.stringify({ key: E.key, rev: E.base + 1, at: Date.now(), json: E.inflight, meta: {} })); } catch (_) { /* sin sitio */ } }
     if (!E.on || E.ro || !E.db || !E.pendingWork()) return;
     try {
       const t = E.tx(['spaces', 'meta'], 'readwrite'); const sp = t.objectStore('spaces'); const mt = t.objectStore('meta');
-      if (E.sDirty && !E.enc) { const json = E.sRaw != null ? E.sRaw : E.serialize(); sp.put({ key: E.key, json, rev: E.base + 1, at: Date.now() }); E.base += 1; E.sDirty = false; E.sRaw = null; }
+      if (E.sDirty && !E.enc) {
+        const json = E.sRaw != null ? E.sRaw : E.serialize(); sp.put({ key: E.key, json, rev: E.base + 1, at: Date.now() }); E.base += 1; E.sDirty = false; E.sRaw = null;
+        // diario síncrono: la transacción de IndexedDB lanzada al cerrar no siempre llega a confirmarse si la página se recarga
+        const meta = {}; for (const k of E.dirty) if (E.M.has(k) && !E.isSpace(k)) meta[k] = E.M.get(k);
+        try { if (LS) LS.setItem('dx:journal', JSON.stringify({ key: E.key, rev: E.base, at: Date.now(), json, meta })); } catch (_) { /* sin sitio: queda la transacción */ }
+      }
       for (const k of E.dirty) { if (!E.M.has(k)) continue; if (E.isSpace(k)) sp.put({ key: k, json: E.M.get(k), rev: 1, at: Date.now() }); else mt.put({ k, v: E.M.get(k) }); }
       for (const k of E.del) { sp.delete(k); mt.delete(k); }
       E.dirty.clear(); E.del.clear(); if (t.commit) t.commit();
@@ -1270,6 +1278,13 @@ input[type=checkbox]:not(.switch),input[type=radio]{min-width:18px;min-height:18
         const r = await askPassword(active, why); E.enc = r.enc; E.M.set(E.key, r.json);
       } else E.M.set(E.key, active.json);
     }
+    try {
+      const j = LS && JSON.parse(LS.getItem('dx:journal') || 'null');
+      if (j && j.key === E.key && typeof j.json === 'string' && !(active && active.enc) && (j.rev || 0) > ((active && active.rev) || 0)) {
+        E.M.set(E.key, j.json); for (const [k, v] of Object.entries(j.meta || {})) { E.M.set(k, v); E.dirty.add(k); }
+        E.base = (active && active.rev) || 0; E.journalRecovered = true;
+      } else if (j) LS.removeItem('dx:journal');
+    } catch (_) { /* diario ilegible: se ignora */ }
     try { E.bc = new BroadcastChannel('crm-clm'); E.bc.onmessage = onMsg; } catch (_) { E.bc = null; }
     if (E.locks) {
       const got = await new Promise((res) => {
@@ -1280,6 +1295,7 @@ input[type=checkbox]:not(.switch),input[type=radio]{min-width:18px;min-height:18
     const fac = makeFacade();
     try { Object.defineProperty(window, 'localStorage', { configurable: true, enumerable: true, get: () => fac }); } catch (_) { runBlocks(); return; }
     E.on = true; E.engine = 'indexeddb';
+    if (E.journalRecovered && !E.ro) { E.sDirty = true; E.schedule(0); }
     const raw = E.M.get(E.key);
     if (raw != null && !E.ro) { let okj = false; try { const d = JSON.parse(raw); okj = !!d && d.version === 1; } catch (_) { okj = false; } if (!okj) await E.snapCreate('rescue', raw).catch(() => {}); }
     runBlocks();
@@ -8927,6 +8943,18 @@ if (typeof pxLaneDrop === 'function' && ACT['ux-kmove']) {
     }));
   };
 }
+/* - La celda activa de la rejilla conserva el foco aunque la virtualización repinte su fila
+     (si una tecla de la rejilla acaba de moverla y el foco ha caído en <body>) */
+(() => {
+  let gridKeyAt = 0;
+  document.addEventListener('keydown', (e) => { if (e.target && e.target.closest && e.target.closest('#content .tbl')) gridKeyAt = Date.now(); }, true);
+  const refocus = () => {
+    if (Date.now() - gridKeyAt > 1000) return; const a = document.activeElement; if (a && a !== document.body) return;
+    const cell = document.querySelector('#content .tbl .xc.xl-act'); if (cell) { if (!cell.hasAttribute('tabindex')) cell.setAttribute('tabindex', '-1'); cell.focus({ preventScroll: true }); }
+  };
+  const content = document.getElementById('content');
+  if (content && window.MutationObserver) new MutationObserver(() => requestAnimationFrame(refocus)).observe(content, { childList: true, subtree: true });
+})();
 </script>
 <script type="text/x-app" data-order="17">
 /* ============================================================
