@@ -72,6 +72,12 @@ Pendiente de operación (no de código): copia de seguridad diaria del archivo S
 - **Seguridad y rendimiento:** las automatizaciones que entran en bucle se desactivan; el cambio de tipo de una columna se puede deshacer; las tablas y el kanban se cargan por páginas (miles de filas sin bloquear la página).
 - **Guardado:** si el almacenamiento del navegador se llena, aparece un aviso.
 
+**Camino a 10/10** (`diagnostico_e_instrucciones_10_crm_clm.txt`). Requisito a requisito, con su prueba, en [`demo/ESTADO_10.md`](demo/ESTADO_10.md). Resumen:
+- **Datos y seguridad:** IndexedDB con arranque asíncrono, bloqueo entre pestañas, instantáneas, copia automática, comprobador de integridad, pantalla de error segura, cifrado con contraseña y 0 peticiones de red.
+- **Uso diario:** validación y deshacer universales, prevención de duplicados, búsqueda global y paleta de comandos, atajos, enlaces profundos, favoritos, preferencias por usuario, vocabulario renombrable y plantillas de espacio.
+- **Contratos:** impresión o PDF, comparación de versiones, calendario, exportación .ics.
+- **Rendimiento y accesibilidad:** tablas virtualizadas, rejilla accesible, contraste AA en claro y oscuro, foco correcto y espacio «Ejemplo» separado.
+
 Esta parte corresponde a `cambios_crm_clm_para_claude_code.txt`, que se aplicó literalmente y se verificó con sus pruebas F1–F5. Hay un bloque de integración que mete los objetos personalizados en las carpetas.
 
 La demo incluye también la pestaña **Contratos (CLM)** con el mismo principio: tablero por estado, solicitud guiada, plantillas y cláusulas, revisión contra playbook, aprobaciones, firma simulada con OTP y evidencias, obligaciones, hitos, pagos, enmiendas, renovaciones, terminación, informes y configuración; el tutorial tiene un capítulo «Contratos» con diez pasos.
