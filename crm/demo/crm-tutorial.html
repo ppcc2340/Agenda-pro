@@ -1026,9 +1026,9 @@ body:not(.vz-tut-on) #tutBtn,body:not(.vz-tut-on) #uxTutFold{display:none!import
 .amu-x:hover{background:var(--hover);color:var(--ink)}
 .amu-x.right{margin-left:auto}
 /* ---------- listado */
-.head .amu-help{display:inline-flex;align-items:center;gap:4px;border:0;background:transparent;border-radius:12px;padding:0 6px 0 2px;color:var(--ink2);font-size:12px;font-weight:600;min-height:24px}
-.head .amu-help:hover{background:var(--hover);color:var(--ink)}
-.head .amu-help .amu-i{width:16px;height:16px}
+.head h1 .amu-help{width:28px;height:28px;border:0;background:transparent;border-radius:50%;display:inline-grid;place-items:center;color:var(--ink2);margin-left:2px;font-size:14px;font-weight:400}
+.head h1 .amu-help:hover{background:var(--hover);color:var(--ink)}
+.amu-morebtn{white-space:nowrap}
 .amu-links2{display:inline-flex;gap:14px;flex-wrap:wrap}
 .amu-link2{display:inline-flex;align-items:center;gap:4px;color:var(--ux-ink-primary,#0060b9);font-size:12px;font-weight:600;text-decoration:none}
 .amu-link2:hover{text-decoration:underline}
@@ -13481,10 +13481,8 @@ amu.emptyHtml = function (board) {
 function amuListPage() {
   const ui = amu.ui(); const all = amu.rules(); const t0 = performance.now();
   const nOut = amu.has('amOut') && amOut.outbox ? amOut.outbox('pending').length : 0; const nTpl = ((S.am && S.am.templates) || []).length;
-  const links = [nOut ? `<a href="#/automatizaciones/salida" class="amu-link2">${amu.ico('mail')}Correos por enviar · ${nOut}</a>` : '', nTpl ? `<a href="#/automatizaciones/plantillas" class="amu-link2">${amu.ico('doc')}Plantillas</a>` : ''].filter(Boolean).join('');
-  const nAlert = all.filter(amu.hasAlert).length;
-  const ioBtn = amu.has('amIO') && typeof amIO.exportRules === 'function' ? `<button class="btn" data-act="amu-export" data-arg="">${amu.ico('download')}Exportar</button>` : '';
-  setHead({ title: 'Automatizaciones', desc: `<span class="amu-links2"><button type="button" class="amu-help" data-act="amu-help" aria-label="Ayuda: qué es una automatización">${amu.ico('help')}Qué es una automatización</button>${links}</span>`, toolbar: all.length ? `<button class="btn primary" data-act="auto-new">${ico.plus}Nueva automatización</button><label class="tsearch"><span class="sr-only">Buscar automatizaciones</span>${ico.search}<input placeholder="Buscar" value="${esc(ui.q || '')}" data-amuq="1" aria-label="Buscar automatizaciones"/></label><button class="btn ${Object.keys(ui.filters).some((k) => ui.filters[k]) ? 'on' : ''}" data-act="amu-filter" aria-haspopup="dialog">${ico.filter}Filtrar</button>${ioBtn}` : '' });
+  const nAlert = all.filter(amu.hasAlert).length; amu.listExtras = { nOut, nTpl };
+  setHead({ title: 'Automatizaciones', extra: ` <button type="button" class="amu-help" data-act="amu-help" aria-label="Ayuda sobre automatizaciones">${amu.ico('help')}</button>`, desc: '', toolbar: all.length ? `<button class="btn primary" data-act="auto-new">${ico.plus}Nueva automatización</button><label class="tsearch"><span class="sr-only">Buscar automatizaciones</span>${ico.search}<input placeholder="Buscar" value="${esc(ui.q || '')}" data-amuq="1" aria-label="Buscar automatizaciones"/></label>${all.length >= 10 ? `<button class="btn ${Object.keys(ui.filters).some((k) => ui.filters[k]) ? 'on' : ''}" data-act="amu-filter" aria-haspopup="dialog">${ico.filter}Filtrar</button>` : ''}<button class="btn amu-morebtn" data-act="amu-more" aria-haspopup="menu" aria-expanded="false">Más${nOut ? ` · ${nOut}` : ''} ▾</button>` : '' });
   const content = document.getElementById('content');
   if (!all.length) { content.innerHTML = amu.emptyHtml((S.ui.amuBoard) || 'deals'); return; }
   const tabs = [['on', 'Activas', all.filter((r) => r.on).length], ['off', 'Pausadas', all.filter((r) => !r.on).length], ['alert', 'Con avisos', nAlert]];
@@ -13501,7 +13499,7 @@ function amuListPage() {
     ui.fold = ui.fold || {};
     body = `<div class="amu-row amu-groupby"><span class="amu-hint">Agrupar por</span><select class="inp amu-sel" data-amugroup="1" aria-label="Agrupar por"><option value="board" ${by === 'board' ? 'selected' : ''}>tablero</option><option value="folder" ${by === 'folder' ? 'selected' : ''}>carpeta</option></select></div>` + [...groups.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([k, rs]) => `<details class="amu-group" ${ui.fold[k] ? '' : 'open'} data-gkey="${esc(k)}"><summary><b>${esc(k)}</b> <span class="amu-hint">· ${rs.length}</span></summary><div role="list">${rs.map((r) => amu.rowHtml(r, actMap.get(r.id))).join('')}</div></details>`).join('');
   } else body = `<div role="list" aria-label="Automatizaciones">${list.sort(order).map((r) => amu.rowHtml(r, actMap.get(r.id))).join('')}</div>`;
-  content.innerHTML = `<div class="amu-tabs stabs" role="tablist" aria-label="Estado">${tabs.map(([k, l, n]) => `<button role="tab" aria-selected="${tab === k}" class="${tab === k ? 'active' : ''}" data-act="amu-tab" data-arg="${k}">${l}${n ? ` · ${n}` : ''}</button>`).join('')}</div>${chips ? `<div class="amu-chips amu-filterchips">${chips}</div>` : ''}${list.length ? body : `<div class="empty">${tab === 'on' ? 'No hay automatizaciones activas.' : tab === 'off' ? 'No hay automatizaciones pausadas.' : 'Ninguna automatización necesita tu atención.'}${ui.q ? ' Prueba con otra búsqueda.' : ''}</div>`}<p class="amu-foot-link"><button type="button" class="amu-link" data-act="amu-legacy" data-arg="log">Historial completo, programadas y aprobaciones</button></p>`;
+  content.innerHTML = `<div class="amu-tabs stabs" role="tablist" aria-label="Estado">${tabs.map(([k, l, n]) => `<button role="tab" aria-selected="${tab === k}" class="${tab === k ? 'active' : ''}" data-act="amu-tab" data-arg="${k}">${l}${n ? ` · ${n}` : ''}</button>`).join('')}</div>${chips ? `<div class="amu-chips amu-filterchips">${chips}</div>` : ''}${list.length ? body : `<div class="empty">${tab === 'on' ? 'No hay automatizaciones activas.' : tab === 'off' ? 'No hay automatizaciones pausadas.' : 'Ninguna automatización necesita tu atención.'}${ui.q ? ' Prueba con otra búsqueda.' : ''}</div>`}`;
   amu.listMs = Math.round((performance.now() - t0) * 10) / 10;
   const q = content.ownerDocument.querySelector('[data-amuq]'); if (q) q.oninput = () => { ui.q = q.value; clearTimeout(amu.qT); amu.qT = setTimeout(() => { const pos = q.selectionStart; render(); const q2 = document.querySelector('[data-amuq]'); if (q2) { q2.focus(); q2.setSelectionRange(pos, pos); } }, 200); };
   const g = content.querySelector('[data-amugroup]'); if (g) g.onchange = () => { ui.group = g.value; render(); };
@@ -13514,6 +13512,21 @@ ACT['amu-help'] = (_, el) => {
   m.querySelector('[data-close2]').onclick = () => { m.close(); if (el && el.focus) el.focus(); };
 };
 ACT['amu-legacy'] = (v) => { S.ui.view.automatizaciones = v || 'log'; render(); };
+/* menú «Más ▾» de la cabecera: accesos secundarios (19.3), vistas del centro anterior e importar/exportar (I) */
+ACT['amu-more'] = (_, el) => {
+  const x = amu.listExtras || { nOut: 0, nTpl: 0 }; const io = amu.has('amIO');
+  const items = [];
+  if (x.nOut) items.push(['go', '#/automatizaciones/salida', 'mail', `Correos por enviar · ${x.nOut}`]);
+  if (x.nTpl) items.push(['go', '#/automatizaciones/plantillas', 'doc', 'Plantillas']);
+  if (items.length) items.push(['sep']);
+  for (const [v, l] of [['recipes', 'Recetas'], ['log', 'Historial'], ['sched', 'Programadas'], ['usage', 'Uso y presupuesto'], ['approvals', 'Aprobaciones'], ['gov', 'Gobierno']]) items.push(['view', v, 'history', l]);
+  if (io) { items.push(['sep']); items.push(['act', 'am-import', 'download', 'Importar']); items.push(['act', 'am-export', 'download', 'Exportar']); }
+  const box = dropdown(el, items.map((it, i) => (it[0] === 'sep' ? '<div class="sep"></div>' : `<button type="button" role="menuitem" data-mi="${i}">${amu.ico(it[2])}${esc(it[3])}</button>`)).join(''), 'list amu-dd');
+  box.setAttribute('role', 'menu'); box.setAttribute('aria-label', 'Más'); el.setAttribute('aria-expanded', 'true');
+  const first = box.querySelector('button'); if (first) first.focus();
+  box.addEventListener('keydown', (e) => { const o = [...box.querySelectorAll('button')]; const i = o.indexOf(document.activeElement); if (e.key === 'ArrowDown') { e.preventDefault(); (o[i + 1] || o[0]).focus(); } if (e.key === 'ArrowUp') { e.preventDefault(); (o[i - 1] || o[o.length - 1]).focus(); } });
+  box.querySelectorAll('[data-mi]').forEach((b) => (b.onclick = () => { const it = items[Number(b.dataset.mi)]; closeDd(); el.setAttribute('aria-expanded', 'false'); if (it[0] === 'go') go(it[1]); else if (it[0] === 'view') ACT['amu-legacy'](it[1]); else if (it[0] === 'act' && ACT[it[1]]) ACT[it[1]](it[1] === 'am-import' ? 'page' : ''); }));
+};
 ACT['amu-idea'] = ({ board, code }) => { amUI.open(null, { board, recipe: code }); };
 ACT['amu-filter'] = (_, el) => {
   const ui = amu.ui(); const f = ui.filters; const rules = amu.rules();
@@ -13576,6 +13589,7 @@ ACT['amu-export'] = () => { try { const out = amIO.exportRules(); if (typeof out
       return r;
     };
   }
+  if (typeof route !== 'undefined' && route && route.page === 'automatizaciones') { try { render(); } catch (e) { console.warn('amu render', e); } }
 })();
 amu.clmSection = function (c) {
   const board = 'contracts'; const runs = amu.has('amLog') && amLog.forItem ? amLog.forItem(board, c.id, 50) : amExec.runs({ board, item: c.id }).slice(0, 50);

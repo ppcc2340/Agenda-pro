@@ -212,4 +212,4 @@ Huecos del motor detectados al construir los escenarios (documentados en las not
 - Vaciar una columna de estado personalizada desde una acción no es posible todavía (el escritor rechaza el valor nulo).
 - No hay operador de fecha relativo a otra columna ± número; E10 usa una columna de fórmula.
 - `setField` rechaza fechas pasadas en el cierre del negocio y el fin del contrato.
-- Con «Correos por enviar» y «Plantillas» a la vez, la cabecera del listado llega a 9 controles.
+- La cabecera del listado agrupa en un solo menú «Más ▾» los accesos secundarios (correos por enviar, plantillas, importar y exportar, y las vistas del centro anterior): 7 controles en total.
