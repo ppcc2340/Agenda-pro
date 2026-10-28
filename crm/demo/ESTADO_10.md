@@ -177,3 +177,39 @@ Al fusionarlos, los bloques se renumeraron en el orden del documento para que el
 Pruebas antiguas adaptadas en esta revisión:
 - xlwalk, v2walk y demo-clm abren ahora «Formato condicional», «Reglas» y «Automatizaciones» desde «Más».
 - La prueba E del botón flotante del tutorial lo abre antes, porque ese botón solo existe mientras el tutorial está en curso.
+
+---
+
+# Motor de automatizaciones (`motor_automatizaciones_especificacion.txt`)
+
+Construido en dos fases sobre la demo:
+- **Fase 1 (motor):** E1 (núcleo: modelo de datos, adaptador, registro de piezas, eventos, emparejamiento, condiciones, ejecutor, límites, permisos, migración) y E2 (reloj y planificador, variables y plantillas, salidas, registro de ejecuciones), en paralelo y fusionados después.
+- **Fase 2 (sobre el motor):** U (interfaz de la Parte C) e I (importar y exportar, importador de monday y escenarios de capacidad).
+
+Todo son bloques nuevos que envuelven las funciones existentes; no se ha editado ninguna línea del código anterior. Las reglas v2 que ya existían siguen ejecutándose con el mismo resultado.
+
+| Apartado | Estado | Notas |
+|---|---|---|
+| 4 Modelo de datos | ✅ | `S.am` con reglas (4.1), árbol de condiciones, acciones, planificador, ejecuciones (anillo de 10.000 o 90 días), plantillas y versión del esquema con `amMigrate`. |
+| 5 Adaptador | ✅ | 8 tableros (sistema y objetos personalizados), columnas normalizadas, columna de sistema «Grupo» (10.4). Todas las escrituras pasan por `setField`, `createX`, `moveStage`, `clmSetStatus`…; el motor nunca escribe en `S`. |
+| 6 Registro de piezas | ✅ | Contrato literal de la especificación. Catálogo: 21 disparadores, 26 operadores y 22 acciones, incluidas las del CRM y del CLM. Cada pieza con `validate`, `describe`, `preview` y `run`/`match`. |
+| 7–8 Eventos y emparejamiento | ✅ | Un único punto de emisión con actor, origen, profundidad y lote; cola en microtarea; lotes con resumen (300 elementos → 1 aviso); nada se ejecuta en una pestaña de solo lectura. Índice tablero → evento: 200 reglas en 0,3 ms por evento. |
+| 9 Condiciones | ✅ | Traza `{ ok, why }` en español; operadores por tipo; tabla de valores vacíos probada. |
+| 10 y 13 Acciones y ejecución | ✅ | Una ejecución = un paso de deshacer; política «seguir» o «todo o nada»; idempotencia 24 h; destinatarios y remitente (10.6, 10.7); crear en otro tablero con mapeo; ramas; límites (profundidad 10, 5 por día, bucle 12, correos 200/1.000); pausa tras 3 errores con aviso; detección de bucles al guardar con frase clara y bloqueo si no hay condición de parada. |
+| 11 Variables y plantillas | ✅ | `{{ruta|filtro}}` con todos los filtros, permisos por campo, escapado, biblioteca con vista previa y «usada en N». Compatible con las variables del motor anterior. «Insertar dato» sin llaves en la interfaz. |
+| 12 Tiempo | ✅ | Reloj inyectable, zona horaria y calendario laboral en Ajustes › General; fechas con desfase y hora, periodos, «no cambia en N días», esperas que reevalúan condiciones; bucle de 60 s solo en la pestaña con escritura; al abrir, política «ejecutar / preguntar» y ventana de tolerancia. 10.000 entradas en 2 ms. |
+| 14 Salidas | ✅ | Proveedor local: bandeja «Correos por enviar» con Abrir en mi correo, .eml, Copiar, Marcar enviado y Descartar; línea temporal; modo prueba «[Prueba]»; campana y actualizaciones; webhook deshabilitado con explicación. |
+| 15 Registro | ✅ | Historial por regla y por elemento, «¿Por qué no se ejecutó…?», indicadores, avisos al propietario. |
+| 16 Seguridad | ✅ | Permisos de edición, `runAs`, permisos por campo, auditoría sellada de crear, editar, activar y pausar. |
+| 17–21 Interfaz | ✅ | Pantalla vacía con 3 ideas, paso a paso guiado, listado de una línea por regla con estados, constructor «Cuando · Si · Entonces» generado desde el registro, «Más opciones» recordado por usuario, probar con un elemento sin cambiar nada, activar con las preguntas de 21.2, historial. ≤ 7 controles por pantalla y paso; teclado y lector de pantalla; contraste AA. |
+| 22.1–22.3 Pruebas | ✅ | Unitarias por pieza, motor (reloj simulado, profundidad, límites, bucle 12, pausa, idempotencia, deshacer, lotes, solo lectura, columna borrada) y los 12 escenarios E1–E12 construidos solo con el esquema y ejecutados de principio a fin. |
+| 23 Migración | 🟡 | Las reglas v2 se reflejan en `S.am.rules`, se ven, activan, pausan y prueban desde la interfaz nueva, y al editarlas se convierten a piezas nativas. El ejecutor v2 se conserva a propósito para que ninguna regla cambie de resultado (paso 3 del plan de migración pendiente). |
+| 24 Rendimiento | ✅ | Evento con 200 reglas < 1 ms; planificador con 10.000 entradas 2 ms; listado con 300 reglas < 40 ms; importar 300 reglas ~50 ms. |
+| 25 Importar y exportar | ✅ | Formato propio con mapeo por nombre y pantalla de resolución; reglas importadas pausadas. Importador de monday construido sobre un CSV de ejemplo de 40 filas (el real no se ha facilitado): 27 reglas válidas, 8 borradores con lo que falta, 2 grupos agrupados «desde el responsable». |
+| 22.4 Personas | ⏳ | Requiere 5 personas nuevas. |
+
+Huecos del motor detectados al construir los escenarios (documentados en las notas de los paquetes):
+- Vaciar una columna de estado personalizada desde una acción no es posible todavía (el escritor rechaza el valor nulo).
+- No hay operador de fecha relativo a otra columna ± número; E10 usa una columna de fórmula.
+- `setField` rechaza fechas pasadas en el cierre del negocio y el fin del contrato.
+- Con «Correos por enviar» y «Plantillas» a la vez, la cabecera del listado llega a 9 controles.
