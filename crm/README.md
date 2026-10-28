@@ -58,6 +58,14 @@ Cubierta por los tests de `server/tests/crm.test.ts` y la interfaz: alta de cont
 
 Pendiente de operación (no de código): copia de seguridad diaria del archivo SQLite y prueba de restauración.
 
+## Donna (aplicación de un solo archivo)
+
+`crm/demo/crm-tutorial.html` es **Donna**: CRM + CLM + automatizaciones en un único archivo HTML, sin servidor, con los datos en el navegador (IndexedDB, con cifrado opcional). Ábrelo con doble clic. Incluye:
+- Guía de usuario dentro de la aplicación (`#/ayuda`, también en [`demo/GUIA_DONNA.md`](demo/GUIA_DONNA.md)) y tutorial guiado.
+- Integraciones listas para conectar: correo, firma electrónica, calendario, mensajería, webhooks, IA y telefonía (Ajustes › Integraciones), con un puente local descargable para las APIs que no admiten llamadas desde el navegador.
+- Identidad visual propia ([`demo/IDENTIDAD_DONNA.md`](demo/IDENTIDAD_DONNA.md)) y accesibilidad WCAG 2.2 AA.
+- Estado de cada ronda de trabajo, con sus pruebas, en [`demo/ESTADO_10.md`](demo/ESTADO_10.md).
+
 ## Demo con tutorial
 
 `crm/demo/crm-tutorial.html` es una demo usable en un solo archivo (sin servidor, datos en el navegador) con un tutorial guiado (73 pasos) que resalta cada función en pantalla: tableros, edición en celda, columnas y etiquetas nuevas, agrupaciones, kanban con etapas editables, reglas «cuando… entonces…», fichas 360, tickets, presupuestos, informes, formularios y roles. Ábrelo con doble clic.

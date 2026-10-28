@@ -213,3 +213,23 @@ Huecos del motor detectados al construir los escenarios (documentados en las not
 - No hay operador de fecha relativo a otra columna ± número; E10 usa una columna de fórmula.
 - `setField` rechaza fechas pasadas en el cierre del negocio y el fin del contrato.
 - La cabecera del listado agrupa en un solo menú «Más ▾» los accesos secundarios (correos por enviar, plantillas, importar y exportar, y las vistas del centro anterior): 7 controles en total.
+
+---
+
+# Donna: pulido final
+
+Encargo: «que todo esté funcional, llegar y conectar APIs, visualmente perfecto, claro, accesible, intuitivo, con guía de usuario, nombre Donna, logo propio y diseño distinto de monday».
+
+Hecho en cuatro paquetes sobre la demo (bloques que envuelven el código existente; fusión X → G → Q → V):
+
+| Paquete | Qué incluye | Pruebas propias |
+|---|---|---|
+| **G · Marca y guía** | Nombre «Donna» en todo lo visible (títulos, pantallas de carga, contraseña y rescate, bienvenida, tutorial, PDF, archivos y formatos `donna-*`, con compatibilidad de lectura de los formatos anteriores). Centro de ayuda `#/ayuda` con 16 capítulos, 71 pasos, 12 preguntas frecuentes y 40 términos; buscador; 82 enlaces «Ir a esta pantalla» y «Hacer el paso del tutorial»; impresión a PDF. «¿Qué es esto?» en 20 pantallas. Inventario de textos: 114 pantallas, 3.590 cadenas, 0 problemáticas. La guía también está en `GUIA_DONNA.md`. | 64 |
+| **X · Integraciones** | Ajustes › Integraciones con 24 conectores en 9 grupos: correo (SMTP por puente, SendGrid, Mailgun, Resend, Gmail, Microsoft Graph), firma (DocuSign, Signaturit, Dropbox Sign), calendario (Google, Microsoft 365), mensajería (WhatsApp Cloud API, Twilio SMS, Slack, Teams), webhooks (genérico, Zapier, Make, n8n), importar desde URL, puente local descargable, IA compatible con OpenAI y telefonía (Twilio Voice, Aircall). Cada uno con campos, «Probar conexión» que distingue red/CORS de credenciales, estado, registro de llamadas sin secretos, desconexión y exportación de configuración sin claves. Al conectarse, correo, firma, calendario, mensajes y webhooks funcionan de verdad desde la bandeja, el CLM y las automatizaciones; sin conexión, siguen los modos locales y se dice. API interna `window.donna` documentada. Sin conectores: 0 peticiones de red. | 60 |
+| **Q · Funcional** | Rastreador de 6 configuraciones (3 roles × 2 espacios) que pulsa cada botón de cada ruta; 7 recorridos completos solo por la interfaz (de empresa a contrato renovado, ticket, importación, automatización, espacio nuevo, copia y recuperación, cifrado); 68 casos límite. Corregido, entre otros, un fallo de **pérdida de datos**: las altas navegaban a la ficha sin guardar y una recarga inmediata las perdía. También: «Cumplida» con nota, enlaces dentro de diálogos, ruta inexistente, fichas vacías, «Preparar correo» para listas, deshacer la última ejecución de una automatización, «Vaciar este espacio», paleta y diálogos accesibles. Informe completo en las notas del paquete. | 209 |
+| **V · Identidad y accesibilidad** | Logotipo propio (D con punto ámbar) y una dirección visual distinta de monday: verde petróleo y neutros cálidos, títulos con serifa, estados como punto + etiqueta tenue, grupos sin barra de color, tablas limpias, una sola familia de iconos, bordes en lugar de sombras, navegación inferior en móvil. Sistema de diseño con tokens; revisión de 87 pantallas × 8 combinaciones; 0 fallos de contraste; nombres accesibles en todos los controles; objetivos de 24 px (44 en móvil); regresión visual con 696 capturas. Documentado en `IDENTIDAD_DONNA.md`. | 46 |
+
+Fuera del alcance de esta ronda:
+- Flujo OAuth propio: Gmail, Microsoft y DocuSign piden un token ya emitido (documentado en cada conector).
+- Las pruebas con personas (tiempo hasta la primera tarea, lectores de pantalla reales).
+- El CRM con servidor (`crm/`) conserva su nombre; el cambio a Donna se ha aplicado a la aplicación de un solo archivo.
