@@ -15339,15 +15339,18 @@ function dapiPage() {
   if (sub === 'api') return dapiApiPage();
   if (sub && dapi.get(sub)) return dapiDetail(sub, adm);
   const enc = dapiEncrypted(); const nConn = dapi.list().filter((d) => dapi.active(d.id)).length;
-  const card = (d) => { const st = dapi.status(d.id); const prim = (d.capabilities || []).some((c) => dapi.primary(c) === d.id && dapi.list().filter((x) => (x.capabilities || []).includes(c) && dapi.active(x.id)).length > 1); return `<a class="dapi-card st-${DAPI_ST_CLS[st.key] || 'unset'}" href="#/ajustes/integraciones/${d.id}" data-dapi-card="${d.id}"><div class="row" style="gap:8px;align-items:flex-start"><b class="grow">${esc(d.name)}</b>${dapiStPill(d.id)}</div><p class="small muted dapi-act">${esc((d.activates || [])[0] || '')}</p>${st.key === 'error' && st.why ? `<p class="small dapi-err">${esc(dapiShort(st.why, 120))}</p>` : ''}${prim ? '<p class="xs muted">Se usa por defecto</p>' : ''}</a>`; };
+  const card = (d) => { const st = dapi.status(d.id); const prim = (d.capabilities || []).some((c) => dapi.primary(c) === d.id && dapi.list().filter((x) => (x.capabilities || []).includes(c) && dapi.active(x.id)).length > 1); return `<a class="dapi-card st-${DAPI_ST_CLS[st.key] || 'unset'}" href="#/ajustes/integraciones/${d.id}" data-go="#/ajustes/integraciones/${d.id}" role="link" tabindex="0" aria-label="${esc(d.name)}: ${esc(st.label)}. Abrir la ficha del conector" data-dapi-card="${d.id}"><div class="row" style="gap:8px;align-items:flex-start"><b class="grow">${esc(d.name)}</b>${dapiStPill(d.id)}</div><p class="small muted dapi-act">${esc((d.activates || [])[0] || '')}</p>${st.key === 'error' && st.why ? `<p class="small dapi-err">${esc(dapiShort(st.why, 120))}</p>` : ''}${prim ? '<p class="xs muted">Se usa por defecto</p>' : ''}</a>`; };
   document.getElementById('content').innerHTML = `<div class="dapi-wrap">
   <div class="card dapi-intro"><div class="row wrap" style="gap:8px;align-items:flex-start"><div class="grow"><h3>Integraciones</h3><p class="small muted" style="margin:4px 0 0">Conecta Donna con tus servicios sin tocar código: elige un conector, pega las claves que te dé el proveedor, pulsa «Probar conexión» y listo. ${nConn ? `<b>${nConn} ${nConn === 1 ? 'conector activo' : 'conectores activos'}.</b>` : 'Ahora mismo no hay ninguno conectado: Donna no hace ninguna llamada a internet.'}</p></div><div class="row wrap" style="gap:6px">${adm ? '<button class="btn outline sm" data-act="dapi-export">Exportar configuración (sin claves)</button><button class="btn outline sm" data-act="dapi-import">Importar configuración</button>' : ''}<a class="btn outline sm" href="#/ajustes/integraciones/api">API de Donna</a></div></div>
   <div class="dapi-note ${enc ? 'ok' : 'warn'} mt12" role="note">${enc ? 'Las claves se guardan cifradas con la contraseña de este espacio.' : 'Las claves se guardan en este navegador sin cifrar, dentro de los datos del espacio. Si el equipo es compartido, activa el cifrado en <a href="#/ajustes/seguridad">Ajustes › Seguridad</a>.'}${adm ? '' : ' Solo un administrador puede cambiar las integraciones (puedes verlas).'}</div></div>
-  ${dapi.groups.map(([g, label]) => { const list = dapi.list(g); if (!list.length) return ''; return `<h3 class="dapi-group">${esc(label)}</h3><div class="dapi-grid">${list.map(card).join('')}</div>`; }).join('')}
+  ${dapi.groups.map(([g, label]) => { const list = dapi.list(g); if (!list.length) return ''; return `<h3 class="dapi-group">${esc(label)}</h3><div class="dapi-grid" role="list">${list.map(card).join('')}</div>`; }).join('')}
   <p class="xs muted mt12">Sin conectores configurados, Donna no hace ninguna petición de red. Cada conector guarda un registro con sus últimas 50 llamadas (sin claves).</p></div>`;
+  document.querySelectorAll('[data-dapi-card]').forEach((a) => { a.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(a.dataset.go); } }; a.onclick = (e) => { e.preventDefault(); go(a.dataset.go); }; });
 }
+let dapiKeep = null;
+function dapiCapture() { const f0 = document.getElementById('dapiForm'); if (!f0 || !f0.querySelector('[data-dirty]')) return null; const o = { _id: f0.dataset.dapiId }; f0.querySelectorAll('[data-dapif][data-dirty]').forEach((el) => { o[el.dataset.dapif] = el.type === 'checkbox' ? el.checked : el.value; }); return o; }
 function dapiDetail(id, adm) {
-  const d = dapi.get(id); const c = dapi.cfg(id) || { fields: {}, log: [] }; const f = dapi.fields(id); const st = dapi.status(id); const configured = dapi.configured(id);
+  const d = dapi.get(id); const keep = dapiKeep && dapiKeep._id === id ? dapiKeep : null; dapiKeep = null; const c = dapi.cfg(id) || { fields: {}, log: [] }; const f = dapi.fields(id); const st = dapi.status(id); const configured = dapi.configured(id);
   const field = (q) => { const val = f[q.key]; const has = q.secret && c.fields && c.fields[q.key]; const dis = adm ? '' : 'disabled'; const idf = 'dapi_' + q.key;
     if (q.type === 'checkbox') return `<div class="fld full"><label class="chk"><input type="checkbox" id="${idf}" data-dapif="${q.key}" ${val ? 'checked' : ''} ${dis}/>${esc(q.label)}</label>${q.help ? `<span class="xs muted">${esc(q.help)}</span>` : ''}</div>`;
     if (q.type === 'select') return `<div class="fld"><label for="${idf}">${esc(q.label)}</label><select class="inp" id="${idf}" data-dapif="${q.key}" ${dis}>${(q.options || []).map(([v, l]) => `<option value="${esc(v)}" ${String(val) === String(v) ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>${q.help ? `<span class="xs muted">${esc(q.help)}</span>` : ''}</div>`;
@@ -15360,18 +15363,19 @@ function dapiDetail(id, adm) {
   <div class="card"><div class="row wrap" style="gap:8px;align-items:center"><h3 class="grow" style="margin:0">${esc(d.name)}</h3>${dapiStPill(id)}</div>
   ${st.key === 'error' && st.why ? `<div class="dapi-note warn mt8" role="alert">${esc(st.why)}</div>` : ''}
   <p class="small muted mt8"><b>Qué activa en Donna:</b></p><ul class="small dapi-ul">${(d.activates || []).map((a) => `<li>${esc(a)}</li>`).join('')}</ul>
-  <div class="fgrid mt12" id="dapiForm">${d.fields.map(field).join('') || '<p class="small muted">Este conector no necesita datos.</p>'}</div>
+  <div class="fgrid mt12" id="dapiForm" data-dapi-id="${id}">${d.fields.map(field).join('') || '<p class="small muted">Este conector no necesita datos.</p>'}</div>
   <div class="row wrap mt12" style="gap:8px">${adm ? `<button class="btn primary" data-act="dapi-save" data-arg="${id}">Guardar</button><button class="btn outline" data-act="dapi-test" data-arg="${id}" ${configured || !d.fields.length ? '' : 'disabled'}>Probar conexión</button>${id === 'import_url' ? `<button class="btn outline" data-act="dapi-import-url" ${dapi.active(id) ? '' : 'disabled'}>Importar ahora</button>` : ''}${id === 'bridge' ? '<button class="btn outline" data-act="dapi-server-js">Descargar server.js</button>' : ''}${configured ? `<button class="btn outline" style="color:var(--c-red)" data-act="dapi-disconnect" data-arg="${id}">Desconectar</button>` : ''}` : ''}${prim.map((cp) => (dapi.primary(cp) === id ? `<span class="tag">Se usa por defecto para ${esc(cp)}</span>` : `<button class="btn outline sm" data-act="dapi-primary" data-arg='${JSON.stringify({ cap: cp, id })}'>Usar este por defecto</button>`)).join('')}</div>
   <div class="dapi-result mt8" id="dapiResult" aria-live="polite" hidden></div></div>
   <div class="card mt12"><h3>Qué pedir al proveedor</h3><p class="small">${esc(d.docs)}</p>${d.bridge === 'always' ? '<p class="small muted">Este conector funciona solo a través del <a href="#/ajustes/integraciones/bridge">puente local</a>.</p>' : d.bridge === 'optional' ? `<p class="small muted">Si «Probar conexión» dice que no se pudo conectar, suele ser que el proveedor no admite llamadas desde el navegador (CORS): configura el <a href="#/ajustes/integraciones/bridge">puente local</a> y elige «A través del puente local» arriba.</p>` : ''}${id === 'bridge' ? `<details class="mt8"><summary class="small">Ver el código de server.js</summary><pre class="dapi-pre">${esc(DAPI_SERVER_JS)}</pre></details>` : ''}</div>
   <div class="card mt12"><div class="row" style="gap:8px"><h3 class="grow" style="margin:0">Actividad${log.length ? ` (últimas ${log.length} llamadas)` : ''}</h3>${log.length && adm ? `<button class="btn outline sm" data-act="dapi-clear-log" data-arg="${id}">Vaciar</button>` : ''}</div>${log.length ? `<ul class="dapi-log" role="list">${log.map((l) => `<li class="${l.ok ? 'ok' : 'err'}"><span class="xs muted">${esc(fdt(l.at))}</span><span class="dapi-dot" aria-label="${l.ok ? 'correcto' : 'error'}"></span><span class="small">${esc(l.summary)}</span></li>`).join('')}</ul>` : '<p class="small muted">Todavía no hay llamadas. Aquí verás fecha, resultado y resumen de cada una, nunca las claves.</p>'}</div></div>`;
+  document.querySelectorAll('#dapiForm [data-dapif]').forEach((el) => { const mark = () => { el.dataset.dirty = '1'; }; el.addEventListener('input', mark); el.addEventListener('change', mark); if (keep && el.dataset.dapif in keep) { if (el.type === 'checkbox') el.checked = !!keep[el.dataset.dapif]; else el.value = keep[el.dataset.dapif]; el.dataset.dirty = '1'; } });
   document.querySelectorAll('[data-dapi-eye]').forEach((b) => (b.onclick = () => { const inp = document.querySelector(`[data-dapif="${b.dataset.dapiEye}"]`); if (!inp) return; const show = inp.type === 'password'; inp.type = show ? 'text' : 'password'; if (show && !inp.value && c.fields && c.fields[b.dataset.dapiEye]) inp.value = c.fields[b.dataset.dapiEye]; b.textContent = show ? 'Ocultar' : 'Mostrar'; }));
 }
-function dapiReadForm() { const out = {}; document.querySelectorAll('[data-dapif]').forEach((el) => { out[el.dataset.dapif] = el.type === 'checkbox' ? el.checked : el.value; }); return out; }
+function dapiReadForm() { const out = {}; document.querySelectorAll('[data-dapif]').forEach((el) => { out[el.dataset.dapif] = el.type === 'checkbox' ? el.checked : el.value; delete el.dataset.dirty; }); dapiKeep = null; return out; }
 function dapiShowResult(r) { const el = document.getElementById('dapiResult'); if (!el) return; el.hidden = false; el.className = 'dapi-result mt8 ' + (r.ok ? 'ok' : 'err'); el.textContent = (r.ok ? 'Conexión correcta. ' : 'No se pudo conectar. ') + (r.message || ''); }
 ACT['dapi-save'] = (id) => { const r = dapi.save(id, dapiReadForm()); if (!r) return; dapiDefineActions(); toast(dapi.configured(id) ? 'Guardado. Pulsa «Probar conexión» para comprobarlo' : 'Guardado', 'ok'); refresh(); };
 ACT['dapi-test'] = async (id, el) => { if (!dapi.configured(id)) { const r = dapi.save(id, dapiReadForm()); if (!r) return; } else dapi.save(id, dapiReadForm(), { keepStatus: true }); if (el) { el.disabled = true; el.textContent = 'Probando…'; } const r = await dapi.test(id); dapiShowResult(r); if (el) { el.disabled = false; el.textContent = 'Probar conexión'; } const pill = document.querySelector('#content .dapi-st'); if (pill) pill.outerHTML = dapiStPill(id); toast(r.ok ? 'Conexión correcta' : 'No se pudo conectar', r.ok ? 'ok' : 'err'); dapiDefineActions(); };
-ACT['dapi-disconnect'] = async (id) => { if (!(await ask('¿Desconectar?', `Se borran las claves de «${dapi.get(id).name}» y Donna deja de usarlo. El registro de actividad se conserva.`, 'Desconectar', true))) return; dapi.disconnect(id); dapiDefineActions(); toast('Desconectado', 'ok'); refresh(); };
+ACT['dapi-disconnect'] = async (id) => { dapiReadForm(); if (!(await ask('¿Desconectar?', `Se borran las claves de «${dapi.get(id).name}» y Donna deja de usarlo. El registro de actividad se conserva.`, 'Desconectar', true))) return; dapi.disconnect(id); dapiDefineActions(); toast('Desconectado', 'ok'); refresh(); };
 ACT['dapi-primary'] = ({ cap, id }) => { dapi.setPrimary(cap, id); toast('Se usará este conector por defecto', 'ok'); refresh(); };
 ACT['dapi-clear-log'] = (id) => { const c = dapi.cfg(id); if (c) { c.log = []; save(); refresh(); } };
 ACT['dapi-export'] = () => { download(`donna-integraciones-${dayISO()}.json`, JSON.stringify(dapi.exportConfig(), null, 2)); toast('Configuración exportada sin claves', 'ok'); };
@@ -15395,6 +15399,7 @@ function dapiApiPage() {
   if (typeof PAGES === 'undefined' || typeof PAGES.ajustes !== 'function' || PAGES.ajustes._dapi) return; const orig = PAGES.ajustes;
   PAGES.ajustes = function () {
     const tab = route.id || 'general'; const mine = tab === 'integraciones';
+    try { dapiKeep = mine ? dapiCapture() : null; } catch (_) { dapiKeep = null; }
     try { if (typeof UX_SET_GROUPS !== 'undefined') { const g = UX_SET_GROUPS.find((x) => x[0] === 'Comunicación'); if (g && !g[1].includes('integraciones')) g[1].push('integraciones'); } } catch (_) { /* nada */ }
     orig.apply(this, arguments);
     try {
@@ -15901,7 +15906,12 @@ function dgBodyDraw() {
   body.querySelectorAll('.dg-res a').forEach((a) => a.addEventListener('click', () => { dg.mode = 'chapter'; }));
   if (ch && route.sub && q.length < 2) { const sec = body.querySelector(`#dg-s-${CSS.escape(route.sub)}`); if (sec) { if (sec.tagName === 'DETAILS') sec.open = true; setTimeout(() => sec.scrollIntoView({ block: 'start' }), 30); } }
 }
+/* al volver a la guía desde un paso del tutorial, el consejo flotante se quedaría en el centro (su elemento no está aquí) y taparía los botones */
+function dgHideStaleTip() {
+  try { const tip = document.getElementById('tutTip'); if (!tip || !tip.classList.contains('on') || typeof STEPS === 'undefined' || typeof tutHide !== 'function') return; const st = STEPS[TUT.idx]; const el = st && st.sel ? document.querySelector(st.sel) : null; if (!el || el.closest('#content')) tutHide(); } catch (_) { /* nada */ }
+}
 function dgPage() {
+  dgHideStaleTip(); for (const ms of [450, 900]) setTimeout(() => { if (route.page === 'ayuda') dgHideStaleTip(); }, ms); /* tutShow coloca el consejo 380 ms después de navegar */
   const ch = dgChapter(route.id);
   if (route.id && !ch) { go('#/ayuda'); return; }
   setHead({ title: 'Guía de usuario', desc: 'Cómo funciona Donna, pantalla por pantalla. Busca una palabra o elige un capítulo.', toolbar: `<label class="tsearch dg-search"><span class="sr-only">Buscar en la guía</span>${ico.search}<input id="dgQ" data-q="1" placeholder="Buscar en la guía: firma, importar, atajos…" value="${dgEsc(dg.q || '')}" aria-label="Buscar en la guía" autocomplete="off"/></label><button type="button" class="btn outline" data-act="dg-print" title="Abre el diálogo de impresión con la guía completa: elige «Guardar como PDF» para obtener el archivo">${dg.ico.print}Imprimir la guía</button><button type="button" class="btn outline" data-act="dg-tutorial">${dg.ico.play}Tutorial guiado</button>` });
@@ -15914,9 +15924,16 @@ function dgPage() {
   }
 }
 PAGES.ayuda = dgPage;
-ACT['dg-go'] = (g) => { if (typeof g === 'string') { try { g = JSON.parse(g); } catch (_) { g = { h: g }; } } if (!g || !g.h) return; const page = String(g.h).replace(/^#\//, '').split('/')[0]; if (g.view && S.ui && S.ui.view) S.ui.view[page] = g.view; go(g.h); };
-ACT['dg-tut'] = (id) => { const st = dgTutStep(id); if (!st) return toast('Este paso del tutorial no está disponible en esta versión.', 'err'); if (typeof tutShow === 'function') tutShow(st.i); };
-ACT['dg-tutorial'] = () => { if (typeof vzTutOpen === 'function') vzTutOpen(); else { const t = document.getElementById('tut'); if (t) { t.classList.add('open'); if (typeof tutDrawPanel === 'function') tutDrawPanel(); } } };
+function dgCloseTut() { const t = document.getElementById('tut'); if (t) t.classList.remove('open'); }
+ACT['dg-go'] = (g) => { if (typeof g === 'string') { try { g = JSON.parse(g); } catch (_) { g = { h: g }; } } if (!g || !g.h) return; dgCloseTut(); const page = String(g.h).replace(/^#\//, '').split('/')[0]; if (g.view && S.ui && S.ui.view) S.ui.view[page] = g.view; if (location.hash === g.h) render(); else go(g.h); };
+ACT['dg-tut'] = (id) => { const st = dgTutStep(id); if (!st) return toast('Este paso del tutorial no está disponible en esta versión.', 'err'); dgCloseTut(); if (typeof tutShow === 'function') tutShow(st.i); };
+/* «Tutorial guiado» desde la guía: empieza (o retoma) el tutorial de forma visible, en el primer paso del capítulo abierto; no deja abierto el panel flotante, que taparía la guía */
+ACT['dg-tutorial'] = () => {
+  if (typeof STEPS === 'undefined' || typeof tutShow !== 'function') { if (typeof vzTutOpen === 'function') vzTutOpen(); return; }
+  const ch = dgChapter(route.id); const first = ch ? (ch.sec || []).flatMap((s) => s.tut || []).map((id) => STEPS.findIndex((x) => x.id === id)).find((i) => i >= 0) : -1;
+  const i = first >= 0 ? first : (typeof TUT !== 'undefined' && TUT.idx >= 0 && TUT.idx < STEPS.length - 1 ? TUT.idx : 0);
+  dgCloseTut(); tutShow(i);
+};
 /* impresión: guía completa en una hoja aparte (#dgPrint) con @media print */
 function dgPrintHtml() {
   const date = new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -16159,6 +16176,21 @@ ACT['dg-print'] = () => {
   /* ------------------------------------------------------------------ 7c · solo lectura: sin cajas «+ Añadir…» en los tableros */
   const hideAddRows = () => { try { if (typeof can !== 'function' || can('edit')) return; document.querySelectorAll('#content input[data-addrow]').forEach((i) => { i.hidden = true; i.setAttribute('aria-hidden', 'true'); i.tabIndex = -1; }); } catch (_) { /* nada */ } };
   try { new MutationObserver(() => hideAddRows()).observe(document.getElementById('content') || document.body, { childList: true, subtree: true }); note('ro-addrows'); } catch (_) { /* nada */ }
+
+  /* ------------------------------------------------------------------ 7d · repintados en segundo plano con un menú o diálogo abierto
+     El bucle de 60 s del motor de automatizaciones (y la puesta al día al arrancar) llama a refreshSoft() cuando ejecuta
+     algo programado; si en ese momento hay un desplegable o un diálogo abierto, el repintado los deja huérfanos (p. ej. el
+     menú «Más ▾» apunta a botones que ya no están). Se pospone hasta que no haya menús ni diálogos abiertos. */
+  if (typeof refreshSoft === 'function') {
+    const _rs = refreshSoft; let rsT = null;
+    refreshSoft = function () {
+      const busy = document.querySelector('.dd, .pop, #layer .overlay, #amuOv, .xl-ledd, input.xl-ce');
+      if (!busy) { if (rsT) { clearTimeout(rsT); rsT = null; } return _rs.apply(this, arguments); }
+      if (!rsT) rsT = setTimeout(() => { rsT = null; refreshSoft(); }, 1500);
+      return undefined;
+    };
+    note('soft-refresh-wait');
+  }
 
   /* ------------------------------------------------------------------ 8 · paleta Ctrl+K: botón de cerrar (teclado/táctil) */
   if (typeof ACT !== 'undefined' && typeof ACT.palette === 'function') {
