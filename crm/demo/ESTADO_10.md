@@ -233,3 +233,17 @@ Fuera del alcance de esta ronda:
 - Flujo OAuth propio: Gmail, Microsoft y DocuSign piden un token ya emitido (documentado en cada conector).
 - Las pruebas con personas (tiempo hasta la primera tarea, lectores de pantalla reales).
 - El CRM con servidor (`crm/`) conserva su nombre; el cambio a Donna se ha aplicado a la aplicación de un solo archivo.
+
+---
+
+# Donna v9: correcciones de la prueba del motor (`prueba_v8_motor_automatizaciones.txt`)
+
+Cada punto se reprodujo primero sobre la versión publicada. Tres paquetes; fusión ENG → UX → IMP.
+
+| Paquete | Puntos | Qué cambia | Pruebas propias |
+|---|---|---|---|
+| **IMP · Importador de monday** | P0-1, P0-2, P0-3 (importación), P1-6 | Reconoce el CSV de monday en español e inglés (sin tildes ni mayúsculas, BOM, `,` `;` o tabulador, CRLF). Si el archivo no dice a qué tablero va, lo pregunta y deja crear un objeto nuevo («Marcas»). Las filas sin frase entran como borrador con su descripción y app. Analizador por partes que entiende todas las construcciones del informe; lo que no existe en Donna (columnas, etiquetas, grupos, listas, tableros, personas, «Someone», «some time») pasa a un paso de mapeo con «crear» o «usar otra». Agrupa las reglas que solo cambian de responsable (136 → 36). Destinatarios siempre como objetos. Exportar cuenta e incluye las reglas migradas del motor anterior. Con el CSV sintético fiel al informe: 222 filas, 176 + 46, 0 frases sin entender, 76 reglas válidas sin errores y 46 borradores. | 56 |
+| **ENG · Motor y espacio real** | P0-3 (motor), P0-4, P1-1, P1-7, P1-9, P1-10, P1-11, P1-12, U2, U5 | Destinatarios `col:`/`list:`/`role:`/`user:` convertidos a objetos al cargar, validar y ejecutar, con motivos de omisión claros. Un espacio nuevo nace sin automatizaciones, sin registro y solo con su administrador; en espacios ya creados, aviso para pausar o borrar las del ejemplo y «Quitar usuarios de ejemplo». Reglas nuevas con correo en modo prueba también desde el constructor; columnas inexistentes bloquean el guardado; nombre del grupo en las frases; límite diario antes que la profundidad; aviso a la 12.ª repetición; índice del emparejador por tablero, evento y columna; tarjeta «Aprobaciones pendientes» en Mi día; con «Datos personales: No» no se pide aprobación al DPO. | 47 |
+| **UX · Textos y bandeja** | P0-5, P1-2, P1-3, P1-4, P1-5, P1-8, U4, U6, C6 | «Solo lectura» corregido en origen (44 avisos). Bandeja «Correos por enviar · N» a la vista en la cabecera y en la barra lateral. Textos de correo y firma según el conector conectado; en modo prueba se dice a quién iba dirigido. «Automatizaciones de serie» en lugar de «Motor anterior». Frases naturales («y el estado es Abierto», ramas «según el caso»). Ficha del presupuesto con Ver, Enviar y PDF. Pago único en lenguaje natural. Etiquetas asociadas a todos los campos de alta. | 72 |
+
+Pruebas: los 6 recorridos y las 15 baterías anteriores sin fallos tras adaptar 5 comprobaciones del importador antiguo (las filas sin frase ya no se descartan), la frase esperada de E1 («y el resultado es Abierto»), el aviso del presupuesto y dos detalles del rastreador (persona de Legal en el espacio en blanco; botones que abren el selector de archivos). Sin resolver: con el CSV real de monday hay que confirmar los recuentos (`check-real.cjs`); y el tiempo por acción en la prueba de resistencia sigue en unos 55 ms, igual que antes de esta ronda (el coste está en el repintado, no en el motor).
