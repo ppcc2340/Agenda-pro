@@ -247,3 +247,34 @@ Cada punto se reprodujo primero sobre la versión publicada. Tres paquetes; fusi
 | **UX · Textos y bandeja** | P0-5, P1-2, P1-3, P1-4, P1-5, P1-8, U4, U6, C6 | «Solo lectura» corregido en origen (44 avisos). Bandeja «Correos por enviar · N» a la vista en la cabecera y en la barra lateral. Textos de correo y firma según el conector conectado; en modo prueba se dice a quién iba dirigido. «Automatizaciones de serie» en lugar de «Motor anterior». Frases naturales («y el estado es Abierto», ramas «según el caso»). Ficha del presupuesto con Ver, Enviar y PDF. Pago único en lenguaje natural. Etiquetas asociadas a todos los campos de alta. | 72 |
 
 Pruebas: los 6 recorridos y las 15 baterías anteriores sin fallos tras adaptar 5 comprobaciones del importador antiguo (las filas sin frase ya no se descartan), la frase esperada de E1 («y el resultado es Abierto»), el aviso del presupuesto y dos detalles del rastreador (persona de Legal en el espacio en blanco; botones que abren el selector de archivos). Sin resolver: con el CSV real de monday hay que confirmar los recuentos (`check-real.cjs`); y el tiempo por acción en la prueba de resistencia sigue en unos 55 ms, igual que antes de esta ronda (el coste está en el repintado, no en el motor).
+
+---
+
+# Donna: interfaz premium y accesible (`guia_interfaz_premium_accesible_crm_clm.txt`)
+
+Cuatro paquetes: T (sistema de diseño), A (accesible), C (clara, fácil y premium) e I (integración y prueba «interfaz»). Fusión T → A → C → I.
+
+Decisión de producto: se mantiene la identidad propia de Donna (sans del sistema con títulos en serif, logotipo «D» con punto ámbar, verde petróleo). No se incrusta Figtree ni se cambia el logotipo (apartados 2.1, 6.6 y 6.7 de la guía); el resto de tokens de la guía se aplica sobre esa identidad.
+
+| Criterio (39 vistas × claro/oscuro × 1440/390) | Antes | Después |
+|---|---|---|
+| U-1 tamaños de letra distintos / mínimo | 13 / 9,5 px | 5 / 12 px |
+| U-2 tamaños en px (hojas + en línea) | 286 + 42 | 0 |
+| U-3 márgenes y rellenos fuera de la retícula de 4 | 74,5 % | 3,7 % |
+| U-4 colores fuera de los tokens | 1.378 usos | 0 |
+| U-5 contraste | 251 | 0 |
+| U-6 objetivos < 24 px (< 44 táctil) | 1.900 | 0 |
+| U-7 botones solo icono sin nombre o sin descripción | 1.530 | 0 |
+| U-8 campos sin etiqueta | 446 | 0 |
+| U-9 caracteres por línea en párrafos | 184 | 78 |
+| U-10 vistas con más de un botón primario | 16 | 0 |
+| U-11 transiciones fuera de transform/opacity o > 300 ms | 6 reglas | 0 |
+| U-12, U-13, U-14 | 0 | 0 |
+| Saltos de encabezado | 72 | 0 |
+| axe-core WCAG 2.2 AA, infracciones graves | 2.131 | 0 |
+| U-15 cambio de vista | < 100 ms | máx. 56 ms |
+| U-15 tiempo por acción (resistencia) | 53–55 ms | 63–68 ms (objetivo 40: no se cumple) |
+
+Qué incluye: tokens en tres capas (OKLCH → roles → componentes) en claro y oscuro; tipografía en rem que respeta la letra del navegador; migración de más de 2.000 valores sueltos; objetivos de 24/44 px; descripción emergente única con atajos; interruptores, rejillas y encabezados correctos; errores junto al campo; un primario por vista; borrar a la papelera con «Deshacer»; formularios con `autocomplete`, validación al salir y teléfono formateado; barra inferior móvil Inicio · Mi día · Pipeline · Contratos · Más; movimiento con tokens; momentos pico con siguiente paso (desactivables); Inicio con saludo y títulos-conclusión; página `#/componentes` para administradores; ráfaga de repintados por las aperturas de correo simuladas agrupada (Contratos: de 98.650 a 31.100 cambios del DOM).
+
+Pendiente: el tiempo por acción (40 ms) exige repintar solo lo afectado dentro de `render`; la vista de negocios con 10.000 registros tarda 148 ms (97 antes); y las pruebas con personas (apartado 13) no se pueden automatizar.
