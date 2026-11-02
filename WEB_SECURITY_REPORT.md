@@ -1,85 +1,93 @@
-# Informe de revisión de seguridad web: Cadenzo / La Mesa Larga
+# Informe de seguridad web: Cadenzo / La Mesa Larga
 
 **Fecha:** 2026-11-02
-**Alcance:** revisión pasiva. Solo peticiones GET normales (curl, openssl), sin credenciales, sin fuzzing, sin escaneo de puertos ni payloads.
-
-**Objetivos revisados**
+**Alcance:** revisión pasiva. Solo peticiones GET normales, sin credenciales, sin fuzzing, sin escaneo de puertos ni payloads.
 
 | Superficie | Host |
 |---|---|
 | Sitio de pantallas | `cadenzo-pantallas.netlify.app` |
 | API y paneles (staff, kds, admin, soporte) | `api-production-4763.up.railway.app` |
 
-## Resumen
+**Nota de seguridad:** las credenciales de demostración y los PIN de ejemplo que se compartieron en el chat no se reproducen aquí. Deben cambiarse en producción. El historial del repositorio ya contiene un commit anterior con esos valores (`c36a49d`), por lo que hay que rotarlos igualmente.
+
+## Veredicto
+
+El backend aplica bien la autenticación: los endpoints protegidos devuelven 401 sin sesión y no hay CORS abierto. El riesgo real está en el acceso del personal. El PIN es el único secreto que protege comandas y cocina, tiene entre 4 y 6 dígitos y su defensa depende de un identificador de dispositivo que vive en el navegador. Además, el sitio de Netlify no tiene defensas en el navegador.
+
+## Prioridades
 
 | # | Prioridad | Hallazgo | Sitio |
 |---|---|---|---|
-| 1 | Alta | Credenciales demo compartidas, con contraseña que no cumple la política del propio frontend | API / admin |
-| 2 | Alta | PIN de 4 dígitos con valores triviales (1234, 0000) | API / staff, kds |
-| 3 | Media | Sin cabeceras de seguridad (CSP, X-Frame-Options, etc.) | Netlify |
-| 4 | Media | Token con apariencia de clave en `<meta name="cadenzo-telemetry">` | API |
-| 5 | Baja | Rutas inexistentes devuelven 200 con HTML (incluye robots.txt, sitemap.xml, security.txt) | API |
-| 6 | Baja | Falta `security.txt` y `robots.txt` | Ambos |
-| 7 | Baja | HSTS sin `preload` | API |
-| 8 | Info | Cabecera `Server` revela la plataforma de hosting | Ambos |
-| 9 | Info | Certificado del API caduca el 2026-12-26 | API |
-| 10 | Info | Revisar CVEs de React 19.3.1 | API |
+| 1 | Crítica | Credencial de administrador de demostración compartida y con contraseña débil | API / admin |
+| 2 | Alta | PIN del personal de 4 a 6 dígitos sin prueba de límite de intentos | API / staff, kds |
+| 3 | Alta | El "dispositivo habilitado" es un UUID que el cliente genera y guarda en localStorage | API / staff, kds |
+| 4 | Media | Netlify sin CSP, X-Frame-Options ni otras cabeceras | Netlify |
+| 5 | Media | Token con apariencia de clave en `<meta name="cadenzo-telemetry">` | API |
+| 6 | Media | Endpoint `/health` revela entorno y estado de la base de datos | API |
+| 7 | Baja | Endpoint de errores de cliente (`monitoring/client-errors`) con método abierto | API |
+| 8 | Baja | Mensajes de error distintos según el caso en `/auth/me` y `/sessions/me` | API |
+| 9 | Baja | Rutas inexistentes devuelven 200 con HTML | API |
+| 10 | Baja | Faltan `security.txt` y `robots.txt` | Ambos |
+| 11 | Info | Cabecera `Server` revela el proveedor de hosting | Ambos |
+| 12 | Info | Certificado del API caduca el 2026-12-26 | API |
+| 13 | Info | Revisar CVEs de React 19.3.1 | API |
 
 ## Lo que está bien
 
-- **API, cabeceras:** CSP restrictiva (`script-src 'self'`, `connect-src 'self'`, `frame-ancestors 'none'`, `object-src 'none'`), `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: same-origin`, `Permissions-Policy` y HSTS de un año.
-- **Netlify, HSTS:** `max-age=31536000; includeSubDomains; preload`.
-- **TLS:** el API negocia TLS 1.2 con ECDHE y AES-256-GCM. Certificado de Netlify válido hasta 2027-03-19.
-- **Admin sin sesión:** no emite cookies antes de autenticarse.
-- **Soporte:** `/soporte` envía `X-Robots-Tag: noindex, nofollow, noarchive`.
-- **Frontend:** la contraseña exige 12 caracteres como mínimo. Solo se usa `dangerouslySetInnerHTML` para el código QR.
+- **Protección de endpoints:** `floor`, `kitchen`, `orders`, `admin/*` y `support/tickets` devuelven 401 sin sesión.
+- **Sin mapas de código fuente expuestos:** los `.map` devuelven el HTML de la SPA, no el código original.
+- **Sin CORS abierto:** el API no devuelve `Access-Control-Allow-Origin` a un origen ajeno.
+- **Listado de personal protegido:** `auth/pin-users` responde con el mismo error de dispositivo para un slug válido y para uno inventado, así que no sirve para enumerar.
+- **CSP del API:** restrictiva, con `script-src 'self'`, `connect-src 'self'` y `frame-ancestors 'none'`.
+- **HSTS, nosniff, X-Frame-Options y Referrer-Policy** presentes en el API.
+- **TLS:** el API negocia TLS 1.2 con ECDHE y AES-256-GCM. El certificado de Netlify es válido hasta 2027-03-19.
+- **Innerhtml:** el único uso de `dangerouslySetInnerHTML` que encontré es el código QR.
 
 ## Hallazgos detallados
 
-### 1. Alta: credenciales demo compartidas y contraseña débil
+### 1. Crítica: credencial de administrador de demostración
 
-La cuenta `admin@lamesalarga.cl` usa `demo1234`, de 8 caracteres. El esquema de validación del frontend exige al menos 12. Si esa cuenta existe en producción, es un acceso administrativo con contraseña débil y ya compartido en texto plano.
+La cuenta de administración usa una contraseña de demostración de 8 caracteres. El frontend exige 12 como mínimo, así que la validación no se aplica a esa cuenta. Como se pegó en un chat, debe considerarse pública.
 
-**Riesgo:** toma de control del panel de administración.
+**Riesgo:** control total del panel de administración: menú, precios, personal y ajustes del local.
 
-**Corrección:**
-- Cambiar la contraseña de inmediato y no reutilizar la de demostración.
-- Eliminar las cuentas demo de producción o crearlas solo en un entorno de pruebas.
-- Hacer que el servidor rechace contraseñas de menos de 12 caracteres, no solo el frontend.
+**Corrección inmediata:**
+- Cambiar la contraseña hoy.
+- Revisar en los registros de acceso si alguien entró con ella.
+- Eliminar las cuentas de demostración de producción.
+- Aplicar el mínimo de 12 caracteres también en el servidor, no solo en el cliente.
 
-### 2. Alta: PIN de 4 dígitos con valores triviales
+### 2. Alta: PIN de 4 a 6 dígitos sin límite demostrado
 
-Los PIN del personal son de 4 dígitos (10.000 combinaciones). Los ejemplos incluyen `1234` y `0000`. No pude comprobar si hay límite de intentos, porque eso exige probar el login y no lo hice.
+El cliente acepta PIN de 4 a 6 dígitos. Con 4 dígitos son 10.000 combinaciones. No pude confirmar si el servidor limita intentos, porque eso exige probar el login y no lo hice.
 
-**Riesgo:** adivinación de PIN en el panel de meseros o de cocina.
+**Riesgo:** adivinación del PIN de un mesero o de cocina para operar comandas.
 
 **Corrección (Node/Express, ejemplo orientativo):**
 
 ```javascript
-// Limitar intentos por IP y por usuario
 import rateLimit from 'express-rate-limit';
-app.use('/api/auth/pin', rateLimit({ windowMs: 15 * 60 * 1000, limit: 5, standardHeaders: true }));
-
-// Rechazar PIN triviales al crearlos
-const PIN_DEBIL = new Set(['0000', '1111', '1234', '4321', '1212']);
-if (PIN_DEBIL.has(pin)) throw new Error('PIN demasiado sencillo');
+app.use('/api/v1/auth/login', rateLimit({ windowMs: 15 * 60 * 1000, limit: 5, standardHeaders: true }));
 ```
 
-Además conviene subir a 6 dígitos y bloquear la cuenta tras varios fallos. El vínculo por dispositivo ya reduce el riesgo, pero no lo elimina.
+Además: subir el mínimo a 6 dígitos en el servidor, rechazar PIN triviales al crearlos, bloquear temporalmente la cuenta tras varios fallos y registrar los intentos fallidos.
 
-### 3. Media: Netlify sin cabeceras de seguridad
+### 3. Alta: el "dispositivo habilitado" es un UUID del navegador
 
-La respuesta de `cadenzo-pantallas.netlify.app` solo incluye HSTS. Faltan:
+El cliente genera un UUID con `crypto.randomUUID()` y lo guarda en `localStorage` bajo la clave `cadenzo.device`. Ese mismo identificador se envía al servidor en el flujo de unión y en los eventos. El error `device_not_enabled` se activa cuando el servidor no reconoce el dispositivo.
 
-- Content-Security-Policy
-- X-Frame-Options
-- X-Content-Type-Options
-- Referrer-Policy
-- Permissions-Policy
+Esto es una hipótesis que no pude probar sin login: si el servidor confía en el `deviceId` que envía el cliente, cualquiera que copie ese UUID de un equipo habilitado puede saltarse la barrera. Como el PIN ya es débil, el dispositivo debería ser un segundo factor de verdad, no un identificador.
 
-El HTML tiene estilos inline y un script inline, así que la CSP necesita un hash para ese script o una excepción acotada. Además, la página carga fuentes de Google.
+**Riesgo:** quien tenga acceso físico o a los datos de un equipo del local puede reutilizar su identidad.
 
-**Riesgo:** clickjacking del sitio de pantallas y menor defensa frente a XSS.
+**Corrección:**
+- Vincular el dispositivo a una cookie `HttpOnly`, `Secure` y `SameSite=Strict` firmada por el servidor, no a un UUID enviado por el cliente.
+- Emitir la habilitación del dispositivo solo tras un login con correo y contraseña, y guardar en el servidor su hash.
+- Permitir revocar dispositivos desde el panel de administración.
+
+### 4. Media: Netlify sin defensas en el navegador
+
+La respuesta de `cadenzo-pantallas.netlify.app` solo incluye HSTS. Sin CSP, cualquier script inyectado se ejecuta sin restricción. Sin `X-Frame-Options` ni `frame-ancestors`, cualquier web puede embeber la pantalla.
 
 **Corrección en `netlify.toml` (probar antes en un preview):**
 
@@ -94,80 +102,74 @@ El HTML tiene estilos inline y un script inline, así que la CSP necesita un has
     Content-Security-Policy = "default-src 'self'; script-src 'self' 'sha256-REEMPLAZAR'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
 ```
 
-Para obtener el hash del script inline:
+El hash del script inline se calcula sobre el HTML descargado. Si el HUD de Netlify (`/.netlify/scripts/hud`) se bloquea, añade la excepción necesaria.
 
-```bash
-python3 -c "import re,base64,hashlib,sys; h=open(sys.argv[1]).read(); [print(base64.b64encode(hashlib.sha256(m.encode()).digest()).decode()) for m in re.findall(r'<script>([^<]*)</script>', h)]" netlify_root.html
-```
+### 5. Media: token con apariencia de clave en el HTML
 
-Si el sitio muestra errores de CSP tras el cambio, revisa si el script `/.netlify/scripts/hud` de Netlify necesita una excepción.
+El HTML del API incluye una etiqueta `<meta name="cadenzo-telemetry">` con un valor de 32 caracteres. No sé si es identificador público o clave de escritura. Hasta confirmarlo, debe tratarse como expuesto.
 
-### 4. Media: token en una etiqueta meta
+**Corrección:** confirmar su función, rotarlo en el servicio de telemetría y, si es secreto, moverlo al servidor.
 
-El HTML del API incluye:
+### 6. Media: `/health` revela entorno y estado de la base de datos
 
-```html
-<meta name="cadenzo-telemetry" content="Vrx-vjg0gbl6NJ5jH1QYCFtDZHOqUvh3">
-```
+`/api/v1/health` responde sin autenticación con `"env":"production"`, el estado de la base de datos y si los pagos están habilitados. Son datos útiles para un atacante que prepare un ataque, aunque no den acceso.
 
-No sé si es un identificador público o una clave de escritura. Si es una clave secreta, cualquiera que abra la página puede usarla.
+**Corrección:** devolver solo `{"ok":true}` públicamente y reservar el detalle para una ruta interna con autenticación o una IP de monitorización.
 
-**Corrección:** confirma qué es. Si es secreta, muévela al servidor y deja solo un identificador público en el cliente. Si se quiere rotar, hazlo desde el servicio de telemetría.
+### 7. Baja: endpoint de errores de cliente
 
-### 5. Baja: rutas inexistentes devuelven 200
+`/api/v1/monitoring/client-errors` existe y el cliente lo usa para reportar errores. Un GET devuelve 405, así que el POST es público. No lo probé por ser una escritura. Un endpoint de ingesta abierto puede llenar los registros o inyectar datos falsos.
 
-En el API, `/robots.txt`, `/sitemap.xml`, `/security.txt` y `/.well-known/security.txt` devuelven 200 con el mismo HTML de 1109 bytes. Es el fallback de la SPA. Puede confundir a herramientas automáticas y a quien busque esos archivos.
+**Corrección:** limitar tamaño y frecuencia por IP, validar el esquema y no mostrar esos datos sin escapar en el panel de administración.
+
+### 8. Baja: mensajes de error distintos
+
+`/auth/me` responde "inicia sesión" y `/sessions/me` responde "token de mesa inválido o expirado". La diferencia permite saber qué mecanismo se usó, aunque no revela secretos. Unificar los mensajes en una respuesta genérica.
+
+### 9. Baja: rutas inexistentes devuelven 200
+
+En el API, `robots.txt`, `sitemap.xml` y `security.txt` devuelven 200 con el HTML de la SPA. Puede confundir a herramientas automáticas.
 
 **Corrección (Express):**
 
 ```javascript
-// Antes del fallback de la SPA
 app.use((req, res, next) => {
-  if (/\.(txt|xml)$/.test(req.path) || req.path.startsWith('/.well-known/')) {
-    return res.status(404).end();
-  }
+  if (/\.(txt|xml)$/.test(req.path) || req.path.startsWith('/.well-known/')) return res.status(404).end();
   next();
 });
 ```
 
-### 6. Baja: faltan security.txt y robots.txt
+### 10. Baja: faltan security.txt y robots.txt
 
 Ninguno de los dos sitios tiene `security.txt`. Netlify devuelve 404 también para `robots.txt`.
 
-**Corrección:** publica `/.well-known/security.txt` (Netlify: carpeta `public/`; API: carpeta estática):
+**Corrección:** publicar `/.well-known/security.txt`:
 
 ```text
 Contact: mailto:seguridad@lamesalarga.cl
 Expires: 2027-11-02T00:00:00Z
 Preferred-Languages: es, en
-Canonical: https://cadenzo-pantallas.netlify.app/.well-known/security.txt
 ```
 
-Y un `robots.txt` mínimo. Para el panel de administración conviene `Disallow: /admin` y `Disallow: /soporte`, aunque la protección real debe estar en la autenticación.
+### 11. Info: cabecera Server
 
-### 7. Baja: HSTS sin preload en el API
+Netlify responde `server: Netlify` y Railway `server: railway-hikari`. No revelan versión. Es riesgo bajo y difícil de evitar en plataformas gestionadas.
 
-`max-age=31536000; includeSubDomains` es correcto. Si quieres aparecer en la lista de precarga de navegadores, añade `preload`, pero solo cuando estés seguro de que todo el dominio sirve HTTPS.
+### 12. Info: certificado del API
 
-### 8. Info: la cabecera Server revela la plataforma
+Let's Encrypt, caduca el 2026-12-26. Railway lo renueva automáticamente. Confirma que la renovación se completa antes de la fecha.
 
-Netlify responde `server: Netlify` y Railway responde `server: railway-hikari`. No revelan versión, pero sí el proveedor. Es un riesgo bajo y difícil de evitar en plataformas gestionadas.
+### 13. Info: librerías JavaScript
 
-### 9. Info: certificado del API
-
-El certificado del API es de Let's Encrypt y caduca el 2026-12-26. Railway lo renueva automáticamente, pero conviene confirmar que la renovación se completa unos días antes de la caducidad.
-
-### 10. Info: librerías JavaScript
-
-El bundle del API incluye React y react-dom 19.3.1. No conozco ninguna vulnerabilidad pública para esa versión en mis datos, pero no puedo confirmarlo para la fecha de hoy. Revisa el `package.json` del repositorio con `npm audit` o con la base OSV.
-
-La página de Netlify carga Google Fonts desde terceros. No es una vulnerabilidad, pero comparte la IP del visitante con Google.
+El bundle incluye React y react-dom 19.3.1. No conozco una vulnerabilidad pública para esa versión, pero no puedo confirmarlo a fecha de hoy. Revisa el `package.json` con `npm audit` o con la base OSV.
 
 ## No verificado
 
-- **Redirección HTTP a HTTPS:** el proxy de salida no permite peticiones HTTP, así que no pude comprobarla.
-- **TLS 1.3:** la sonda por proxy no devolvió resultado. Solo confirmé TLS 1.2.
-- **Cookies de sesión:** solo comprobé el estado sin autenticar. Las flags Secure, HttpOnly y SameSite de las cookies de sesión requieren iniciar sesión.
-- **Mensajes de error y autenticación:** no probé formularios ni endpoints de login, por las reglas de la revisión.
+- **Límite de intentos del PIN y del login:** no probado. Es el punto más importante que falta.
+- **Validación del dispositivo en el servidor:** si confía en el UUID del cliente. Hipótesis del punto 3.
+- **Cookies de sesión:** sin autenticar no emiten cookies. Sus flags Secure, HttpOnly y SameSite siguen sin verificar.
+- **Redirección HTTP a HTTPS:** el proxy de salida no permite HTTP.
+- **TLS 1.3:** la sonda por proxy no devolvió resultado.
+- **Endpoints POST:** no probados, por ser escrituras.
 
-Para cerrar estos puntos hace falta una revisión autenticada con las cuentas de prueba, y solo si lo autorizas.
+Para cerrar estos puntos hace falta una revisión autenticada con cuentas de prueba, solo con tu autorización.
