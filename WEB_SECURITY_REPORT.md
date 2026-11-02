@@ -20,7 +20,7 @@ El backend aplica bien la autenticación: los endpoints protegidos devuelven 401
 |---|---|---|---|
 | 1 | Crítica | Credencial de administrador de demostración compartida y con contraseña débil | API / admin |
 | 2 | Alta | PIN del personal de 4 a 6 dígitos sin prueba de límite de intentos | API / staff, kds |
-| 3 | Alta | El "dispositivo habilitado" es un UUID que el cliente genera y guarda en localStorage | API / staff, kds |
+| 3 | Media | El dispositivo de personal es de confianza durante 180 días y se revoca solo a mano | API / staff, kds |
 | 4 | Media | Netlify sin CSP, X-Frame-Options ni otras cabeceras | Netlify |
 | 5 | Media | Token con apariencia de clave en `<meta name="cadenzo-telemetry">` | API |
 | 6 | Media | Endpoint `/health` revela entorno y estado de la base de datos | API |
@@ -41,7 +41,7 @@ El backend aplica bien la autenticación: los endpoints protegidos devuelven 401
 - **CSP del API:** restrictiva, con `script-src 'self'`, `connect-src 'self'` y `frame-ancestors 'none'`.
 - **HSTS, nosniff, X-Frame-Options y Referrer-Policy** presentes en el API.
 - **TLS:** el API negocia TLS 1.2 con ECDHE y AES-256-GCM. El certificado de Netlify es válido hasta 2027-03-19.
-- **Innerhtml:** el único uso de `dangerouslySetInnerHTML` que encontré es el código QR.
+- **dangerouslySetInnerHTML:** el único uso de `dangerouslySetInnerHTML` que encontré es el código QR.
 
 ## Hallazgos detallados
 
@@ -72,18 +72,18 @@ app.use('/api/v1/auth/login', rateLimit({ windowMs: 15 * 60 * 1000, limit: 5, st
 
 Además: subir el mínimo a 6 dígitos en el servidor, rechazar PIN triviales al crearlos, bloquear temporalmente la cuenta tras varios fallos y registrar los intentos fallidos.
 
-### 3. Alta: el "dispositivo habilitado" es un UUID del navegador
+### 3. Media: confianza de dispositivo de 180 días
 
-El cliente genera un UUID con `crypto.randomUUID()` y lo guarda en `localStorage` bajo la clave `cadenzo.device`. Ese mismo identificador se envía al servidor en el flujo de unión y en los eventos. El error `device_not_enabled` se activa cuando el servidor no reconoce el dispositivo.
+Tras un login de administración, el servidor emite `__Host-cadenzo_device` con `HttpOnly`, `Secure`, `SameSite=Lax` y 180 días de vida. Es el mecanismo que permite el PIN en ese equipo. Un equipo habilitado sigue dentro durante medio año sin volver a pedir correo y contraseña.
 
-Esto es una hipótesis que no pude probar sin login: si el servidor confía en el `deviceId` que envía el cliente, cualquiera que copie ese UUID de un equipo habilitado puede saltarse la barrera. Como el PIN ya es débil, el dispositivo debería ser un segundo factor de verdad, no un identificador.
+Además, el cliente guarda un UUID propio en `localStorage` (`cadenzo.device`) y lo envía en algunos flujos. No pude confirmar si el servidor lo usa para decidir algo, así que lo trato como dato de telemetría, no como control.
 
-**Riesgo:** quien tenga acceso físico o a los datos de un equipo del local puede reutilizar su identidad.
+**Riesgo:** un equipo robado, perdido o que sale del local conserva acceso por PIN durante meses, y el personal que se va no pierde el acceso al equipo.
 
 **Corrección:**
-- Vincular el dispositivo a una cookie `HttpOnly`, `Secure` y `SameSite=Strict` firmada por el servidor, no a un UUID enviado por el cliente.
-- Emitir la habilitación del dispositivo solo tras un login con correo y contraseña, y guardar en el servidor su hash.
-- Permitir revocar dispositivos desde el panel de administración.
+- Reducir la vida de la cookie a 30 días o menos, o renovarla solo con actividad.
+- Revocar el dispositivo al desactivar a un miembro del personal, y ofrecer una lista de dispositivos habilitados en el panel de administración.
+- No usar el UUID de `localStorage` como identificador de confianza.
 
 ### 4. Media: Netlify sin defensas en el navegador
 
@@ -163,11 +163,18 @@ Let's Encrypt, caduca el 2026-12-26. Railway lo renueva automáticamente. Confir
 
 El bundle incluye React y react-dom 19.3.1. No conozco una vulnerabilidad pública para esa versión, pero no puedo confirmarlo a fecha de hoy. Revisa el `package.json` con `npm audit` o con la base OSV.
 
+## Verificado con sesión de administración
+
+- **Cookie de sesión:** `__Host-cadenzo_staff` con `HttpOnly`, `Secure`, `SameSite=Lax` y 12 horas. Bien configurada.
+- **Cierre de sesión:** `auth/logout` responde 204 y la cookie deja de valer (401 en `auth/me`).
+- **Listado del personal:** `admin/staff` devuelve banderas `hasPin` y `hasPassword`, no hashes. Correcto.
+- **Caché:** las respuestas de `admin/staff` y `admin/settings` llevan `Cache-Control: no-store`. Correcto.
+- **Permisos:** la cuenta de administración tiene un conjunto amplio de permisos (descuentos, edición de menú, auditoría, personal). Conviene revisar si todos son necesarios para un administrador de día a día.
+
 ## No verificado
 
-- **Límite de intentos del PIN y del login:** no probado. Es el punto más importante que falta.
-- **Validación del dispositivo en el servidor:** si confía en el UUID del cliente. Hipótesis del punto 3.
-- **Cookies de sesión:** sin autenticar no emiten cookies. Sus flags Secure, HttpOnly y SameSite siguen sin verificar.
+- **Límite de intentos del PIN y del login:** no probado a propósito. Hacer intentos fallidos contra cuentas reales de servicio podría bloquear a meseros en turno. Hay que probarlo en un entorno de pruebas o con una cuenta creada solo para esto.
+- **Rol del UUID de `localStorage`:** no confirmado. Ver punto 3.
 - **Redirección HTTP a HTTPS:** el proxy de salida no permite HTTP.
 - **TLS 1.3:** la sonda por proxy no devolvió resultado.
 - **Endpoints POST:** no probados, por ser escrituras.
