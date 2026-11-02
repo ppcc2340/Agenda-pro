@@ -180,3 +180,10 @@ El bundle incluye React y react-dom 19.3.1. No conozco una vulnerabilidad públi
 - **Endpoints POST:** no probados, por ser escrituras.
 
 Para cerrar estos puntos hace falta una revisión autenticada con cuentas de prueba, solo con tu autorización.
+
+## Anexo: pruebas de carga y límites de tasa
+
+- **Prueba realizada:** 30 peticiones GET secuenciales a `/api/v1/health` desde un único origen. Todas devolvieron 200 y ninguna 429.
+- **Lectura:** no hay límite de tasa visible en ese endpoint. `/health` no es el de mayor riesgo, así que el resultado no dice nada sobre el login ni el PIN.
+- **No realizado:** prueba de saturación. Se hará solo en un entorno de pruebas o fuera del horario de servicio, porque una caída en producción afecta a comandas y cocina.
+- **Código del API:** no está en este repositorio. `meri/` es un proyecto distinto con un esqueleto de API, así que no pude auditar el código del API de Cadenzo ni ejecutar `npm audit` sobre él.
