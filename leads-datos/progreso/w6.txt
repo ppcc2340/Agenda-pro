@@ -21,3 +21,4 @@ panadería|Vitacura, Santiago, Chile
 panadería|Copiapó, Chile
 panadería|Concepción, Chile
 pastelería|Las Condes, Santiago, Chile
+pastelería|Iquique, Chile

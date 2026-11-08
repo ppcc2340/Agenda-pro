@@ -20,3 +20,4 @@ constructora|Temuco, Chile
 panadería|Ñuñoa, Santiago, Chile
 panadería|Calama, Chile
 panadería|Chillán, Chile
+pastelería|Providencia, Santiago, Chile

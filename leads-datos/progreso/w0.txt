@@ -23,3 +23,4 @@ constructora|Puerto Montt, Chile
 panadería|La Florida, Santiago, Chile
 panadería|Coquimbo, Chile
 panadería|Temuco, Chile
+pastelería|Ñuñoa, Santiago, Chile

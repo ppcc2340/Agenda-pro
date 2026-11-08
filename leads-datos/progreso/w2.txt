@@ -22,3 +22,4 @@ constructora|Chillán, Chile
 panadería|Providencia, Santiago, Chile
 panadería|Arica, Chile
 panadería|Viña del Mar, Chile
+panadería|Osorno, Chile

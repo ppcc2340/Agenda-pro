@@ -22,3 +22,4 @@ constructora|Concepción, Chile
 panadería|Las Condes, Santiago, Chile
 panadería|Iquique, Chile
 panadería|Rancagua, Chile
+panadería|Puerto Montt, Chile

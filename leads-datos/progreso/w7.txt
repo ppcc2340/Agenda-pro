@@ -20,3 +20,4 @@ constructora|Osorno, Chile
 panadería|Maipú, Santiago, Chile
 panadería|La Serena, Chile
 panadería|Los Ángeles, Chile
+pastelería|Santiago Centro, Chile

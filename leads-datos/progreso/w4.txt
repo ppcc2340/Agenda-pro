@@ -14,3 +14,4 @@ gimnasio|Providencia, Santiago, Chile
 gimnasio|Arica, Chile
 gimnasio|Viña del Mar, Chile
 gimnasio|Osorno, Chile
+constructora|Maipú, Santiago, Chile
