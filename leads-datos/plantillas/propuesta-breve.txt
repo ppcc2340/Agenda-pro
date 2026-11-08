@@ -2,11 +2,17 @@ Asunto: Apoyo legal para {nombre}
 
 Hola, equipo de {nombre}:
 
-Somos {negocio}, abogados de Las Condes. Trabajamos con pymes en tres cosas
-concretas: registro de marca, contratos con clientes y proveedores, y cobranza
-de facturas impagas.
+Somos {negocio}, abogados de Las Condes que trabajamos con pymes.
 
-Si alguno de esos temas está pendiente en {nombre}, conversemos 15 minutos.
+En marcas, revisamos si el nombre está disponible, lo registramos en INAPI y les
+avisamos si alguien intenta inscribir uno parecido.
+
+También constituimos empresas, preparamos pactos de accionistas, redactamos y
+revisamos contratos, cobramos facturas impagas y llevamos juicios civiles y de
+arriendo. Y si prefieren tener un abogado a mano para el día a día, tenemos
+planes mensuales.
+
+Si alguno de estos temas está pendiente en {nombre}, conversemos 15 minutos.
 ¿Les acomoda esta semana o la próxima?
 
 Saludos,
