@@ -8,3 +8,7 @@ tienda de ropa|Iquique, Chile
 tienda de ropa|Rancagua, Chile
 tienda de ropa|Puerto Montt, Chile
 centro de estética|La Florida, Santiago, Chile
+centro de estética|Coquimbo, Chile
+centro de estética|Temuco, Chile
+gimnasio|Ñuñoa, Santiago, Chile
+gimnasio|Calama, Chile

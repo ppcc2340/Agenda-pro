@@ -11,3 +11,6 @@ tienda de ropa|Calama, Chile
 tienda de ropa|Chillán, Chile
 centro de estética|Providencia, Santiago, Chile
 centro de estética|Arica, Chile
+centro de estética|Viña del Mar, Chile
+centro de estética|Osorno, Chile
+gimnasio|Maipú, Santiago, Chile

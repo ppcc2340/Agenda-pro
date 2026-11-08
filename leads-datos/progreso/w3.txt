@@ -11,3 +11,7 @@ tienda de ropa|La Serena, Chile
 tienda de ropa|Los Ángeles, Chile
 centro de estética|Santiago Centro, Chile
 centro de estética|Antofagasta, Chile
+centro de estética|Talca, Chile
+centro de estética|Punta Arenas, Chile
+gimnasio|Puente Alto, Chile
+gimnasio|Valparaíso, Chile

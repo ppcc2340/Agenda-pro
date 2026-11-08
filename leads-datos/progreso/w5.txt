@@ -8,3 +8,6 @@ tienda de ropa|Puente Alto, Chile
 tienda de ropa|Valparaíso, Chile
 tienda de ropa|Valdivia, Chile
 centro de estética|Vitacura, Santiago, Chile
+centro de estética|Copiapó, Chile
+centro de estética|Concepción, Chile
+gimnasio|Las Condes, Santiago, Chile

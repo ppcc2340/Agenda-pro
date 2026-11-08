@@ -11,3 +11,6 @@ tienda de ropa|Copiapó, Chile
 tienda de ropa|Concepción, Chile
 centro de estética|Las Condes, Santiago, Chile
 centro de estética|Iquique, Chile
+centro de estética|Rancagua, Chile
+centro de estética|Puerto Montt, Chile
+gimnasio|La Florida, Santiago, Chile

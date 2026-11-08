@@ -2,3 +2,7 @@ cafetería|Copiapó, Chile
 cafetería|Concepción, Chile
 restaurante|Las Condes, Santiago, Chile
 restaurante|Iquique, Chile
+restaurante|Rancagua, Chile
+restaurante|Puerto Montt, Chile
+tienda de ropa|La Florida, Santiago, Chile
+tienda de ropa|Coquimbo, Chile
