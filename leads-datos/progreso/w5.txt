@@ -3,3 +3,7 @@ cafetería|Los Ángeles, Chile
 restaurante|Santiago Centro, Chile
 restaurante|Antofagasta, Chile
 restaurante|Talca, Chile
+restaurante|Punta Arenas, Chile
+tienda de ropa|Puente Alto, Chile
+tienda de ropa|Valparaíso, Chile
+tienda de ropa|Valdivia, Chile

@@ -5,3 +5,7 @@ cafetería|Viña del Mar, Chile
 cafetería|Osorno, Chile
 restaurante|Maipú, Santiago, Chile
 restaurante|La Serena, Chile
+restaurante|Los Ángeles, Chile
+tienda de ropa|Santiago Centro, Chile
+tienda de ropa|Antofagasta, Chile
+tienda de ropa|Talca, Chile

@@ -4,3 +4,6 @@ restaurante|Vitacura, Santiago, Chile
 restaurante|Copiapó, Chile
 restaurante|Concepción, Chile
 tienda de ropa|Las Condes, Santiago, Chile
+tienda de ropa|Iquique, Chile
+tienda de ropa|Rancagua, Chile
+tienda de ropa|Puerto Montt, Chile

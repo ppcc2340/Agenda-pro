@@ -3,3 +3,7 @@ cafetería|Temuco, Chile
 restaurante|Ñuñoa, Santiago, Chile
 restaurante|Calama, Chile
 restaurante|Chillán, Chile
+tienda de ropa|Providencia, Santiago, Chile
+tienda de ropa|Arica, Chile
+tienda de ropa|Viña del Mar, Chile
+tienda de ropa|Osorno, Chile

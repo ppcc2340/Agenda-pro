@@ -6,3 +6,7 @@ cafetería|Punta Arenas, Chile
 restaurante|Puente Alto, Chile
 restaurante|Valparaíso, Chile
 restaurante|Valdivia, Chile
+tienda de ropa|Vitacura, Santiago, Chile
+tienda de ropa|Copiapó, Chile
+tienda de ropa|Concepción, Chile
+centro de estética|Las Condes, Santiago, Chile

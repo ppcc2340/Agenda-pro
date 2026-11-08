@@ -7,3 +7,6 @@ restaurante|Arica, Chile
 restaurante|Viña del Mar, Chile
 restaurante|Osorno, Chile
 tienda de ropa|Maipú, Santiago, Chile
+tienda de ropa|La Serena, Chile
+tienda de ropa|Los Ángeles, Chile
+centro de estética|Santiago Centro, Chile

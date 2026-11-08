@@ -6,3 +6,7 @@ cafetería|Puerto Montt, Chile
 restaurante|La Florida, Santiago, Chile
 restaurante|Coquimbo, Chile
 restaurante|Temuco, Chile
+tienda de ropa|Ñuñoa, Santiago, Chile
+tienda de ropa|Calama, Chile
+tienda de ropa|Chillán, Chile
+centro de estética|Providencia, Santiago, Chile
