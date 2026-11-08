@@ -36,3 +36,7 @@ veterinaria|Coquimbo, Chile
 veterinaria|Temuco, Chile
 ferretería|Ñuñoa, Santiago, Chile
 ferretería|Calama, Chile
+ferretería|Chillán, Chile
+cervecería artesanal|Providencia, Santiago, Chile
+cervecería artesanal|Arica, Chile
+cervecería artesanal|Viña del Mar, Chile

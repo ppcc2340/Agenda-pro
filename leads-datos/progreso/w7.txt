@@ -42,3 +42,7 @@ cervecería artesanal|Calama, Chile
 cervecería artesanal|Chillán, Chile
 agencia de marketing|Providencia, Santiago, Chile
 agencia de marketing|Arica, Chile
+agencia de marketing|Viña del Mar, Chile
+agencia de marketing|Osorno, Chile
+inmobiliaria|Maipú, Santiago, Chile
+inmobiliaria|La Serena, Chile

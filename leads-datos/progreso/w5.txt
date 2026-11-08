@@ -43,3 +43,6 @@ cervecería artesanal|Rancagua, Chile
 cervecería artesanal|Puerto Montt, Chile
 agencia de marketing|La Florida, Santiago, Chile
 agencia de marketing|Coquimbo, Chile
+agencia de marketing|Temuco, Chile
+inmobiliaria|Ñuñoa, Santiago, Chile
+inmobiliaria|Calama, Chile

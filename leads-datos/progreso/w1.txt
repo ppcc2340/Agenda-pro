@@ -45,3 +45,6 @@ cervecería artesanal|La Serena, Chile
 cervecería artesanal|Los Ángeles, Chile
 agencia de marketing|Santiago Centro, Chile
 agencia de marketing|Antofagasta, Chile
+agencia de marketing|Talca, Chile
+agencia de marketing|Punta Arenas, Chile
+inmobiliaria|Puente Alto, Chile

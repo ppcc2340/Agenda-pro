@@ -45,3 +45,7 @@ cervecería artesanal|Coquimbo, Chile
 cervecería artesanal|Temuco, Chile
 agencia de marketing|Ñuñoa, Santiago, Chile
 agencia de marketing|Calama, Chile
+agencia de marketing|Chillán, Chile
+inmobiliaria|Providencia, Santiago, Chile
+inmobiliaria|Arica, Chile
+inmobiliaria|Viña del Mar, Chile

@@ -43,3 +43,8 @@ cervecería artesanal|Talca, Chile
 cervecería artesanal|Punta Arenas, Chile
 agencia de marketing|Puente Alto, Chile
 agencia de marketing|Valparaíso, Chile
+agencia de marketing|Valdivia, Chile
+inmobiliaria|Vitacura, Santiago, Chile
+inmobiliaria|Copiapó, Chile
+inmobiliaria|Concepción, Chile
+clínica dental|Las Condes, Santiago, Chile

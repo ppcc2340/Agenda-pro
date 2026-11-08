@@ -46,3 +46,6 @@ cervecería artesanal|Concepción, Chile
 agencia de marketing|Las Condes, Santiago, Chile
 agencia de marketing|Iquique, Chile
 agencia de marketing|Rancagua, Chile
+agencia de marketing|Puerto Montt, Chile
+inmobiliaria|La Florida, Santiago, Chile
+inmobiliaria|Coquimbo, Chile
