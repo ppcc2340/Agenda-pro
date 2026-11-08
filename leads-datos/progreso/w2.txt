@@ -29,3 +29,9 @@ pastelería|Los Ángeles, Chile
 barbería|Santiago Centro, Chile
 barbería|Antofagasta, Chile
 barbería|Talca, Chile
+barbería|Punta Arenas, Chile
+peluquería|Puente Alto, Chile
+peluquería|Valparaíso, Chile
+peluquería|Valdivia, Chile
+veterinaria|Vitacura, Santiago, Chile
+veterinaria|Copiapó, Chile

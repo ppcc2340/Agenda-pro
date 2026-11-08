@@ -28,3 +28,9 @@ barbería|La Florida, Santiago, Chile
 barbería|Coquimbo, Chile
 barbería|Temuco, Chile
 peluquería|Ñuñoa, Santiago, Chile
+peluquería|Calama, Chile
+peluquería|Chillán, Chile
+veterinaria|Providencia, Santiago, Chile
+veterinaria|Arica, Chile
+veterinaria|Viña del Mar, Chile
+veterinaria|Osorno, Chile

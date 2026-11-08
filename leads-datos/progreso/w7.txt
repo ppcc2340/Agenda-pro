@@ -27,3 +27,8 @@ pastelería|Punta Arenas, Chile
 barbería|Puente Alto, Chile
 barbería|Valparaíso, Chile
 barbería|Valdivia, Chile
+peluquería|Vitacura, Santiago, Chile
+peluquería|Copiapó, Chile
+peluquería|Concepción, Chile
+veterinaria|Las Condes, Santiago, Chile
+veterinaria|Iquique, Chile

@@ -30,3 +30,8 @@ barbería|Ñuñoa, Santiago, Chile
 barbería|Calama, Chile
 barbería|Chillán, Chile
 peluquería|Providencia, Santiago, Chile
+peluquería|Arica, Chile
+peluquería|Viña del Mar, Chile
+peluquería|Osorno, Chile
+veterinaria|Maipú, Santiago, Chile
+veterinaria|La Serena, Chile

@@ -21,3 +21,9 @@ panadería|Santiago Centro, Chile
 panadería|Antofagasta, Chile
 panadería|Talca, Chile
 panadería|Punta Arenas, Chile
+pastelería|Puente Alto, Chile
+pastelería|Valparaíso, Chile
+pastelería|Valdivia, Chile
+barbería|Vitacura, Santiago, Chile
+barbería|Copiapó, Chile
+barbería|Concepción, Chile

@@ -30,3 +30,8 @@ barbería|Las Condes, Santiago, Chile
 barbería|Iquique, Chile
 barbería|Rancagua, Chile
 barbería|Puerto Montt, Chile
+peluquería|La Florida, Santiago, Chile
+peluquería|Coquimbo, Chile
+peluquería|Temuco, Chile
+veterinaria|Ñuñoa, Santiago, Chile
+veterinaria|Calama, Chile
