@@ -14,3 +14,4 @@ centro de estética|Iquique, Chile
 centro de estética|Rancagua, Chile
 centro de estética|Puerto Montt, Chile
 gimnasio|La Florida, Santiago, Chile
+gimnasio|Coquimbo, Chile

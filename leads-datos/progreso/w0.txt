@@ -14,3 +14,4 @@ centro de estética|Puente Alto, Chile
 centro de estética|Valparaíso, Chile
 centro de estética|Valdivia, Chile
 gimnasio|Vitacura, Santiago, Chile
+gimnasio|Copiapó, Chile

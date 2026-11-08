@@ -12,3 +12,4 @@ centro de estética|Coquimbo, Chile
 centro de estética|Temuco, Chile
 gimnasio|Ñuñoa, Santiago, Chile
 gimnasio|Calama, Chile
+gimnasio|Chillán, Chile
