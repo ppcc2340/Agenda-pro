@@ -35,3 +35,4 @@ peluquería|Coquimbo, Chile
 peluquería|Temuco, Chile
 veterinaria|Ñuñoa, Santiago, Chile
 veterinaria|Calama, Chile
+veterinaria|Chillán, Chile

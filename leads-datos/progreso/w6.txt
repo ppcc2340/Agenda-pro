@@ -34,3 +34,4 @@ veterinaria|Providencia, Santiago, Chile
 veterinaria|Arica, Chile
 veterinaria|Viña del Mar, Chile
 veterinaria|Osorno, Chile
+ferretería|Maipú, Santiago, Chile

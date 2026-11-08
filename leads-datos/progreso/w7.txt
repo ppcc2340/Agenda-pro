@@ -32,3 +32,4 @@ peluquería|Copiapó, Chile
 peluquería|Concepción, Chile
 veterinaria|Las Condes, Santiago, Chile
 veterinaria|Iquique, Chile
+veterinaria|Rancagua, Chile

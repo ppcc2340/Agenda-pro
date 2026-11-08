@@ -33,3 +33,4 @@ peluquería|Talca, Chile
 peluquería|Punta Arenas, Chile
 veterinaria|Puente Alto, Chile
 veterinaria|Valparaíso, Chile
+veterinaria|Valdivia, Chile

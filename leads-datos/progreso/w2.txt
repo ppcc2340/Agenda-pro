@@ -35,3 +35,4 @@ peluquería|Valparaíso, Chile
 peluquería|Valdivia, Chile
 veterinaria|Vitacura, Santiago, Chile
 veterinaria|Copiapó, Chile
+veterinaria|Concepción, Chile

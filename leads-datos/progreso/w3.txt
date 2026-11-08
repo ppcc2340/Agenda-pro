@@ -35,3 +35,4 @@ peluquería|Viña del Mar, Chile
 peluquería|Osorno, Chile
 veterinaria|Maipú, Santiago, Chile
 veterinaria|La Serena, Chile
+veterinaria|Los Ángeles, Chile
