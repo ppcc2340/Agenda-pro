@@ -70,3 +70,5 @@ tienda de mascotas|Rancagua, Chile
 tienda de mascotas|Puerto Montt, Chile
 joyería|La Florida, Santiago, Chile
 joyería|Coquimbo, Chile
+joyería|Temuco, Chile
+mueblería|Ñuñoa, Santiago, Chile

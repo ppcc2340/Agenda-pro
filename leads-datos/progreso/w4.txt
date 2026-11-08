@@ -64,3 +64,5 @@ imprenta|Temuco, Chile
 florería|Ñuñoa, Santiago, Chile
 florería|Calama, Chile
 florería|Chillán, Chile
+tienda de mascotas|Providencia, Santiago, Chile
+tienda de mascotas|Arica, Chile

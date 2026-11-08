@@ -70,3 +70,6 @@ tienda de mascotas|Chillán, Chile
 joyería|Providencia, Santiago, Chile
 joyería|Arica, Chile
 joyería|Viña del Mar, Chile
+joyería|Osorno, Chile
+mueblería|Maipú, Santiago, Chile
+mueblería|La Serena, Chile

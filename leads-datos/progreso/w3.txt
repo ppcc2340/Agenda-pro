@@ -71,3 +71,6 @@ tienda de mascotas|Puente Alto, Chile
 tienda de mascotas|Valparaíso, Chile
 tienda de mascotas|Valdivia, Chile
 joyería|Vitacura, Santiago, Chile
+joyería|Copiapó, Chile
+joyería|Concepción, Chile
+mueblería|Las Condes, Santiago, Chile

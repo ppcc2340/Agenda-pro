@@ -71,3 +71,5 @@ tienda de mascotas|Punta Arenas, Chile
 joyería|Puente Alto, Chile
 joyería|Valparaíso, Chile
 joyería|Valdivia, Chile
+mueblería|Vitacura, Santiago, Chile
+mueblería|Copiapó, Chile
