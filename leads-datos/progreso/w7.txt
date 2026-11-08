@@ -67,3 +67,6 @@ florería|Temuco, Chile
 tienda de mascotas|Ñuñoa, Santiago, Chile
 tienda de mascotas|Calama, Chile
 tienda de mascotas|Chillán, Chile
+joyería|Providencia, Santiago, Chile
+joyería|Arica, Chile
+joyería|Viña del Mar, Chile

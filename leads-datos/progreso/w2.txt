@@ -67,3 +67,7 @@ florería|Las Condes, Santiago, Chile
 florería|Iquique, Chile
 florería|Rancagua, Chile
 florería|Puerto Montt, Chile
+tienda de mascotas|La Florida, Santiago, Chile
+tienda de mascotas|Coquimbo, Chile
+tienda de mascotas|Temuco, Chile
+joyería|Ñuñoa, Santiago, Chile

@@ -67,3 +67,7 @@ florería|Los Ángeles, Chile
 tienda de mascotas|Santiago Centro, Chile
 tienda de mascotas|Antofagasta, Chile
 tienda de mascotas|Talca, Chile
+tienda de mascotas|Punta Arenas, Chile
+joyería|Puente Alto, Chile
+joyería|Valparaíso, Chile
+joyería|Valdivia, Chile

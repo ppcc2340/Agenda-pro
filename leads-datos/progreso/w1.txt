@@ -69,3 +69,6 @@ florería|Viña del Mar, Chile
 florería|Osorno, Chile
 tienda de mascotas|Maipú, Santiago, Chile
 tienda de mascotas|La Serena, Chile
+tienda de mascotas|Los Ángeles, Chile
+joyería|Santiago Centro, Chile
+joyería|Antofagasta, Chile

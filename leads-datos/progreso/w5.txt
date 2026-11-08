@@ -66,3 +66,7 @@ florería|Copiapó, Chile
 florería|Concepción, Chile
 tienda de mascotas|Las Condes, Santiago, Chile
 tienda de mascotas|Iquique, Chile
+tienda de mascotas|Rancagua, Chile
+tienda de mascotas|Puerto Montt, Chile
+joyería|La Florida, Santiago, Chile
+joyería|Coquimbo, Chile

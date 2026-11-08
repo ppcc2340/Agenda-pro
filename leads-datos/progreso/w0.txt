@@ -69,3 +69,6 @@ florería|Valparaíso, Chile
 florería|Valdivia, Chile
 tienda de mascotas|Vitacura, Santiago, Chile
 tienda de mascotas|Copiapó, Chile
+tienda de mascotas|Concepción, Chile
+joyería|Las Condes, Santiago, Chile
+joyería|Iquique, Chile

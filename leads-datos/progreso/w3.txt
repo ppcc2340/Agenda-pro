@@ -68,3 +68,6 @@ florería|Antofagasta, Chile
 florería|Talca, Chile
 florería|Punta Arenas, Chile
 tienda de mascotas|Puente Alto, Chile
+tienda de mascotas|Valparaíso, Chile
+tienda de mascotas|Valdivia, Chile
+joyería|Vitacura, Santiago, Chile

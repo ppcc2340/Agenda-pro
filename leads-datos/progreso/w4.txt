@@ -59,3 +59,8 @@ taller mecánico|Iquique, Chile
 taller mecánico|Rancagua, Chile
 taller mecánico|Puerto Montt, Chile
 imprenta|La Florida, Santiago, Chile
+imprenta|Coquimbo, Chile
+imprenta|Temuco, Chile
+florería|Ñuñoa, Santiago, Chile
+florería|Calama, Chile
+florería|Chillán, Chile
