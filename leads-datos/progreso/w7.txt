@@ -59,3 +59,5 @@ taller mecánico|Copiapó, Chile
 taller mecánico|Concepción, Chile
 imprenta|Las Condes, Santiago, Chile
 imprenta|Iquique, Chile
+imprenta|Rancagua, Chile
+imprenta|Puerto Montt, Chile

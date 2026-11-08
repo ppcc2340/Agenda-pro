@@ -60,3 +60,4 @@ taller mecánico|Talca, Chile
 taller mecánico|Punta Arenas, Chile
 imprenta|Puente Alto, Chile
 imprenta|Valparaíso, Chile
+imprenta|Valdivia, Chile

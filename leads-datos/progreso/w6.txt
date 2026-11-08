@@ -60,3 +60,5 @@ taller mecánico|Chillán, Chile
 imprenta|Providencia, Santiago, Chile
 imprenta|Arica, Chile
 imprenta|Viña del Mar, Chile
+imprenta|Osorno, Chile
+florería|Maipú, Santiago, Chile

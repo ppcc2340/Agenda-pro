@@ -61,3 +61,4 @@ taller mecánico|Arica, Chile
 taller mecánico|Viña del Mar, Chile
 taller mecánico|Osorno, Chile
 imprenta|Maipú, Santiago, Chile
+imprenta|La Serena, Chile

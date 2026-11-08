@@ -62,3 +62,4 @@ taller mecánico|Coquimbo, Chile
 taller mecánico|Temuco, Chile
 imprenta|Ñuñoa, Santiago, Chile
 imprenta|Calama, Chile
+imprenta|Chillán, Chile

@@ -61,3 +61,4 @@ taller mecánico|Puente Alto, Chile
 taller mecánico|Valparaíso, Chile
 taller mecánico|Valdivia, Chile
 imprenta|Vitacura, Santiago, Chile
+imprenta|Copiapó, Chile
