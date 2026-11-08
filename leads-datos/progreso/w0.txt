@@ -29,3 +29,4 @@ pastelería|Chillán, Chile
 barbería|Providencia, Santiago, Chile
 barbería|Arica, Chile
 barbería|Viña del Mar, Chile
+barbería|Osorno, Chile

@@ -26,3 +26,4 @@ pastelería|Talca, Chile
 pastelería|Punta Arenas, Chile
 barbería|Puente Alto, Chile
 barbería|Valparaíso, Chile
+barbería|Valdivia, Chile

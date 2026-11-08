@@ -29,3 +29,4 @@ pastelería|Temuco, Chile
 barbería|Ñuñoa, Santiago, Chile
 barbería|Calama, Chile
 barbería|Chillán, Chile
+peluquería|Providencia, Santiago, Chile

@@ -27,3 +27,4 @@ pastelería|Osorno, Chile
 barbería|Maipú, Santiago, Chile
 barbería|La Serena, Chile
 barbería|Los Ángeles, Chile
+peluquería|Santiago Centro, Chile
