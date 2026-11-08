@@ -65,3 +65,7 @@ imprenta|Calama, Chile
 imprenta|Chillán, Chile
 florería|Providencia, Santiago, Chile
 florería|Arica, Chile
+florería|Viña del Mar, Chile
+florería|Osorno, Chile
+tienda de mascotas|Maipú, Santiago, Chile
+tienda de mascotas|La Serena, Chile

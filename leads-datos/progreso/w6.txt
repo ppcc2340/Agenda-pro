@@ -63,3 +63,7 @@ imprenta|Viña del Mar, Chile
 imprenta|Osorno, Chile
 florería|Maipú, Santiago, Chile
 florería|La Serena, Chile
+florería|Los Ángeles, Chile
+tienda de mascotas|Santiago Centro, Chile
+tienda de mascotas|Antofagasta, Chile
+tienda de mascotas|Talca, Chile

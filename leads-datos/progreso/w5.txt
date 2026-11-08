@@ -63,3 +63,6 @@ imprenta|Valparaíso, Chile
 imprenta|Valdivia, Chile
 florería|Vitacura, Santiago, Chile
 florería|Copiapó, Chile
+florería|Concepción, Chile
+tienda de mascotas|Las Condes, Santiago, Chile
+tienda de mascotas|Iquique, Chile

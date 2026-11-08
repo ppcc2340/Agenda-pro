@@ -64,3 +64,6 @@ imprenta|Vitacura, Santiago, Chile
 imprenta|Copiapó, Chile
 imprenta|Concepción, Chile
 florería|Las Condes, Santiago, Chile
+florería|Iquique, Chile
+florería|Rancagua, Chile
+florería|Puerto Montt, Chile

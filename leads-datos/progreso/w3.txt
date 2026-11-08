@@ -64,3 +64,7 @@ imprenta|Maipú, Santiago, Chile
 imprenta|La Serena, Chile
 imprenta|Los Ángeles, Chile
 florería|Santiago Centro, Chile
+florería|Antofagasta, Chile
+florería|Talca, Chile
+florería|Punta Arenas, Chile
+tienda de mascotas|Puente Alto, Chile

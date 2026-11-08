@@ -65,3 +65,7 @@ imprenta|Antofagasta, Chile
 imprenta|Talca, Chile
 imprenta|Punta Arenas, Chile
 florería|Puente Alto, Chile
+florería|Valparaíso, Chile
+florería|Valdivia, Chile
+tienda de mascotas|Vitacura, Santiago, Chile
+tienda de mascotas|Copiapó, Chile

@@ -55,3 +55,7 @@ clínica dental|Valdivia, Chile
 óptica|Copiapó, Chile
 óptica|Concepción, Chile
 taller mecánico|Las Condes, Santiago, Chile
+taller mecánico|Iquique, Chile
+taller mecánico|Rancagua, Chile
+taller mecánico|Puerto Montt, Chile
+imprenta|La Florida, Santiago, Chile

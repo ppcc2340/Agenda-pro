@@ -63,3 +63,7 @@ imprenta|Rancagua, Chile
 imprenta|Puerto Montt, Chile
 florería|La Florida, Santiago, Chile
 florería|Coquimbo, Chile
+florería|Temuco, Chile
+tienda de mascotas|Ñuñoa, Santiago, Chile
+tienda de mascotas|Calama, Chile
+tienda de mascotas|Chillán, Chile
