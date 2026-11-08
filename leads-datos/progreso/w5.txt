@@ -72,3 +72,7 @@ joyería|La Florida, Santiago, Chile
 joyería|Coquimbo, Chile
 joyería|Temuco, Chile
 mueblería|Ñuñoa, Santiago, Chile
+mueblería|Calama, Chile
+mueblería|Chillán, Chile
+escuela de idiomas|Providencia, Santiago, Chile
+escuela de idiomas|Arica, Chile

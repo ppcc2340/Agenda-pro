@@ -66,3 +66,6 @@ florería|Calama, Chile
 florería|Chillán, Chile
 tienda de mascotas|Providencia, Santiago, Chile
 tienda de mascotas|Arica, Chile
+tienda de mascotas|Viña del Mar, Chile
+tienda de mascotas|Osorno, Chile
+joyería|Maipú, Santiago, Chile

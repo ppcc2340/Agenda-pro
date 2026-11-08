@@ -73,3 +73,6 @@ joyería|Valparaíso, Chile
 joyería|Valdivia, Chile
 mueblería|Vitacura, Santiago, Chile
 mueblería|Copiapó, Chile
+mueblería|Concepción, Chile
+escuela de idiomas|Las Condes, Santiago, Chile
+escuela de idiomas|Iquique, Chile

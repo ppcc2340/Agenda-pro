@@ -72,3 +72,7 @@ tienda de mascotas|Copiapó, Chile
 tienda de mascotas|Concepción, Chile
 joyería|Las Condes, Santiago, Chile
 joyería|Iquique, Chile
+joyería|Rancagua, Chile
+joyería|Puerto Montt, Chile
+mueblería|La Florida, Santiago, Chile
+mueblería|Coquimbo, Chile

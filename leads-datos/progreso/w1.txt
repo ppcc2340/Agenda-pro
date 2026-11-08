@@ -72,3 +72,6 @@ tienda de mascotas|La Serena, Chile
 tienda de mascotas|Los Ángeles, Chile
 joyería|Santiago Centro, Chile
 joyería|Antofagasta, Chile
+joyería|Talca, Chile
+joyería|Punta Arenas, Chile
+mueblería|Puente Alto, Chile

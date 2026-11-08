@@ -73,3 +73,7 @@ joyería|Viña del Mar, Chile
 joyería|Osorno, Chile
 mueblería|Maipú, Santiago, Chile
 mueblería|La Serena, Chile
+mueblería|Los Ángeles, Chile
+escuela de idiomas|Santiago Centro, Chile
+escuela de idiomas|Antofagasta, Chile
+escuela de idiomas|Talca, Chile

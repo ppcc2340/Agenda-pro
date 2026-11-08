@@ -74,3 +74,6 @@ joyería|Vitacura, Santiago, Chile
 joyería|Copiapó, Chile
 joyería|Concepción, Chile
 mueblería|Las Condes, Santiago, Chile
+mueblería|Iquique, Chile
+mueblería|Rancagua, Chile
+mueblería|Puerto Montt, Chile
