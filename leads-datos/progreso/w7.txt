@@ -52,3 +52,10 @@ clínica dental|Antofagasta, Chile
 clínica dental|Talca, Chile
 clínica dental|Punta Arenas, Chile
 óptica|Puente Alto, Chile
+óptica|Valparaíso, Chile
+óptica|Valdivia, Chile
+taller mecánico|Vitacura, Santiago, Chile
+taller mecánico|Copiapó, Chile
+taller mecánico|Concepción, Chile
+imprenta|Las Condes, Santiago, Chile
+imprenta|Iquique, Chile

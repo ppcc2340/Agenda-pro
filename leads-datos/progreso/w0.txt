@@ -56,3 +56,10 @@ clínica dental|Chillán, Chile
 óptica|Providencia, Santiago, Chile
 óptica|Arica, Chile
 óptica|Viña del Mar, Chile
+óptica|Osorno, Chile
+taller mecánico|Maipú, Santiago, Chile
+taller mecánico|La Serena, Chile
+taller mecánico|Los Ángeles, Chile
+imprenta|Santiago Centro, Chile
+imprenta|Antofagasta, Chile
+imprenta|Talca, Chile

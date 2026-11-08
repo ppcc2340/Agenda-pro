@@ -54,3 +54,9 @@ clínica dental|Puerto Montt, Chile
 óptica|La Florida, Santiago, Chile
 óptica|Coquimbo, Chile
 óptica|Temuco, Chile
+taller mecánico|Ñuñoa, Santiago, Chile
+taller mecánico|Calama, Chile
+taller mecánico|Chillán, Chile
+imprenta|Providencia, Santiago, Chile
+imprenta|Arica, Chile
+imprenta|Viña del Mar, Chile

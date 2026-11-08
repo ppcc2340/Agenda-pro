@@ -46,3 +46,10 @@ agencia de marketing|La Serena, Chile
 agencia de marketing|Los Ángeles, Chile
 inmobiliaria|Santiago Centro, Chile
 inmobiliaria|Antofagasta, Chile
+inmobiliaria|Talca, Chile
+inmobiliaria|Punta Arenas, Chile
+clínica dental|Puente Alto, Chile
+clínica dental|Valparaíso, Chile
+clínica dental|Valdivia, Chile
+óptica|Vitacura, Santiago, Chile
+óptica|Copiapó, Chile

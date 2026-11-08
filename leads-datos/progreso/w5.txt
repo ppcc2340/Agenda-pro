@@ -53,3 +53,10 @@ clínica dental|Viña del Mar, Chile
 clínica dental|Osorno, Chile
 óptica|Maipú, Santiago, Chile
 óptica|La Serena, Chile
+óptica|Los Ángeles, Chile
+taller mecánico|Santiago Centro, Chile
+taller mecánico|Antofagasta, Chile
+taller mecánico|Talca, Chile
+taller mecánico|Punta Arenas, Chile
+imprenta|Puente Alto, Chile
+imprenta|Valparaíso, Chile

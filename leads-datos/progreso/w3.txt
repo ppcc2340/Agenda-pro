@@ -55,3 +55,9 @@ clínica dental|Coquimbo, Chile
 clínica dental|Temuco, Chile
 óptica|Ñuñoa, Santiago, Chile
 óptica|Calama, Chile
+óptica|Chillán, Chile
+taller mecánico|Providencia, Santiago, Chile
+taller mecánico|Arica, Chile
+taller mecánico|Viña del Mar, Chile
+taller mecánico|Osorno, Chile
+imprenta|Maipú, Santiago, Chile

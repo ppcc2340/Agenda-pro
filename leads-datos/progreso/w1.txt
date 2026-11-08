@@ -55,3 +55,10 @@ clínica dental|Copiapó, Chile
 clínica dental|Concepción, Chile
 óptica|Las Condes, Santiago, Chile
 óptica|Iquique, Chile
+óptica|Rancagua, Chile
+óptica|Puerto Montt, Chile
+taller mecánico|La Florida, Santiago, Chile
+taller mecánico|Coquimbo, Chile
+taller mecánico|Temuco, Chile
+imprenta|Ñuñoa, Santiago, Chile
+imprenta|Calama, Chile
