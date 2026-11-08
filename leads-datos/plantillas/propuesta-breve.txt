@@ -1,17 +1,13 @@
-Asunto: Proteger lo que ya construyó {nombre}
+Asunto: Apoyo legal para {nombre}
 
 Hola, equipo de {nombre}:
 
-Les escribimos corto, porque sabemos que el día a día de una pyme no da tregua.
+Somos {negocio}, abogados de Las Condes. Trabajamos con pymes en tres cosas
+concretas: registro de marca, contratos con clientes y proveedores, y cobranza
+de facturas impagas.
 
-Pasa más seguido de lo que parece: un negocio se hace un nombre, junta clientes
-y buenas reseñas, y un día descubre que otro registró su marca, que un contrato
-no lo protegía o que una deuda se quedó sin cobrar.
-
-En {negocio} ayudamos a pymes a dejar eso resuelto antes de que se transforme
-en un problema.
-
-¿Les parece si conversamos 15 minutos esta semana o la próxima?
+Si alguno de esos temas está pendiente en {nombre}, conversemos 15 minutos.
+¿Les acomoda esta semana o la próxima?
 
 Saludos,
 
