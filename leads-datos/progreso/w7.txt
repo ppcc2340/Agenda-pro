@@ -16,3 +16,7 @@ gimnasio|Chillán, Chile
 constructora|Providencia, Santiago, Chile
 constructora|Arica, Chile
 constructora|Viña del Mar, Chile
+constructora|Osorno, Chile
+panadería|Maipú, Santiago, Chile
+panadería|La Serena, Chile
+panadería|Los Ángeles, Chile

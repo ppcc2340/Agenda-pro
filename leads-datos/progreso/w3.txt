@@ -19,3 +19,6 @@ gimnasio|Valdivia, Chile
 constructora|Vitacura, Santiago, Chile
 constructora|Copiapó, Chile
 constructora|Concepción, Chile
+panadería|Las Condes, Santiago, Chile
+panadería|Iquique, Chile
+panadería|Rancagua, Chile

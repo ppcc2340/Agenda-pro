@@ -17,3 +17,6 @@ gimnasio|Puerto Montt, Chile
 constructora|La Florida, Santiago, Chile
 constructora|Coquimbo, Chile
 constructora|Temuco, Chile
+panadería|Ñuñoa, Santiago, Chile
+panadería|Calama, Chile
+panadería|Chillán, Chile

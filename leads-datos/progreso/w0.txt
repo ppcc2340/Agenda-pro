@@ -19,3 +19,7 @@ gimnasio|Concepción, Chile
 constructora|Las Condes, Santiago, Chile
 constructora|Iquique, Chile
 constructora|Rancagua, Chile
+constructora|Puerto Montt, Chile
+panadería|La Florida, Santiago, Chile
+panadería|Coquimbo, Chile
+panadería|Temuco, Chile

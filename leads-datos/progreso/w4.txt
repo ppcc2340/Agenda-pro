@@ -11,3 +11,6 @@ centro de estética|Ñuñoa, Santiago, Chile
 centro de estética|Calama, Chile
 centro de estética|Chillán, Chile
 gimnasio|Providencia, Santiago, Chile
+gimnasio|Arica, Chile
+gimnasio|Viña del Mar, Chile
+gimnasio|Osorno, Chile

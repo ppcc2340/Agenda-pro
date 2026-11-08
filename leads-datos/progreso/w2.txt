@@ -19,3 +19,6 @@ gimnasio|Temuco, Chile
 constructora|Ñuñoa, Santiago, Chile
 constructora|Calama, Chile
 constructora|Chillán, Chile
+panadería|Providencia, Santiago, Chile
+panadería|Arica, Chile
+panadería|Viña del Mar, Chile

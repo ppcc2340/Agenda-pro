@@ -19,3 +19,7 @@ gimnasio|Los Ángeles, Chile
 constructora|Santiago Centro, Chile
 constructora|Antofagasta, Chile
 constructora|Talca, Chile
+constructora|Punta Arenas, Chile
+panadería|Puente Alto, Chile
+panadería|Valparaíso, Chile
+panadería|Valdivia, Chile

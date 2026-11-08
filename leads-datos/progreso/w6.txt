@@ -17,3 +17,7 @@ gimnasio|Punta Arenas, Chile
 constructora|Puente Alto, Chile
 constructora|Valparaíso, Chile
 constructora|Valdivia, Chile
+panadería|Vitacura, Santiago, Chile
+panadería|Copiapó, Chile
+panadería|Concepción, Chile
+pastelería|Las Condes, Santiago, Chile
