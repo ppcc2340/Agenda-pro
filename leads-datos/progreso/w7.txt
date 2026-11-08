@@ -1,0 +1,6 @@
+cafetería|Valparaíso, Chile
+cafetería|Valdivia, Chile
+restaurante|Vitacura, Santiago, Chile
+restaurante|Copiapó, Chile
+restaurante|Concepción, Chile
+tienda de ropa|Las Condes, Santiago, Chile

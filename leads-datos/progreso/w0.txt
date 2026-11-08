@@ -1,0 +1,7 @@
+cafetería|Providencia, Santiago, Chile
+cafetería|Vitacura, Santiago, Chile
+cafetería|Arica, Chile
+cafetería|Viña del Mar, Chile
+cafetería|Osorno, Chile
+restaurante|Maipú, Santiago, Chile
+restaurante|La Serena, Chile

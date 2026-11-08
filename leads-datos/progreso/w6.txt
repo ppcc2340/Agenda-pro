@@ -1,0 +1,5 @@
+cafetería|Coquimbo, Chile
+cafetería|Temuco, Chile
+restaurante|Ñuñoa, Santiago, Chile
+restaurante|Calama, Chile
+restaurante|Chillán, Chile

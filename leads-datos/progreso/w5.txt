@@ -1,0 +1,5 @@
+cafetería|La Serena, Chile
+cafetería|Los Ángeles, Chile
+restaurante|Santiago Centro, Chile
+restaurante|Antofagasta, Chile
+restaurante|Talca, Chile

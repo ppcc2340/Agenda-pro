@@ -1,0 +1,9 @@
+cafetería|Ñuñoa, Santiago, Chile
+cafetería|Puente Alto, Chile
+cafetería|Calama, Chile
+cafetería|Chillán, Chile
+restaurante|Providencia, Santiago, Chile
+restaurante|Arica, Chile
+restaurante|Viña del Mar, Chile
+restaurante|Osorno, Chile
+tienda de ropa|Maipú, Santiago, Chile

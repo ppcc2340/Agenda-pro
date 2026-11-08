@@ -1,0 +1,8 @@
+cafetería|Santiago Centro, Chile
+cafetería|La Florida, Santiago, Chile
+cafetería|Antofagasta, Chile
+cafetería|Talca, Chile
+cafetería|Punta Arenas, Chile
+restaurante|Puente Alto, Chile
+restaurante|Valparaíso, Chile
+restaurante|Valdivia, Chile

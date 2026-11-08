@@ -1,0 +1,4 @@
+cafetería|Copiapó, Chile
+cafetería|Concepción, Chile
+restaurante|Las Condes, Santiago, Chile
+restaurante|Iquique, Chile

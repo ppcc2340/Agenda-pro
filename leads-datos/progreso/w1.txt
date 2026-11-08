@@ -1,0 +1,8 @@
+cafetería|Las Condes, Santiago, Chile
+cafetería|Maipú, Santiago, Chile
+cafetería|Iquique, Chile
+cafetería|Rancagua, Chile
+cafetería|Puerto Montt, Chile
+restaurante|La Florida, Santiago, Chile
+restaurante|Coquimbo, Chile
+restaurante|Temuco, Chile
