@@ -19,7 +19,7 @@ from motor import config, plantillas, store      # noqa: E402
 
 CHILE = ZoneInfo("America/Santiago")
 AZUL = PatternFill("solid", fgColor="1F3864")
-COLORES = {"Programado": "FFF2CC", "Enviado": "DDEBF7", "Respondió": "C6EFCE", "Pidió baja": "F4CCCC",
+COLORES = {"No enviado (bloqueo Zoho)": "F8CBAD", "Programado": "FFF2CC", "Enviado": "DDEBF7", "Respondió": "C6EFCE", "Pidió baja": "F4CCCC",
            "Rebotó": "E0E0E0", "Por confirmar": "FCE4D6"}
 COLUMNAS = [("N°", 6), ("Negocio", 34), ("Rubro", 20), ("Ciudad", 24), ("Correo", 32), ("Teléfono", 16),
             ("Dirección", 40), ("Sitio web", 34), ("Fuente (Google Maps)", 22), ("Programado / enviado (hora Chile)", 22),
@@ -29,7 +29,7 @@ COLUMNAS = [("N°", 6), ("Negocio", 34), ("Rubro", 20), ("Ciudad", 24), ("Correo
 def estado_legible(l, ahora):
     e = l["estado"]
     if e == "revisar":
-        return "Por confirmar"
+        return "No enviado (bloqueo Zoho)" if (l["respuesta"] or "").startswith("No enviado") else "Por confirmar"
     if e == "respondio":
         return "Respondió"
     if e == "baja":
@@ -57,6 +57,7 @@ def main():
     ap = argparse.ArgumentParser()
     ahora = datetime.now(CHILE).replace(tzinfo=None)
     ap.add_argument("--salida", default=str(config.RAIZ / f"contactados-{ahora:%Y-%m-%d}.xlsx"))
+    ap.add_argument("--nota", default="")
     a = ap.parse_args()
     cfg = config.cargar()
     con = store.conectar()
@@ -92,7 +93,11 @@ def main():
     rs.column_dimensions["A"].width = 40; rs.column_dimensions["B"].width = 14
     rs.append([f"Campaña de prospección AFyV Legal · generado {ahora:%d-%m-%Y %H:%M} (hora Chile)"])
     rs["A1"].font = Font(bold=True, size=13)
-    rs.append([]); rs.append(["Total contactados (enviados + programados)", len(filas)])
+    rs.append([]); rs.append(["Total en la campaña (enviados + programados + no enviados)", len(filas)])
+    if a.nota:
+        rs.append([]); rs.append(["Nota"]); rs.cell(row=rs.max_row, column=1).font = Font(bold=True)
+        for linea in a.nota.split("|"):
+            rs.append([linea.strip()])
     for titulo, cont in (("Por estado", por_estado), ("Por día de envío", por_dia),
                          ("Por ciudad", por_ciudad), ("Por rubro", por_rubro)):
         rs.append([]); rs.append([titulo, "Correos"])
