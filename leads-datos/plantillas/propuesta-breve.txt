@@ -1,17 +1,19 @@
-Asunto: Asesoría legal para {nombre}
+Asunto: Proteger lo que ya construyó {nombre}
 
 Hola, equipo de {nombre}:
 
-Les escribimos desde {negocio}, estudio jurídico de Las Condes que trabaja con
-pymes y emprendedores de todo Chile.
+Les escribimos corto, porque sabemos que el día a día de una pyme no da tregua.
 
-Vimos a {nombre} en internet y pensamos que podría servirles lo que hacemos:
-{servicio}. Antes de contratar les informamos por escrito el precio y el plazo,
-y nuestro equipo revisa y firma cada entrega.
+Pasa más seguido de lo que parece: un negocio se hace un nombre, junta clientes
+y buenas reseñas, y un día descubre que otro registró su marca, que un contrato
+no lo protegía o que una deuda se quedó sin cobrar.
 
-¿Les acomoda una llamada de 15 minutos esta semana o la próxima?
+En {negocio} ayudamos a pymes a dejar eso resuelto antes de que se transforme
+en un problema.
 
-Saludos cordiales,
+¿Les parece si conversamos 15 minutos esta semana o la próxima?
+
+Saludos,
 
 {remitente}
 contacto@afyvlegal.com
