@@ -7,3 +7,4 @@ tienda de ropa|Providencia, Santiago, Chile
 tienda de ropa|Arica, Chile
 tienda de ropa|Viña del Mar, Chile
 tienda de ropa|Osorno, Chile
+centro de estética|Maipú, Santiago, Chile

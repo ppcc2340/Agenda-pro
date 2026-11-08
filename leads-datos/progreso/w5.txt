@@ -7,3 +7,4 @@ restaurante|Punta Arenas, Chile
 tienda de ropa|Puente Alto, Chile
 tienda de ropa|Valparaíso, Chile
 tienda de ropa|Valdivia, Chile
+centro de estética|Vitacura, Santiago, Chile

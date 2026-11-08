@@ -10,3 +10,4 @@ tienda de ropa|Ñuñoa, Santiago, Chile
 tienda de ropa|Calama, Chile
 tienda de ropa|Chillán, Chile
 centro de estética|Providencia, Santiago, Chile
+centro de estética|Arica, Chile

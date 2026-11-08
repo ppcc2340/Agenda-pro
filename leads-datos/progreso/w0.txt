@@ -9,3 +9,4 @@ restaurante|Los Ángeles, Chile
 tienda de ropa|Santiago Centro, Chile
 tienda de ropa|Antofagasta, Chile
 tienda de ropa|Talca, Chile
+tienda de ropa|Punta Arenas, Chile
