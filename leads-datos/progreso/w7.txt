@@ -22,3 +22,7 @@ panadería|La Serena, Chile
 panadería|Los Ángeles, Chile
 pastelería|Santiago Centro, Chile
 pastelería|Antofagasta, Chile
+pastelería|Talca, Chile
+pastelería|Punta Arenas, Chile
+barbería|Puente Alto, Chile
+barbería|Valparaíso, Chile

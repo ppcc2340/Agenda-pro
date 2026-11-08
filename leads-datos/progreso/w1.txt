@@ -25,3 +25,7 @@ panadería|Valparaíso, Chile
 panadería|Valdivia, Chile
 pastelería|Vitacura, Santiago, Chile
 pastelería|Copiapó, Chile
+pastelería|Concepción, Chile
+barbería|Las Condes, Santiago, Chile
+barbería|Iquique, Chile
+barbería|Rancagua, Chile

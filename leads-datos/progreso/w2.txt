@@ -25,3 +25,7 @@ panadería|Viña del Mar, Chile
 panadería|Osorno, Chile
 pastelería|Maipú, Santiago, Chile
 pastelería|La Serena, Chile
+pastelería|Los Ángeles, Chile
+barbería|Santiago Centro, Chile
+barbería|Antofagasta, Chile
+barbería|Talca, Chile

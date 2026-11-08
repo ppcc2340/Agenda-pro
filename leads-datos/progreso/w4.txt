@@ -17,3 +17,6 @@ gimnasio|Osorno, Chile
 constructora|Maipú, Santiago, Chile
 constructora|La Serena, Chile
 constructora|Los Ángeles, Chile
+panadería|Santiago Centro, Chile
+panadería|Antofagasta, Chile
+panadería|Talca, Chile

@@ -25,3 +25,7 @@ panadería|Rancagua, Chile
 panadería|Puerto Montt, Chile
 pastelería|La Florida, Santiago, Chile
 pastelería|Coquimbo, Chile
+pastelería|Temuco, Chile
+barbería|Ñuñoa, Santiago, Chile
+barbería|Calama, Chile
+barbería|Chillán, Chile

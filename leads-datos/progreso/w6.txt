@@ -24,3 +24,7 @@ pastelería|Las Condes, Santiago, Chile
 pastelería|Iquique, Chile
 pastelería|Rancagua, Chile
 pastelería|Puerto Montt, Chile
+barbería|La Florida, Santiago, Chile
+barbería|Coquimbo, Chile
+barbería|Temuco, Chile
+peluquería|Ñuñoa, Santiago, Chile

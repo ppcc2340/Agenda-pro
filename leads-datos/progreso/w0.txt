@@ -25,3 +25,7 @@ panadería|Coquimbo, Chile
 panadería|Temuco, Chile
 pastelería|Ñuñoa, Santiago, Chile
 pastelería|Calama, Chile
+pastelería|Chillán, Chile
+barbería|Providencia, Santiago, Chile
+barbería|Arica, Chile
+barbería|Viña del Mar, Chile

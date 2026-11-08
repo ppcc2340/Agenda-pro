@@ -23,3 +23,7 @@ panadería|Chillán, Chile
 pastelería|Providencia, Santiago, Chile
 pastelería|Arica, Chile
 pastelería|Viña del Mar, Chile
+pastelería|Osorno, Chile
+barbería|Maipú, Santiago, Chile
+barbería|La Serena, Chile
+barbería|Los Ángeles, Chile
