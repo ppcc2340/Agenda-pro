@@ -21,6 +21,8 @@ from zoneinfo import ZoneInfo
 AQUI = Path(__file__).resolve().parent
 sys.path.insert(0, str(AQUI))
 from motor import config, plantillas, store       # noqa: E402
+from motor.filtro_correos import motivo_descarte   # noqa: E402
+from motor.filtro_negocios import motivo_negocio  # noqa: E402
 
 CHILE = ZoneInfo("America/Santiago")
 RE_MAIL = re.compile(r"^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}$")
@@ -80,6 +82,10 @@ def main():
             continue
         if not RE_MAIL.match(e) or e in ya:
             store.actualizar(con, l["id"], estado="duplicado" if e in ya else "correo_invalido")
+            continue
+        motivo = motivo_descarte(e) or motivo_negocio(l["nombre"], e, l["web"])
+        if motivo:
+            store.actualizar(con, l["id"], estado="descartado", respuesta=f"Descartado: {motivo}")
             continue
         ya.add(e)
         lote.append(l)
