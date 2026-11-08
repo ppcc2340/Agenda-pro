@@ -21,3 +21,5 @@ panadería|Ñuñoa, Santiago, Chile
 panadería|Calama, Chile
 panadería|Chillán, Chile
 pastelería|Providencia, Santiago, Chile
+pastelería|Arica, Chile
+pastelería|Viña del Mar, Chile

@@ -24,3 +24,4 @@ panadería|Arica, Chile
 panadería|Viña del Mar, Chile
 panadería|Osorno, Chile
 pastelería|Maipú, Santiago, Chile
+pastelería|La Serena, Chile

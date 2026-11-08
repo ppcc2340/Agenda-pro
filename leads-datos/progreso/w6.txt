@@ -22,3 +22,5 @@ panadería|Copiapó, Chile
 panadería|Concepción, Chile
 pastelería|Las Condes, Santiago, Chile
 pastelería|Iquique, Chile
+pastelería|Rancagua, Chile
+pastelería|Puerto Montt, Chile

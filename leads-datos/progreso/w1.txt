@@ -24,3 +24,4 @@ panadería|Puente Alto, Chile
 panadería|Valparaíso, Chile
 panadería|Valdivia, Chile
 pastelería|Vitacura, Santiago, Chile
+pastelería|Copiapó, Chile

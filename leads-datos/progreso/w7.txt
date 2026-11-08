@@ -21,3 +21,4 @@ panadería|Maipú, Santiago, Chile
 panadería|La Serena, Chile
 panadería|Los Ángeles, Chile
 pastelería|Santiago Centro, Chile
+pastelería|Antofagasta, Chile

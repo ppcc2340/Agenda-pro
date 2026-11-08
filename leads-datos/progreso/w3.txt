@@ -23,3 +23,5 @@ panadería|Las Condes, Santiago, Chile
 panadería|Iquique, Chile
 panadería|Rancagua, Chile
 panadería|Puerto Montt, Chile
+pastelería|La Florida, Santiago, Chile
+pastelería|Coquimbo, Chile

@@ -15,3 +15,5 @@ gimnasio|Arica, Chile
 gimnasio|Viña del Mar, Chile
 gimnasio|Osorno, Chile
 constructora|Maipú, Santiago, Chile
+constructora|La Serena, Chile
+constructora|Los Ángeles, Chile
