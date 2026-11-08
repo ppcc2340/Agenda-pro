@@ -16,3 +16,4 @@ gimnasio|Talca, Chile
 gimnasio|Punta Arenas, Chile
 constructora|Puente Alto, Chile
 constructora|Valparaíso, Chile
+constructora|Valdivia, Chile
