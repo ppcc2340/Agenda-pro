@@ -42,3 +42,4 @@ ferretería|Talca, Chile
 ferretería|Punta Arenas, Chile
 cervecería artesanal|Puente Alto, Chile
 cervecería artesanal|Valparaíso, Chile
+cervecería artesanal|Valdivia, Chile

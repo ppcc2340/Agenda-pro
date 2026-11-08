@@ -40,3 +40,4 @@ ferretería|Concepción, Chile
 cervecería artesanal|Las Condes, Santiago, Chile
 cervecería artesanal|Iquique, Chile
 cervecería artesanal|Rancagua, Chile
+cervecería artesanal|Puerto Montt, Chile

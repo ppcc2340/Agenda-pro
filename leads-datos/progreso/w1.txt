@@ -42,3 +42,4 @@ ferretería|Viña del Mar, Chile
 ferretería|Osorno, Chile
 cervecería artesanal|Maipú, Santiago, Chile
 cervecería artesanal|La Serena, Chile
+cervecería artesanal|Los Ángeles, Chile

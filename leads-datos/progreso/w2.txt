@@ -42,3 +42,4 @@ ferretería|Rancagua, Chile
 ferretería|Puerto Montt, Chile
 cervecería artesanal|La Florida, Santiago, Chile
 cervecería artesanal|Coquimbo, Chile
+cervecería artesanal|Temuco, Chile
