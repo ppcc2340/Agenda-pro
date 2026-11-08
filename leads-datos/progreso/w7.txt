@@ -50,3 +50,5 @@ inmobiliaria|Los Ángeles, Chile
 clínica dental|Santiago Centro, Chile
 clínica dental|Antofagasta, Chile
 clínica dental|Talca, Chile
+clínica dental|Punta Arenas, Chile
+óptica|Puente Alto, Chile

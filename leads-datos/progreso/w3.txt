@@ -52,3 +52,6 @@ inmobiliaria|Rancagua, Chile
 inmobiliaria|Puerto Montt, Chile
 clínica dental|La Florida, Santiago, Chile
 clínica dental|Coquimbo, Chile
+clínica dental|Temuco, Chile
+óptica|Ñuñoa, Santiago, Chile
+óptica|Calama, Chile

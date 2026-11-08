@@ -53,3 +53,5 @@ inmobiliaria|Valdivia, Chile
 clínica dental|Vitacura, Santiago, Chile
 clínica dental|Copiapó, Chile
 clínica dental|Concepción, Chile
+óptica|Las Condes, Santiago, Chile
+óptica|Iquique, Chile

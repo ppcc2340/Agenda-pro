@@ -53,3 +53,6 @@ inmobiliaria|Temuco, Chile
 clínica dental|Ñuñoa, Santiago, Chile
 clínica dental|Calama, Chile
 clínica dental|Chillán, Chile
+óptica|Providencia, Santiago, Chile
+óptica|Arica, Chile
+óptica|Viña del Mar, Chile

@@ -51,3 +51,5 @@ clínica dental|Providencia, Santiago, Chile
 clínica dental|Arica, Chile
 clínica dental|Viña del Mar, Chile
 clínica dental|Osorno, Chile
+óptica|Maipú, Santiago, Chile
+óptica|La Serena, Chile

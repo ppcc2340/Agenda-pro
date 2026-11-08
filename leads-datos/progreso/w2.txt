@@ -54,3 +54,4 @@ clínica dental|Maipú, Santiago, Chile
 clínica dental|La Serena, Chile
 clínica dental|Los Ángeles, Chile
 óptica|Santiago Centro, Chile
+óptica|Antofagasta, Chile

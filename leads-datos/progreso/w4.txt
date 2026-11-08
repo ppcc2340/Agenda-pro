@@ -44,3 +44,5 @@ cervecería artesanal|Osorno, Chile
 agencia de marketing|Maipú, Santiago, Chile
 agencia de marketing|La Serena, Chile
 agencia de marketing|Los Ángeles, Chile
+inmobiliaria|Santiago Centro, Chile
+inmobiliaria|Antofagasta, Chile

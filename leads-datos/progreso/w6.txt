@@ -52,3 +52,5 @@ clínica dental|Iquique, Chile
 clínica dental|Rancagua, Chile
 clínica dental|Puerto Montt, Chile
 óptica|La Florida, Santiago, Chile
+óptica|Coquimbo, Chile
+óptica|Temuco, Chile
