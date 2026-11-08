@@ -76,7 +76,7 @@ fuentes:
 max_por_fuente: 20
 buscar_correo_en_web: true
 correo:
-  modo: smtp
+  modo: zoho-web
   plantilla: propuesta-breve
   max_por_dia: 40
   segundos_entre_envios: 45

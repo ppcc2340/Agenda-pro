@@ -177,7 +177,7 @@ def main():
         s.add_argument(opt)
     s.add_argument("--buscar", action="append", metavar='"rubro|ciudad"')
     s.add_argument("--agregar", action="store_true", help="sumar búsquedas en vez de reemplazar")
-    s.add_argument("--modo", choices=["gmail", "smtp"])
+    s.add_argument("--modo", choices=["gmail", "smtp", "zoho-web"])
     sub.add_parser("instalar", help="instala dependencias y navegador")
     s = sub.add_parser("buscar"); s.add_argument("--rubro"); s.add_argument("--ciudad")
     s.add_argument("--fuentes", help="google,maps,instagram"); pl(s)
