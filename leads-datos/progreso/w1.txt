@@ -43,3 +43,5 @@ ferretería|Osorno, Chile
 cervecería artesanal|Maipú, Santiago, Chile
 cervecería artesanal|La Serena, Chile
 cervecería artesanal|Los Ángeles, Chile
+agencia de marketing|Santiago Centro, Chile
+agencia de marketing|Antofagasta, Chile

@@ -44,3 +44,5 @@ cervecería artesanal|Vitacura, Santiago, Chile
 cervecería artesanal|Copiapó, Chile
 cervecería artesanal|Concepción, Chile
 agencia de marketing|Las Condes, Santiago, Chile
+agencia de marketing|Iquique, Chile
+agencia de marketing|Rancagua, Chile

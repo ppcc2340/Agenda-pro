@@ -43,3 +43,5 @@ ferretería|Puerto Montt, Chile
 cervecería artesanal|La Florida, Santiago, Chile
 cervecería artesanal|Coquimbo, Chile
 cervecería artesanal|Temuco, Chile
+agencia de marketing|Ñuñoa, Santiago, Chile
+agencia de marketing|Calama, Chile

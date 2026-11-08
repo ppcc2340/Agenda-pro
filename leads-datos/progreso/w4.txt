@@ -34,3 +34,5 @@ peluquería|Puerto Montt, Chile
 veterinaria|La Florida, Santiago, Chile
 veterinaria|Coquimbo, Chile
 veterinaria|Temuco, Chile
+ferretería|Ñuñoa, Santiago, Chile
+ferretería|Calama, Chile

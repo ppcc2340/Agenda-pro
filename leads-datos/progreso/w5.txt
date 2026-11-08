@@ -41,3 +41,5 @@ cervecería artesanal|Las Condes, Santiago, Chile
 cervecería artesanal|Iquique, Chile
 cervecería artesanal|Rancagua, Chile
 cervecería artesanal|Puerto Montt, Chile
+agencia de marketing|La Florida, Santiago, Chile
+agencia de marketing|Coquimbo, Chile

@@ -40,3 +40,5 @@ ferretería|Temuco, Chile
 cervecería artesanal|Ñuñoa, Santiago, Chile
 cervecería artesanal|Calama, Chile
 cervecería artesanal|Chillán, Chile
+agencia de marketing|Providencia, Santiago, Chile
+agencia de marketing|Arica, Chile
