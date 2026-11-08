@@ -12,3 +12,4 @@ centro de estética|La Serena, Chile
 centro de estética|Los Ángeles, Chile
 gimnasio|Santiago Centro, Chile
 gimnasio|Antofagasta, Chile
+gimnasio|Talca, Chile

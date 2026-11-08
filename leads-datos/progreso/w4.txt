@@ -7,3 +7,4 @@ restaurante|Puerto Montt, Chile
 tienda de ropa|La Florida, Santiago, Chile
 tienda de ropa|Coquimbo, Chile
 tienda de ropa|Temuco, Chile
+centro de estética|Ñuñoa, Santiago, Chile

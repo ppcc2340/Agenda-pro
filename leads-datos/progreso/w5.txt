@@ -12,3 +12,5 @@ centro de estética|Copiapó, Chile
 centro de estética|Concepción, Chile
 gimnasio|Las Condes, Santiago, Chile
 gimnasio|Iquique, Chile
+gimnasio|Rancagua, Chile
+gimnasio|Puerto Montt, Chile
