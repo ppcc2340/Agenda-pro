@@ -1,44 +1,85 @@
-# ─────────────────────────────────────────────────────────────────────
-#  Configuración del motor de leads. Edita solo este archivo.
-# ─────────────────────────────────────────────────────────────────────
-
+# Configuración del motor de leads.
+# Puedes cambiarla en cualquier momento pidiéndoselo a Claude ("cambia el servicio a…",
+# "agrega la búsqueda de gimnasios en Temuco"). Carpeta de datos: la que contiene este archivo.
 negocio:
-  nombre: "Mi Empresa"
-  remitente: "Juan Pérez"
-  servicio: "desarrollo de sitios web y automatización de procesos"
-  telefono: "+56 9 1234 5678"
-  web: "https://miempresa.cl"
-
-# Qué buscar y dónde. Cada búsqueda = rubro + ciudad.
+  nombre: AFyV Legal
+  remitente: Contacto AFyV Legal
+  servicio: 'asesoría legal para pymes: registro y defensa de marcas, constitución de empresas, contratos
+    y cobranza'
+  telefono: +56 9 8171 4111
+  web: https://www.afyvlegal.com/
 busquedas:
-  - rubro: "clínica dental"
-    ciudad: "Santiago, Chile"
-  - rubro: "estudio jurídico"
-    ciudad: "Valparaíso, Chile"
-    plantilla: presentacion-servicios   # opcional: plantilla distinta para esta búsqueda
-
-# Fuentes activas: google, maps, instagram
-fuentes: [google, maps, instagram]
-
-# Máximo de resultados por fuente y por búsqueda
+- rubro: cafetería
+  ciudad: Santiago, Chile
+- rubro: cafetería
+  ciudad: Viña del Mar, Chile
+- rubro: cafetería
+  ciudad: Concepción, Chile
+- rubro: cafetería
+  ciudad: La Serena, Chile
+- rubro: cafetería
+  ciudad: Temuco, Chile
+- rubro: restaurante
+  ciudad: Santiago, Chile
+- rubro: restaurante
+  ciudad: Viña del Mar, Chile
+- rubro: restaurante
+  ciudad: Concepción, Chile
+- rubro: restaurante
+  ciudad: La Serena, Chile
+- rubro: restaurante
+  ciudad: Temuco, Chile
+- rubro: tienda de ropa
+  ciudad: Santiago, Chile
+- rubro: tienda de ropa
+  ciudad: Viña del Mar, Chile
+- rubro: tienda de ropa
+  ciudad: Concepción, Chile
+- rubro: tienda de ropa
+  ciudad: La Serena, Chile
+- rubro: tienda de ropa
+  ciudad: Temuco, Chile
+- rubro: centro de estética
+  ciudad: Santiago, Chile
+- rubro: centro de estética
+  ciudad: Viña del Mar, Chile
+- rubro: centro de estética
+  ciudad: Concepción, Chile
+- rubro: centro de estética
+  ciudad: La Serena, Chile
+- rubro: centro de estética
+  ciudad: Temuco, Chile
+- rubro: gimnasio
+  ciudad: Santiago, Chile
+- rubro: gimnasio
+  ciudad: Viña del Mar, Chile
+- rubro: gimnasio
+  ciudad: Concepción, Chile
+- rubro: gimnasio
+  ciudad: La Serena, Chile
+- rubro: gimnasio
+  ciudad: Temuco, Chile
+- rubro: constructora
+  ciudad: Santiago, Chile
+- rubro: constructora
+  ciudad: Viña del Mar, Chile
+- rubro: constructora
+  ciudad: Concepción, Chile
+- rubro: constructora
+  ciudad: La Serena, Chile
+- rubro: constructora
+  ciudad: Temuco, Chile
+fuentes:
+- google
+- maps
+- instagram
 max_por_fuente: 20
-
-# Si un lead tiene sitio web pero no correo, lo visita para buscar el correo
 buscar_correo_en_web: true
-
 correo:
-  # Cómo se envían y leen los correos:
-  #   gmail → a través del conector de Gmail de Claude (sin contraseñas; Claude envía y lee)
-  #   smtp  → directo desde este programa con EMAIL_USER / EMAIL_PASS del .env
-  modo: gmail
-
-  # Plantilla por defecto. Están en la carpeta plantillas/ (una por archivo, edítalas
-  # libremente o crea nuevas). Cada búsqueda puede indicar su propia "plantilla:".
+  modo: smtp
   plantilla: propuesta-breve
-
-  max_por_dia: 40            # límite diario de envíos (protege tu reputación)
-  segundos_entre_envios: 45  # pausa entre correos (solo modo smtp)
-  personalizar_con_ia: false # true = Claude redacta un primer párrafo a medida (requiere ANTHROPIC_API_KEY)
-
+  max_por_dia: 40
+  segundos_entre_envios: 45
+  personalizar_con_ia: false
 excel:
-  archivo: "leads.xlsx"
+  archivo: leads.xlsx

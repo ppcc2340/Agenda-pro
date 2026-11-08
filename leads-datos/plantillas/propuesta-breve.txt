@@ -1,16 +1,30 @@
-Asunto: Propuesta para {nombre}
+Asunto: Asesoría legal para {nombre}
 
 Hola, equipo de {nombre}:
 
-Soy {remitente}, de {negocio}. Trabajamos con negocios de {rubro} en {ciudad}
-ofreciendo {servicio}.
+Les escribimos desde {negocio}, estudio jurídico de Las Condes que trabaja con
+pymes y emprendedores de todo Chile.
 
-Me gustaría contarles en 15 minutos cómo podríamos ayudarles. ¿Tienen
-disponibilidad esta semana o la próxima?
+Vimos a {nombre} en internet y pensamos que podría servirles lo que hacemos:
+{servicio}. Antes de contratar les informamos por escrito el precio y el plazo,
+y nuestro equipo revisa y firma cada entrega.
 
-Saludos,
+¿Les acomoda una llamada de 15 minutos esta semana o la próxima?
+
+Saludos cordiales,
+
 {remitente}
-{negocio} · {telefono} · {web}
+contacto@afyvlegal.com
+{web}
+Las Condes - Santiago, Chile.
+{telefono}
+
+Este mensaje y sus archivos adjuntos son confidenciales y se dirigen exclusivamente a su destinatario. Si usted no es el destinatario, queda prohibida su revisión, uso, divulgación o copia, debiendo eliminarlo y notificar al remitente.
+La información contenida en este correo es de carácter general y preliminar, y no constituye asesoría legal definitiva, oferta vinculante ni genera relación abogado-cliente, salvo que exista aceptación expresa y por escrito por parte de AFyV conforme a sus términos de contratación.
+
+Cualquier opinión, recomendación o antecedente se basa únicamente en la información proporcionada por el destinatario y puede ser incompleta o requerir validación posterior. AFyV no asume responsabilidad por decisiones adoptadas sobre la base de este mensaje sin una contratación formal del servicio.
+
+El tratamiento de datos personales se realiza conforme a la legislación vigente y a la Política de Privacidad de AFyV.
 
 ---
-Si no desea recibir más correos, responda con la palabra "BAJA".
+Si no desean recibir más correos, respondan con la palabra "BAJA".
