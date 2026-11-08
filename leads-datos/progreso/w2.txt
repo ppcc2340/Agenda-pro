@@ -36,3 +36,9 @@ peluquería|Valdivia, Chile
 veterinaria|Vitacura, Santiago, Chile
 veterinaria|Copiapó, Chile
 veterinaria|Concepción, Chile
+ferretería|Las Condes, Santiago, Chile
+ferretería|Iquique, Chile
+ferretería|Rancagua, Chile
+ferretería|Puerto Montt, Chile
+cervecería artesanal|La Florida, Santiago, Chile
+cervecería artesanal|Coquimbo, Chile

@@ -27,3 +27,9 @@ pastelería|Valdivia, Chile
 barbería|Vitacura, Santiago, Chile
 barbería|Copiapó, Chile
 barbería|Concepción, Chile
+peluquería|Las Condes, Santiago, Chile
+peluquería|Iquique, Chile
+peluquería|Rancagua, Chile
+peluquería|Puerto Montt, Chile
+veterinaria|La Florida, Santiago, Chile
+veterinaria|Coquimbo, Chile

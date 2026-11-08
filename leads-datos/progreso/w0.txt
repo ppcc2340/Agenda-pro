@@ -36,3 +36,10 @@ peluquería|Los Ángeles, Chile
 veterinaria|Santiago Centro, Chile
 veterinaria|Antofagasta, Chile
 veterinaria|Talca, Chile
+veterinaria|Punta Arenas, Chile
+ferretería|Puente Alto, Chile
+ferretería|Valparaíso, Chile
+ferretería|Valdivia, Chile
+cervecería artesanal|Vitacura, Santiago, Chile
+cervecería artesanal|Copiapó, Chile
+cervecería artesanal|Concepción, Chile

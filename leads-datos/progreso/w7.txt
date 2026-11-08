@@ -33,3 +33,10 @@ peluquería|Concepción, Chile
 veterinaria|Las Condes, Santiago, Chile
 veterinaria|Iquique, Chile
 veterinaria|Rancagua, Chile
+veterinaria|Puerto Montt, Chile
+ferretería|La Florida, Santiago, Chile
+ferretería|Coquimbo, Chile
+ferretería|Temuco, Chile
+cervecería artesanal|Ñuñoa, Santiago, Chile
+cervecería artesanal|Calama, Chile
+cervecería artesanal|Chillán, Chile

@@ -35,3 +35,9 @@ veterinaria|Arica, Chile
 veterinaria|Viña del Mar, Chile
 veterinaria|Osorno, Chile
 ferretería|Maipú, Santiago, Chile
+ferretería|La Serena, Chile
+ferretería|Los Ángeles, Chile
+cervecería artesanal|Santiago Centro, Chile
+cervecería artesanal|Antofagasta, Chile
+cervecería artesanal|Talca, Chile
+cervecería artesanal|Punta Arenas, Chile

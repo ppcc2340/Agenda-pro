@@ -36,3 +36,9 @@ peluquería|Temuco, Chile
 veterinaria|Ñuñoa, Santiago, Chile
 veterinaria|Calama, Chile
 veterinaria|Chillán, Chile
+ferretería|Providencia, Santiago, Chile
+ferretería|Arica, Chile
+ferretería|Viña del Mar, Chile
+ferretería|Osorno, Chile
+cervecería artesanal|Maipú, Santiago, Chile
+cervecería artesanal|La Serena, Chile

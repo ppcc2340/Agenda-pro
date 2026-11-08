@@ -34,3 +34,9 @@ peluquería|Punta Arenas, Chile
 veterinaria|Puente Alto, Chile
 veterinaria|Valparaíso, Chile
 veterinaria|Valdivia, Chile
+ferretería|Vitacura, Santiago, Chile
+ferretería|Copiapó, Chile
+ferretería|Concepción, Chile
+cervecería artesanal|Las Condes, Santiago, Chile
+cervecería artesanal|Iquique, Chile
+cervecería artesanal|Rancagua, Chile

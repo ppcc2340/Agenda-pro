@@ -36,3 +36,9 @@ peluquería|Osorno, Chile
 veterinaria|Maipú, Santiago, Chile
 veterinaria|La Serena, Chile
 veterinaria|Los Ángeles, Chile
+ferretería|Santiago Centro, Chile
+ferretería|Antofagasta, Chile
+ferretería|Talca, Chile
+ferretería|Punta Arenas, Chile
+cervecería artesanal|Puente Alto, Chile
+cervecería artesanal|Valparaíso, Chile
