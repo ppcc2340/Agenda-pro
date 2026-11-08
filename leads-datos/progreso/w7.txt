@@ -61,3 +61,5 @@ imprenta|Las Condes, Santiago, Chile
 imprenta|Iquique, Chile
 imprenta|Rancagua, Chile
 imprenta|Puerto Montt, Chile
+florería|La Florida, Santiago, Chile
+florería|Coquimbo, Chile

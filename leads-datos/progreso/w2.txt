@@ -62,3 +62,5 @@ taller mecánico|Valparaíso, Chile
 taller mecánico|Valdivia, Chile
 imprenta|Vitacura, Santiago, Chile
 imprenta|Copiapó, Chile
+imprenta|Concepción, Chile
+florería|Las Condes, Santiago, Chile

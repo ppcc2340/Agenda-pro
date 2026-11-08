@@ -53,3 +53,5 @@ clínica dental|Valparaíso, Chile
 clínica dental|Valdivia, Chile
 óptica|Vitacura, Santiago, Chile
 óptica|Copiapó, Chile
+óptica|Concepción, Chile
+taller mecánico|Las Condes, Santiago, Chile

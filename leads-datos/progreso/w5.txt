@@ -61,3 +61,5 @@ taller mecánico|Punta Arenas, Chile
 imprenta|Puente Alto, Chile
 imprenta|Valparaíso, Chile
 imprenta|Valdivia, Chile
+florería|Vitacura, Santiago, Chile
+florería|Copiapó, Chile

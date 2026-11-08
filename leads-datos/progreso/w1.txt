@@ -63,3 +63,5 @@ taller mecánico|Temuco, Chile
 imprenta|Ñuñoa, Santiago, Chile
 imprenta|Calama, Chile
 imprenta|Chillán, Chile
+florería|Providencia, Santiago, Chile
+florería|Arica, Chile

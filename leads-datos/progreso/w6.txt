@@ -62,3 +62,4 @@ imprenta|Arica, Chile
 imprenta|Viña del Mar, Chile
 imprenta|Osorno, Chile
 florería|Maipú, Santiago, Chile
+florería|La Serena, Chile

@@ -63,3 +63,5 @@ taller mecánico|Los Ángeles, Chile
 imprenta|Santiago Centro, Chile
 imprenta|Antofagasta, Chile
 imprenta|Talca, Chile
+imprenta|Punta Arenas, Chile
+florería|Puente Alto, Chile

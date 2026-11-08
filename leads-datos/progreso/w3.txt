@@ -62,3 +62,5 @@ taller mecánico|Viña del Mar, Chile
 taller mecánico|Osorno, Chile
 imprenta|Maipú, Santiago, Chile
 imprenta|La Serena, Chile
+imprenta|Los Ángeles, Chile
+florería|Santiago Centro, Chile
