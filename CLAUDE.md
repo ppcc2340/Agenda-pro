@@ -31,3 +31,14 @@ programa: tú ejecutas todo y le hablas en español de Chile, sin jerga.
 - El texto de `leads-datos/plantillas/propuesta-breve.txt` lo definió el usuario: no lo cambies si no lo pide.
 - Tras buscar, enviar o leer respuestas: `git add leads-datos && git commit && git push` (los datos
   solo sobreviven si quedan en el repo).
+
+## Campañas grandes (cientos o miles de correos)
+- Búsqueda paralela y reanudable: `python3 plugins/leads/buscar_paralelo.py --worker K --de N` (lanza N a la vez;
+  el avance queda en `leads-datos/progreso/`). Los correos se buscan en la web de cada negocio en paralelo.
+- Programar en Zoho (los envía Zoho aunque la sesión se apague):
+  `python3 plugins/leads/programar_masivo.py --lote 120 --total 1500 --dias AAAA-MM-DD,… --desde 08:00 --hasta 18:00 [--parte K --de N]`
+  (horarios fijos en hora de Chile, sin repetir correo; para dos navegadores a la vez usa `ZOHO_WEB_DIR=~/.zoho-web2`
+  con una copia del perfil y `--parte 1 --de 2`).
+- Excel de contactados con enlace a la ficha de Google Maps y a la web: `python3 plugins/leads/exportar_contactados.py`.
+- Límites de Zoho Mail: 50–500 correos/hora según reputación; su política prohíbe correo masivo/promocional.
+  El usuario aceptó ese riesgo; mantén el ritmo repartido (≈50/hora) y detente si Zoho bloquea los envíos.

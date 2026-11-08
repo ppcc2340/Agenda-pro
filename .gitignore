@@ -3,3 +3,6 @@ __pycache__/
 leads-plugin.zip
 leads-datos/.env
 leads-datos/__pycache__/
+leads-datos/*.db-wal
+leads-datos/*.db-shm
+leads-datos/logs/
