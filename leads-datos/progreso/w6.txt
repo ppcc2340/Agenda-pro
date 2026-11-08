@@ -13,3 +13,6 @@ centro de estética|Los Ángeles, Chile
 gimnasio|Santiago Centro, Chile
 gimnasio|Antofagasta, Chile
 gimnasio|Talca, Chile
+gimnasio|Punta Arenas, Chile
+constructora|Puente Alto, Chile
+constructora|Valparaíso, Chile

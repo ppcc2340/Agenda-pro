@@ -16,3 +16,6 @@ centro de estética|Punta Arenas, Chile
 gimnasio|Puente Alto, Chile
 gimnasio|Valparaíso, Chile
 gimnasio|Valdivia, Chile
+constructora|Vitacura, Santiago, Chile
+constructora|Copiapó, Chile
+constructora|Concepción, Chile

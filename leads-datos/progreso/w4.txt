@@ -8,3 +8,6 @@ tienda de ropa|La Florida, Santiago, Chile
 tienda de ropa|Coquimbo, Chile
 tienda de ropa|Temuco, Chile
 centro de estética|Ñuñoa, Santiago, Chile
+centro de estética|Calama, Chile
+centro de estética|Chillán, Chile
+gimnasio|Providencia, Santiago, Chile

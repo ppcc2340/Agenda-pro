@@ -16,3 +16,6 @@ centro de estética|Valdivia, Chile
 gimnasio|Vitacura, Santiago, Chile
 gimnasio|Copiapó, Chile
 gimnasio|Concepción, Chile
+constructora|Las Condes, Santiago, Chile
+constructora|Iquique, Chile
+constructora|Rancagua, Chile

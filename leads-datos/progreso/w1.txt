@@ -16,3 +16,6 @@ centro de estética|Osorno, Chile
 gimnasio|Maipú, Santiago, Chile
 gimnasio|La Serena, Chile
 gimnasio|Los Ángeles, Chile
+constructora|Santiago Centro, Chile
+constructora|Antofagasta, Chile
+constructora|Talca, Chile

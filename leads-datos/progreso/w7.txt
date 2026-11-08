@@ -13,3 +13,6 @@ centro de estética|Temuco, Chile
 gimnasio|Ñuñoa, Santiago, Chile
 gimnasio|Calama, Chile
 gimnasio|Chillán, Chile
+constructora|Providencia, Santiago, Chile
+constructora|Arica, Chile
+constructora|Viña del Mar, Chile

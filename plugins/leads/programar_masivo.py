@@ -108,6 +108,12 @@ def main():
         partes = linea.split(" ", 3)
         if partes[0] == "SIN_SESION":
             print("SIN_SESION", flush=True); proc.kill(); sys.exit(3)
+        if partes[0] == "CONFIRMANDO" and len(partes) > 1 and partes[1] in por_id:
+            # Se anota ANTES de confirmar en Zoho: si el proceso se corta aquí, no se reprograma.
+            s, cuando, pl, nombre = por_id[partes[1]]
+            store.actualizar(con, int(partes[1]), estado="revisar", enviado_el=cuando,
+                             message_id=f"<zoho-prog-{s}-{partes[1]}-revisar>")
+            continue
         if partes[0] not in ("OK", "FALLO") or len(partes) < 2 or partes[1] not in por_id:
             if linea: print(linea, flush=True)
             continue

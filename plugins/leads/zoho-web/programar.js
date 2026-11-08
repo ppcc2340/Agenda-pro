@@ -61,6 +61,7 @@ const visibleBtn = (p, re) => p.locator('button:visible').filter({ hasText: re }
       const esperado = `${c.fecha} ${String(c.hora).padStart(2, '0')}:${String(c.minuto).padStart(2, '0')}`;
       const leido = `${aaaa}-${mm}-${dd} ${h.padStart(2, '0')}:${m.padStart(2, '0')}`;
       if (leido !== esperado || !zona) throw new Error(`programación no coincide: ${leido} (esperado ${esperado}, zona Chile: ${!!zona})`);
+      console.log(`CONFIRMANDO ${c.id}`);
       await visibleBtn(p, /Programar y enviar/).click();
       paso = 'confirmar';   // ya se pulsó "Programar y enviar": un fallo aquí puede ser un programado real
       await p.waitForTimeout(3500);

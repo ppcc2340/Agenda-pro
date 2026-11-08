@@ -16,3 +16,6 @@ centro de estética|Puerto Montt, Chile
 gimnasio|La Florida, Santiago, Chile
 gimnasio|Coquimbo, Chile
 gimnasio|Temuco, Chile
+constructora|Ñuñoa, Santiago, Chile
+constructora|Calama, Chile
+constructora|Chillán, Chile
