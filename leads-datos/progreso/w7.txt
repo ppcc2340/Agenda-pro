@@ -46,3 +46,7 @@ agencia de marketing|Viña del Mar, Chile
 agencia de marketing|Osorno, Chile
 inmobiliaria|Maipú, Santiago, Chile
 inmobiliaria|La Serena, Chile
+inmobiliaria|Los Ángeles, Chile
+clínica dental|Santiago Centro, Chile
+clínica dental|Antofagasta, Chile
+clínica dental|Talca, Chile

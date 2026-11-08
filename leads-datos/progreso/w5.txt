@@ -46,3 +46,8 @@ agencia de marketing|Coquimbo, Chile
 agencia de marketing|Temuco, Chile
 inmobiliaria|Ñuñoa, Santiago, Chile
 inmobiliaria|Calama, Chile
+inmobiliaria|Chillán, Chile
+clínica dental|Providencia, Santiago, Chile
+clínica dental|Arica, Chile
+clínica dental|Viña del Mar, Chile
+clínica dental|Osorno, Chile

@@ -48,3 +48,7 @@ inmobiliaria|Vitacura, Santiago, Chile
 inmobiliaria|Copiapó, Chile
 inmobiliaria|Concepción, Chile
 clínica dental|Las Condes, Santiago, Chile
+clínica dental|Iquique, Chile
+clínica dental|Rancagua, Chile
+clínica dental|Puerto Montt, Chile
+óptica|La Florida, Santiago, Chile

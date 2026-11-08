@@ -49,3 +49,8 @@ agencia de marketing|Chillán, Chile
 inmobiliaria|Providencia, Santiago, Chile
 inmobiliaria|Arica, Chile
 inmobiliaria|Viña del Mar, Chile
+inmobiliaria|Osorno, Chile
+clínica dental|Maipú, Santiago, Chile
+clínica dental|La Serena, Chile
+clínica dental|Los Ángeles, Chile
+óptica|Santiago Centro, Chile

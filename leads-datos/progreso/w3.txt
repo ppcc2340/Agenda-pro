@@ -48,3 +48,7 @@ agencia de marketing|Copiapó, Chile
 agencia de marketing|Concepción, Chile
 inmobiliaria|Las Condes, Santiago, Chile
 inmobiliaria|Iquique, Chile
+inmobiliaria|Rancagua, Chile
+inmobiliaria|Puerto Montt, Chile
+clínica dental|La Florida, Santiago, Chile
+clínica dental|Coquimbo, Chile

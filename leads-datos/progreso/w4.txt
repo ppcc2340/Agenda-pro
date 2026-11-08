@@ -40,3 +40,7 @@ ferretería|Chillán, Chile
 cervecería artesanal|Providencia, Santiago, Chile
 cervecería artesanal|Arica, Chile
 cervecería artesanal|Viña del Mar, Chile
+cervecería artesanal|Osorno, Chile
+agencia de marketing|Maipú, Santiago, Chile
+agencia de marketing|La Serena, Chile
+agencia de marketing|Los Ángeles, Chile

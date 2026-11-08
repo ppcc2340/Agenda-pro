@@ -48,3 +48,8 @@ agencia de marketing|Antofagasta, Chile
 agencia de marketing|Talca, Chile
 agencia de marketing|Punta Arenas, Chile
 inmobiliaria|Puente Alto, Chile
+inmobiliaria|Valparaíso, Chile
+inmobiliaria|Valdivia, Chile
+clínica dental|Vitacura, Santiago, Chile
+clínica dental|Copiapó, Chile
+clínica dental|Concepción, Chile

@@ -49,3 +49,7 @@ agencia de marketing|Rancagua, Chile
 agencia de marketing|Puerto Montt, Chile
 inmobiliaria|La Florida, Santiago, Chile
 inmobiliaria|Coquimbo, Chile
+inmobiliaria|Temuco, Chile
+clínica dental|Ñuñoa, Santiago, Chile
+clínica dental|Calama, Chile
+clínica dental|Chillán, Chile
