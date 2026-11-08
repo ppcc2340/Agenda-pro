@@ -70,9 +70,7 @@ busquedas:
 - rubro: constructora
   ciudad: Temuco, Chile
 fuentes:
-- google
 - maps
-- instagram
 max_por_fuente: 20
 buscar_correo_en_web: true
 correo:
