@@ -1,0 +1,4 @@
+[submodule "OpenMontage"]
+	path = OpenMontage
+	url = https://github.com/OpenMontageInc/OpenMontage
+	shallow = true
