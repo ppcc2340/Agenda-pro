@@ -78,7 +78,11 @@ def main():
         "SELECT lower(email) FROM leads WHERE email IS NOT NULL AND (message_id IS NOT NULL "
         "OR estado IN ('enviado','respondio','baja','rebote','revisar'))")}
     lote = []
-    for l in store.listar(con, "nuevo"):
+    try:   # primero los de prioridad (p. ej. los que quedaron pendientes de una campaña anterior)
+        nuevos = con.execute("SELECT * FROM leads WHERE estado='nuevo' ORDER BY COALESCE(prioridad,0) DESC, id").fetchall()
+    except sqlite3.OperationalError:
+        nuevos = store.listar(con, "nuevo")
+    for l in nuevos:
         e = (l["email"] or "").strip().lower()
         if zlib.crc32(e.encode()) % a.de != a.parte:   # mismo correo → siempre la misma parte
             continue
