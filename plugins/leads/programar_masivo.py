@@ -50,6 +50,7 @@ def main():
     ap.add_argument("--hasta", default="18:00")
     ap.add_argument("--parte", type=int, default=0, help="para correr varios a la vez: esta parte…")
     ap.add_argument("--de", type=int, default=1, help="…de este total (reparte horarios y leads)")
+    ap.add_argument("--campana", default="", help='espacio de horarios propio, p. ej. "-d20261110" (uno por día)')
     a = ap.parse_args()
     dias = a.dias.split(",")
     por_dia = -(-a.total // len(dias))
@@ -59,9 +60,10 @@ def main():
     con = store.conectar()
     con.execute("PRAGMA journal_mode=WAL"); con.execute("PRAGMA busy_timeout=60000")
 
+    re_slot = re.compile(rf"<zoho-prog{re.escape(a.campana)}-(\d+)-")
     usados = set()
-    for (mid,) in con.execute("SELECT message_id FROM leads WHERE message_id LIKE '<zoho-prog-%'"):
-        m = RE_SLOT.match(mid)
+    for (mid,) in con.execute("SELECT message_id FROM leads WHERE message_id LIKE ?", (f"<zoho-prog{a.campana}-%",)):
+        m = re_slot.match(mid)
         if m:
             usados.add(int(m.group(1)))
     limite = datetime.now(CHILE).replace(tzinfo=None) + timedelta(minutes=20)
@@ -118,7 +120,7 @@ def main():
             # Se anota ANTES de confirmar en Zoho: si el proceso se corta aquí, no se reprograma.
             s, cuando, pl, nombre = por_id[partes[1]]
             store.actualizar(con, int(partes[1]), estado="revisar", enviado_el=cuando,
-                             message_id=f"<zoho-prog-{s}-{partes[1]}-revisar>")
+                             message_id=f"<zoho-prog{a.campana}-{s}-{partes[1]}-revisar>")
             continue
         if partes[0] not in ("OK", "FALLO") or len(partes) < 2 or partes[1] not in por_id:
             if linea: print(linea, flush=True)
@@ -126,14 +128,14 @@ def main():
         s, cuando, pl, nombre = por_id[partes[1]]
         if partes[0] == "OK":
             store.actualizar(con, int(partes[1]), estado="enviado", enviado_el=cuando, plantilla=pl,
-                             message_id=f"<zoho-prog-{s}-{partes[1]}@afyvlegal.com>")
+                             message_id=f"<zoho-prog{a.campana}-{s}-{partes[1]}@afyvlegal.com>")
             ok += 1; seguidos = 0
             print(f"✔ {cuando} {nombre}", flush=True)
         else:
             fallos += 1; seguidos += 1
             if "[confirmar]" in linea:   # pudo quedar programado: reservar horario y revisar a mano
                 store.actualizar(con, int(partes[1]), estado="revisar", enviado_el=cuando,
-                                 message_id=f"<zoho-prog-{s}-{partes[1]}-revisar>")
+                                 message_id=f"<zoho-prog{a.campana}-{s}-{partes[1]}-revisar>")
             print(f"✘ {linea}", flush=True)
             if seguidos >= 5:
                 print("DEMASIADOS_FALLOS_SEGUIDOS: detengo el lote", flush=True)
